@@ -22,10 +22,10 @@ export const progressRecords = pgTable(
       enum: ['activity', 'module', 'course'],
     }).notNull(),
     targetId: text('target_id').notNull(),
-    startedAt: timestamp('started_at').notNull().defaultNow(),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
     position: jsonb('position'), // opaque typed payload; service interprets per target type
-    completedAt: timestamp('completed_at'), // null = in progress
-    updatedAt: timestamp('updated_at')
+    completedAt: timestamp('completed_at', { withTimezone: true }), // null = in progress
+    updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow()
       .$onUpdate(() => new Date()),

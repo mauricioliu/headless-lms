@@ -25,8 +25,8 @@ export const connections = pgTable(
     config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
     active: boolean('active').notNull().default(true),
     credentialRef: text('credential_ref').notNull(),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),

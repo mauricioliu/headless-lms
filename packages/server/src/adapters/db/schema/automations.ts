@@ -22,8 +22,8 @@ export const automations = pgTable(
     trigger: text('trigger').notNull(),
     actions: jsonb('actions').$type<AutomationAction[]>().notNull(),
     enabled: boolean('enabled').notNull().default(true),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),
@@ -47,8 +47,8 @@ export const automationRuns = pgTable(
     event: jsonb('event').$type<DomainEvent>().notNull(),
     status: text('status', { enum: ['running', 'completed', 'failed'] }).notNull(),
     actionResults: jsonb('action_results').$type<AutomationActionResult[]>().notNull().default([]),
-    startedAt: timestamp('started_at').notNull(),
-    finishedAt: timestamp('finished_at'),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),

@@ -26,7 +26,7 @@ export const organizations = pgTable('organizations', {
   ownerId: text('owner_id')
     .notNull()
     .references(() => users.id),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const memberships = pgTable(
@@ -44,7 +44,7 @@ export const memberships = pgTable(
       .references(() => users.id),
     role: text('role', { enum: ['owner', 'admin', 'instructor'] }).notNull(),
     externalId: text('external_id').notNull().unique(),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({ pk: primaryKey({ columns: [t.orgId, t.id] }) }),
 );
@@ -67,8 +67,8 @@ export const invitations = pgTable(
       .notNull()
       .references(() => users.id),
     tokenHash: text('token_hash').unique(),
-    expiresAt: timestamp('expires_at'),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),
@@ -90,7 +90,7 @@ export const courseAssignments = pgTable(
       .$defaultFn(() => genId('courseAssignment')),
     membershipId: text('membership_id').notNull(),
     courseId: text('course_id').notNull(),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),

@@ -15,8 +15,8 @@ export const credentials = pgTable(
     id: text('id').notNull(),
     ciphertext: text('ciphertext').notNull(),
     keyVersion: integer('key_version').notNull().default(1),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({ pk: primaryKey({ columns: [t.orgId, t.id] }) }),
 );

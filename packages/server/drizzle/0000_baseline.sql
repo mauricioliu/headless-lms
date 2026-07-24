@@ -3,7 +3,7 @@ CREATE TABLE "course_assignments" (
 	"id" text NOT NULL,
 	"membership_id" text NOT NULL,
 	"course_id" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "course_assignments_org_id_id_pk" PRIMARY KEY("org_id","id"),
 	CONSTRAINT "course_assignments_org_id_membership_id_course_id_unique" UNIQUE("org_id","membership_id","course_id")
 );
@@ -16,8 +16,8 @@ CREATE TABLE "invitations" (
 	"status" text NOT NULL,
 	"invited_by" text NOT NULL,
 	"token_hash" text,
-	"expires_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL,
+	"expires_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "invitations_org_id_id_pk" PRIMARY KEY("org_id","id"),
 	CONSTRAINT "invitations_token_hash_unique" UNIQUE("token_hash")
 );
@@ -28,7 +28,7 @@ CREATE TABLE "memberships" (
 	"user_id" text NOT NULL,
 	"role" text NOT NULL,
 	"external_id" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "memberships_org_id_id_pk" PRIMARY KEY("org_id","id"),
 	CONSTRAINT "memberships_external_id_unique" UNIQUE("external_id")
 );
@@ -39,7 +39,7 @@ CREATE TABLE "organizations" (
 	"name" text NOT NULL,
 	"slug" text NOT NULL,
 	"owner_id" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "organizations_external_id_unique" UNIQUE("external_id"),
 	CONSTRAINT "organizations_slug_unique" UNIQUE("slug")
 );
@@ -50,8 +50,8 @@ CREATE TABLE "activities" (
 	"module_id" text NOT NULL,
 	"seq" integer NOT NULL,
 	"settings" jsonb,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "activities_org_id_id_pk" PRIMARY KEY("org_id","id"),
 	CONSTRAINT "activities_org_id_module_id_seq_unique" UNIQUE("org_id","module_id","seq")
 );
@@ -70,7 +70,7 @@ CREATE TABLE "content_items" (
 	"org_id" text NOT NULL,
 	"id" text NOT NULL,
 	"type" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "content_items_org_id_id_pk" PRIMARY KEY("org_id","id"),
 	CONSTRAINT "content_items_org_id_id_type_unique" UNIQUE("org_id","id","type"),
 	CONSTRAINT "content_items_type_check" CHECK ("content_items"."type" in ('course'))
@@ -85,8 +85,8 @@ CREATE TABLE "courses" (
 	"description" text DEFAULT '' NOT NULL,
 	"status" text DEFAULT 'draft' NOT NULL,
 	"category" text DEFAULT '' NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "courses_org_id_id_pk" PRIMARY KEY("org_id","id"),
 	CONSTRAINT "courses_org_id_slug_unique" UNIQUE("org_id","slug")
 );
@@ -97,8 +97,8 @@ CREATE TABLE "modules" (
 	"course_id" text NOT NULL,
 	"title" text NOT NULL,
 	"seq" integer NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "modules_org_id_id_pk" PRIMARY KEY("org_id","id")
 );
 --> statement-breakpoint
@@ -109,8 +109,8 @@ CREATE TABLE "entitlements" (
 	"content_id" text NOT NULL,
 	"status" text DEFAULT 'active' NOT NULL,
 	"source" text DEFAULT 'manual' NOT NULL,
-	"granted_at" timestamp DEFAULT now() NOT NULL,
-	"expires_at" timestamp,
+	"granted_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"expires_at" timestamp with time zone,
 	CONSTRAINT "entitlements_org_id_id_pk" PRIMARY KEY("org_id","id"),
 	CONSTRAINT "entitlements_org_id_student_id_content_id_unique" UNIQUE("org_id","student_id","content_id")
 );
@@ -121,10 +121,10 @@ CREATE TABLE "progress_records" (
 	"student_id" text NOT NULL,
 	"target_type" text NOT NULL,
 	"target_id" text NOT NULL,
-	"started_at" timestamp DEFAULT now() NOT NULL,
+	"started_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"position" jsonb,
-	"completed_at" timestamp,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"completed_at" timestamp with time zone,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "progress_records_org_id_id_pk" PRIMARY KEY("org_id","id"),
 	CONSTRAINT "progress_records_org_id_student_id_target_type_target_id_unique" UNIQUE("org_id","student_id","target_type","target_id")
 );
@@ -136,8 +136,8 @@ CREATE TABLE "students" (
 	"email" text NOT NULL,
 	"first_name" text NOT NULL,
 	"last_name" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "students_org_id_id_pk" PRIMARY KEY("org_id","id"),
 	CONSTRAINT "students_org_id_email_unique" UNIQUE("org_id","email"),
 	CONSTRAINT "students_org_id_external_id_unique" UNIQUE("org_id","external_id")
@@ -148,8 +148,8 @@ CREATE TABLE "users" (
 	"external_id" text NOT NULL,
 	"email" text NOT NULL,
 	"display_name" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "users_external_id_unique" UNIQUE("external_id"),
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
@@ -164,7 +164,7 @@ CREATE TABLE "assets" (
 	"size" bigint DEFAULT 0 NOT NULL,
 	"status" text DEFAULT 'pending' NOT NULL,
 	"uploaded_by" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "assets_org_id_id_pk" PRIMARY KEY("org_id","id")
 );
 --> statement-breakpoint
@@ -173,8 +173,8 @@ CREATE TABLE "credentials" (
 	"id" text NOT NULL,
 	"ciphertext" text NOT NULL,
 	"key_version" integer DEFAULT 1 NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "credentials_org_id_id_pk" PRIMARY KEY("org_id","id")
 );
 --> statement-breakpoint
@@ -185,8 +185,8 @@ CREATE TABLE "connections" (
 	"config" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"active" boolean DEFAULT true NOT NULL,
 	"credential_ref" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "connections_org_id_id_pk" PRIMARY KEY("org_id","id"),
 	CONSTRAINT "connections_org_id_integration_id_unique" UNIQUE("org_id","integration_id")
 );
@@ -197,10 +197,10 @@ CREATE TABLE "event_outbox" (
 	"type" text NOT NULL,
 	"payload" jsonb NOT NULL,
 	"attempts" integer DEFAULT 0 NOT NULL,
-	"next_attempt_at" timestamp DEFAULT now() NOT NULL,
+	"next_attempt_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"last_error" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"processed_at" timestamp
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"processed_at" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "automation_runs" (
@@ -212,8 +212,8 @@ CREATE TABLE "automation_runs" (
 	"event" jsonb NOT NULL,
 	"status" text NOT NULL,
 	"action_results" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"started_at" timestamp NOT NULL,
-	"finished_at" timestamp,
+	"started_at" timestamp with time zone NOT NULL,
+	"finished_at" timestamp with time zone,
 	CONSTRAINT "automation_runs_org_id_id_pk" PRIMARY KEY("org_id","id")
 );
 --> statement-breakpoint
@@ -225,8 +225,8 @@ CREATE TABLE "automations" (
 	"trigger" text NOT NULL,
 	"actions" jsonb NOT NULL,
 	"enabled" boolean DEFAULT true NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "automations_org_id_id_pk" PRIMARY KEY("org_id","id")
 );
 --> statement-breakpoint
@@ -238,12 +238,12 @@ CREATE TABLE "account" (
 	"access_token" text,
 	"refresh_token" text,
 	"id_token" text,
-	"access_token_expires_at" timestamp,
-	"refresh_token_expires_at" timestamp,
+	"access_token_expires_at" timestamp with time zone,
+	"refresh_token_expires_at" timestamp with time zone,
 	"scope" text,
 	"password" text,
-	"created_at" timestamp NOT NULL,
-	"updated_at" timestamp NOT NULL
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "invitation" (
@@ -252,9 +252,9 @@ CREATE TABLE "invitation" (
 	"email" text NOT NULL,
 	"role" text NOT NULL,
 	"status" text DEFAULT 'pending' NOT NULL,
-	"expires_at" timestamp,
+	"expires_at" timestamp with time zone,
 	"inviter_id" text NOT NULL,
-	"created_at" timestamp NOT NULL
+	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "member" (
@@ -262,20 +262,20 @@ CREATE TABLE "member" (
 	"organization_id" text NOT NULL,
 	"user_id" text NOT NULL,
 	"role" text DEFAULT 'member' NOT NULL,
-	"created_at" timestamp NOT NULL
+	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "oauth_access_token" (
 	"id" text PRIMARY KEY NOT NULL,
 	"access_token" text NOT NULL,
 	"refresh_token" text NOT NULL,
-	"access_token_expires_at" timestamp NOT NULL,
-	"refresh_token_expires_at" timestamp NOT NULL,
+	"access_token_expires_at" timestamp with time zone NOT NULL,
+	"refresh_token_expires_at" timestamp with time zone NOT NULL,
 	"client_id" text NOT NULL,
 	"user_id" text,
 	"scopes" text NOT NULL,
-	"created_at" timestamp NOT NULL,
-	"updated_at" timestamp NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
 	CONSTRAINT "oauth_access_token_access_token_unique" UNIQUE("access_token"),
 	CONSTRAINT "oauth_access_token_refresh_token_unique" UNIQUE("refresh_token")
 );
@@ -291,8 +291,8 @@ CREATE TABLE "oauth_application" (
 	"type" text NOT NULL,
 	"disabled" boolean DEFAULT false,
 	"user_id" text,
-	"created_at" timestamp NOT NULL,
-	"updated_at" timestamp NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
 	CONSTRAINT "oauth_application_client_id_unique" UNIQUE("client_id")
 );
 --> statement-breakpoint
@@ -302,8 +302,8 @@ CREATE TABLE "oauth_consent" (
 	"user_id" text NOT NULL,
 	"scopes" text NOT NULL,
 	"consent_given" boolean NOT NULL,
-	"created_at" timestamp NOT NULL,
-	"updated_at" timestamp NOT NULL
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "organization" (
@@ -312,17 +312,17 @@ CREATE TABLE "organization" (
 	"slug" text NOT NULL,
 	"logo" text,
 	"metadata" text,
-	"created_at" timestamp NOT NULL,
-	"updated_at" timestamp,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone,
 	CONSTRAINT "organization_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
 CREATE TABLE "session" (
 	"id" text PRIMARY KEY NOT NULL,
-	"expires_at" timestamp NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
 	"token" text NOT NULL,
-	"created_at" timestamp NOT NULL,
-	"updated_at" timestamp NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
 	"ip_address" text,
 	"user_agent" text,
 	"user_id" text NOT NULL,
@@ -336,8 +336,8 @@ CREATE TABLE "user" (
 	"email" text NOT NULL,
 	"email_verified" boolean NOT NULL,
 	"image" text,
-	"created_at" timestamp NOT NULL,
-	"updated_at" timestamp NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
 	CONSTRAINT "user_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
@@ -345,9 +345,9 @@ CREATE TABLE "verification" (
 	"id" text PRIMARY KEY NOT NULL,
 	"identifier" text NOT NULL,
 	"value" text NOT NULL,
-	"expires_at" timestamp NOT NULL,
-	"created_at" timestamp,
-	"updated_at" timestamp
+	"expires_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone,
+	"updated_at" timestamp with time zone
 );
 --> statement-breakpoint
 ALTER TABLE "course_assignments" ADD CONSTRAINT "course_assignments_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

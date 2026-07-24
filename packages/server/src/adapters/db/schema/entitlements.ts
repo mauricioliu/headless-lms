@@ -27,8 +27,8 @@ export const entitlements = pgTable(
       .default('active'),
     // Free text: 'manual', 'import', integration ids, …
     source: text('source').notNull().default('manual'),
-    grantedAt: timestamp('granted_at').notNull().defaultNow(),
-    expiresAt: timestamp('expires_at'), // null = lifetime
+    grantedAt: timestamp('granted_at', { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }), // null = lifetime
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),

@@ -12,10 +12,10 @@ export const eventOutbox = pgTable(
     type: text('type').notNull(),
     payload: jsonb('payload').$type<Record<string, unknown>>().notNull(),
     attempts: integer('attempts').notNull().default(0),
-    nextAttemptAt: timestamp('next_attempt_at').notNull().defaultNow(),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
     lastError: text('last_error'),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    processedAt: timestamp('processed_at'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    processedAt: timestamp('processed_at', { withTimezone: true }),
   },
   (t) => ({
     pendingIdx: index('event_outbox_pending_idx')
