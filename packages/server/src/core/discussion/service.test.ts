@@ -695,4 +695,27 @@ describe('reactions', () => {
     await service.setThreadState('o1', 'a1', 'locked');
     await expect(service.react('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
   });
+
+  it('refuses to remove a reaction on a locked thread', async () => {
+    const { service, comment } = await withComment();
+    await service.react('o1', comment.id, learner, '👍');
+    await service.setThreadState('o1', 'a1', 'locked');
+    await expect(service.unreact('o1', comment.id, learner, '👍')).rejects.toThrow(
+      ForbiddenError,
+    );
+  });
+
+  it('refuses a reaction on a hidden thread', async () => {
+    const { service, comment } = await withComment();
+    await service.setThreadState('o1', 'a1', 'hidden');
+    await expect(service.react('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
+  });
+
+  it('still lets a reaction be withdrawn after reactions are disabled', async () => {
+    const { service, comment, reactions } = await withComment();
+    await service.react('o1', comment.id, learner, '👍');
+    await service.setSettings('o1', 'c1', { reactions: false });
+    await service.unreact('o1', comment.id, learner, '👍');
+    expect(reactions).toHaveLength(0);
+  });
 });
