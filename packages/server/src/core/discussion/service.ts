@@ -19,6 +19,7 @@ import type {
   AuthorRecord,
   DiscussionRepository,
   DiscussionUnitOfWork,
+  ThreadView,
 } from './ports.js';
 
 /** A course with no stored settings. Discussion is opt-in, so the common case
@@ -181,5 +182,74 @@ export class DiscussionServiceImpl {
       return row;
     });
     return this.renderOne(orgId, saved, actor);
+  }
+
+  async listThread(orgId: string, activityId: string, actor: Actor): Promise<ThreadView> {
+    const config = await this.resolveConfig(orgId, activityId);
+    if (config.state === 'hidden') {
+      return { config, comments: [] };
+    }
+    const rows = await this.repo.listByActivity(orgId, activityId);
+    // A pending comment is visible to its own author and to staff, nobody else.
+    const readable = rows.filter((c) => {
+      if (c.status === 'published' || c.status === 'removed') {
+        return true;
+      }
+      return actor.isStaff || c.orgUserId === actor.orgUserId;
+    });
+    // Replies nest one level, so a reply has nothing hanging off it — a removed
+    // reply is simply dropped rather than held open as a placeholder.
+    const replies = readable.filter((c) => c.parentId !== null && c.status !== 'removed');
+    const heldOpen = new Set(replies.map((r) => r.parentId));
+    // A removed root survives only to hold replies THIS reader can see. Judging
+    // it against every reply would show a marker with nothing beneath it.
+    const roots = readable.filter(
+      (c) => c.parentId === null && (c.status !== 'removed' || heldOpen.has(c.id)),
+    );
+    const rootIds = new Set(roots.map((r) => r.id));
+    const served = [...roots, ...replies.filter((r) => rootIds.has(r.parentId!))].sort((a, b) =>
+      a.createdAt.localeCompare(b.createdAt),
+    );
+
+    const ids = served.map((c) => c.id);
+    const people = new Set<string>();
+    for (const c of served) {
+      people.add(c.orgUserId);
+      if (c.removedBy) {
+        people.add(c.removedBy);
+      }
+    }
+    const [reactions, authors] = await Promise.all([
+      config.reactions ? this.repo.listReactions(orgId, ids) : Promise.resolve([]),
+      this.repo.authorsOf(orgId, [...people]),
+    ]);
+
+    const comments = served.map((c) => {
+      const own = reactions.filter((r) => r.commentId === c.id);
+      const byEmoji = new Map<string, { emoji: string; count: number; reacted: boolean }>();
+      for (const r of own) {
+        const entry = byEmoji.get(r.emoji) ?? { emoji: r.emoji, count: 0, reacted: false };
+        entry.count += 1;
+        entry.reacted ||= r.orgUserId === actor.orgUserId;
+        byEmoji.set(r.emoji, entry);
+      }
+      const author = authors[c.orgUserId];
+      const remover = c.removedBy ? authors[c.removedBy] : undefined;
+      return {
+        id: c.id,
+        parentId: c.parentId,
+        author: author
+          ? this.toAuthor(author)
+          : { id: c.orgUserId, name: 'Unknown', image: null, role: 'student' as const },
+        isOwn: c.orgUserId === actor.orgUserId,
+        body: c.status === 'removed' ? null : c.body,
+        status: c.status,
+        removedBy: remover ? this.toAuthor(remover) : null,
+        reactions: [...byEmoji.values()].sort((a, b) => a.emoji.localeCompare(b.emoji)),
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      };
+    });
+    return { config, comments };
   }
 }

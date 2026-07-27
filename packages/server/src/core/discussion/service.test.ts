@@ -422,3 +422,56 @@ describe('post', () => {
     ).rejects.toThrow(NotFoundError);
   });
 });
+
+describe('listThread', () => {
+  it('serves a pending comment to its author but not to another learner', async () => {
+    const { service } = makeService();
+    await enabled(service, { requireReview: true });
+    const pending = await service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'q',
+    });
+
+    const own = await service.listThread('o1', 'a1', learner);
+    expect(own.comments.map((c) => c.id)).toContain(pending.id);
+
+    const other: Actor = { orgUserId: 'orm_other', isStaff: false };
+    const theirs = await service.listThread('o1', 'a1', other);
+    expect(theirs.comments).toHaveLength(0);
+
+    const moderator = await service.listThread('o1', 'a1', staff);
+    expect(moderator.comments.map((c) => c.id)).toContain(pending.id);
+  });
+
+  it('resolves the author from their current role and omits their email', async () => {
+    const fake = fakeRepo();
+    fake.authors.set('orm_staff', {
+      id: 'orm_staff', name: 'Sarah Chen', image: null, role: 'instructor',
+      email: 'sarah@example.test',
+    });
+    const { service } = makeService(fake);
+    await enabled(service);
+    await service.post('o1', staff, { activityId: 'a1', parentId: null, body: 'hello' });
+    const view = await service.listThread('o1', 'a1', learner);
+    expect(view.comments[0]?.author).toEqual({
+      id: 'orm_staff', name: 'Sarah Chen', image: null, role: 'instructor',
+    });
+  });
+
+  it('flags a comment as the reader own only for its author', async () => {
+    const { service } = makeService();
+    await enabled(service);
+    await service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'mine' });
+    expect((await service.listThread('o1', 'a1', learner)).comments[0]?.isOwn).toBe(true);
+    expect((await service.listThread('o1', 'a1', staff)).comments[0]?.isOwn).toBe(false);
+  });
+
+  it('serves nothing for a hidden thread', async () => {
+    const { service } = makeService();
+    await enabled(service);
+    await service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'hi' });
+    await service.setThreadState('o1', 'a1', 'hidden');
+    const view = await service.listThread('o1', 'a1', learner);
+    expect(view.comments).toHaveLength(0);
+    expect(view.config.state).toBe('hidden');
+  });
+});
