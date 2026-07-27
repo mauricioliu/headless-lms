@@ -5,4 +5,7 @@ export type {
   Activity,
   Module,
   SaveActivityInput,
+  DownloadStatus,
+  Download,
+  DownloadAsset,
 } from '@headless-lms/types';

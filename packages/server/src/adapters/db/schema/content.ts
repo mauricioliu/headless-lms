@@ -33,7 +33,7 @@ export const contentItems = pgTable(
       .notNull()
       .references(() => organizations.id),
     id: text('id').notNull(),
-    type: text('type', { enum: ['course'] }).notNull(),
+    type: text('type', { enum: ['course', 'download'] }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
