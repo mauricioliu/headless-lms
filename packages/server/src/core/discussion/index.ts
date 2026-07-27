@@ -1,5 +1,5 @@
 // discussion context — public surface. Re-export only what other layers may use.
-// DiscussionServiceImpl and DEFAULT_SETTINGS are exported here once service.ts lands (Task 6).
+export { DiscussionServiceImpl, DEFAULT_SETTINGS } from './service.js';
 export type {
   DiscussionService,
   DiscussionRepository,
