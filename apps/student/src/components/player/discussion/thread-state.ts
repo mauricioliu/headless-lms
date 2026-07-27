@@ -51,12 +51,22 @@ function toggleReaction(
 ): ThreadComment {
   const existing = comment.reactions.find((r) => r.emoji === emoji);
   if (on) {
+    // Idempotent: a stale render can dispatch "on" twice for the same reader
+    // (e.g. `!summary?.reacted` read before the first dispatch's state lands).
+    // Already reacted — nothing to do.
+    if (existing?.reacted) {
+      return comment;
+    }
     const reactions = existing
       ? comment.reactions.map((r) =>
           r.emoji === emoji ? { ...r, count: r.count + 1, reacted: true } : r,
         )
       : [...comment.reactions, { emoji, count: 1, reacted: true }];
     return { ...comment, reactions };
+  }
+  // Same for the "off" direction: nothing to undo if the reader never reacted.
+  if (!existing?.reacted) {
+    return comment;
   }
   // Only the reader's own reaction goes away — everyone else's count stands.
   const reactions = comment.reactions

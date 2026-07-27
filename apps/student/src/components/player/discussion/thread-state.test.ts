@@ -89,6 +89,7 @@ describe("permissions", () => {
     expect(p.canReport).toBe(true);
     expect(p.canReply).toBe(false);
     expect(p.canReact).toBe(false);
+    expect(permissions(locked, comment({ isOwn: true })).canEdit).toBe(false);
   });
 
   it("lets an author still remove their own comment on a locked thread", () => {
@@ -119,6 +120,14 @@ describe("threadReducer", () => {
     const next = threadReducer(initialThreadState, {
       kind: "loaded",
       view: { config: { ...open, state: "hidden" }, comments: [] },
+    });
+    expect(next.status).toBe("off");
+  });
+
+  it("marks the thread off when the course disables it even while the activity still shows it visible", () => {
+    const next = threadReducer(initialThreadState, {
+      kind: "loaded",
+      view: { config: { ...open, enabled: false, state: "visible" }, comments: [] },
     });
     expect(next.status).toBe("off");
   });
@@ -167,6 +176,30 @@ describe("threadReducer", () => {
     expect(off.comments[0]?.reactions).toEqual([]);
   });
 
+  it("does not double-count a reader reacting twice without an intervening toggle off", () => {
+    const loaded = threadReducer(initialThreadState, {
+      kind: "loaded",
+      view: { config: open, comments: [comment({ id: "r1" })] },
+    });
+    const once = threadReducer(loaded, { kind: "reacted", id: "r1", emoji: "👍", on: true });
+    const twice = threadReducer(once, { kind: "reacted", id: "r1", emoji: "👍", on: true });
+    expect(twice.comments[0]?.reactions).toEqual([{ emoji: "👍", count: 1, reacted: true }]);
+  });
+
+  it("does not go negative un-reacting twice without an intervening toggle on", () => {
+    const seeded = comment({
+      id: "r1",
+      reactions: [{ emoji: "👍", count: 1, reacted: true }],
+    });
+    const loaded = threadReducer(initialThreadState, {
+      kind: "loaded",
+      view: { config: open, comments: [seeded] },
+    });
+    const once = threadReducer(loaded, { kind: "reacted", id: "r1", emoji: "👍", on: false });
+    const twice = threadReducer(once, { kind: "reacted", id: "r1", emoji: "👍", on: false });
+    expect(twice.comments[0]?.reactions).toEqual([]);
+  });
+
   it("keeps other people's reaction count when the reader removes their own", () => {
     const seeded = comment({
       id: "r1",
@@ -202,5 +235,13 @@ describe("threadReducer", () => {
     const failed = threadReducer(loaded, { kind: "failed", message: "offline" });
     expect(failed.error).toBe("offline");
     expect(failed.comments).toHaveLength(1);
+    // A failed mutation on an already-ready thread must not knock it back to
+    // "error" — the thread stays on screen, just with an error message set.
+    expect(failed.status).toBe("ready");
+  });
+
+  it("moves to error status when the initial load itself fails", () => {
+    const failed = threadReducer(initialThreadState, { kind: "failed", message: "offline" });
+    expect(failed.status).toBe("error");
   });
 });
