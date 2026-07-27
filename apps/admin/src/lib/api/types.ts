@@ -121,7 +121,7 @@ export interface SessionUser {
   id: string;
   name: string;
   email: string;
-  image?: string | null;
+  image: string | null;
   /** Active org role + the courses an instructor is scoped to. */
   role: Role;
   scopedCourseIds: string[];

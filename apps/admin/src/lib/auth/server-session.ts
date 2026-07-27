@@ -24,8 +24,10 @@ import { isManager } from "../roles";
 
 export type ServerRole = "owner" | "admin" | "instructor";
 
+type SessionPerson = { id: string; name: string; email: string; image: string | null };
+
 export type ServerSession = {
-  user: { id: string; name: string; email: string; image: string | null };
+  user: SessionPerson;
   organization: { id: string; name: string; slug: string } | null;
   role: ServerRole;
   status: "authenticated" | "no-organization" | "no-active-org" | "denied";
@@ -51,7 +53,7 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
   });
   if (!res.ok) return null;
   const data = (await res.json()) as {
-    user?: { id: string; name: string; email: string; image?: string | null };
+    user?: SessionPerson;
     session?: { activeOrganizationId?: string | null };
   } | null;
   if (!data?.user) return null;
