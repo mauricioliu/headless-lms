@@ -556,6 +556,15 @@ describe('listThread', () => {
     const theirs = await service.listThread('o1', 'a1', other);
     expect(theirs.comments[0]?.reactions).toEqual([{ emoji: '👍', count: 2, reacted: false }]);
   });
+
+  it('throws NotFoundError rather than render an unresolved author as a student', async () => {
+    const fake = fakeRepo();
+    const { service } = makeService(fake);
+    await enabled(service);
+    await service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'hi' });
+    fake.repo.authorsOf = async () => ({});
+    await expect(service.listThread('o1', 'a1', learner)).rejects.toThrow(NotFoundError);
+  });
 });
 
 describe('edit, remove, restore, approve', () => {
@@ -651,6 +660,31 @@ describe('edit, remove, restore, approve', () => {
     const before = appended.length;
     await service.restore('o1', comment.id, staff);
     expect(appended).toHaveLength(before);
+  });
+
+  it('throws NotFoundError from edit when the comment vanishes mid-write', async () => {
+    const fake = fakeRepo();
+    const { service } = makeService(fake);
+    await enabled(service);
+    const comment = await service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'original',
+    });
+    fake.repo.updateComment = async () => null;
+    await expect(service.edit('o1', comment.id, learner, 'revised')).rejects.toThrow(
+      NotFoundError,
+    );
+  });
+
+  it('throws NotFoundError from restore when the comment vanishes mid-write', async () => {
+    const fake = fakeRepo();
+    const { service } = makeService(fake);
+    await enabled(service);
+    const comment = await service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'original',
+    });
+    await service.remove('o1', comment.id, staff);
+    fake.repo.updateComment = async () => null;
+    await expect(service.restore('o1', comment.id, staff)).rejects.toThrow(NotFoundError);
   });
 });
 
@@ -857,6 +891,17 @@ describe('reports and queue', () => {
     await service.report('o1', comment.id, staff, 'a');
     await expect(service.resolveReports('o1', comment.id, learner)).rejects.toThrow(
       ForbiddenError,
+    );
+  });
+
+  it('throws NotFoundError from the queue rather than a blank id/email placeholder', async () => {
+    const fake = fakeRepo();
+    const { service } = makeService(fake);
+    await enabled(service, { requireReview: true });
+    await service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'q' });
+    fake.repo.authorsOf = async () => ({});
+    await expect(service.queue('o1', { kind: 'pending', courseId: 'c1' })).rejects.toThrow(
+      NotFoundError,
     );
   });
 });

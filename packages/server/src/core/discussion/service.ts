@@ -238,13 +238,20 @@ export class DiscussionServiceImpl implements DiscussionService {
         byEmoji.set(r.emoji, entry);
       }
       const author = authors[c.orgUserId];
+      if (!author) {
+        throw new NotFoundError('OrgUser', c.orgUserId);
+      }
+      // An ABSENT removedBy is normal — the comment was never removed. A
+      // removedBy id that does not resolve means the remover's profile
+      // vanished, which must throw rather than render a fake remover.
+      if (c.removedBy && !authors[c.removedBy]) {
+        throw new NotFoundError('OrgUser', c.removedBy);
+      }
       const remover = c.removedBy ? authors[c.removedBy] : undefined;
       return {
         id: c.id,
         parentId: c.parentId,
-        author: author
-          ? this.toAuthor(author)
-          : { id: c.orgUserId, name: 'Unknown', image: null, role: 'student' as const },
+        author: this.toAuthor(author),
         isOwn: c.orgUserId === actor.orgUserId,
         body: c.status === 'removed' ? null : c.body,
         status: c.status,
@@ -283,7 +290,13 @@ export class DiscussionServiceImpl implements DiscussionService {
       body,
       updatedAt: this.now(),
     });
-    return this.renderOne(orgId, updated ?? comment, actor);
+    if (!updated) {
+      // load() proved it existed; a null here means it vanished mid-write.
+      // Returning the pre-edit comment would report success and hand back
+      // the old body.
+      throw new NotFoundError('Comment', commentId);
+    }
+    return this.renderOne(orgId, updated, actor);
   }
 
   async remove(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
@@ -326,7 +339,13 @@ export class DiscussionServiceImpl implements DiscussionService {
       removedBy: null,
       updatedAt: this.now(),
     });
-    return updated ?? comment;
+    if (!updated) {
+      // load() proved it existed; a null here means it vanished mid-write.
+      // Returning the still-removed comment would report success while
+      // handing back the removed row.
+      throw new NotFoundError('Comment', commentId);
+    }
+    return updated;
   }
 
   /** Load a comment together with its thread's resolved config. Both gates
@@ -458,10 +477,14 @@ export class DiscussionServiceImpl implements DiscussionService {
       people.add(r.orgUserId);
     }
     const authors = await this.repo.authorsOf(orgId, [...people]);
-    const unknown = { id: '', name: 'Unknown', image: null, role: 'student' as const, email: '' };
 
     return rows.map(({ comment, courseId, activityTitle }) => {
-      const record = authors[comment.orgUserId] ?? { ...unknown, id: comment.orgUserId };
+      const record = authors[comment.orgUserId];
+      if (!record) {
+        // The queue's whole purpose is letting a moderator identify an
+        // account — a fabricated blank record defeats that.
+        throw new NotFoundError('OrgUser', comment.orgUserId);
+      }
       return {
         comment,
         author: this.toAuthor(record),
@@ -470,11 +493,17 @@ export class DiscussionServiceImpl implements DiscussionService {
         activityTitle,
         reports: reports
           .filter((r) => r.commentId === comment.id)
-          .map((r) => ({
-            reporter: this.toAuthor(authors[r.orgUserId] ?? { ...unknown, id: r.orgUserId }),
-            reason: r.reason,
-            createdAt: r.createdAt,
-          })),
+          .map((r) => {
+            const reporter = authors[r.orgUserId];
+            if (!reporter) {
+              throw new NotFoundError('OrgUser', r.orgUserId);
+            }
+            return {
+              reporter: this.toAuthor(reporter),
+              reason: r.reason,
+              createdAt: r.createdAt,
+            };
+          }),
       };
     });
   }
