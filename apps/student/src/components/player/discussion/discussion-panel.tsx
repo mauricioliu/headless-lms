@@ -1,0 +1,115 @@
+"use client";
+
+import * as React from "react";
+
+import { useApp } from "@/lib/store";
+import { canPost, groupThread } from "./thread-state";
+import { useThread } from "./use-thread";
+import { CommentComposer } from "./comment-composer";
+import { CommentItem } from "./comment-item";
+
+export function DiscussionPanel({ activityId }: { activityId: string }) {
+  const thread = useThread(activityId);
+  const { showToast } = useApp();
+
+  // Surface a refused mutation once, then let the thread carry on.
+  const lastError = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (thread.error && thread.error !== lastError.current) {
+      lastError.current = thread.error;
+      showToast(thread.error);
+    }
+    if (!thread.error) lastError.current = null;
+  }, [thread.error, showToast]);
+
+  // Disabled for the course, or hidden on this activity: render nothing at all.
+  if (thread.status === "off" || thread.status === "loading") {
+    return null;
+  }
+
+  if (thread.status === "error" || !thread.config) {
+    return (
+      <section className="mx-auto w-full max-w-3xl px-6 pb-10">
+        <div className="border-t border-line pt-6">
+          <p className="text-[13.5px] text-ink-3">
+            The discussion could not be loaded.{" "}
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="font-semibold underline"
+            >
+              Retry
+            </button>
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  const config = thread.config;
+  const nodes = groupThread(thread.comments);
+  const count = nodes.reduce((n, node) => n + 1 + node.replies.length, 0);
+  const open = canPost(config);
+
+  return (
+    <section className="mx-auto w-full max-w-3xl px-6 pb-10">
+      <div className="border-t border-line pt-6">
+        <h2 className="text-[15px] font-semibold text-ink">
+          Discussion{count > 0 ? ` · ${count}` : ""}
+        </h2>
+
+        {open ? (
+          <div className="mt-3">
+            <CommentComposer
+              placeholder="Ask a question or share what helped"
+              submitLabel="Post"
+              onSubmit={(body) => thread.post(body, null)}
+            />
+          </div>
+        ) : (
+          <p className="mt-3 text-[13.5px] text-ink-3">
+            This discussion is closed. You can still read what has been posted.
+          </p>
+        )}
+
+        {nodes.length === 0 && open && (
+          <p className="mt-4 text-[13.5px] text-ink-3">
+            No comments yet — be the first to say something.
+          </p>
+        )}
+
+        <div className="mt-2 divide-y divide-line">
+          {nodes.map(({ comment, replies }) => (
+            <div key={comment.id} className="py-1">
+              <CommentItem
+                comment={comment}
+                config={config}
+                onReply={(body) => thread.post(body, comment.id)}
+                onEdit={(body) => thread.edit(comment.id, body)}
+                onRemove={() => thread.remove(comment.id, comment.author)}
+                onReact={(emoji, on) => thread.react(comment.id, emoji, on)}
+                onReport={(reason) =>
+                  thread.report(comment.id, reason).then(() => showToast("Reported — thank you"))
+                }
+              />
+              {replies.map((reply) => (
+                <CommentItem
+                  key={reply.id}
+                  comment={reply}
+                  config={config}
+                  isReply
+                  onEdit={(body) => thread.edit(reply.id, body)}
+                  onRemove={() => thread.remove(reply.id, reply.author)}
+                  onReact={(emoji, on) => thread.react(reply.id, emoji, on)}
+                  onReport={(reason) =>
+                    thread.report(reply.id, reason).then(() => showToast("Reported — thank you"))
+                  }
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

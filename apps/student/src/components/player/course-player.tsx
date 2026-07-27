@@ -35,6 +35,7 @@ import { PlayerHeader } from "./player-header";
 import { CurriculumSidebar, type SidebarStyle } from "./curriculum-sidebar";
 import { FooterNav } from "./footer-nav";
 import { ContentArea } from "./content/content-area";
+import { DiscussionPanel } from "./discussion/discussion-panel";
 import { useIsNarrow } from "./use-viewport";
 
 export interface CoursePlayerProps {
@@ -327,6 +328,7 @@ export function CoursePlayer({
             >
               <ContentArea node={curLesson ? renderedContent[curLessonId] : null} />
             </editorMedia.MediaProvider>
+            {curLessonId && <DiscussionPanel key={curLessonId} activityId={curLessonId} />}
           </div>
 
           <FooterNav
