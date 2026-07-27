@@ -10,16 +10,32 @@ import {
 import type { Role } from "@/lib/api/types";
 import { visibleNav } from "@/lib/roles";
 
-export interface NavItem {
+export interface NavChild {
   href: string;
+  label: string;
+}
+
+export interface NavItem {
+  /** Destination for leaf items; omitted for expandable sections. */
+  href?: string;
   label: string;
   icon: LucideIcon;
   key: keyof ReturnType<typeof visibleNav>;
+  /** Present = the item expands into a submenu instead of linking anywhere. */
+  children?: NavChild[];
 }
 
 const ALL_NAV: NavItem[] = [
   { href: "/", label: "Overview", icon: LayoutDashboard, key: "overview" },
-  { href: "/courses", label: "Content", icon: Library, key: "courses" },
+  {
+    label: "Content",
+    icon: Library,
+    key: "courses",
+    children: [
+      { href: "/courses", label: "Courses" },
+      { href: "/downloads", label: "Downloads" },
+    ],
+  },
   { href: "/media", label: "Media", icon: Image, key: "media" },
   { href: "/students", label: "Students", icon: GraduationCap, key: "students" },
   { href: "/automations", label: "Automations", icon: Workflow, key: "automations" },
