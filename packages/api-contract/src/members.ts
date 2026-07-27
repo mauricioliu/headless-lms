@@ -1,6 +1,6 @@
 // Team (org members) resource schemas.
 import { z } from "zod";
-import { ListQuery, paginated } from "./shared.js";
+import { ListQuery, paginated, OrgUserProfileSchema } from "./shared.js";
 
 /** Org-scoped roles, mirrored from better-auth's organization plugin. */
 export const Role = z.enum(["owner", "admin", "instructor"]);
@@ -9,11 +9,7 @@ export type Role = z.infer<typeof Role>;
 export const MemberStatus = z.enum(["active", "invited"]);
 export type MemberStatus = z.infer<typeof MemberStatus>;
 
-export const Member = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string(),
-  image: z.string().nullable().optional(),
+export const Member = OrgUserProfileSchema.extend({
   role: Role,
   status: MemberStatus,
   joinedAt: z.string().nullable(),

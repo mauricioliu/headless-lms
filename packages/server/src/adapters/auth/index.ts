@@ -4,6 +4,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { magicLink, organization, jwt } from 'better-auth/plugins';
 import { oauthProvider } from '@better-auth/oauth-provider';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { UserProfile } from '@headless-lms/types';
 
 import type { Mailer } from '../../core/shared/mailer.js';
 import type { Logger } from '../../core/shared/ports.js';
@@ -328,18 +329,16 @@ export function createAuth(opts: CreateAuthOptions): Auth {
 // lookup, the MCP OAuth hooks, and organization member-writes); the object
 // `createAuth` returns is the real better-auth instance underneath, just
 // narrowed to this shape at the boundary.
+// Mirrors `AuthUser` in http/fastify.d.ts. Declared locally rather than
+// imported — the boundary linter disallows adapters -> http.
+type AuthUser = UserProfile & { emailVerified: boolean };
+
 export interface Auth {
   handler: (request: Request) => Promise<Response>;
   options: BetterAuthOptions;
   api: {
     getSession: (input: { headers: Headers }) => Promise<{
-      user: {
-        id: string;
-        email: string;
-        name: string;
-        emailVerified: boolean;
-        image?: string | null;
-      };
+      user: AuthUser;
       session: Record<string, unknown>;
     } | null>;
     // Consumed structurally by the oauth provider's discovery helper
