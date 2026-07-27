@@ -139,7 +139,6 @@ const ADMIN_PRINCIPAL: McpPrincipal = {
   orgUserId: 'student-admin',
   orgId: 'org-1',
   role: 'admin',
-  assignedCourseIds: [],
   scopes: [
     'courses:read',
     'courses:write',
@@ -154,16 +153,14 @@ const STUDENT_PRINCIPAL: McpPrincipal = {
   orgUserId: 'student-1',
   orgId: 'org-1',
   role: 'instructor',
-  assignedCourseIds: [],
   scopes: ['courses:read', 'entitlements:read'],
 };
 
-/** Instructor principal with read scopes and course assignment. */
+/** Instructor principal with read scopes. */
 const INSTRUCTOR_PRINCIPAL: McpPrincipal = {
   orgUserId: 'student-inst',
   orgId: 'org-1',
   role: 'instructor',
-  assignedCourseIds: ['course-1'],
   scopes: ['courses:read', 'entitlements:read'],
 };
 
@@ -172,7 +169,6 @@ const NO_SCOPE_PRINCIPAL: McpPrincipal = {
   orgUserId: 'student-noscope',
   orgId: 'org-1',
   role: 'admin',
-  assignedCourseIds: [],
   scopes: [],
 };
 

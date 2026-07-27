@@ -68,8 +68,6 @@ export async function buildPrincipal(
     throw new PrincipalError('user does not participate in this organization', 403);
   }
 
-  const assignedCourseIds = await container.organizations.assignedCourseIds(org.id, orgUser.id);
-
   // JWT `scope` is a space-separated string per OAuth 2.0 convention.
   const scopes = typeof token.scope === 'string' ? token.scope.split(' ').filter(Boolean) : [];
 
@@ -78,7 +76,6 @@ export async function buildPrincipal(
     orgUserId: orgUser.id,
     orgId: org.id,
     role: parseRole(orgUser.role),
-    assignedCourseIds,
     scopes,
   };
 }

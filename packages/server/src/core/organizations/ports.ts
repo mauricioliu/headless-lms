@@ -1,5 +1,5 @@
 // organizations context — ports.
-import type { Organization, OrgUser, Invitation, CourseAssignment } from './model.js';
+import type { Organization, OrgUser, Invitation } from './model.js';
 import type { Member, MembersQuery, Page } from './members.js';
 import type { Role } from './roles.js';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
@@ -11,7 +11,6 @@ import type {
   CreateInviteInput,
   AcceptInviteInput,
   InviteRole,
-  AssignCourseInput,
   CreateParticipantInput,
 } from './types.js';
 
@@ -61,9 +60,6 @@ export interface OrganizationService extends OrganizationProvisioner {
     authOrgId: string,
     input: UpdateOrganizationInput,
   ): Promise<Organization>;
-  assignCourse(input: AssignCourseInput): Promise<CourseAssignment>;
-  unassignCourse(input: AssignCourseInput): Promise<void>;
-  assignedCourseIds(orgId: string, orgUserId: string): Promise<string[]>;
   // --- Roster (participants) ------------------------------------------------
   // An admin adds someone before they hold an account; the row carries their
   // entitlements until an invitation is accepted and stamps `user_id`.
@@ -113,9 +109,6 @@ export interface OrganizationsRepository {
   upsertPendingInvitation(orgId: string, input: NewInvitationRow): Promise<Invitation>;
   setInvitationStatus(orgId: string, id: string, status: string): Promise<void>;
   findInvitationByTokenHash(tokenHash: string): Promise<Invitation | null>;
-  insertCourseAssignment(orgId: string, input: AssignCourseInput): Promise<CourseAssignment>;
-  deleteCourseAssignment(orgId: string, orgUserId: string, courseId: string): Promise<void>;
-  findAssignedCourseIds(orgId: string, orgUserId: string): Promise<string[]>;
   /** The person's participation in one org. `(org_id, user_id)` is unique. */
   findOrgUser(orgId: string, userId: string): Promise<OrgUser | null>;
   /** Every org this person participates in, oldest first. */

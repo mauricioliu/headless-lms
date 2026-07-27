@@ -1,13 +1,3 @@
-CREATE TABLE "course_assignments" (
-	"org_id" text NOT NULL,
-	"id" text NOT NULL,
-	"org_user_id" text NOT NULL,
-	"course_id" text NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "course_assignments_org_id_id_pk" PRIMARY KEY("org_id","id"),
-	CONSTRAINT "course_assignments_org_id_org_user_id_course_id_unique" UNIQUE("org_id","org_user_id","course_id")
-);
---> statement-breakpoint
 CREATE TABLE "invitations" (
 	"org_id" text NOT NULL,
 	"id" text NOT NULL,
@@ -381,9 +371,6 @@ CREATE TABLE "verification" (
 	"updated_at" timestamp with time zone
 );
 --> statement-breakpoint
-ALTER TABLE "course_assignments" ADD CONSTRAINT "course_assignments_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "course_assignments" ADD CONSTRAINT "course_assignments_org_id_org_user_id_org_users_org_id_id_fk" FOREIGN KEY ("org_id","org_user_id") REFERENCES "public"."org_users"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "course_assignments" ADD CONSTRAINT "course_assignments_org_id_course_id_courses_org_id_id_fk" FOREIGN KEY ("org_id","course_id") REFERENCES "public"."courses"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invitations" ADD CONSTRAINT "invitations_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invitations" ADD CONSTRAINT "invitations_invited_by_users_id_fk" FOREIGN KEY ("invited_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "org_users" ADD CONSTRAINT "org_users_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

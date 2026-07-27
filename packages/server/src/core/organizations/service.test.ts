@@ -53,13 +53,6 @@ function fakeRepo() {
   const members: OrgUser[] = [];
   const invitations: Invitation[] = [];
   const tokenHashes = new Map<string, string>();
-  const assignments: {
-    id: string;
-    orgId: string;
-    orgUserId: string;
-    courseId: string;
-    createdAt: Date;
-  }[] = [];
   let n = 0;
   const repo: OrganizationsRepository = {
     async create(input: CreateOrganizationInput) {
@@ -154,30 +147,6 @@ function fakeRepo() {
         }
       }
       return null;
-    },
-    async insertCourseAssignment(orgId, input) {
-      const row = {
-        id: `a${++n}`,
-        orgId,
-        orgUserId: input.orgUserId,
-        courseId: input.courseId,
-        createdAt: new Date(0),
-      };
-      assignments.push(row);
-      return row;
-    },
-    async deleteCourseAssignment(orgId, orgUserId, courseId) {
-      const i = assignments.findIndex(
-        (x) => x.orgId === orgId && x.orgUserId === orgUserId && x.courseId === courseId,
-      );
-      if (i >= 0) {
-        assignments.splice(i, 1);
-      }
-    },
-    async findAssignedCourseIds(orgId, orgUserId) {
-      return assignments
-        .filter((x) => x.orgId === orgId && x.orgUserId === orgUserId)
-        .map((x) => x.courseId);
     },
     async findOrgUser(orgId: string, userId: string) {
       return members.find((m) => m.orgId === orgId && m.userId === userId) ?? null;
@@ -294,29 +263,6 @@ describe('OrganizationService', () => {
       lastName: 'Ber',
     });
     expect(m.role).toBe('instructor');
-  });
-
-  it('assigns and lists instructor course assignments', async () => {
-    const { repo } = fakeRepo();
-    const svc = new OrganizationServiceImpl(repo, stubMembersRepo, stubOrgAdmin, stubPeople());
-    const org = await svc.createOrg(orgInput);
-    const a = await svc.assignCourse({
-      orgExternalId: 'org_1',
-      orgUserId: 'm1',
-      courseId: 'c1',
-    });
-    expect(a.orgId).toBe(org.id);
-    expect(a.courseId).toBe('c1');
-    expect(await svc.assignedCourseIds(org.id, 'm1')).toEqual(['c1']);
-  });
-
-  it('unassigns a course', async () => {
-    const { repo } = fakeRepo();
-    const svc = new OrganizationServiceImpl(repo, stubMembersRepo, stubOrgAdmin, stubPeople());
-    const org = await svc.createOrg(orgInput);
-    await svc.assignCourse({ orgExternalId: 'org_1', orgUserId: 'm1', courseId: 'c1' });
-    await svc.unassignCourse({ orgExternalId: 'org_1', orgUserId: 'm1', courseId: 'c1' });
-    expect(await svc.assignedCourseIds(org.id, 'm1')).toEqual([]);
   });
 
   it("normalizes Better Auth's member role to instructor on mirror", async () => {

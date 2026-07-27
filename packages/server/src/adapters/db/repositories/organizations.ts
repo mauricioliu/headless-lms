@@ -6,7 +6,6 @@ import type {
   Organization,
   OrgUser,
   Invitation,
-  CourseAssignment,
 } from '../../../core/organizations/model.js';
 import { parseRole, normalizeRole } from '../../../core/organizations/index.js';
 import type { NewInvitationRow } from '../../../core/organizations/ports.js';
@@ -14,14 +13,12 @@ import type {
   CreateOrganizationInput,
   UpdateOrganizationInput,
   AddOrgUserInput,
-  AssignCourseInput,
   CreateParticipantInput,
 } from '../../../core/organizations/types.js';
 import {
   organizations,
   orgUsers,
   invitations,
-  courseAssignments,
 } from '../schema/organizations.js';
 import { progressRecords } from '../schema/progress.js';
 import type { Logger } from '../../../core/shared/ports.js';

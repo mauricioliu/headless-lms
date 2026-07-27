@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ROLES, isRole, parseRole, capability, canForCourse, normalizeRole } from './roles.js';
+import { ROLES, isRole, parseRole, capability, normalizeRole } from './roles.js';
 
 describe('roles', () => {
   it('exposes the staff roles plus student', () => {
@@ -40,26 +40,6 @@ describe('roles', () => {
     expect(capability('instructor', 'create_course')).toBe(false);
   });
 
-  it('canForCourse resolves unconditional and assigned scopes', () => {
-    expect(
-      canForCourse('admin', 'view_student_progress', { assignedCourseIds: [], courseId: 'c1' }),
-    ).toBe(true);
-    expect(
-      canForCourse('instructor', 'edit_assigned_course', {
-        assignedCourseIds: ['c1'],
-        courseId: 'c1',
-      }),
-    ).toBe(true);
-    expect(
-      canForCourse('instructor', 'edit_assigned_course', {
-        assignedCourseIds: ['c2'],
-        courseId: 'c1',
-      }),
-    ).toBe(false);
-    expect(
-      canForCourse('instructor', 'manage_users', { assignedCourseIds: [], courseId: 'c1' }),
-    ).toBe(false);
-  });
 });
 
 describe('normalizeRole', () => {

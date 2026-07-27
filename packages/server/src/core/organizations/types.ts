@@ -10,6 +10,5 @@ export type {
   CreateInviteInput,
   AcceptInviteInput,
   InviteRole,
-  AssignCourseInput,
   CreateParticipantInput,
 } from '@headless-lms/types';

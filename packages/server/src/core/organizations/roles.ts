@@ -46,9 +46,13 @@ export type Permission =
   | 'view_student_progress'
   | 'consume_content';
 
-// Unconditional (true), course-scoped ("assigned" — requires the course to be
-// assigned to the member), or enrollment-scoped ("enrolled" — access owned by
-// entitlements). Absent ⇒ denied.
+// Unconditional (true), course-scoped ("assigned"), or enrollment-scoped
+// ("enrolled" — access owned by entitlements). Absent ⇒ denied.
+//
+// "assigned" is a granted-but-narrowed answer: the role holds the permission,
+// but only over some subset of courses. Nothing narrows it today — there is no
+// course-assignment store — so callers must decide what a narrowed grant means
+// for them. `authorize` treats it as denied; `tools.ts` treats it as granted.
 export type Capability = true | 'assigned' | 'enrolled';
 
 const MATRIX: Record<Role, Partial<Record<Permission, Capability>>> = {
@@ -80,21 +84,6 @@ const MATRIX: Record<Role, Partial<Record<Permission, Capability>>> = {
 
 export function capability(role: Role, permission: Permission): Capability | false {
   return MATRIX[role][permission] ?? false;
-}
-
-export function canForCourse(
-  role: Role,
-  permission: Permission,
-  ctx: { assignedCourseIds: readonly string[]; courseId: string },
-): boolean {
-  const cap = capability(role, permission);
-  if (cap === true) {
-    return true;
-  }
-  if (cap === 'assigned') {
-    return ctx.assignedCourseIds.includes(ctx.courseId);
-  }
-  return false;
 }
 
 // Better Auth's role model is broader than ours: it keeps a built-in `member`

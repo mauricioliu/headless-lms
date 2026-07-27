@@ -10,7 +10,7 @@ import type {
   PersonResolver,
   AuthHeaders,
 } from './ports.js';
-import type { Organization, OrgUser, Invitation, CourseAssignment } from './model.js';
+import type { Organization, OrgUser, Invitation } from './model.js';
 import { STUDENT_ROLE, parseRole, type Role } from './roles.js';
 import {
   OrganizationRuleError,
@@ -26,7 +26,6 @@ import type {
   CreateInviteInput,
   AcceptInviteInput,
   InviteRole,
-  AssignCourseInput,
   CreateParticipantInput,
 } from './types.js';
 import type { Logger, OutboxAppender } from '../shared/ports.js';
@@ -373,23 +372,6 @@ export class OrganizationServiceImpl implements OrganizationService {
 
   async getBySlug(slug: string): Promise<Organization | null> {
     return this.repo.findBySlug(slug);
-  }
-
-  async assignCourse(input: AssignCourseInput): Promise<CourseAssignment> {
-    const org = await this.requireOrg(input.orgExternalId);
-    const assignment = await this.repo.insertCourseAssignment(org.id, input);
-    this.logger.info('course assigned', { orgId: org.id, courseId: input.courseId });
-    return assignment;
-  }
-
-  async unassignCourse(input: AssignCourseInput): Promise<void> {
-    const org = await this.requireOrg(input.orgExternalId);
-    await this.repo.deleteCourseAssignment(org.id, input.orgUserId, input.courseId);
-    this.logger.info('course unassigned', { orgId: org.id, courseId: input.courseId });
-  }
-
-  async assignedCourseIds(orgId: string, orgUserId: string): Promise<string[]> {
-    return this.repo.findAssignedCourseIds(orgId, orgUserId);
   }
 
   async getOrgUser(orgId: string, userId: string): Promise<OrgUser | null> {

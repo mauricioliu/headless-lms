@@ -7,13 +7,11 @@ import {
   text,
   timestamp,
   primaryKey,
-  foreignKey,
   unique,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { genId } from '../../../core/shared/id.js';
 import { users } from './identity.js';
-import { courses } from './content.js';
 
 export const organizations = pgTable('organizations', {
   id: text('id')
@@ -31,7 +29,7 @@ export const organizations = pgTable('organizations', {
 
 // A person's participation in one organization under one role — the single
 // org-scoped actor for staff and learners alike. Everything actor-shaped
-// (entitlements, progress, course assignments) FKs (org_id, id) here.
+// (entitlements, progress) FKs (org_id, id) here.
 export const orgUsers = pgTable(
   'org_users',
   {
