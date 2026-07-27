@@ -97,11 +97,11 @@ export const serverApi = {
     ensureConfigured();
     return unwrap(await Students.getStudent({ path: { id }, ...(await authHeaders()) }));
   },
-  async studentEntitlements(studentId: string): Promise<Entitlement[]> {
+  async studentEntitlements(orgUserId: string): Promise<Entitlement[]> {
     ensureConfigured();
     const page = unwrap(
       await Entitlements.listEntitlements({
-        query: { studentId, pageSize: 100 },
+        query: { orgUserId, pageSize: 100 },
         ...(await authHeaders()),
       }),
     );

@@ -72,7 +72,7 @@ export function GrantAccessSheet({
 
   const onSubmit = handleSubmit((values) => {
     const input = {
-      studentId: values.studentId,
+      orgUserId: values.studentId,
       contentId: values.courseId,
       expiresAt:
         values.expiryMode === "never" || !values.expiresAt

@@ -2827,7 +2827,7 @@
               "type": "string"
             },
             "in": "query",
-            "name": "studentId",
+            "name": "orgUserId",
             "required": false
           },
           {
@@ -2866,7 +2866,7 @@
                           "id": {
                             "type": "string"
                           },
-                          "studentId": {
+                          "orgUserId": {
                             "type": "string"
                           },
                           "firstName": {
@@ -2922,7 +2922,7 @@
                         },
                         "required": [
                           "id",
-                          "studentId",
+                          "orgUserId",
                           "firstName",
                           "lastName",
                           "studentEmail",
@@ -2977,7 +2977,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "studentId": {
+                  "orgUserId": {
                     "type": "string"
                   },
                   "contentId": {
@@ -2989,7 +2989,7 @@
                   }
                 },
                 "required": [
-                  "studentId",
+                  "orgUserId",
                   "contentId",
                   "expiresAt"
                 ]
@@ -3008,7 +3008,7 @@
                     "id": {
                       "type": "string"
                     },
-                    "studentId": {
+                    "orgUserId": {
                       "type": "string"
                     },
                     "firstName": {
@@ -3064,7 +3064,7 @@
                   },
                   "required": [
                     "id",
-                    "studentId",
+                    "orgUserId",
                     "firstName",
                     "lastName",
                     "studentEmail",
@@ -3132,7 +3132,7 @@
                     "id": {
                       "type": "string"
                     },
-                    "studentId": {
+                    "orgUserId": {
                       "type": "string"
                     },
                     "firstName": {
@@ -3188,7 +3188,7 @@
                   },
                   "required": [
                     "id",
-                    "studentId",
+                    "orgUserId",
                     "firstName",
                     "lastName",
                     "studentEmail",

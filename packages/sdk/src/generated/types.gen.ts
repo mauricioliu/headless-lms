@@ -940,7 +940,7 @@ export type ListEntitlementsData = {
     sort?: string;
     status?: "active" | "expired" | "revoked";
     source?: string;
-    studentId?: string;
+    orgUserId?: string;
     contentId?: string;
     type?: "course";
   };
@@ -954,7 +954,7 @@ export type ListEntitlementsResponses = {
   200: {
     rows: Array<{
       id: string;
-      studentId: string;
+      orgUserId: string;
       firstName: string;
       lastName: string;
       studentEmail: string;
@@ -978,7 +978,7 @@ export type ListEntitlementsResponse = ListEntitlementsResponses[keyof ListEntit
 
 export type GrantEntitlementData = {
   body: {
-    studentId: string;
+    orgUserId: string;
     contentId: string;
     expiresAt: string | null;
   };
@@ -993,7 +993,7 @@ export type GrantEntitlementResponses = {
    */
   201: {
     id: string;
-    studentId: string;
+    orgUserId: string;
     firstName: string;
     lastName: string;
     studentEmail: string;
@@ -1041,7 +1041,7 @@ export type SetEntitlementStatusResponses = {
    */
   200: {
     id: string;
-    studentId: string;
+    orgUserId: string;
     firstName: string;
     lastName: string;
     studentEmail: string;

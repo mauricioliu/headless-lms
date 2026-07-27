@@ -10,7 +10,7 @@ import type { Entitlement } from "@/lib/api/types";
 
 
 export interface GrantEntitlementInput {
-  studentId: string;
+  orgUserId: string;
   contentId: string;
   expiresAt: string | null;
 }
@@ -23,7 +23,7 @@ export async function grantEntitlementAction(
     await Entitlements.grantEntitlement({ body: input, ...(await authHeaders()) }),
   );
   revalidatePath("/entitlements");
-  revalidatePath(`/students/${input.studentId}`);
+  revalidatePath(`/students/${input.orgUserId}`);
   return entitlement;
 }
 
