@@ -611,4 +611,28 @@ describe('edit, remove, restore, approve', () => {
     const { service, comment } = await published();
     await expect(service.approve('o1', comment.id, staff)).rejects.toThrow(ForbiddenError);
   });
+
+  it('removing an already-removed comment is idempotent', async () => {
+    const { service, comment, appended } = await published();
+    await service.remove('o1', comment.id, staff);
+    const before = appended.length;
+    const again = await service.remove('o1', comment.id, staff);
+    expect(again.status).toBe('removed');
+    expect(appended).toHaveLength(before);
+  });
+
+  it('edit emits no event', async () => {
+    const { service, comment, appended } = await published();
+    const before = appended.length;
+    await service.edit('o1', comment.id, learner, 'revised');
+    expect(appended).toHaveLength(before);
+  });
+
+  it('restore emits no event', async () => {
+    const { service, comment, appended } = await published();
+    await service.remove('o1', comment.id, staff);
+    const before = appended.length;
+    await service.restore('o1', comment.id, staff);
+    expect(appended).toHaveLength(before);
+  });
 });

@@ -296,12 +296,16 @@ export class DiscussionServiceImpl {
         removedBy: actor.orgUserId,
         updatedAt: this.now(),
       });
-      const result = updated ?? comment;
+      if (!updated) {
+        // load() proved it existed; a null here means it vanished mid-operation.
+        // Roll back rather than emit an event for a transition that didn't happen.
+        throw new NotFoundError('Comment', commentId);
+      }
       await scope.outbox.append([
-        { type: 'comment.removed', orgId, comment: result, removedBy: actor.orgUserId },
+        { type: 'comment.removed', orgId, comment: updated, removedBy: actor.orgUserId },
       ]);
       this.logger.info('comment removed', { orgId, commentId, by: actor.orgUserId });
-      return result;
+      return updated;
     });
   }
 
@@ -334,10 +338,14 @@ export class DiscussionServiceImpl {
         status: 'published',
         updatedAt: this.now(),
       });
-      const result = updated ?? comment;
-      await scope.outbox.append([{ type: 'comment.published', orgId, comment: result }]);
+      if (!updated) {
+        // load() proved it existed; a null here means it vanished mid-operation.
+        // Roll back rather than emit an event for a transition that didn't happen.
+        throw new NotFoundError('Comment', commentId);
+      }
+      await scope.outbox.append([{ type: 'comment.published', orgId, comment: updated }]);
       this.logger.info('comment published', { orgId, commentId });
-      return result;
+      return updated;
     });
   }
 }
