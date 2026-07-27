@@ -507,4 +507,8 @@ export class DiscussionServiceImpl implements DiscussionService {
       };
     });
   }
+
+  findCommentForGate(orgId: string, commentId: string): Promise<Comment | null> {
+    return this.repo.findComment(orgId, commentId);
+  }
 }

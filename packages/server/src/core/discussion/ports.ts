@@ -109,6 +109,9 @@ export interface DiscussionService {
   resolveReports(orgId: string, commentId: string, actor: Actor): Promise<void>;
 
   queue(orgId: string, query: QueueQuery): Promise<QueueEntry[]>;
+
+  /** Read-only lookup for the HTTP entitlement gate — no rules applied. */
+  findCommentForGate(orgId: string, commentId: string): Promise<Comment | null>;
 }
 
 export interface DiscussionRepository {
