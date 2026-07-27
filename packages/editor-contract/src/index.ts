@@ -4,6 +4,10 @@
 // a non-conforming editor fails typecheck at that file.
 import type { ComponentType, ReactNode } from "react";
 
+/** The kind of media slot being filled. Editor vocabulary — a host maps these
+ *  onto its own asset taxonomy. */
+export type EditorMediaKind = "image" | "video" | "audio" | "file";
+
 /** Result of a host-side media upload, referenced from editor content. */
 export interface UploadedEditorFile {
   /** Host-side asset id ("" if the host doesn't track assets). */
@@ -36,6 +40,14 @@ export interface PageEditorProps {
     file: File,
     opts: { onProgress?: (fraction: number) => void },
   ) => Promise<UploadedEditorFile>;
+  /**
+   * Host-provided picker over the host's existing media, letting authors reuse
+   * an already-uploaded asset instead of uploading a new copy. The host owns
+   * the picker UI (a dialog, typically) and resolves `null` when the author
+   * cancels. Editors that support media offer a "library" affordance only when
+   * this is supplied.
+   */
+  pickAsset?: (opts: { kind: EditorMediaKind }) => Promise<UploadedEditorFile | null>;
 }
 
 export interface EditorModule {

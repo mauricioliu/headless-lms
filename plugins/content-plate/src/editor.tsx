@@ -12,6 +12,7 @@ import * as React from 'react';
 import type { PageEditorProps } from '@headless-lms/editor-contract';
 
 import { EditorKit } from './editor/editor-kit';
+import { PickAssetProvider } from './hooks/use-pick-asset';
 import { UploadProvider } from './hooks/use-upload-file';
 import { Editor as EditorArea, EditorContainer } from './ui/editor';
 import { isNodeList } from './validate';
@@ -22,6 +23,7 @@ export function Editor({
   initialConfig,
   onChange,
   onSave,
+  pickAsset,
   uploadFile,
 }: PageEditorProps) {
   const editor = usePlateEditor({
@@ -42,14 +44,16 @@ export function Editor({
 
   return (
     <UploadProvider uploadFile={uploadFile ?? null}>
-      <Plate
-        editor={editor}
-        onChange={({ value }) => onChange?.(value)}
-      >
-        <EditorContainer className="h-auto overflow-visible" variant="default">
-          <EditorArea placeholder="Type '/' for commands…" variant="default" />
-        </EditorContainer>
-      </Plate>
+      <PickAssetProvider pickAsset={pickAsset ?? null}>
+        <Plate
+          editor={editor}
+          onChange={({ value }) => onChange?.(value)}
+        >
+          <EditorContainer className="h-auto overflow-visible" variant="default">
+            <EditorArea placeholder="Type '/' for commands…" variant="default" />
+          </EditorContainer>
+        </Plate>
+      </PickAssetProvider>
     </UploadProvider>
   );
 }

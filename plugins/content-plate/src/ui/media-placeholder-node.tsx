@@ -8,7 +8,7 @@ import {
   usePlaceholderPopoverState,
 } from '@platejs/media/react';
 import { AudioLinesIcon, FileUpIcon, FilmIcon, ImageIcon } from 'lucide-react';
-import { KEYS, nanoid } from 'platejs';
+import { KEYS } from 'platejs';
 import {
   PlateElement,
   type PlateElementProps,
@@ -17,14 +17,21 @@ import {
 } from 'platejs/react';
 import type { ReactNode } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { useFilePicker } from 'use-file-picker';
 
 import { cn } from '../lib/utils';
-import { useUploadFile } from '../hooks/use-upload-file';
+import { type PickAssetKind, usePickAsset } from '../hooks/use-pick-asset';
+import {
+  getErrorMessage,
+  type UploadedFile,
+  useUploadFile,
+} from '../hooks/use-upload-file';
 
 import { BlockActionButton } from './block-context-menu';
 import { Button } from './button';
 import { Input } from './input';
+import { mediaNodeProps } from './media-node-props';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { Spinner } from './spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
@@ -128,29 +135,39 @@ const MEDIA_CONFIG: Record<
   string,
   {
     accept: string[];
+    browseText: string;
     buttonText: string;
     embedText: string;
+    pickKind: PickAssetKind;
   }
 > = {
   [KEYS.audio]: {
     accept: ['audio/*'],
+    browseText: 'Browse library',
     buttonText: 'Upload Audio',
     embedText: 'Embed audio',
+    pickKind: 'audio',
   },
   [KEYS.file]: {
     accept: ['*'],
+    browseText: 'Browse library',
     buttonText: 'Choose a file',
     embedText: 'Embed file',
+    pickKind: 'file',
   },
   [KEYS.img]: {
     accept: ['image/*'],
+    browseText: 'Browse library',
     buttonText: 'Upload file',
     embedText: 'Embed image',
+    pickKind: 'image',
   },
   [KEYS.video]: {
     accept: ['video/*'],
+    browseText: 'Browse library',
     buttonText: 'Upload video',
     embedText: 'Embed video',
+    pickKind: 'video',
   },
 };
 
@@ -176,6 +193,8 @@ function MediaPlaceholderPopover({ children }: { children: React.ReactNode }) {
 
   const { isUploading, progress, uploadedFile, uploadFile, uploadingFile } =
     useUploadFile();
+
+  const pickAsset = usePickAsset();
 
   const replaceCurrentPlaceholder = useCallback(
     (file: File) => {
@@ -221,32 +240,51 @@ function MediaPlaceholderPopover({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReplaced]);
 
+  /** Turn this placeholder into a real media node. One path for both sources:
+   *  a fresh upload and an asset picked out of the host's library. */
+  const commitMedia = useCallback(
+    (file: UploadedFile) => {
+      const path = editor.api.findPath(element);
+
+      setMediaNode(
+        editor,
+        mediaNodeProps(file, mediaType!, {
+          placeholderId: element.id as string,
+          size,
+        }),
+        { at: path }
+      );
+    },
+    [editor, element, mediaType, size]
+  );
+
   useEffect(() => {
     if (!uploadedFile) return;
 
-    const path = editor.api.findPath(element);
-
-    // `assetId` is the stable reference persisted with the node — the host
-    // re-signs a fresh short-lived URL for it whenever content is rendered.
-    const assetRef = uploadedFile.id ? { assetId: uploadedFile.id } : {};
-
-    setMediaNode(
-      editor,
-      {
-        id: nanoid(),
-        initialHeight: size?.height,
-        initialWidth: size?.width,
-        isUpload: true,
-        name: mediaType === KEYS.file ? uploadedFile.name : '',
-        placeholderId: element.id as string,
-        type: mediaType!,
-        url: uploadedFile.url,
-        ...assetRef,
-      },
-      { at: path }
-    );
+    commitMedia(uploadedFile);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uploadedFile, element.id, size]);
+
+  /** Library tab: hand off to the host's picker, then commit what it returns. */
+  const [isPicking, setIsPicking] = useState(false);
+
+  const onBrowseLibrary = useCallback(async () => {
+    if (!pickAsset) return;
+
+    // The host's picker owns the screen while it's open — get out of its way.
+    setOpen(false);
+    setIsPicking(true);
+
+    try {
+      const picked = await pickAsset({ kind: currentMedia.pickKind });
+
+      if (picked) commitMedia(picked);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsPicking(false);
+    }
+  }, [pickAsset, currentMedia.pickKind, commitMedia]);
 
   const [embedValue, setEmbedValue] = useState('');
 
@@ -287,12 +325,33 @@ function MediaPlaceholderPopover({ children }: { children: React.ReactNode }) {
         onOpenAutoFocus={(e) => e.preventDefault()}
         variant="media"
       >
-        <Tabs className="w-full shrink-0" defaultValue="account">
+        <Tabs
+          className="w-full shrink-0"
+          defaultValue={pickAsset ? 'library' : 'upload'}
+        >
           <TabsList className="px-2" onMouseDown={(e) => e.preventDefault()}>
-            <TabsTrigger value="account">Upload</TabsTrigger>
-            <TabsTrigger value="password">Embed link</TabsTrigger>
+            {pickAsset && <TabsTrigger value="library">Library</TabsTrigger>}
+            <TabsTrigger value="upload">Upload</TabsTrigger>
+            <TabsTrigger value="embed">Embed link</TabsTrigger>
           </TabsList>
-          <TabsContent className="w-[300px] px-3 py-2" value="account">
+
+          {pickAsset && (
+            <TabsContent className="w-[300px] px-3 py-2" value="library">
+              <Button
+                className="w-full"
+                disabled={isPicking}
+                onClick={onBrowseLibrary}
+                variant="brand"
+              >
+                {currentMedia.browseText}
+              </Button>
+              <div className="mt-3 text-muted-foreground text-xs">
+                Reuse a file you have already uploaded
+              </div>
+            </TabsContent>
+          )}
+
+          <TabsContent className="w-[300px] px-3 py-2" value="upload">
             <Button className="w-full" onClick={openFilePicker} variant="brand">
               {currentMedia.buttonText}
             </Button>
@@ -303,7 +362,7 @@ function MediaPlaceholderPopover({ children }: { children: React.ReactNode }) {
 
           <TabsContent
             className="w-[300px] px-3 pt-2 pb-3 text-center"
-            value="password"
+            value="embed"
           >
             <Input
               onChange={(e) => setEmbedValue(e.target.value)}
