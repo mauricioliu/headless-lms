@@ -11,8 +11,11 @@ import type {
   GetAssetResponse,
   GetAutomationResponse,
   GetCourseResponse,
+  GetDiscussionSettingsResponse,
+  GetModerationQueueResponse,
   GetOverviewResponse,
   GetStudentResponse,
+  GetThreadStatesResponse,
   ListAssetsResponse,
   ListAutomationActionsResponse,
   ListAutomationTriggersResponse,
@@ -26,6 +29,7 @@ import type {
   ListStudentsResponse,
   RequestAssetDownloadResponse,
   RequestUploadResponse,
+  SetDiscussionSettingsData,
 } from "@headless-lms/sdk";
 
 // --- entities (straight from the SDK responses) ----------------------------
@@ -114,6 +118,18 @@ export type StudentsPage = ListStudentsResponse;
 export type EntitlementsPage = ListEntitlementsResponse;
 export type MembersPage = ListMembersResponse;
 export type AssetsPage = ListAssetsResponse;
+
+// --- discussion --------------------------------------------------------------
+
+export type ModerationQueue = GetModerationQueueResponse;
+export type QueueEntry = ModerationQueue["entries"][number];
+export type QueueReport = QueueEntry["reports"][number];
+export type DiscussionSettings = GetDiscussionSettingsResponse;
+export type ThreadStates = GetThreadStatesResponse["states"];
+export type ThreadState = ThreadStates[string];
+// `SetDiscussionSettingsData["body"]` is already required (not optional), so
+// no `NonNullable<>` is needed here.
+export type SetDiscussionSettings = SetDiscussionSettingsData["body"];
 
 // --- auth / session (not part of the resource API) -------------------------
 

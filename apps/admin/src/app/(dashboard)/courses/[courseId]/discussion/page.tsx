@@ -1,0 +1,34 @@
+// Discussion tab: comment settings and the moderation queue for one course.
+// The queue is already course-scoped by the API, so this tab is the whole
+// moderation surface — there is no global inbox.
+import { requireAuth } from "@/lib/auth/server-session";
+import { serverApi } from "@/lib/api/server";
+
+import { SettingsForm } from "./_components/settings-form";
+import { QueueList, type QueueKind } from "./_components/queue-list";
+
+export default async function CourseDiscussionTab({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ courseId: string }>;
+  searchParams: Promise<{ kind?: string }>;
+}) {
+  const { courseId } = await params;
+  const { kind: rawKind } = await searchParams;
+  const kind: QueueKind = rawKind === "reported" ? "reported" : "pending";
+
+  // Start both fetches immediately, gate on session/role, then await — the API
+  // round-trips run in parallel instead of sequentially.
+  const settingsPromise = serverApi.discussionSettings(courseId);
+  const queuePromise = serverApi.moderationQueue(courseId, kind);
+  await requireAuth(settingsPromise, queuePromise);
+  const [settings, entries] = await Promise.all([settingsPromise, queuePromise]);
+
+  return (
+    <div className="space-y-8">
+      <SettingsForm settings={settings} />
+      <QueueList kind={kind} entries={entries} />
+    </div>
+  );
+}

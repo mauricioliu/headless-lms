@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, KeyRound, Layers, Settings2, type LucideIcon } from "lucide-react";
+import {
+  BarChart3,
+  KeyRound,
+  Layers,
+  MessagesSquare,
+  Settings2,
+  type LucideIcon,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -15,6 +22,7 @@ const TABS: { segment: string; label: string; icon: LucideIcon }[] = [
   { segment: "content", label: "Content", icon: Layers },
   { segment: "analytics", label: "Analytics", icon: BarChart3 },
   { segment: "access", label: "Access", icon: KeyRound },
+  { segment: "discussion", label: "Discussion", icon: MessagesSquare },
 ];
 
 export function CourseTabsNav({ courseId }: { courseId: string }) {
