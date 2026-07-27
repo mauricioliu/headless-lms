@@ -1,4 +1,5 @@
 import type {
+  GetActivityThreadResponse,
   GetLearnCourseResponse,
   GetLearnOrgResponse,
   ListLearnCoursesResponse,
@@ -11,6 +12,12 @@ export type Org = GetLearnOrgResponse;
 export type CourseSummary = ListLearnCoursesResponse[number];
 export type Module = ListLearnModulesResponse[number];
 export type Activity = Module["activities"][number];
+
+/** One activity's thread as the learner may see it. */
+export type ThreadView = GetActivityThreadResponse;
+export type ResolvedThreadConfig = ThreadView["config"];
+export type ThreadComment = ThreadView["comments"][number];
+export type CommentAuthor = ThreadComment["author"];
 
 /** The editor-agnostic content wrapper stored under `settings.content`. */
 export interface ActivityContent {
