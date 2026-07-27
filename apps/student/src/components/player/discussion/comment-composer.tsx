@@ -28,6 +28,9 @@ export function CommentComposer({
       await onSubmit(trimmed);
       setValue("");
       onCancel?.();
+    } catch {
+      // The hook already surfaced the failure; keep the draft so the
+      // reader can retry rather than retyping.
     } finally {
       setBusy(false);
     }

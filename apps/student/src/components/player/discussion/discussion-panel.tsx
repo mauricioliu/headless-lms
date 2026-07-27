@@ -88,9 +88,14 @@ export function DiscussionPanel({ activityId }: { activityId: string }) {
                 onEdit={(body) => thread.edit(comment.id, body)}
                 onRemove={() => thread.remove(comment.id, comment.author)}
                 onReact={(emoji, on) => thread.react(comment.id, emoji, on)}
-                onReport={(reason) =>
-                  thread.report(comment.id, reason).then(() => showToast("Reported — thank you"))
-                }
+                onReport={async (reason) => {
+                  try {
+                    await thread.report(comment.id, reason);
+                    showToast("Reported — thank you");
+                  } catch {
+                    // Already surfaced via the thread.error effect above.
+                  }
+                }}
               />
               {replies.map((reply) => (
                 <CommentItem
@@ -101,9 +106,14 @@ export function DiscussionPanel({ activityId }: { activityId: string }) {
                   onEdit={(body) => thread.edit(reply.id, body)}
                   onRemove={() => thread.remove(reply.id, reply.author)}
                   onReact={(emoji, on) => thread.react(reply.id, emoji, on)}
-                  onReport={(reason) =>
-                    thread.report(reply.id, reason).then(() => showToast("Reported — thank you"))
-                  }
+                  onReport={async (reason) => {
+                    try {
+                      await thread.report(reply.id, reason);
+                      showToast("Reported — thank you");
+                    } catch {
+                      // Already surfaced via the thread.error effect above.
+                    }
+                  }}
                 />
               ))}
             </div>

@@ -26,6 +26,14 @@ export function useThread(activityId: string): UseThread {
   const [state, dispatch] = React.useReducer(threadReducer, initialThreadState);
   // Guards a response for a lesson the reader has already left.
   const current = React.useRef(activityId);
+  // Mirrors state.comments every render so optimistic() can snapshot the
+  // latest value at call time rather than a value closed over at the last
+  // render — two optimistic calls issued before a render commits must not
+  // share (and clobber each other via) the same rollback snapshot.
+  const commentsRef = React.useRef(state.comments);
+  React.useEffect(() => {
+    commentsRef.current = state.comments;
+  }, [state.comments]);
 
   React.useEffect(() => {
     if (!activityId) return;
@@ -51,7 +59,7 @@ export function useThread(activityId: string): UseThread {
   /** Apply locally, call the server, put the snapshot back if it refuses. */
   const optimistic = React.useCallback(
     async (apply: () => void, call: () => Promise<void>) => {
-      const snapshot = state.comments;
+      const snapshot = commentsRef.current;
       apply();
       try {
         await call();
@@ -60,12 +68,13 @@ export function useThread(activityId: string): UseThread {
         dispatch({ kind: "failed", message: message(err) });
       }
     },
-    [state.comments],
+    [],
   );
 
   // Not optimistic: the server decides whether a comment lands published or
   // pending, and guessing wrong would flash the wrong badge. The composer shows
-  // its own busy state while this runs, so the wait is visible.
+  // its own busy state while this runs, so the wait is visible. Rethrows on
+  // failure so the composer can tell success from failure and keep the draft.
   const post = React.useCallback(
     async (body: string, parentId: string | null) => {
       ensureClientSdk();
@@ -78,6 +87,7 @@ export function useThread(activityId: string): UseThread {
         dispatch({ kind: "inserted", comment: res.data });
       } catch (err: unknown) {
         dispatch({ kind: "failed", message: message(err) });
+        throw err;
       }
     },
     [activityId],
@@ -91,6 +101,7 @@ export function useThread(activityId: string): UseThread {
       dispatch({ kind: "replaced", id, comment: res.data });
     } catch (err: unknown) {
       dispatch({ kind: "failed", message: message(err) });
+      throw err;
     }
   }, []);
 
@@ -123,6 +134,8 @@ export function useThread(activityId: string): UseThread {
   );
 
   // Not optimistic: the reader needs to know the signal was actually recorded.
+  // Rethrows so a caller can tell success from failure (e.g. only toast a
+  // confirmation on success); callers must handle the rejection themselves.
   const report = React.useCallback(async (id: string, reason: string) => {
     ensureClientSdk();
     try {
