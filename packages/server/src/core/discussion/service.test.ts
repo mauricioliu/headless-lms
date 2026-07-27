@@ -791,7 +791,10 @@ describe('reports and queue', () => {
     expect(entries[0]?.activityTitle).toBe('Lesson one');
     expect(entries[0]?.courseId).toBe('c1');
     expect(entries[0]?.reports.map((r) => r.reason).sort()).toEqual(['rude', 'spam']);
-    expect(entries[0]?.reports[0]?.reporter.id).toBeDefined();
+    expect(entries[0]?.reports.map((r) => r.reporter.id).sort()).toEqual(
+      [staff.orgUserId, other.orgUserId].sort(),
+    );
+    expect('email' in entries[0]!.reports[0]!.reporter).toBe(false);
   });
 
   it('drops a comment out of the reported queue once its reports resolve', async () => {
@@ -799,6 +802,36 @@ describe('reports and queue', () => {
     await service.report('o1', comment.id, staff, 'a');
     await service.resolveReports('o1', comment.id, staff);
     expect(await service.queue('o1', { kind: 'reported', courseId: 'c1' })).toHaveLength(0);
+  });
+
+  it('resolves every open report on a comment, not just one', async () => {
+    const { service, comment, reports } = await withComment();
+    const other: Actor = { orgUserId: 'orm_other', isStaff: false };
+    await service.report('o1', comment.id, staff, 'a');
+    await service.report('o1', comment.id, other, 'b');
+
+    const before = await service.queue('o1', { kind: 'reported', courseId: 'c1' });
+    expect(before).toHaveLength(1);
+    expect(before[0]?.reports).toHaveLength(2);
+
+    await service.resolveReports('o1', comment.id, staff);
+
+    expect(await service.queue('o1', { kind: 'reported', courseId: 'c1' })).toHaveLength(0);
+    expect(reports.every((r) => r.resolvedAt !== null)).toBe(true);
+  });
+
+  it('scopes the reported queue to the requested course', async () => {
+    const { service, comment } = await withComment();
+    await service.report('o1', comment.id, staff, 'a');
+    expect(await service.queue('o1', { kind: 'reported', courseId: 'c2' })).toHaveLength(0);
+    expect(await service.queue('o1', { kind: 'reported', courseId: 'c1' })).toHaveLength(1);
+  });
+
+  it('returns the report that actually exists on a duplicate, not a fabricated one', async () => {
+    const { service, comment } = await withComment();
+    const first = await service.report('o1', comment.id, staff, 'first');
+    const second = await service.report('o1', comment.id, staff, 'second');
+    expect(second.id).toBe(first.id);
   });
 
   it('lists pending comments in the queue', async () => {

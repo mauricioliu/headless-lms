@@ -415,8 +415,14 @@ export class DiscussionServiceImpl implements DiscussionService {
     return this.uow.run(async (scope) => {
       const saved = await scope.discussion.insertReport(orgId, report);
       if (!saved) {
-        // Already reported by this person — the existing open report stands and
-        // a second event would double-count any threshold automation.
+        // Already reported by this person. Return the report that actually
+        // exists — a fabricated id resolves to nothing — and emit no second
+        // event, which would double-count any threshold automation.
+        const open = await scope.discussion.listOpenReports(orgId, [commentId]);
+        const mine = open.find((r) => r.orgUserId === actor.orgUserId);
+        if (mine) {
+          return mine;
+        }
         return report;
       }
       await scope.outbox.append([{ type: 'comment.reported', orgId, report: saved }]);
