@@ -206,7 +206,31 @@ export class OrganizationServiceImpl implements OrganizationService {
     }
     // Claim-or-create: an admin-built roster entry for this email is claimed so
     // its entitlements survive; otherwise the participation is created now.
-    await this.claimOrCreateParticipant(invitation, person, input.userExternalId);
+    // One person holds at most one participation per org. If they already have
+    // one — typically invited under a second address — the invitation cannot be
+    // honoured, and refusing here keeps it from hitting the (org_id, user_id)
+    // unique as an unhandled error.
+    const existing = await this.repo.findOrgUser(invitation.orgId, person.id);
+    if (existing) {
+      this.logger.warn('invite accept refused: already participates in this org', {
+        orgId: invitation.orgId,
+        invitationId: invitation.id,
+        orgUserId: existing.id,
+      });
+      return null;
+    }
+    const settled = await this.claimOrCreateParticipant(
+      invitation,
+      person,
+      input.userExternalId,
+    );
+    if (!settled) {
+      this.logger.warn('invite accept refused: participation could not be settled', {
+        orgId: invitation.orgId,
+        invitationId: invitation.id,
+      });
+      return null;
+    }
     if (invitation.role !== STUDENT_ROLE) {
       // Staff also need better-auth's member record; its afterAddMember hook
       // stamps external_id onto the row we just settled.
@@ -244,7 +268,25 @@ export class OrganizationServiceImpl implements OrganizationService {
     invitation: Invitation,
     person: { id: string; displayName: string },
     userExternalId: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
+    try {
+      return await this.settleParticipation(invitation, person, userExternalId);
+    } catch (err) {
+      // acceptInvite pre-checks that this person holds no participation here,
+      // but a concurrent accept can take it in between. The uniqueness rule is
+      // the real guard; losing that race is a refusal, not a crash.
+      if (err instanceof ConflictError) {
+        return false;
+      }
+      throw err;
+    }
+  }
+
+  private async settleParticipation(
+    invitation: Invitation,
+    person: { id: string; displayName: string },
+    userExternalId: string,
+  ): Promise<boolean> {
     const claimed = await this.uow.run(async ({ organizations, outbox }) => {
       const count = await organizations.claimOrgUser(
         invitation.orgId,
@@ -265,7 +307,7 @@ export class OrganizationServiceImpl implements OrganizationService {
       return count > 0;
     });
     if (claimed) {
-      return;
+      return true;
     }
     const { first, last } = splitName(person.displayName);
     await this.uow.run(async ({ organizations, outbox }) => {
@@ -288,6 +330,7 @@ export class OrganizationServiceImpl implements OrganizationService {
         { type: 'student.created', orgId: created.orgId, student: created },
       ]);
     });
+    return true;
   }
 
   // --- Roster (participants) -------------------------------------------------

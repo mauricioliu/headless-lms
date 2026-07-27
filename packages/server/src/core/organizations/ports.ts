@@ -119,7 +119,11 @@ export interface OrganizationsRepository {
   insertPendingOrgUser(input: CreateParticipantInput): Promise<OrgUser>;
   /** Deletes the participation and its dependent rows; false when none matched. */
   deleteOrgUser(orgId: string, id: string): Promise<boolean>;
-  /** Stamps `user_id` onto the org's pending row for this email; rows updated. */
+  /**
+   * Stamps `user_id` onto the org's pending row for this email; rows updated.
+   * Throws ConflictError when the person already participates in this org —
+   * one person holds at most one participation per org.
+   */
   claimOrgUser(orgId: string, email: string, userId: string): Promise<number>;
 }
 

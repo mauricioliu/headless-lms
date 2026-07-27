@@ -11,6 +11,7 @@ import type {
 import type { Organization, OrgUser, Invitation } from './model.js';
 import { normalizeRole } from './roles.js';
 import { OrganizationRuleError } from './members.js';
+import { ConflictError } from '../shared/errors.js';
 import type {
   CreateOrganizationInput,
   AddOrgUserInput,
@@ -185,6 +186,12 @@ function fakeRepo() {
       return true;
     },
     async claimOrgUser(orgId: string, email: string, userId: string) {
+      // Mirrors the `(org_id, user_id)` unique in Postgres: one person holds at
+      // most one participation per org. The repository translates that
+      // violation into ConflictError, so the fake raises the same thing.
+      if (members.some((m) => m.orgId === orgId && m.userId === userId)) {
+        throw new ConflictError('That account already belongs to this organization');
+      }
       let count = 0;
       for (let i = 0; i < members.length; i++) {
         const row = members[i];
@@ -594,6 +601,81 @@ describe('OrganizationService', () => {
       role: 'instructor',
       userId: 'usr_for_usr_ext_3',
     });
+  });
+
+  it('acceptInvite refuses when the person already participates in that org', async () => {
+    // Bob is staff under his work address; someone invites his personal one.
+    // One person holds at most one participation per org, so this must be a
+    // clean refusal rather than a unique-constraint blow-up.
+    const h = inviteHarness();
+    const org = await h.svc.createOrg(orgInput);
+    await h.svc.addOrgUser({
+      orgExternalId: 'org_1',
+      externalId: 'mem_bob',
+      userId: 'usr_for_auth_bob',
+      role: 'instructor',
+      email: 'bob@work.com',
+      firstName: 'Bob',
+      lastName: 'Stone',
+    });
+    await h.svc.createInvite({
+      orgId: org.id,
+      email: 'bob@personal.com',
+      role: 'student',
+      inviterUserId: 'usr_1',
+    });
+    const result = await h.svc.acceptInvite({
+      token: h.lastToken(),
+      email: 'bob@personal.com',
+      userExternalId: 'auth_bob',
+    });
+    expect(result).toBeNull();
+    expect(h.invitations[0]?.status).toBe('pending');
+    // No second participation, and the original is untouched.
+    expect(h.members).toHaveLength(1);
+    expect(h.members[0]).toMatchObject({ email: 'bob@work.com', role: 'instructor' });
+  });
+
+  it('acceptInvite refuses rather than throwing when the claim races another accept', async () => {
+    // The pre-check passed, but a concurrent accept took the participation
+    // between the check and the write. The unique constraint is the real
+    // guard, so a violation here must still surface as a refusal, not a 500.
+    const fake = fakeRepo();
+    const racing: OrganizationsRepository = {
+      ...fake.repo,
+      async findOrgUser() {
+        return null; // check sees nothing…
+      },
+      async claimOrgUser() {
+        // …but the write loses the race.
+        throw new ConflictError('That account already belongs to this organization');
+      },
+    };
+    const { mailer, lastToken } = capturingMailer();
+    const svc = new OrganizationServiceImpl(
+      racing,
+      stubMembersRepo,
+      () => stubOrgAdmin(),
+      stubPeople(),
+      undefined,
+      undefined,
+      mailer,
+      inviteUrls,
+    );
+    const org = await svc.createOrg(orgInput);
+    await svc.createInvite({
+      orgId: org.id,
+      email: 'racer@example.com',
+      role: 'student',
+      inviterUserId: 'usr_1',
+    });
+    const result = await svc.acceptInvite({
+      token: lastToken(),
+      email: 'racer@example.com',
+      userExternalId: 'auth_racer',
+    });
+    expect(result).toBeNull();
+    expect(fake.invitations[0]?.status).toBe('pending');
   });
 
   it('acceptInvite refuses when the account has no domain person', async () => {

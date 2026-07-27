@@ -275,12 +275,22 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return rows.length > 0;
   }
 
+  // Throws ConflictError when the person already holds a participation in this
+  // org — `(org_id, user_id)` is unique. Translating here keeps core free of
+  // Postgres error codes; the service treats it as a refusal.
   async claimOrgUser(orgId: string, email: string, userId: string): Promise<number> {
-    const rows = await this.db
-      .update(orgUsers)
-      .set({ userId })
-      .where(and(eq(orgUsers.orgId, orgId), eq(orgUsers.email, email), isNull(orgUsers.userId)))
-      .returning({ id: orgUsers.id });
-    return rows.length;
+    try {
+      const rows = await this.db
+        .update(orgUsers)
+        .set({ userId })
+        .where(and(eq(orgUsers.orgId, orgId), eq(orgUsers.email, email), isNull(orgUsers.userId)))
+        .returning({ id: orgUsers.id });
+      return rows.length;
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictError('That account already belongs to this organization');
+      }
+      throw err;
+    }
   }
 }
