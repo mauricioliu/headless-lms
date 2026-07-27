@@ -1,5 +1,5 @@
 {
-  "id": "93351667-7338-478a-b9e5-ac3771709be9",
+  "id": "672192bd-12f0-4032-9e25-6e2ef7633c5f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -20,8 +20,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "membership_id": {
-          "name": "membership_id",
+        "org_user_id": {
+          "name": "org_user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -55,13 +55,13 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "course_assignments_org_id_membership_id_memberships_org_id_id_fk": {
-          "name": "course_assignments_org_id_membership_id_memberships_org_id_id_fk",
+        "course_assignments_org_id_org_user_id_org_users_org_id_id_fk": {
+          "name": "course_assignments_org_id_org_user_id_org_users_org_id_id_fk",
           "tableFrom": "course_assignments",
-          "tableTo": "memberships",
+          "tableTo": "org_users",
           "columnsFrom": [
             "org_id",
-            "membership_id"
+            "org_user_id"
           ],
           "columnsTo": [
             "org_id",
@@ -96,12 +96,12 @@
         }
       },
       "uniqueConstraints": {
-        "course_assignments_org_id_membership_id_course_id_unique": {
-          "name": "course_assignments_org_id_membership_id_course_id_unique",
+        "course_assignments_org_id_org_user_id_course_id_unique": {
+          "name": "course_assignments_org_id_org_user_id_course_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "org_id",
-            "membership_id",
+            "org_user_id",
             "course_id"
           ]
         }
@@ -244,8 +244,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.memberships": {
-      "name": "memberships",
+    "public.org_users": {
+      "name": "org_users",
       "schema": "",
       "columns": {
         "org_id": {
@@ -264,10 +264,28 @@
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "role": {
           "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -276,10 +294,17 @@
           "name": "external_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
@@ -288,9 +313,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "memberships_org_id_organizations_id_fk": {
-          "name": "memberships_org_id_organizations_id_fk",
-          "tableFrom": "memberships",
+        "org_users_org_id_organizations_id_fk": {
+          "name": "org_users_org_id_organizations_id_fk",
+          "tableFrom": "org_users",
           "tableTo": "organizations",
           "columnsFrom": [
             "org_id"
@@ -301,9 +326,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "memberships_user_id_users_id_fk": {
-          "name": "memberships_user_id_users_id_fk",
-          "tableFrom": "memberships",
+        "org_users_user_id_users_id_fk": {
+          "name": "org_users_user_id_users_id_fk",
+          "tableFrom": "org_users",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
@@ -316,8 +341,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "memberships_org_id_id_pk": {
-          "name": "memberships_org_id_id_pk",
+        "org_users_org_id_id_pk": {
+          "name": "org_users_org_id_id_pk",
           "columns": [
             "org_id",
             "id"
@@ -325,11 +350,27 @@
         }
       },
       "uniqueConstraints": {
-        "memberships_external_id_unique": {
-          "name": "memberships_external_id_unique",
+        "org_users_external_id_unique": {
+          "name": "org_users_external_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "external_id"
+          ]
+        },
+        "org_users_org_id_email_unique": {
+          "name": "org_users_org_id_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "org_id",
+            "email"
+          ]
+        },
+        "org_users_org_id_user_id_unique": {
+          "name": "org_users_org_id_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "org_id",
+            "user_id"
           ]
         }
       },
@@ -941,8 +982,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "student_id": {
-          "name": "student_id",
+        "org_user_id": {
+          "name": "org_user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1011,13 +1052,13 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "entitlements_org_id_student_id_students_org_id_id_fk": {
-          "name": "entitlements_org_id_student_id_students_org_id_id_fk",
+        "entitlements_org_id_org_user_id_org_users_org_id_id_fk": {
+          "name": "entitlements_org_id_org_user_id_org_users_org_id_id_fk",
           "tableFrom": "entitlements",
-          "tableTo": "students",
+          "tableTo": "org_users",
           "columnsFrom": [
             "org_id",
-            "student_id"
+            "org_user_id"
           ],
           "columnsTo": [
             "org_id",
@@ -1037,12 +1078,12 @@
         }
       },
       "uniqueConstraints": {
-        "entitlements_org_id_student_id_content_id_unique": {
-          "name": "entitlements_org_id_student_id_content_id_unique",
+        "entitlements_org_id_org_user_id_content_id_unique": {
+          "name": "entitlements_org_id_org_user_id_content_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "org_id",
-            "student_id",
+            "org_user_id",
             "content_id"
           ]
         }
@@ -1067,8 +1108,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "student_id": {
-          "name": "student_id",
+        "org_user_id": {
+          "name": "org_user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1126,6 +1167,21 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "progress_records_org_id_org_user_id_org_users_org_id_id_fk": {
+          "name": "progress_records_org_id_org_user_id_org_users_org_id_id_fk",
+          "tableFrom": "progress_records",
+          "tableTo": "org_users",
+          "columnsFrom": [
+            "org_id",
+            "org_user_id"
+          ],
+          "columnsTo": [
+            "org_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -1138,116 +1194,14 @@
         }
       },
       "uniqueConstraints": {
-        "progress_records_org_id_student_id_target_type_target_id_unique": {
-          "name": "progress_records_org_id_student_id_target_type_target_id_unique",
+        "progress_records_org_id_org_user_id_target_type_target_id_unique": {
+          "name": "progress_records_org_id_org_user_id_target_type_target_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "org_id",
-            "student_id",
+            "org_user_id",
             "target_type",
             "target_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.students": {
-      "name": "students",
-      "schema": "",
-      "columns": {
-        "org_id": {
-          "name": "org_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "external_id": {
-          "name": "external_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "first_name": {
-          "name": "first_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "last_name": {
-          "name": "last_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "students_org_id_organizations_id_fk": {
-          "name": "students_org_id_organizations_id_fk",
-          "tableFrom": "students",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "org_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "students_org_id_id_pk": {
-          "name": "students_org_id_id_pk",
-          "columns": [
-            "org_id",
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {
-        "students_org_id_email_unique": {
-          "name": "students_org_id_email_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "org_id",
-            "email"
-          ]
-        },
-        "students_org_id_external_id_unique": {
-          "name": "students_org_id_external_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "org_id",
-            "external_id"
           ]
         }
       },

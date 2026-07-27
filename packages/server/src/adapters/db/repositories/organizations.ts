@@ -23,7 +23,6 @@ import {
   invitations,
   courseAssignments,
 } from '../schema/organizations.js';
-import { users } from '../schema/identity.js';
 import { progressRecords } from '../schema/progress.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';

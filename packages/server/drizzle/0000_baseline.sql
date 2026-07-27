@@ -1,11 +1,11 @@
 CREATE TABLE "course_assignments" (
 	"org_id" text NOT NULL,
 	"id" text NOT NULL,
-	"membership_id" text NOT NULL,
+	"org_user_id" text NOT NULL,
 	"course_id" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "course_assignments_org_id_id_pk" PRIMARY KEY("org_id","id"),
-	CONSTRAINT "course_assignments_org_id_membership_id_course_id_unique" UNIQUE("org_id","membership_id","course_id")
+	CONSTRAINT "course_assignments_org_id_org_user_id_course_id_unique" UNIQUE("org_id","org_user_id","course_id")
 );
 --> statement-breakpoint
 CREATE TABLE "invitations" (
@@ -22,15 +22,21 @@ CREATE TABLE "invitations" (
 	CONSTRAINT "invitations_token_hash_unique" UNIQUE("token_hash")
 );
 --> statement-breakpoint
-CREATE TABLE "memberships" (
+CREATE TABLE "org_users" (
 	"org_id" text NOT NULL,
 	"id" text NOT NULL,
-	"user_id" text NOT NULL,
+	"user_id" text,
 	"role" text NOT NULL,
-	"external_id" text NOT NULL,
+	"email" text NOT NULL,
+	"first_name" text NOT NULL,
+	"last_name" text NOT NULL,
+	"external_id" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "memberships_org_id_id_pk" PRIMARY KEY("org_id","id"),
-	CONSTRAINT "memberships_external_id_unique" UNIQUE("external_id")
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "org_users_org_id_id_pk" PRIMARY KEY("org_id","id"),
+	CONSTRAINT "org_users_external_id_unique" UNIQUE("external_id"),
+	CONSTRAINT "org_users_org_id_email_unique" UNIQUE("org_id","email"),
+	CONSTRAINT "org_users_org_id_user_id_unique" UNIQUE("org_id","user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "organizations" (
@@ -105,20 +111,20 @@ CREATE TABLE "modules" (
 CREATE TABLE "entitlements" (
 	"org_id" text NOT NULL,
 	"id" text NOT NULL,
-	"student_id" text NOT NULL,
+	"org_user_id" text NOT NULL,
 	"content_id" text NOT NULL,
 	"status" text DEFAULT 'active' NOT NULL,
 	"source" text DEFAULT 'manual' NOT NULL,
 	"granted_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"expires_at" timestamp with time zone,
 	CONSTRAINT "entitlements_org_id_id_pk" PRIMARY KEY("org_id","id"),
-	CONSTRAINT "entitlements_org_id_student_id_content_id_unique" UNIQUE("org_id","student_id","content_id")
+	CONSTRAINT "entitlements_org_id_org_user_id_content_id_unique" UNIQUE("org_id","org_user_id","content_id")
 );
 --> statement-breakpoint
 CREATE TABLE "progress_records" (
 	"org_id" text NOT NULL,
 	"id" text NOT NULL,
-	"student_id" text NOT NULL,
+	"org_user_id" text NOT NULL,
 	"target_type" text NOT NULL,
 	"target_id" text NOT NULL,
 	"started_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -126,21 +132,7 @@ CREATE TABLE "progress_records" (
 	"completed_at" timestamp with time zone,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "progress_records_org_id_id_pk" PRIMARY KEY("org_id","id"),
-	CONSTRAINT "progress_records_org_id_student_id_target_type_target_id_unique" UNIQUE("org_id","student_id","target_type","target_id")
-);
---> statement-breakpoint
-CREATE TABLE "students" (
-	"org_id" text NOT NULL,
-	"id" text NOT NULL,
-	"external_id" text,
-	"email" text NOT NULL,
-	"first_name" text NOT NULL,
-	"last_name" text NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "students_org_id_id_pk" PRIMARY KEY("org_id","id"),
-	CONSTRAINT "students_org_id_email_unique" UNIQUE("org_id","email"),
-	CONSTRAINT "students_org_id_external_id_unique" UNIQUE("org_id","external_id")
+	CONSTRAINT "progress_records_org_id_org_user_id_target_type_target_id_unique" UNIQUE("org_id","org_user_id","target_type","target_id")
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -351,12 +343,12 @@ CREATE TABLE "verification" (
 );
 --> statement-breakpoint
 ALTER TABLE "course_assignments" ADD CONSTRAINT "course_assignments_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "course_assignments" ADD CONSTRAINT "course_assignments_org_id_membership_id_memberships_org_id_id_fk" FOREIGN KEY ("org_id","membership_id") REFERENCES "public"."memberships"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "course_assignments" ADD CONSTRAINT "course_assignments_org_id_org_user_id_org_users_org_id_id_fk" FOREIGN KEY ("org_id","org_user_id") REFERENCES "public"."org_users"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "course_assignments" ADD CONSTRAINT "course_assignments_org_id_course_id_courses_org_id_id_fk" FOREIGN KEY ("org_id","course_id") REFERENCES "public"."courses"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invitations" ADD CONSTRAINT "invitations_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invitations" ADD CONSTRAINT "invitations_invited_by_users_id_fk" FOREIGN KEY ("invited_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "memberships" ADD CONSTRAINT "memberships_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "memberships" ADD CONSTRAINT "memberships_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "org_users" ADD CONSTRAINT "org_users_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "org_users" ADD CONSTRAINT "org_users_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activities" ADD CONSTRAINT "activities_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activities" ADD CONSTRAINT "activities_org_id_module_id_modules_org_id_id_fk" FOREIGN KEY ("org_id","module_id") REFERENCES "public"."modules"("org_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -370,9 +362,9 @@ ALTER TABLE "modules" ADD CONSTRAINT "modules_org_id_organizations_id_fk" FOREIG
 ALTER TABLE "modules" ADD CONSTRAINT "modules_org_id_course_id_courses_org_id_id_fk" FOREIGN KEY ("org_id","course_id") REFERENCES "public"."courses"("org_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "entitlements" ADD CONSTRAINT "entitlements_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "entitlements" ADD CONSTRAINT "entitlements_org_id_content_id_content_items_org_id_id_fk" FOREIGN KEY ("org_id","content_id") REFERENCES "public"."content_items"("org_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "entitlements" ADD CONSTRAINT "entitlements_org_id_student_id_students_org_id_id_fk" FOREIGN KEY ("org_id","student_id") REFERENCES "public"."students"("org_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "entitlements" ADD CONSTRAINT "entitlements_org_id_org_user_id_org_users_org_id_id_fk" FOREIGN KEY ("org_id","org_user_id") REFERENCES "public"."org_users"("org_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "progress_records" ADD CONSTRAINT "progress_records_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "students" ADD CONSTRAINT "students_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "progress_records" ADD CONSTRAINT "progress_records_org_id_org_user_id_org_users_org_id_id_fk" FOREIGN KEY ("org_id","org_user_id") REFERENCES "public"."org_users"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assets" ADD CONSTRAINT "assets_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "credentials" ADD CONSTRAINT "credentials_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "connections" ADD CONSTRAINT "connections_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

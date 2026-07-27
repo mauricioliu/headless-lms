@@ -10,7 +10,7 @@ import type {
 
 const ENTITLEMENT: Entitlement = {
   id: 'e1',
-  studentId: 's1',
+  orgUserId: 's1',
   firstName: 'Bob',
   lastName: 'Smith',
   studentEmail: 'bob@example.com',
