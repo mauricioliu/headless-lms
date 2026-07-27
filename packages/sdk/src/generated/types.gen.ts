@@ -1165,7 +1165,7 @@ export type GetThreadStatesResponse = GetThreadStatesResponses[keyof GetThreadSt
 
 export type SetActivityThreadStateData = {
   body: {
-    state: "visible" | "hidden" | "locked";
+    state: "visible" | "hidden" | "locked" | null;
   };
   path: {
     activityId: string;

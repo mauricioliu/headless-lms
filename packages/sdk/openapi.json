@@ -3318,13 +3318,27 @@
                 "type": "object",
                 "properties": {
                   "state": {
-                    "nullable": true,
-                    "type": "string",
-                    "enum": [
-                      "visible",
-                      "hidden",
-                      "locked"
-                    ]
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "visible"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "hidden"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "locked"
+                        ]
+                      }
+                    ],
+                    "nullable": true
                   }
                 },
                 "required": [

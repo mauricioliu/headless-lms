@@ -125,8 +125,17 @@ export const SetDiscussionSettings = z.object({
 export type SetDiscussionSettings = z.infer<typeof SetDiscussionSettings>;
 
 export const SetThreadState = z.object({
-  /** null clears the override so the course setting applies again. */
-  state: ThreadState.nullable(),
+  /**
+   * null clears the override so the course setting applies again.
+   *
+   * Spelled as a literal union rather than `ThreadState.nullable()`: hey-api's
+   * openapi-ts (0.99.0) drops the `null` arm when a required property is a
+   * `{ type: "string", enum: [...], nullable: true }` schema, generating
+   * `"visible" | "hidden" | "locked"` with no `null`. A literal union instead
+   * serializes as `anyOf` of single-value enums + `nullable: true`, which the
+   * generator handles correctly — verified via `pnpm gen:sdk`.
+   */
+  state: z.union([z.literal("visible"), z.literal("hidden"), z.literal("locked"), z.null()]),
 });
 export type SetThreadState = z.infer<typeof SetThreadState>;
 
