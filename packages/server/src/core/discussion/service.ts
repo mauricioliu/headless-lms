@@ -325,6 +325,43 @@ export class DiscussionServiceImpl {
     return updated ?? comment;
   }
 
+  /** Load a comment together with its thread's resolved config. Both gates
+   *  below need the pair, and neither should read the row twice. */
+  private async loadWithConfig(
+    orgId: string,
+    commentId: string,
+  ): Promise<{ comment: Comment; config: ResolvedThreadConfig }> {
+    const comment = await this.load(orgId, commentId);
+    const config = await this.resolveConfig(orgId, comment.activityId);
+    return { comment, config };
+  }
+
+  async react(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void> {
+    const { config } = await this.loadWithConfig(orgId, commentId);
+    // Writing to the thread — locked and hidden both refuse.
+    if (config.state !== 'visible') {
+      throw new ForbiddenError('discussion is not open on this activity');
+    }
+    if (!config.reactions) {
+      throw new ForbiddenError('reactions are disabled on this course');
+    }
+    await this.repo.insertReaction(orgId, {
+      orgId,
+      commentId,
+      orgUserId: actor.orgUserId,
+      emoji,
+      createdAt: this.now(),
+    });
+  }
+
+  async unreact(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void> {
+    const { config } = await this.loadWithConfig(orgId, commentId);
+    if (config.state !== 'visible') {
+      throw new ForbiddenError('discussion is not open on this activity');
+    }
+    await this.repo.deleteReaction(orgId, commentId, actor.orgUserId, emoji);
+  }
+
   async approve(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
     if (!actor.isStaff) {
       throw new ForbiddenError('only a moderator may approve a comment');

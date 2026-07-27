@@ -539,6 +539,23 @@ describe('listThread', () => {
     const view = await service.listThread('o1', 'a1', learner);
     expect(view.comments.map((c) => c.id)).toEqual([root.id]);
   });
+
+  it('groups reactions by emoji and flags the reader own', async () => {
+    const { service } = makeService();
+    await enabled(service);
+    const c = await service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'hi',
+    });
+    await service.react('o1', c.id, learner, '👍');
+    await service.react('o1', c.id, staff, '👍');
+
+    const view = await service.listThread('o1', 'a1', learner);
+    expect(view.comments[0]?.reactions).toEqual([{ emoji: '👍', count: 2, reacted: true }]);
+
+    const other: Actor = { orgUserId: 'orm_other', isStaff: false };
+    const theirs = await service.listThread('o1', 'a1', other);
+    expect(theirs.comments[0]?.reactions).toEqual([{ emoji: '👍', count: 2, reacted: false }]);
+  });
 });
 
 describe('edit, remove, restore, approve', () => {
@@ -634,5 +651,48 @@ describe('edit, remove, restore, approve', () => {
     const before = appended.length;
     await service.restore('o1', comment.id, staff);
     expect(appended).toHaveLength(before);
+  });
+});
+
+describe('reactions', () => {
+  async function withComment(patch = {}) {
+    const ctx = makeService();
+    await enabled(ctx.service, patch);
+    const comment = await ctx.service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'hi',
+    });
+    return { ...ctx, comment };
+  }
+
+  it('is idempotent for the same person and emoji', async () => {
+    const { service, comment, reactions } = await withComment();
+    await service.react('o1', comment.id, learner, '👍');
+    await service.react('o1', comment.id, learner, '👍');
+    expect(reactions).toHaveLength(1);
+  });
+
+  it('removes a reaction', async () => {
+    const { service, comment, reactions } = await withComment();
+    await service.react('o1', comment.id, learner, '👍');
+    await service.unreact('o1', comment.id, learner, '👍');
+    expect(reactions).toHaveLength(0);
+  });
+
+  it('emits no event', async () => {
+    const { service, comment, appended } = await withComment();
+    const before = appended.length;
+    await service.react('o1', comment.id, learner, '👍');
+    expect(appended).toHaveLength(before);
+  });
+
+  it('refuses when reactions are disabled', async () => {
+    const { service, comment } = await withComment({ reactions: false });
+    await expect(service.react('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
+  });
+
+  it('refuses on a locked thread', async () => {
+    const { service, comment } = await withComment();
+    await service.setThreadState('o1', 'a1', 'locked');
+    await expect(service.react('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
   });
 });
