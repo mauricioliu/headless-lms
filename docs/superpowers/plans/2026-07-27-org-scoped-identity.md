@@ -1,5 +1,7 @@
 # Unified Person / Org-Membership Identity — Implementation Plan
 
+> **Status: executed.** Commits `f3c04f6`, `a7b21ca`, `ac7d221`, `461d9db`, `e478a17`, `54e986d` on `worktree-org-scoped-identity`. Five decisions diverged from the plan as written — see *Deviations* at the bottom before treating any task body as the record of what was built.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Collapse the two actor models (global staff `users` + `memberships`, org-scoped `students`) into one — a global person (`users`) linked to an organization by a single org-scoped participation row (`org_users`) carrying the role.
