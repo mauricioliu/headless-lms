@@ -283,10 +283,17 @@ Locked is read-only for everything except reporting, so the report action stays
 on every comment while post, reply, edit, delete and react all disappear. That
 is the one place the locked thread is not simply inert.
 
-**Mutations are optimistic with rollback.** Post, edit, delete, react and unreact
-apply locally, reconcile against the returned comment, and revert with a message
-through the existing `showToast` on failure. Reporting is not optimistic: it
-confirms, because the learner needs to know the signal was recorded.
+**Delete and react are optimistic with rollback** — they apply locally, and a
+refusal puts the prior state back with a message through the existing
+`showToast`. A removal marks the comment rather than dropping it, so the
+placeholder rule decides whether it still appears.
+
+**Post and edit are not.** The server decides whether a comment lands published
+or held for review, so an optimistic insert would flash the wrong badge before
+correcting itself. Both await the returned comment and insert what actually
+happened; the composer carries its own busy state, so the wait is visible.
+Reporting is not optimistic either — it confirms, because the learner needs to
+know the signal was recorded.
 
 Author display uses `image` when present and falls back to initials via the
 existing `initials()` in `apps/student/src/lib/format.ts`. A non-student `role`
