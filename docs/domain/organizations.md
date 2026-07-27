@@ -6,7 +6,7 @@ Organizations owns the tenant: the organization itself, everyone who belongs to 
 
 ## Scope
 
-- Owns the **organization (tenant)**, **participation** (person ↔ org, with a role), **invitation**, **roles**, and **course assignments** (which scope an instructor to specific courses).
+- Owns the **organization (tenant)**, **participation** (person ↔ org, with a role), **invitation**, and **roles**.
 - Owns **authorization** — the mapping from a participant's role to what they may do.
 - Owns **member management** — inviting, reassigning, and removing the staff who belong to an org — and the **roster**, the learners an organization has added.
 - Does **not** own the person record (identity), learner access (entitlements), content (courses), or completion (progress).
@@ -20,7 +20,6 @@ Better Auth's **organization plugin** is the source of truth for organizations, 
 - **Organization** — the tenant. The root every org-scoped record belongs to. Mirrors a Better Auth org.
 - **Participation** — links a person to an org and carries their role. For staff it also mirrors a Better Auth member; learners have no Better Auth membership, so nothing to mirror.
 - **Invitation** — a pending invite to join an org. Domain-owned, carrying the role the invitee will hold.
-- **Course assignment** — links an instructor's participation to a specific course, which is how an instructor's permissions are scoped to the courses they actually teach.
 
 ## Roles
 
@@ -28,7 +27,7 @@ Four roles: `owner | admin | instructor | student`. A role answers two questions
 
 - **Owner** — full control, including transferring ownership. Org-global. One per org.
 - **Admin** — manage courses, members, and settings. Org-global.
-- **Instructor** — create and manage the courses assigned to them. **Course-scoped** through a course assignment.
+- **Instructor** — create and manage courses. **Course-scoped** in principle: the role's grants are narrowed to a subset of courses rather than the whole org. Nothing records that subset today, so a narrowed grant resolves to no access.
 - **Student** — consume content. **Entitlement-scoped**: the role grants nothing on its own; what a learner may open is decided by their entitlements.
 
 The first three are the staff roles, and only they reach the back office.
@@ -61,8 +60,7 @@ The one exception is deliberate: an organization can add a learner to its **rost
 
 1. **organizations ↔ Better Auth** — the organization plugin is the source of truth; core holds a read-only mirror, and all member writes go through Better Auth.
 2. **organizations ↔ identity** — identity owns the person; organizations references them by id on a participation. A roster entry may reference no person at all until its invitation is accepted. Reference only.
-3. **organizations ↔ courses** — a course assignment references a course by id to scope an instructor; organizations never reads course content. Reference only.
-4. **organizations → all contexts** — provides the tenant scope and answers authorization lookups. Reference plus authorization.
+3. **organizations → all contexts** — provides the tenant scope and answers authorization lookups. Reference plus authorization.
 
 ## Events
 
