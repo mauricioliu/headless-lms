@@ -1401,3 +1401,36 @@ Run against a live stack (`pnpm dev`) after Task 12:
 - [ ] Grant an entitlement to that pending student → invite → accept → the student portal shows the granted course.
 - [ ] A human who is `owner` in org A and `instructor` in org B: switching the active org changes the resolved role, and each org's data stays isolated.
 - [ ] Student login → portal only; hitting an admin route returns 401/redirect, not a dashboard.
+
+---
+
+## Deviations from the plan as written
+
+Five things changed during implementation. Each is in the shipped code; the task bodies above were not rewritten to match.
+
+**1. No migration chain — one regenerated baseline.** Tasks 2, 3, 5 and 6 each specified a migration. Instead `packages/server/drizzle/` was deleted and `0000_baseline.sql` regenerated from the finished schema, and the local dev database rebuilt from it. Pre-1.0 with nothing deployed, one honest baseline beats a sequence describing shapes that never shipped. It also sidesteps drizzle-kit's rename prompt, which cannot render without a TTY. The dev database held unreproducible hand-built content (21 courses, 244 activities, no seed script), so a `pg_dump` was taken to the session scratchpad before the drop.
+
+**2. Invitations create nothing.** Task 8 had `createInvite` minting a pending participation for every role. It creates only the invitation; `acceptInvite` claims an existing roster entry by `(org_id, email)` or creates the participation from the token's role. The pending row therefore has exactly one origin — an admin adding someone to the roster — which is what keeps `POST /students` with `sendInvite: false` working, and keeps entitlements granted before first login attached across acceptance.
+
+**3. `StaffRole` instead of a runtime filter.** Task 7 excluded learners from staff surfaces with `WHERE role != 'student'`. That filter exists, but the member-management types are additionally typed `StaffRole = Exclude<Role, 'student'>`, so a student role reaching a staff surface is a compile error rather than a query someone forgot to write. This also keeps the API contract's staff-only role enum type-checking against the domain.
+
+**4. No `getSoleOrgUser` / `soleOrgExternalId`.** Task 4 and Task 9 added two service methods that were the same query with different return shapes, encoding MCP's "refuse if ambiguous" policy inside the domain port. Both were dropped for one honest domain read, `getOrgUsersForUser(userId)` — every org a person participates in, which is also what an org switcher lists. MCP applies its own rule at its own boundary (`http/mcp/principal.ts`), and the login hook applies its own.
+
+**5. `Entitlement.studentId` → `orgUserId` reaches the wire.** Planned and done, but worth stating: the API field renamed, while `apps/admin` form fields and route segments keep saying *student*. That is product vocabulary and deliberately untouched.
+
+### Found while implementing, fixed here
+
+`http/mcp/principal.ts` was passing the domain `users.id` as the principal's self-scope id, where entitlements and progress both expect a participation id. Under the old schema those id spaces were already distinct, so MCP self-scoped queries could not have matched. It now passes `org_users.id`.
+
+### Verification actually run
+
+- `pnpm test` — 50 files, 378 tests, 0 failures
+- `pnpm typecheck` — clean across every workspace except `apps/website`, which has 25 pre-existing errors on the untouched baseline (missing generated `collections/server`), confirmed by stashing
+- `pnpm lint` — clean except 4 pre-existing `curly` errors in `apps/website`
+- `pnpm gen:sdk` — regenerated against a live database
+- `pnpm --filter admin build` — succeeds
+- API boots against the rebuilt schema on a free port; `/health` and `/docs/json` both 200
+
+### Not done
+
+The manual verification checklist above has not been run — it needs a browser against a live stack with seeded data, and the dev database is now empty.
