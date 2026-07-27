@@ -3,5 +3,8 @@ export type {
   CourseCreated,
   CourseUpdated,
   CourseDeleted,
+  DownloadCreated,
+  DownloadUpdated,
+  DownloadDeleted,
   ContentEvent,
 } from '@headless-lms/types';

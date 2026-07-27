@@ -41,8 +41,8 @@ export class ContentServiceImpl implements ContentService {
   }
 
   async create(orgId: string, input: CreateCourseInput): Promise<Course> {
-    const course = await this.uow.run(async ({ courses, outbox }) => {
-      const created = await courses.create(orgId, input, slugify(input.title));
+    const course = await this.uow.run(async ({ content, outbox }) => {
+      const created = await content.create(orgId, input, slugify(input.title));
       await outbox.append([{ type: 'course.created', orgId, course: created }]);
       return created;
     });
@@ -51,8 +51,8 @@ export class ContentServiceImpl implements ContentService {
   }
 
   async update(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course> {
-    const course = await this.uow.run(async ({ courses, outbox }) => {
-      const updated = await courses.update(orgId, id, patch);
+    const course = await this.uow.run(async ({ content, outbox }) => {
+      const updated = await content.update(orgId, id, patch);
       if (!updated) {
         throw new NotFoundError('Course', id);
       }
@@ -64,13 +64,13 @@ export class ContentServiceImpl implements ContentService {
   }
 
   async remove(orgId: string, id: string): Promise<void> {
-    await this.uow.run(async ({ courses, outbox }) => {
+    await this.uow.run(async ({ content, outbox }) => {
       // Snapshot before the delete — the event carries the last known state.
-      const course = await courses.findById(orgId, id);
+      const course = await content.findById(orgId, id);
       if (!course) {
         throw new NotFoundError('Course', id);
       }
-      const ok = await courses.delete(orgId, id);
+      const ok = await content.delete(orgId, id);
       if (!ok) {
         throw new NotFoundError('Course', id);
       }

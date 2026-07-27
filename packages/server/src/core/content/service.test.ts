@@ -56,7 +56,7 @@ function fakeUow(repo: ContentRepository) {
   });
   const outbox: OutboxAppender = { append };
   const uow: ContentUnitOfWork = {
-    run: (fn) => fn({ courses: repo, outbox }),
+    run: (fn) => fn({ content: repo, outbox }),
   };
   return { uow, append, appended };
 }
