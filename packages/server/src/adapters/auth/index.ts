@@ -1,8 +1,8 @@
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { magicLink, organization, mcp } from 'better-auth/plugins';
-import type { OAuthAccessToken } from 'better-auth/plugins';
+import { magicLink, organization, jwt } from 'better-auth/plugins';
+import { oauthProvider } from '@better-auth/oauth-provider';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 import type { Mailer } from '../../core/shared/mailer.js';
@@ -37,9 +37,11 @@ const AUTH_ID_PREFIXES: Record<string, string> = {
   organization: ID_PREFIXES.organization,
   member: 'mem',
   invitation: 'inv',
-  oauthApplication: 'oap',
+  oauthClient: 'ocl',
   oauthAccessToken: 'oat',
+  oauthRefreshToken: 'ort',
   oauthConsent: 'oac',
+  jwks: 'jwk',
 };
 
 export interface CreateAuthOptions {
@@ -59,6 +61,9 @@ export interface CreateAuthOptions {
   mcpLoginPage: string;
   /** Consent page URL the MCP OAuth flow redirects to (?consent_code&client_id&scope). */
   mcpConsentPage: string;
+  /** Org-selection page: shown between login and consent when the person
+   *  participates in more than one org, so the token binds to a chosen org. */
+  mcpSelectOrgPage: string;
   /** Parent domain for cross-subdomain session cookies (e.g. ".example.com"); undefined → host-only cookie. */
   cookieDomain?: string;
   /** Mark session cookies Secure (set behind HTTPS / in production). */
@@ -193,28 +198,63 @@ export function createAuth(opts: CreateAuthOptions): Auth {
           },
         },
       }),
-      mcp({
+      // Signs the JWT access tokens the OAuth provider issues.
+      jwt(),
+      oauthProvider({
         loginPage: opts.mcpLoginPage,
-        oidcConfig: {
-          // loginPage is required by OIDCOptions; the mcp plugin also sets it
-          // from the outer loginPage option at runtime, so this is consistent.
-          loginPage: opts.mcpLoginPage,
-          consentPage: opts.mcpConsentPage,
-          allowDynamicClientRegistration: true,
-          storeClientSecret: 'hashed',
-          scopes: [
-            'openid',
-            'profile',
-            'courses:read',
-            'courses:write',
-            'students:read',
-            'progress:read',
-            'entitlements:read',
-            'entitlements:write',
-            'assessments:read',
-            'org:read',
-          ],
+        consentPage: opts.mcpConsentPage,
+        allowDynamicClientRegistration: true,
+        storeClientSecret: 'hashed',
+        // The issuer-path discovery document IS served — registerAuth mounts
+        // /.well-known/oauth-authorization-server/api/auth (see http/plugins/auth.ts).
+        silenceWarnings: { oauthAuthServerConfig: true },
+        scopes: [
+          'openid',
+          'profile',
+          'courses:read',
+          'courses:write',
+          'students:read',
+          'progress:read',
+          'entitlements:read',
+          'entitlements:write',
+          'assessments:read',
+          'org:read',
+        ],
+        // A token acts in exactly one organization, chosen by the person at
+        // consent and frozen onto the token as its reference id. Nothing
+        // downstream infers the org from the user's memberships — a person who
+        // later joins a second org does not change what an issued token can do.
+        postLogin: {
+          page: opts.mcpSelectOrgPage,
+          // Only interrupt when the choice is genuinely ambiguous. One
+          // participation is already stamped onto the session at login (see the
+          // session.create hook below), so there is nothing to ask.
+          shouldRedirect: async ({ session }) => {
+            const person = await opts.identity.getUserByExternalId(session.userId as string);
+            if (!person) {
+              return false;
+            }
+            const participations = await opts.organizations.getOrgUsersForUser(person.id);
+            return participations.length > 1;
+          },
+          // Fail closed: no active org means no org to bind, and a token that
+          // named no organization would be a token with ambient authority.
+          consentReferenceId: async ({ session }) => {
+            const activeOrganizationId = session.activeOrganizationId as string | undefined;
+            if (!activeOrganizationId) {
+              throw new APIError('BAD_REQUEST', {
+                error: 'invalid_request',
+                error_description: 'Select an organization before authorizing access',
+              });
+            }
+            return activeOrganizationId;
+          },
         },
+        // The org rides in the token as a claim so the resource server never has
+        // to guess it. Role is deliberately NOT a claim: it is read per request
+        // for this org, so a revoked or downgraded role takes effect at once
+        // rather than lingering until the token expires.
+        customAccessTokenClaims: ({ referenceId }) => ({ org: referenceId }),
       }),
     ],
     hooks: {
@@ -302,11 +342,9 @@ export interface Auth {
       };
       session: Record<string, unknown>;
     } | null>;
-    // Consumed only structurally by better-auth's own mcp helpers
-    // (withMcpAuth, oAuthDiscoveryMetadata, oAuthProtectedResourceMetadata).
-    getMcpSession: (...args: unknown[]) => Promise<OAuthAccessToken | null>;
-    getMcpOAuthConfig: (...args: unknown[]) => unknown;
-    getMCPProtectedResource: (...args: unknown[]) => unknown;
+    // Consumed structurally by the oauth provider's discovery helper
+    // (oauthProviderAuthServerMetadata).
+    getOAuthServerConfig: (...args: unknown[]) => unknown;
     // Organization member-writes (see org-admin.ts).
     createOrganization: (input: {
       body: Record<string, unknown>;

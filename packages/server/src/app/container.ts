@@ -93,6 +93,9 @@ export interface Config {
   mcpLoginPage: string;
   /** Consent page URL the MCP OAuth flow redirects to. */
   mcpConsentPage: string;
+  /** Org-selection page URL, shown between login and consent when the person
+   *  participates in more than one org. */
+  mcpSelectOrgPage: string;
   /** Branding threaded into every email template. Default: brandName "Headless LMS", baseUrl = adminAppUrl.
    *  (studentPortalUrl is composed in from the top-level config field.) */
   emailBranding?: Omit<TemplateContext, 'studentPortalUrl'>;
@@ -150,6 +153,9 @@ export function resolveLoggingConfig(config: LoggingConfig = {}): Required<Loggi
 
 export interface Container {
   auth: Auth;
+  /** Public origin better-auth issues tokens from — the MCP resource server
+   *  verifies against this issuer and fetches its JWKS from it. */
+  authBaseURL: string;
   // Domains
   identity: IdentityServiceImpl;
   organizations: OrganizationServiceImpl;
@@ -382,6 +388,7 @@ export async function buildContainer(
     trustedOrigins: config.trustedOrigins,
     mcpLoginPage: config.mcpLoginPage,
     mcpConsentPage: config.mcpConsentPage,
+    mcpSelectOrgPage: config.mcpSelectOrgPage,
     mailer,
     identity,
     organizations,
@@ -397,6 +404,7 @@ export async function buildContainer(
 
   return {
     auth,
+    authBaseURL: config.authBaseURL,
     identity,
     organizations,
     content,

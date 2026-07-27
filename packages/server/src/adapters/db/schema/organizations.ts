@@ -96,29 +96,3 @@ export const invitations = pgTable(
   }),
 );
 
-export const courseAssignments = pgTable(
-  'course_assignments',
-  {
-    orgId: text('org_id')
-      .notNull()
-      .references(() => organizations.id),
-    id: text('id')
-      .notNull()
-      .$defaultFn(() => genId('courseAssignment')),
-    orgUserId: text('org_user_id').notNull(),
-    courseId: text('course_id').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => ({
-    pk: primaryKey({ columns: [t.orgId, t.id] }),
-    uniqueAssignment: unique().on(t.orgId, t.orgUserId, t.courseId),
-    orgUserFk: foreignKey({
-      columns: [t.orgId, t.orgUserId],
-      foreignColumns: [orgUsers.orgId, orgUsers.id],
-    }),
-    courseFk: foreignKey({
-      columns: [t.orgId, t.courseId],
-      foreignColumns: [courses.orgId, courses.id],
-    }),
-  }),
-);

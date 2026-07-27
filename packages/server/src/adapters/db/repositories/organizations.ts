@@ -202,58 +202,6 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row ? toInvitation(row) : null;
   }
 
-  async insertCourseAssignment(orgId: string, input: AssignCourseInput): Promise<CourseAssignment> {
-    const [row] = await this.db
-      .insert(courseAssignments)
-      .values({ orgId, orgUserId: input.orgUserId, courseId: input.courseId })
-      .onConflictDoNothing()
-      .returning();
-    if (row) {
-      return row;
-    }
-    const [existing] = await this.db
-      .select()
-      .from(courseAssignments)
-      .where(
-        and(
-          eq(courseAssignments.orgId, orgId),
-          eq(courseAssignments.orgUserId, input.orgUserId),
-          eq(courseAssignments.courseId, input.courseId),
-        ),
-      )
-      .limit(1);
-    if (!existing) {
-      throw new Error('failed to insert course assignment');
-    }
-    return existing;
-  }
-
-  async deleteCourseAssignment(
-    orgId: string,
-    orgUserId: string,
-    courseId: string,
-  ): Promise<void> {
-    await this.db
-      .delete(courseAssignments)
-      .where(
-        and(
-          eq(courseAssignments.orgId, orgId),
-          eq(courseAssignments.orgUserId, orgUserId),
-          eq(courseAssignments.courseId, courseId),
-        ),
-      );
-  }
-
-  async findAssignedCourseIds(orgId: string, orgUserId: string): Promise<string[]> {
-    const rows = await this.db
-      .select({ courseId: courseAssignments.courseId })
-      .from(courseAssignments)
-      .where(
-        and(eq(courseAssignments.orgId, orgId), eq(courseAssignments.orgUserId, orgUserId)),
-      );
-    return rows.map((r) => r.courseId);
-  }
-
   async findOrgUser(orgId: string, userId: string): Promise<OrgUser | null> {
     const [row] = await this.db
       .select()

@@ -4,12 +4,12 @@
 //   - the `requireSession` decorator that back-office routes guard with
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { fromNodeHeaders } from 'better-auth/node';
-import { oAuthDiscoveryMetadata, oAuthProtectedResourceMetadata } from 'better-auth/plugins';
+import { oauthProviderAuthServerMetadata } from '@better-auth/oauth-provider';
 import type { Container } from '../../app/container.js';
 import { bridgeWebResponse, toWebRequest } from '../web-bridge.js';
 
 export function registerAuth(app: FastifyInstance, container: Container): void {
-  const { auth } = container;
+  const { auth, authBaseURL } = container;
 
   // OAuth 2.1 / MCP clients POST form-encoded bodies to the token endpoint.
   // Fastify has no built-in parser for this content-type and would 415 before
@@ -33,14 +33,25 @@ export function registerAuth(app: FastifyInstance, container: Container): void {
   // OAuth 2.0 discovery endpoints required by MCP clients (RFC 8414). These must
   // live at the root — outside any /api prefix — so MCP clients can discover the
   // authorization server via standard well-known paths.
-  const discovery = oAuthDiscoveryMetadata(auth);
-  app.get('/.well-known/oauth-authorization-server', async (request, reply) => {
+  const discovery = oauthProviderAuthServerMetadata(auth);
+  const serveDiscovery = async (request: FastifyRequest, reply: FastifyReply) => {
     await bridgeWebResponse(await discovery(toWebRequest(request)), reply);
-  });
+  };
+  app.get('/.well-known/oauth-authorization-server', serveDiscovery);
+  // The issuer is the mounted base path (`<origin>/api/auth`), and RFC 8414
+  // inserts that path after the well-known segment. Clients that follow the
+  // spec literally look here; the bare path above stays for the rest.
+  app.get('/.well-known/oauth-authorization-server/api/auth', serveDiscovery);
 
-  const protectedResource = oAuthProtectedResourceMetadata(auth);
-  app.get('/.well-known/oauth-protected-resource', async (request, reply) => {
-    await bridgeWebResponse(await protectedResource(toWebRequest(request)), reply);
+  // RFC 9728. The authorization server and the protected resource are the same
+  // deployment here, so this document is served directly rather than proxied.
+  const protectedResource = {
+    resource: new URL('/mcp', authBaseURL).toString(),
+    authorization_servers: [authBaseURL],
+    bearer_methods_supported: ['header'],
+  };
+  app.get('/.well-known/oauth-protected-resource', async (_request, reply) => {
+    await reply.send(protectedResource);
   });
 
   // Resolves the current session; 401 when absent. Idempotent — if the session
