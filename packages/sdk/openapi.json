@@ -1349,6 +1349,2013 @@
         }
       }
     },
+    "/api/learn/activities/{activityId}/thread": {
+      "get": {
+        "operationId": "getActivityThread",
+        "summary": "Read an activity's comment thread",
+        "tags": [
+          "Discussion"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "activityId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "config": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "threaded": {
+                          "type": "boolean"
+                        },
+                        "requireReview": {
+                          "type": "boolean"
+                        },
+                        "reactions": {
+                          "type": "boolean"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "visible",
+                            "hidden",
+                            "locked"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "enabled",
+                        "threaded",
+                        "requireReview",
+                        "reactions",
+                        "state"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "comments": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "parentId": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "author": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "image": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "owner",
+                                  "admin",
+                                  "instructor",
+                                  "student"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "image",
+                              "role"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "isOwn": {
+                            "type": "boolean"
+                          },
+                          "body": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "published",
+                              "removed"
+                            ]
+                          },
+                          "removedBy": {
+                            "nullable": true,
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "image": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "owner",
+                                  "admin",
+                                  "instructor",
+                                  "student"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "image",
+                              "role"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "reactions": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "emoji": {
+                                  "type": "string"
+                                },
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "reacted": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "emoji",
+                                "count",
+                                "reacted"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "parentId",
+                          "author",
+                          "isOwn",
+                          "body",
+                          "status",
+                          "removedBy",
+                          "reactions",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "config",
+                    "comments"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/learn/activities/{activityId}/comments": {
+      "post": {
+        "operationId": "postComment",
+        "summary": "Post a comment or reply on an activity",
+        "tags": [
+          "Discussion"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 10000
+                  },
+                  "parentId": {
+                    "default": null,
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "body"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "activityId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "author": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "image": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "owner",
+                            "admin",
+                            "instructor",
+                            "student"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "image",
+                        "role"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "isOwn": {
+                      "type": "boolean"
+                    },
+                    "body": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "published",
+                        "removed"
+                      ]
+                    },
+                    "removedBy": {
+                      "nullable": true,
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "image": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "owner",
+                            "admin",
+                            "instructor",
+                            "student"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "image",
+                        "role"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "reactions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "emoji": {
+                            "type": "string"
+                          },
+                          "count": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "reacted": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "emoji",
+                          "count",
+                          "reacted"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "parentId",
+                    "author",
+                    "isOwn",
+                    "body",
+                    "status",
+                    "removedBy",
+                    "reactions",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/learn/comments/{commentId}": {
+      "patch": {
+        "operationId": "editComment",
+        "summary": "Revise your own comment",
+        "tags": [
+          "Discussion"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 10000
+                  }
+                },
+                "required": [
+                  "body"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "commentId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "author": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "image": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "owner",
+                            "admin",
+                            "instructor",
+                            "student"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "image",
+                        "role"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "isOwn": {
+                      "type": "boolean"
+                    },
+                    "body": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "published",
+                        "removed"
+                      ]
+                    },
+                    "removedBy": {
+                      "nullable": true,
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "image": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "owner",
+                            "admin",
+                            "instructor",
+                            "student"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "image",
+                        "role"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "reactions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "emoji": {
+                            "type": "string"
+                          },
+                          "count": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "reacted": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "emoji",
+                          "count",
+                          "reacted"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "parentId",
+                    "author",
+                    "isOwn",
+                    "body",
+                    "status",
+                    "removedBy",
+                    "reactions",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removeOwnComment",
+        "summary": "Remove your own comment",
+        "tags": [
+          "Discussion"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "commentId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "activityId": {
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "orgUserId": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "published",
+                        "removed"
+                      ]
+                    },
+                    "removedBy": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "activityId",
+                    "parentId",
+                    "orgUserId",
+                    "body",
+                    "status",
+                    "removedBy",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/learn/comments/{commentId}/reactions": {
+      "put": {
+        "operationId": "reactToComment",
+        "summary": "Add a reaction to a comment",
+        "tags": [
+          "Discussion"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "emoji": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 16
+                  }
+                },
+                "required": [
+                  "emoji"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "commentId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "unreactToComment",
+        "summary": "Remove your reaction from a comment",
+        "tags": [
+          "Discussion"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "emoji": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 16
+                  }
+                },
+                "required": [
+                  "emoji"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "commentId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/learn/comments/{commentId}/reports": {
+      "post": {
+        "operationId": "reportComment",
+        "summary": "Flag a comment for moderator attention",
+        "tags": [
+          "Discussion"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "commentId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "commentId": {
+                      "type": "string"
+                    },
+                    "orgUserId": {
+                      "type": "string"
+                    },
+                    "reason": {
+                      "type": "string"
+                    },
+                    "resolvedAt": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "commentId",
+                    "orgUserId",
+                    "reason",
+                    "resolvedAt",
+                    "createdAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/discussion/queue": {
+      "get": {
+        "operationId": "getModerationQueue",
+        "summary": "List comments awaiting review or carrying unresolved reports",
+        "tags": [
+          "Discussion"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "reported"
+              ]
+            },
+            "in": "query",
+            "name": "kind",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "courseId",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "comment": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "activityId": {
+                                "type": "string"
+                              },
+                              "parentId": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "orgUserId": {
+                                "type": "string"
+                              },
+                              "body": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "pending",
+                                  "published",
+                                  "removed"
+                                ]
+                              },
+                              "removedBy": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "updatedAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "activityId",
+                              "parentId",
+                              "orgUserId",
+                              "body",
+                              "status",
+                              "removedBy",
+                              "createdAt",
+                              "updatedAt"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "author": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "image": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "owner",
+                                  "admin",
+                                  "instructor",
+                                  "student"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "image",
+                              "role"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "authorEmail": {
+                            "type": "string"
+                          },
+                          "courseId": {
+                            "type": "string"
+                          },
+                          "activityTitle": {
+                            "type": "string"
+                          },
+                          "reports": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "reporter": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "image": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "role": {
+                                      "type": "string",
+                                      "enum": [
+                                        "owner",
+                                        "admin",
+                                        "instructor",
+                                        "student"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "name",
+                                    "image",
+                                    "role"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "createdAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "reporter",
+                                "reason",
+                                "createdAt"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "comment",
+                          "author",
+                          "authorEmail",
+                          "courseId",
+                          "activityTitle",
+                          "reports"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/discussion/comments/{commentId}/approve": {
+      "post": {
+        "operationId": "approveComment",
+        "summary": "Publish a comment awaiting review",
+        "tags": [
+          "Discussion"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "commentId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "activityId": {
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "orgUserId": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "published",
+                        "removed"
+                      ]
+                    },
+                    "removedBy": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "activityId",
+                    "parentId",
+                    "orgUserId",
+                    "body",
+                    "status",
+                    "removedBy",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/discussion/comments/{commentId}": {
+      "delete": {
+        "operationId": "moderateRemoveComment",
+        "summary": "Remove a comment as a moderator",
+        "tags": [
+          "Discussion"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "commentId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "activityId": {
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "orgUserId": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "published",
+                        "removed"
+                      ]
+                    },
+                    "removedBy": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "activityId",
+                    "parentId",
+                    "orgUserId",
+                    "body",
+                    "status",
+                    "removedBy",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/discussion/comments/{commentId}/restore": {
+      "post": {
+        "operationId": "restoreComment",
+        "summary": "Restore a removed comment",
+        "tags": [
+          "Discussion"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "commentId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "activityId": {
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "orgUserId": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "published",
+                        "removed"
+                      ]
+                    },
+                    "removedBy": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "activityId",
+                    "parentId",
+                    "orgUserId",
+                    "body",
+                    "status",
+                    "removedBy",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/discussion/comments/{commentId}/resolve-reports": {
+      "post": {
+        "operationId": "resolveCommentReports",
+        "summary": "Dismiss every open report on a comment",
+        "tags": [
+          "Discussion"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "commentId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/discussion/courses/{courseId}/settings": {
+      "get": {
+        "operationId": "getDiscussionSettings",
+        "summary": "Read a course's discussion settings",
+        "tags": [
+          "Discussion"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "courseId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orgId": {
+                      "type": "string"
+                    },
+                    "courseId": {
+                      "type": "string"
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "threaded": {
+                      "type": "boolean"
+                    },
+                    "requireReview": {
+                      "type": "boolean"
+                    },
+                    "reactions": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "orgId",
+                    "courseId",
+                    "enabled",
+                    "threaded",
+                    "requireReview",
+                    "reactions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "setDiscussionSettings",
+        "summary": "Update a course's discussion settings",
+        "tags": [
+          "Discussion"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "threaded": {
+                    "type": "boolean"
+                  },
+                  "requireReview": {
+                    "type": "boolean"
+                  },
+                  "reactions": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "courseId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orgId": {
+                      "type": "string"
+                    },
+                    "courseId": {
+                      "type": "string"
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "threaded": {
+                      "type": "boolean"
+                    },
+                    "requireReview": {
+                      "type": "boolean"
+                    },
+                    "reactions": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "orgId",
+                    "courseId",
+                    "enabled",
+                    "threaded",
+                    "requireReview",
+                    "reactions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/discussion/courses/{courseId}/thread-states": {
+      "get": {
+        "operationId": "getThreadStates",
+        "summary": "Read every per-activity thread-state override in a course",
+        "tags": [
+          "Discussion"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "courseId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "states": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string",
+                        "enum": [
+                          "visible",
+                          "hidden",
+                          "locked"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "states"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/discussion/activities/{activityId}/thread-state": {
+      "put": {
+        "operationId": "setActivityThreadState",
+        "summary": "Override or clear an activity's thread state",
+        "tags": [
+          "Discussion"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "nullable": true,
+                    "type": "string",
+                    "enum": [
+                      "visible",
+                      "hidden",
+                      "locked"
+                    ]
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "activityId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/courses/{courseId}/modules": {
       "get": {
         "operationId": "listModules",
@@ -2451,6 +4458,7 @@
                           "id",
                           "name",
                           "email",
+                          "image",
                           "entitlementCount",
                           "avgProgress",
                           "joinedAt",
@@ -2571,6 +4579,7 @@
                     "id",
                     "name",
                     "email",
+                    "image",
                     "entitlementCount",
                     "avgProgress",
                     "joinedAt",
@@ -2670,6 +4679,7 @@
                     "id",
                     "name",
                     "email",
+                    "image",
                     "entitlementCount",
                     "avgProgress",
                     "joinedAt",
@@ -4262,6 +6272,7 @@
                           "id",
                           "name",
                           "email",
+                          "image",
                           "role",
                           "status",
                           "joinedAt",
@@ -4389,6 +6400,7 @@
                     "id",
                     "name",
                     "email",
+                    "image",
                     "role",
                     "status",
                     "joinedAt",

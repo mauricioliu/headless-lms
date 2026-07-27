@@ -29,7 +29,6 @@ import {
 import { NotFoundError } from '../../core/shared/errors.js';
 import type { Container } from '../../app/container.js';
 import type { Actor } from '../../core/discussion/index.js';
-import type { Role } from '../../core/organizations/index.js';
 import { resolveScope } from '../scope.js';
 import { resolveStudentScope } from '../student-scope.js';
 
@@ -75,6 +74,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'GET',
     url: '/api/learn/activities/:activityId/thread',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'getActivityThread',
       tags: ['Discussion'],
@@ -93,6 +93,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'POST',
     url: '/api/learn/activities/:activityId/comments',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'postComment',
       tags: ['Discussion'],
@@ -116,6 +117,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'PATCH',
     url: '/api/learn/comments/:commentId',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'editComment',
       tags: ['Discussion'],
@@ -135,6 +137,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'DELETE',
     url: '/api/learn/comments/:commentId',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'removeOwnComment',
       tags: ['Discussion'],
@@ -153,6 +156,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'PUT',
     url: '/api/learn/comments/:commentId/reactions',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'reactToComment',
       tags: ['Discussion'],
@@ -173,6 +177,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'DELETE',
     url: '/api/learn/comments/:commentId/reactions',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'unreactToComment',
       tags: ['Discussion'],
@@ -193,6 +198,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'POST',
     url: '/api/learn/comments/:commentId/reports',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'reportComment',
       tags: ['Discussion'],
@@ -214,6 +220,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'GET',
     url: '/api/discussion/queue',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'getModerationQueue',
       tags: ['Discussion'],
@@ -234,6 +241,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'POST',
     url: '/api/discussion/comments/:commentId/approve',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'approveComment',
       tags: ['Discussion'],
@@ -243,7 +251,9 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: (scope.role as Role) !== 'student' };
+      // resolveScope rejects any session whose participation is not a staff
+      // role (scope.ts), so a handler reached here is always acting as staff.
+      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
       return discussion.approve(scope.orgId, req.params.commentId, actor);
     },
   });
@@ -251,6 +261,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'DELETE',
     url: '/api/discussion/comments/:commentId',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'moderateRemoveComment',
       tags: ['Discussion'],
@@ -260,7 +271,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: (scope.role as Role) !== 'student' };
+      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
       return discussion.remove(scope.orgId, req.params.commentId, actor);
     },
   });
@@ -268,6 +279,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'POST',
     url: '/api/discussion/comments/:commentId/restore',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'restoreComment',
       tags: ['Discussion'],
@@ -277,7 +289,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: (scope.role as Role) !== 'student' };
+      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
       return discussion.restore(scope.orgId, req.params.commentId, actor);
     },
   });
@@ -285,6 +297,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'POST',
     url: '/api/discussion/comments/:commentId/resolve-reports',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'resolveCommentReports',
       tags: ['Discussion'],
@@ -294,7 +307,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     },
     handler: async (req, reply) => {
       const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: (scope.role as Role) !== 'student' };
+      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
       await discussion.resolveReports(scope.orgId, req.params.commentId, actor);
       return reply.code(204).send();
     },
@@ -303,6 +316,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'GET',
     url: '/api/discussion/courses/:courseId/settings',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'getDiscussionSettings',
       tags: ['Discussion'],
@@ -319,6 +333,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'PATCH',
     url: '/api/discussion/courses/:courseId/settings',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'setDiscussionSettings',
       tags: ['Discussion'],
@@ -336,6 +351,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'GET',
     url: '/api/discussion/courses/:courseId/thread-states',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'getThreadStates',
       tags: ['Discussion'],
@@ -353,6 +369,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'PUT',
     url: '/api/discussion/activities/:activityId/thread-state',
+    preHandler: app.requireSession,
     schema: {
       operationId: 'setActivityThreadState',
       tags: ['Discussion'],

@@ -9,6 +9,9 @@ import type {
   ActivateInviteData,
   ActivateInviteErrors,
   ActivateInviteResponses,
+  ApproveCommentData,
+  ApproveCommentErrors,
+  ApproveCommentResponses,
   ConfigureConnectionData,
   ConfigureConnectionErrors,
   ConfigureConnectionResponses,
@@ -55,6 +58,12 @@ import type {
   DisconnectIntegrationData,
   DisconnectIntegrationErrors,
   DisconnectIntegrationResponses,
+  EditCommentData,
+  EditCommentErrors,
+  EditCommentResponses,
+  GetActivityThreadData,
+  GetActivityThreadErrors,
+  GetActivityThreadResponses,
   GetAssetData,
   GetAssetErrors,
   GetAssetResponses,
@@ -67,6 +76,8 @@ import type {
   GetCourseData,
   GetCourseErrors,
   GetCourseResponses,
+  GetDiscussionSettingsData,
+  GetDiscussionSettingsResponses,
   GetLearnCourseData,
   GetLearnCourseErrors,
   GetLearnCourseProgressData,
@@ -77,11 +88,15 @@ import type {
   GetLearnOrgResponses,
   GetMcpData,
   GetMcpResponses,
+  GetModerationQueueData,
+  GetModerationQueueResponses,
   GetOverviewData,
   GetOverviewResponses,
   GetStudentData,
   GetStudentErrors,
   GetStudentResponses,
+  GetThreadStatesData,
+  GetThreadStatesResponses,
   GrantEntitlementData,
   GrantEntitlementResponses,
   ListAssetsData,
@@ -119,18 +134,33 @@ import type {
   ListModulesResponses,
   ListStudentsData,
   ListStudentsResponses,
+  ModerateRemoveCommentData,
+  ModerateRemoveCommentErrors,
+  ModerateRemoveCommentResponses,
+  PostCommentData,
+  PostCommentErrors,
+  PostCommentResponses,
   PostMcpData,
   PostMcpResponses,
+  ReactToCommentData,
+  ReactToCommentErrors,
+  ReactToCommentResponses,
   ReconnectIntegrationData,
   ReconnectIntegrationErrors,
   ReconnectIntegrationResponses,
   RemoveMemberData,
   RemoveMemberErrors,
   RemoveMemberResponses,
+  RemoveOwnCommentData,
+  RemoveOwnCommentErrors,
+  RemoveOwnCommentResponses,
   ReorderActivitiesData,
   ReorderActivitiesResponses,
   ReorderModulesData,
   ReorderModulesResponses,
+  ReportCommentData,
+  ReportCommentErrors,
+  ReportCommentResponses,
   ReportProgressData,
   ReportProgressErrors,
   ReportProgressResponses,
@@ -143,12 +173,25 @@ import type {
   RequestUploadData,
   RequestUploadErrors,
   RequestUploadResponses,
+  ResolveCommentReportsData,
+  ResolveCommentReportsErrors,
+  ResolveCommentReportsResponses,
+  RestoreCommentData,
+  RestoreCommentErrors,
+  RestoreCommentResponses,
   RevokeConnectedAppData,
   RevokeConnectedAppErrors,
   RevokeConnectedAppResponses,
+  SetActivityThreadStateData,
+  SetActivityThreadStateResponses,
+  SetDiscussionSettingsData,
+  SetDiscussionSettingsResponses,
   SetEntitlementStatusData,
   SetEntitlementStatusErrors,
   SetEntitlementStatusResponses,
+  UnreactToCommentData,
+  UnreactToCommentErrors,
+  UnreactToCommentResponses,
   UpdateActivityData,
   UpdateActivityResponses,
   UpdateAutomationData,
@@ -637,6 +680,246 @@ export class Learn {
       GetLearnCourseProgressErrors,
       ThrowOnError
     >({ url: "/api/learn/courses/{courseId}/progress", ...options });
+  }
+}
+
+export class Discussion {
+  /**
+   * Read an activity's comment thread
+   */
+  public static getActivityThread<ThrowOnError extends boolean = false>(
+    options: Options<GetActivityThreadData, ThrowOnError>,
+  ): RequestResult<GetActivityThreadResponses, GetActivityThreadErrors, ThrowOnError> {
+    return (options.client ?? client).get<
+      GetActivityThreadResponses,
+      GetActivityThreadErrors,
+      ThrowOnError
+    >({ url: "/api/learn/activities/{activityId}/thread", ...options });
+  }
+
+  /**
+   * Post a comment or reply on an activity
+   */
+  public static postComment<ThrowOnError extends boolean = false>(
+    options: Options<PostCommentData, ThrowOnError>,
+  ): RequestResult<PostCommentResponses, PostCommentErrors, ThrowOnError> {
+    return (options.client ?? client).post<PostCommentResponses, PostCommentErrors, ThrowOnError>({
+      url: "/api/learn/activities/{activityId}/comments",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
+   * Remove your own comment
+   */
+  public static removeOwnComment<ThrowOnError extends boolean = false>(
+    options: Options<RemoveOwnCommentData, ThrowOnError>,
+  ): RequestResult<RemoveOwnCommentResponses, RemoveOwnCommentErrors, ThrowOnError> {
+    return (options.client ?? client).delete<
+      RemoveOwnCommentResponses,
+      RemoveOwnCommentErrors,
+      ThrowOnError
+    >({ url: "/api/learn/comments/{commentId}", ...options });
+  }
+
+  /**
+   * Revise your own comment
+   */
+  public static editComment<ThrowOnError extends boolean = false>(
+    options: Options<EditCommentData, ThrowOnError>,
+  ): RequestResult<EditCommentResponses, EditCommentErrors, ThrowOnError> {
+    return (options.client ?? client).patch<EditCommentResponses, EditCommentErrors, ThrowOnError>({
+      url: "/api/learn/comments/{commentId}",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
+   * Remove your reaction from a comment
+   */
+  public static unreactToComment<ThrowOnError extends boolean = false>(
+    options: Options<UnreactToCommentData, ThrowOnError>,
+  ): RequestResult<UnreactToCommentResponses, UnreactToCommentErrors, ThrowOnError> {
+    return (options.client ?? client).delete<
+      UnreactToCommentResponses,
+      UnreactToCommentErrors,
+      ThrowOnError
+    >({
+      url: "/api/learn/comments/{commentId}/reactions",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
+   * Add a reaction to a comment
+   */
+  public static reactToComment<ThrowOnError extends boolean = false>(
+    options: Options<ReactToCommentData, ThrowOnError>,
+  ): RequestResult<ReactToCommentResponses, ReactToCommentErrors, ThrowOnError> {
+    return (options.client ?? client).put<
+      ReactToCommentResponses,
+      ReactToCommentErrors,
+      ThrowOnError
+    >({
+      url: "/api/learn/comments/{commentId}/reactions",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
+   * Flag a comment for moderator attention
+   */
+  public static reportComment<ThrowOnError extends boolean = false>(
+    options: Options<ReportCommentData, ThrowOnError>,
+  ): RequestResult<ReportCommentResponses, ReportCommentErrors, ThrowOnError> {
+    return (options.client ?? client).post<
+      ReportCommentResponses,
+      ReportCommentErrors,
+      ThrowOnError
+    >({
+      url: "/api/learn/comments/{commentId}/reports",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
+   * List comments awaiting review or carrying unresolved reports
+   */
+  public static getModerationQueue<ThrowOnError extends boolean = false>(
+    options: Options<GetModerationQueueData, ThrowOnError>,
+  ): RequestResult<GetModerationQueueResponses, unknown, ThrowOnError> {
+    return (options.client ?? client).get<GetModerationQueueResponses, unknown, ThrowOnError>({
+      url: "/api/discussion/queue",
+      ...options,
+    });
+  }
+
+  /**
+   * Publish a comment awaiting review
+   */
+  public static approveComment<ThrowOnError extends boolean = false>(
+    options: Options<ApproveCommentData, ThrowOnError>,
+  ): RequestResult<ApproveCommentResponses, ApproveCommentErrors, ThrowOnError> {
+    return (options.client ?? client).post<
+      ApproveCommentResponses,
+      ApproveCommentErrors,
+      ThrowOnError
+    >({ url: "/api/discussion/comments/{commentId}/approve", ...options });
+  }
+
+  /**
+   * Remove a comment as a moderator
+   */
+  public static moderateRemoveComment<ThrowOnError extends boolean = false>(
+    options: Options<ModerateRemoveCommentData, ThrowOnError>,
+  ): RequestResult<ModerateRemoveCommentResponses, ModerateRemoveCommentErrors, ThrowOnError> {
+    return (options.client ?? client).delete<
+      ModerateRemoveCommentResponses,
+      ModerateRemoveCommentErrors,
+      ThrowOnError
+    >({ url: "/api/discussion/comments/{commentId}", ...options });
+  }
+
+  /**
+   * Restore a removed comment
+   */
+  public static restoreComment<ThrowOnError extends boolean = false>(
+    options: Options<RestoreCommentData, ThrowOnError>,
+  ): RequestResult<RestoreCommentResponses, RestoreCommentErrors, ThrowOnError> {
+    return (options.client ?? client).post<
+      RestoreCommentResponses,
+      RestoreCommentErrors,
+      ThrowOnError
+    >({ url: "/api/discussion/comments/{commentId}/restore", ...options });
+  }
+
+  /**
+   * Dismiss every open report on a comment
+   */
+  public static resolveCommentReports<ThrowOnError extends boolean = false>(
+    options: Options<ResolveCommentReportsData, ThrowOnError>,
+  ): RequestResult<ResolveCommentReportsResponses, ResolveCommentReportsErrors, ThrowOnError> {
+    return (options.client ?? client).post<
+      ResolveCommentReportsResponses,
+      ResolveCommentReportsErrors,
+      ThrowOnError
+    >({ url: "/api/discussion/comments/{commentId}/resolve-reports", ...options });
+  }
+
+  /**
+   * Read a course's discussion settings
+   */
+  public static getDiscussionSettings<ThrowOnError extends boolean = false>(
+    options: Options<GetDiscussionSettingsData, ThrowOnError>,
+  ): RequestResult<GetDiscussionSettingsResponses, unknown, ThrowOnError> {
+    return (options.client ?? client).get<GetDiscussionSettingsResponses, unknown, ThrowOnError>({
+      url: "/api/discussion/courses/{courseId}/settings",
+      ...options,
+    });
+  }
+
+  /**
+   * Update a course's discussion settings
+   */
+  public static setDiscussionSettings<ThrowOnError extends boolean = false>(
+    options: Options<SetDiscussionSettingsData, ThrowOnError>,
+  ): RequestResult<SetDiscussionSettingsResponses, unknown, ThrowOnError> {
+    return (options.client ?? client).patch<SetDiscussionSettingsResponses, unknown, ThrowOnError>({
+      url: "/api/discussion/courses/{courseId}/settings",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
+   * Read every per-activity thread-state override in a course
+   */
+  public static getThreadStates<ThrowOnError extends boolean = false>(
+    options: Options<GetThreadStatesData, ThrowOnError>,
+  ): RequestResult<GetThreadStatesResponses, unknown, ThrowOnError> {
+    return (options.client ?? client).get<GetThreadStatesResponses, unknown, ThrowOnError>({
+      url: "/api/discussion/courses/{courseId}/thread-states",
+      ...options,
+    });
+  }
+
+  /**
+   * Override or clear an activity's thread state
+   */
+  public static setActivityThreadState<ThrowOnError extends boolean = false>(
+    options: Options<SetActivityThreadStateData, ThrowOnError>,
+  ): RequestResult<SetActivityThreadStateResponses, unknown, ThrowOnError> {
+    return (options.client ?? client).put<SetActivityThreadStateResponses, unknown, ThrowOnError>({
+      url: "/api/discussion/activities/{activityId}/thread-state",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
   }
 }
 
