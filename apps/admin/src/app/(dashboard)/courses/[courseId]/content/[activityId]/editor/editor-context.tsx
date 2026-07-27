@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import editorModule from "@/editor.config";
 
 import { saveActivityContentAction } from "../../../actions";
+import { useRegisterSave } from "../_components/activity-bar-context";
 
 const { validate, meta } = editorModule;
 
@@ -19,9 +20,11 @@ interface ActivityEditorValue {
   save: (config: unknown) => Promise<void>;
   /** Editor change feed — keeps the latest config for `saveNow`. */
   onChange: (config: unknown) => void;
-  /** Save the latest edited config (header save button). */
+  /** Save the latest edited config (the bar's save button). */
   saveNow: () => Promise<void>;
   saving: boolean;
+  /** Edited since the last successful save. */
+  dirty: boolean;
 }
 
 const ActivityEditorContext = React.createContext<ActivityEditorValue | null>(null);
@@ -37,11 +40,12 @@ export function ActivityEditorProvider({
   activityId,
   initialConfig,
   children,
-}: Omit<ActivityEditorValue, "onChange" | "save" | "saveNow" | "saving"> & {
+}: Omit<ActivityEditorValue, "onChange" | "save" | "saveNow" | "saving" | "dirty"> & {
   children: React.ReactNode;
 }) {
   const latestConfig = React.useRef<unknown>(initialConfig);
   const [saving, setSaving] = React.useState(false);
+  const [dirty, setDirty] = React.useState(false);
 
   const save = React.useCallback(
     async (config: unknown) => {
@@ -56,6 +60,7 @@ export function ActivityEditorProvider({
           type: meta.type,
           version: meta.version,
         });
+        setDirty(false);
         toast.success("Saved");
       } catch (err) {
         toast.error("Couldn't save content", { description: (err as Error).message });
@@ -68,9 +73,13 @@ export function ActivityEditorProvider({
 
   const onChange = React.useCallback((config: unknown) => {
     latestConfig.current = config;
+    setDirty(true);
   }, []);
 
   const saveNow = React.useCallback(() => save(latestConfig.current), [save]);
+
+  // The bar lives in the layout above this route, so Content claims its Save.
+  useRegisterSave({ save: saveNow, saving, dirty });
 
   const value = React.useMemo(
     () => ({
@@ -82,8 +91,9 @@ export function ActivityEditorProvider({
       onChange,
       saveNow,
       saving,
+      dirty,
     }),
-    [courseId, moduleId, activityId, initialConfig, save, onChange, saveNow, saving],
+    [courseId, moduleId, activityId, initialConfig, save, onChange, saveNow, saving, dirty],
   );
 
   return <ActivityEditorContext.Provider value={value}>{children}</ActivityEditorContext.Provider>;

@@ -7,6 +7,12 @@ import { ListQuery, paginated } from "./shared.js";
 export const CourseStatus = z.enum(["draft", "published"]);
 export type CourseStatus = z.infer<typeof CourseStatus>;
 
+/** Course-wide delivery settings. Always returned complete; patched partially. */
+export const CourseSettings = z.object({
+  transcriptDownloads: z.boolean(),
+});
+export type CourseSettings = z.infer<typeof CourseSettings>;
+
 export const Course = z.object({
   id: z.string(),
   title: z.string(),
@@ -14,6 +20,7 @@ export const Course = z.object({
   description: z.string(),
   status: CourseStatus,
   category: z.string(),
+  settings: CourseSettings,
   moduleCount: z.number().int(),
   activityCount: z.number().int(),
   enrolledCount: z.number().int(),
@@ -31,6 +38,7 @@ export type CreateCourse = z.infer<typeof CreateCourse>;
 
 export const UpdateCourse = CreateCourse.partial().extend({
   status: CourseStatus.optional(),
+  settings: CourseSettings.partial().optional(),
 });
 export type UpdateCourse = z.infer<typeof UpdateCourse>;
 

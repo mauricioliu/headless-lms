@@ -6,7 +6,7 @@
 import { eq, and, sql, count, asc, desc, ilike, or, type SQL, type AnyColumn } from 'drizzle-orm';
 import type { DbExecutor } from '../index.js';
 import type { ContentRepository } from '../../../core/content/ports.js';
-import type { Course, CourseStatus } from '../../../core/content/model.js';
+import type { Course, CourseSettings, CourseStatus } from '../../../core/content/model.js';
 import type {
   CreateCourseInput,
   ListCoursesQuery,
@@ -53,6 +53,7 @@ const selection = {
   description: courses.description,
   status: courses.status,
   category: courses.category,
+  settings: courses.settings,
   moduleCount: moduleCountExpr,
   activityCount: activityCountExpr,
   enrolledCount: enrolledCountExpr,
@@ -67,12 +68,20 @@ type CourseRow = {
   description: string;
   status: string;
   category: string;
+  settings: unknown;
   moduleCount: number;
   activityCount: number;
   enrolledCount: number;
   createdAt: Date;
   updatedAt: Date;
 };
+
+/** Defaults for keys the stored blob doesn't carry (rows predating a setting). */
+const settingsDefaults: CourseSettings = { transcriptDownloads: false };
+
+function toSettings(stored: unknown): CourseSettings {
+  return { ...settingsDefaults, ...(stored as Partial<CourseSettings> | null) };
+}
 
 function toCourse(row: CourseRow): Course {
   return {
@@ -82,6 +91,7 @@ function toCourse(row: CourseRow): Course {
     description: row.description,
     status: row.status as CourseStatus,
     category: row.category,
+    settings: toSettings(row.settings),
     moduleCount: Number(row.moduleCount),
     activityCount: Number(row.activityCount),
     enrolledCount: Number(row.enrolledCount),
@@ -210,6 +220,10 @@ export class DrizzleContentRepository implements ContentRepository {
     }
     if (patch.status !== undefined) {
       set.status = patch.status;
+    }
+    if (patch.settings !== undefined) {
+      // Shallow merge, so a partial patch can't drop the keys it omits.
+      set.settings = sql`${courses.settings} || ${JSON.stringify(patch.settings)}::jsonb`;
     }
 
     const [updated] = await this.db

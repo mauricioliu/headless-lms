@@ -66,6 +66,9 @@ export const courses = pgTable(
       .notNull()
       .default('draft'),
     category: text('category').notNull().default(''),
+    // Course-wide delivery toggles (CourseSettings). Modelled, unlike the
+    // per-activity blob: a fixed surface the API validates.
+    settings: jsonb('settings').notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()

@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { FileText, GripVertical, Pencil, Trash2 } from "lucide-react";
+import { FileText, GripVertical, Pencil, SlidersHorizontal, Trash2 } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -107,6 +107,12 @@ export function ItemRow({
             <Link href={`/courses/${courseId}/content/${item.id}/editor`}>
               <FileText className="size-4" />
               Edit content
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={`/courses/${courseId}/content/${item.id}/settings`}>
+              <SlidersHorizontal className="size-4" />
+              Settings
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />

@@ -64,6 +64,9 @@ export type ListCoursesResponses = {
       description: string;
       status: "draft" | "published";
       category: string;
+      settings: {
+        transcriptDownloads: boolean;
+      };
       moduleCount: number;
       activityCount: number;
       enrolledCount: number;
@@ -100,6 +103,9 @@ export type CreateCourseResponses = {
     description: string;
     status: "draft" | "published";
     category: string;
+    settings: {
+      transcriptDownloads: boolean;
+    };
     moduleCount: number;
     activityCount: number;
     enrolledCount: number;
@@ -170,6 +176,9 @@ export type GetCourseResponses = {
     description: string;
     status: "draft" | "published";
     category: string;
+    settings: {
+      transcriptDownloads: boolean;
+    };
     moduleCount: number;
     activityCount: number;
     enrolledCount: number;
@@ -186,6 +195,9 @@ export type UpdateCourseData = {
     description?: string;
     category?: string;
     status?: "draft" | "published";
+    settings?: {
+      transcriptDownloads?: boolean;
+    };
   };
   path: {
     id: string;
@@ -217,6 +229,9 @@ export type UpdateCourseResponses = {
     description: string;
     status: "draft" | "published";
     category: string;
+    settings: {
+      transcriptDownloads: boolean;
+    };
     moduleCount: number;
     activityCount: number;
     enrolledCount: number;
@@ -245,6 +260,9 @@ export type ListLearnCoursesResponses = {
     description: string;
     status: "draft" | "published";
     category: string;
+    settings: {
+      transcriptDownloads: boolean;
+    };
     moduleCount: number;
     activityCount: number;
     enrolledCount: number;
@@ -307,6 +325,9 @@ export type GetLearnCourseResponses = {
     description: string;
     status: "draft" | "published";
     category: string;
+    settings: {
+      transcriptDownloads: boolean;
+    };
     moduleCount: number;
     activityCount: number;
     enrolledCount: number;
