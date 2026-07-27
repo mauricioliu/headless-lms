@@ -8,12 +8,18 @@
 //
 // A comment stores no course. Every path that needs one resolves it from the
 // activity through the repository.
-import { NotFoundError } from '../shared/errors.js';
+import { genId } from '../shared/id.js';
+import { NotFoundError, ForbiddenError } from '../shared/errors.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
-import type { DiscussionSettings, ThreadState } from './model.js';
-import type { ResolvedThreadConfig } from './types.js';
-import type { DiscussionRepository, DiscussionUnitOfWork } from './ports.js';
+import type { Comment, CommentAuthor, DiscussionSettings, ThreadState } from './model.js';
+import type { PostCommentInput, ResolvedThreadConfig, ThreadComment } from './types.js';
+import type {
+  Actor,
+  AuthorRecord,
+  DiscussionRepository,
+  DiscussionUnitOfWork,
+} from './ports.js';
 
 /** A course with no stored settings. Discussion is opt-in, so the common case
  *  persists no row at all and every existing course stays silent. */
@@ -91,5 +97,89 @@ export class DiscussionServiceImpl {
       reactions: settings.reactions,
       state,
     };
+  }
+
+  /** Strip the email a profile row carries — a thread must never expose one. */
+  private toAuthor(record: AuthorRecord): CommentAuthor {
+    return { id: record.id, name: record.name, image: record.image, role: record.role };
+  }
+
+  /** Render one comment with no reaction context. Used by post and edit, where
+   *  the caller has just written the row and needs it back in the same shape
+   *  the thread serves. */
+  private async renderOne(
+    orgId: string,
+    comment: Comment,
+    actor: Actor,
+  ): Promise<ThreadComment> {
+    const ids = [comment.orgUserId, ...(comment.removedBy ? [comment.removedBy] : [])];
+    const records = await this.repo.authorsOf(orgId, [...new Set(ids)]);
+    const author = records[comment.orgUserId];
+    if (!author) {
+      throw new NotFoundError('OrgUser', comment.orgUserId);
+    }
+    const remover = comment.removedBy ? records[comment.removedBy] : undefined;
+    return {
+      id: comment.id,
+      parentId: comment.parentId,
+      author: this.toAuthor(author),
+      isOwn: comment.orgUserId === actor.orgUserId,
+      body: comment.status === 'removed' ? null : comment.body,
+      status: comment.status,
+      removedBy: remover ? this.toAuthor(remover) : null,
+      reactions: [],
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+    };
+  }
+
+  async post(orgId: string, actor: Actor, input: PostCommentInput): Promise<ThreadComment> {
+    const config = await this.resolveConfig(orgId, input.activityId);
+    if (config.state !== 'visible') {
+      throw new ForbiddenError('discussion is not open on this activity');
+    }
+    if (input.parentId !== null) {
+      if (!config.threaded) {
+        throw new ForbiddenError('replies are disabled on this course');
+      }
+      const parent = await this.repo.findComment(orgId, input.parentId);
+      if (!parent || parent.activityId !== input.activityId) {
+        throw new NotFoundError('Comment', input.parentId);
+      }
+      // One level. A reply hangs off a root comment; a reply to a reply would
+      // start an indent ladder no reader benefits from.
+      if (parent.parentId !== null) {
+        throw new ForbiddenError('replies nest one level');
+      }
+      // A pending comment is not a reply target — a subtree must never hang off
+      // something no moderator has approved.
+      if (parent.status !== 'published') {
+        throw new ForbiddenError('cannot reply to a comment that is not published');
+      }
+    }
+    // Review holds learners only; staff publish immediately. The role is read
+    // once at the edge and applied here, never stored on the row.
+    const status: Comment['status'] =
+      config.requireReview && !actor.isStaff ? 'pending' : 'published';
+    const at = this.now();
+    const comment: Comment = {
+      id: genId('comment'),
+      orgId,
+      activityId: input.activityId,
+      parentId: input.parentId,
+      orgUserId: actor.orgUserId,
+      body: input.body,
+      status,
+      removedBy: null,
+      createdAt: at,
+      updatedAt: at,
+    };
+    const saved = await this.uow.run(async (scope) => {
+      const row = await scope.discussion.insertComment(orgId, comment);
+      await scope.outbox.append([{ type: 'comment.created', orgId, comment: row }]);
+      this.logger.info('comment created', { orgId, commentId: row.id, status });
+      return row;
+    });
+    return this.renderOne(orgId, saved, actor);
   }
 }

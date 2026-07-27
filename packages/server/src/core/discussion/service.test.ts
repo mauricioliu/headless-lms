@@ -14,7 +14,8 @@ import type {
   ThreadState,
 } from './model.js';
 import type { NewDiscussionEvent } from './events.js';
-import { NotFoundError } from '../shared/errors.js';
+import { NotFoundError, ForbiddenError } from '../shared/errors.js';
+import type { Actor } from './ports.js';
 
 /** Every activity in these tests belongs to course c1 unless a test says
  *  otherwise — the service resolves the course rather than being handed it. */
@@ -277,5 +278,147 @@ describe('settings', () => {
     const { service } = makeService();
     await service.setThreadState('o1', 'a1', 'locked');
     expect(await service.listThreadStates('o1', 'c1')).toEqual({ a1: 'locked' });
+  });
+});
+
+const learner: Actor = { orgUserId: 'orm_learner', isStaff: false };
+const staff: Actor = { orgUserId: 'orm_staff', isStaff: true };
+
+async function enabled(service: DiscussionServiceImpl, patch = {}) {
+  await service.setSettings('o1', 'c1', { enabled: true, ...patch });
+}
+
+describe('post', () => {
+  it('publishes a learner comment when review is off', async () => {
+    const { service, appended } = makeService();
+    await enabled(service);
+    const comment = await service.post('o1', learner, {
+      activityId: 'a1',
+      parentId: null,
+      body: 'first',
+    });
+    expect(comment.status).toBe('published');
+    expect(appended).toHaveLength(1);
+    expect(appended[0]?.type).toBe('comment.created');
+  });
+
+  it('returns a resolved author and never an email', async () => {
+    const fake = fakeRepo();
+    fake.authors.set('orm_staff', {
+      id: 'orm_staff',
+      name: 'Sarah Chen',
+      image: 'https://img.test/s.png',
+      role: 'instructor',
+      email: 'sarah@example.test',
+    });
+    const { service } = makeService(fake);
+    await enabled(service);
+    const comment = await service.post('o1', staff, {
+      activityId: 'a1',
+      parentId: null,
+      body: 'hello',
+    });
+    expect(comment.author).toEqual({
+      id: 'orm_staff',
+      name: 'Sarah Chen',
+      image: 'https://img.test/s.png',
+      role: 'instructor',
+    });
+    expect('email' in comment.author).toBe(false);
+  });
+
+  it('holds a learner comment pending when review is on', async () => {
+    const { service } = makeService();
+    await enabled(service, { requireReview: true });
+    const comment = await service.post('o1', learner, {
+      activityId: 'a1',
+      parentId: null,
+      body: 'q',
+    });
+    expect(comment.status).toBe('pending');
+  });
+
+  it('publishes a staff comment even when review is on', async () => {
+    const { service } = makeService();
+    await enabled(service, { requireReview: true });
+    const comment = await service.post('o1', staff, {
+      activityId: 'a1',
+      parentId: null,
+      body: 'answer',
+    });
+    expect(comment.status).toBe('published');
+  });
+
+  it('refuses to post when discussion is disabled for the course', async () => {
+    const { service } = makeService();
+    await expect(
+      service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'x' }),
+    ).rejects.toThrow(ForbiddenError);
+  });
+
+  it('refuses to post to a locked thread', async () => {
+    const { service } = makeService();
+    await enabled(service);
+    await service.setThreadState('o1', 'a1', 'locked');
+    await expect(
+      service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'x' }),
+    ).rejects.toThrow(ForbiddenError);
+  });
+
+  it('refuses a reply when replies are disabled', async () => {
+    const { service } = makeService();
+    await enabled(service, { threaded: false });
+    const root = await service.post('o1', learner, {
+      activityId: 'a1',
+      parentId: null,
+      body: 'root',
+    });
+    await expect(
+      service.post('o1', learner, { activityId: 'a1', parentId: root.id, body: 'reply' }),
+    ).rejects.toThrow(ForbiddenError);
+  });
+
+  it('refuses a reply to a reply — nesting is one level', async () => {
+    const { service } = makeService();
+    await enabled(service);
+    const root = await service.post('o1', learner, {
+      activityId: 'a1',
+      parentId: null,
+      body: 'root',
+    });
+    const reply = await service.post('o1', staff, {
+      activityId: 'a1',
+      parentId: root.id,
+      body: 'reply',
+    });
+    await expect(
+      service.post('o1', learner, { activityId: 'a1', parentId: reply.id, body: 'nested' }),
+    ).rejects.toThrow(ForbiddenError);
+  });
+
+  it('refuses a reply to a pending comment', async () => {
+    const { service } = makeService();
+    await enabled(service, { requireReview: true });
+    const pending = await service.post('o1', learner, {
+      activityId: 'a1',
+      parentId: null,
+      body: 'q',
+    });
+    await expect(
+      service.post('o1', staff, { activityId: 'a1', parentId: pending.id, body: 'reply' }),
+    ).rejects.toThrow(ForbiddenError);
+  });
+
+  it('refuses a reply to a comment on a different activity', async () => {
+    const { service } = makeService();
+    await enabled(service);
+    const root = await service.post('o1', learner, {
+      activityId: 'a1',
+      parentId: null,
+      body: 'root',
+    });
+    await expect(
+      service.post('o1', learner, { activityId: 'a2', parentId: root.id, body: 'reply' }),
+    ).rejects.toThrow(NotFoundError);
   });
 });
