@@ -40,10 +40,9 @@ the author made.
 
 ### Entities
 
-- **Comment** — the author, the activity it attaches to, the course that
-  activity sits within, the comment it replies to (unset for a root comment),
-  the body, the moderation state, who removed it (unset unless removed), and
-  when it was written and last revised.
+- **Comment** — the author, the activity it attaches to, the comment it replies
+  to (unset for a root comment), the body, the moderation state, who removed it
+  (unset unless removed), and when it was written and last revised.
 - **Reaction** — one person's reaction of one kind to one comment. No body. One
   per person, per comment, per kind.
 - **Report** — one person's flag against one comment: an optional reason and
@@ -61,9 +60,10 @@ the author made.
 - **Removed** — the body is no longer served; the comment is retained.
 
 A removed comment is retained because its replies hang off it. It is served as a
-placeholder holding its position when it has replies, and not served at all when
-it has none. It records who removed it — its author or a moderator — and the
-placeholder says which.
+placeholder holding its position when the reader can see at least one of its
+replies, and not served at all otherwise — a marker with nothing beneath it is
+noise, so whether it appears depends on what that reader is shown. It records
+who removed it — its author or a moderator — and the placeholder says which.
 
 ### Thread state
 
@@ -74,7 +74,8 @@ otherwise. There is no deeper cascade.
 - **Hidden** — the thread is not served. Existing comments are retained and
   reappear if it becomes visible.
 - **Locked** — the thread is served read-only. Existing comments stay readable;
-  no comment, reply or reaction is accepted.
+  no comment, reply or reaction is accepted. Reports still are — an archived
+  thread can still contain something that needs a moderator.
 
 Thread state governs the thread, never a comment's moderation state. Locking
 removes nothing; hiding un-publishes nothing.
@@ -119,16 +120,18 @@ observe, and no automation is present unless one is configured.
 
 ### Queue scope
 
-A comment records the course its activity sits within, so the pending and
-reported queues can be scoped to a course without reading content structure.
+The pending and reported queues scope to a course. A comment records only the
+activity it attaches to; which course that activity sits in is content's fact
+and can change when a course is restructured, so it is resolved when the queue
+is read rather than copied onto every comment.
 
 ## Boundaries
 
 1. **discussion → content** — discussion references the activity a thread
-   attaches to and the course it sits within; content owns both and knows
-   nothing of discussion. Discussion reads no structure and no settings from
-   content. Removing an activity removes its comments, reactions, reports and
-   thread state.
+   attaches to; content owns it and knows nothing of discussion. Which course
+   an activity sits in is content's fact — discussion resolves it when scoping
+   settings or a queue and never stores a copy. Removing an activity removes
+   its comments, reactions, reports and thread state.
 2. **discussion → identity** — discussion references the person's participation
    in the org on every comment, reaction and report, and reads their role from
    it. Identity owns the participation and the role; discussion stores neither.
