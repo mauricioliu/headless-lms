@@ -11,3 +11,4 @@ export * from './credentials.js';
 export * from './integrations.js';
 export * from './outbox.js';
 export * from './automations.js';
+export * from './discussion.js';
