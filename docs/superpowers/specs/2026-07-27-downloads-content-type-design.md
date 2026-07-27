@@ -151,6 +151,8 @@ Always 404, never 403 — a 403 confirms the resource exists to someone not enti
 
 ## HTTP — `packages/server/src/http/routes/`
 
+All routes in this codebase are **`/api/`-prefixed** (`/api/courses`, `/api/learn/courses`). The paths below omit the prefix for readability; the real URLs carry it, including the delivery URL an anchor points at.
+
 **`downloads.ts`** (new, tag `Downloads`, inside the session-guarded plugin):
 
 | Method | Path |
