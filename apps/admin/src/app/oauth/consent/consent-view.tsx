@@ -10,13 +10,17 @@ import { Logo } from "@/components/app-shell/logo";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 /**
- * Landing page for the MCP OAuth consent redirect
- * (`/oauth/consent?consent_code=…&client_id=…&scope=…`). Answers the prompt via
- * `POST /api/auth/oauth2/consent`; better-auth then redirects back to the client.
+ * Landing page for the MCP OAuth consent redirect. The provider redirects here
+ * with the signed authorization query (`client_id`, `scope`, `sig`, …), which is
+ * echoed back verbatim as `oauth_query` when answering the prompt via
+ * `POST /api/auth/oauth2/consent`. The response carries the redirect back to the
+ * client.
+ *
+ * The organization this authorization binds to is the session's active org — a
+ * person in several orgs picks one at `/oauth/select-org` before landing here.
  */
 export function ConsentView() {
   const params = useSearchParams();
-  const consentCode = params.get("consent_code") ?? "";
   const clientId = params.get("client_id") ?? "";
   const scopes = (params.get("scope") ?? "").split(" ").filter(Boolean);
   const [pending, setPending] = React.useState<"allow" | "deny" | null>(null);
@@ -30,16 +34,16 @@ export function ConsentView() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ accept, consent_code: consentCode }),
+        body: JSON.stringify({ accept, oauth_query: params.toString() }),
       });
       if (!res.ok) {
         setError(`Request failed (${res.status})`);
         setPending(null);
         return;
       }
-      const data = (await res.json()) as { redirectURI?: string };
-      if (data.redirectURI) {
-        window.location.assign(data.redirectURI);
+      const data = (await res.json()) as { redirect_uri?: string };
+      if (data.redirect_uri) {
+        window.location.assign(data.redirect_uri);
         return;
       }
       setError("Authorization failed: no redirect received.");
@@ -57,11 +61,9 @@ export function ConsentView() {
           <Logo org="Headless LMS" />
         </div>
         <div className="mt-6 rounded-card border border-line bg-surface p-6">
-          {consentCode ? (
+          {clientId ? (
             <>
-              <h1 className="text-base font-semibold text-ink">
-                {clientId || "An application"} wants access
-              </h1>
+              <h1 className="text-base font-semibold text-ink">{clientId} wants access</h1>
               <p className="mt-1 text-sm text-ink-2">
                 This app is requesting the following permissions:
               </p>

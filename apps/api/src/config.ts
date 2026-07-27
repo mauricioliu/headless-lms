@@ -71,6 +71,7 @@ function loadContainerConfig(): ContainerConfig {
     trustedOrigins,
     mcpLoginPage: process.env.MCP_LOGIN_PAGE ?? `${adminAppUrl}/login`,
     mcpConsentPage: process.env.MCP_CONSENT_PAGE ?? `${adminAppUrl}/oauth/consent`,
+    mcpSelectOrgPage: process.env.MCP_SELECT_ORG_PAGE ?? `${adminAppUrl}/oauth/select-org`,
     emailBranding: {
       brandName: process.env.BRAND_NAME ?? "Headless LMS",
       baseUrl: adminAppUrl,

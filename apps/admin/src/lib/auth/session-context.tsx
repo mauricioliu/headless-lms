@@ -36,8 +36,9 @@ export function SessionProvider({
         email: session.user.email,
         image: session.user.image,
         role: session.role,
-        // Instructor course scoping would come from the courses API
-        // (course_assignments). Managers see everything regardless; not wired.
+        // Instructor course scoping has no backing store — the server holds no
+        // course assignments — so this is always empty. Managers see everything
+        // regardless; `can.editCourse` is the only reader.
         scopedCourseIds: [],
       },
       // Non-null in the authenticated status the layout mounts this under.
