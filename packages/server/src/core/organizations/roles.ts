@@ -6,7 +6,12 @@
 import type { Role } from '@headless-lms/types';
 
 export type { Role };
-export const ROLES = ['owner', 'admin', 'instructor'] as const satisfies readonly Role[];
+export const ROLES = [
+  'owner',
+  'admin',
+  'instructor',
+  'student',
+] as const satisfies readonly Role[];
 
 export function isRole(value: string): value is Role {
   return (ROLES as readonly string[]).includes(value);
@@ -53,6 +58,11 @@ const MATRIX: Record<Role, Partial<Record<Permission, Capability>>> = {
     edit_assigned_course: 'assigned',
     view_student_progress: 'assigned',
   },
+  // A learner participates in the org to consume content they hold an
+  // entitlement for. No management capability of any kind.
+  student: {
+    consume_content: 'enrolled',
+  },
 };
 
 export function capability(role: Role, permission: Permission): Capability | false {
@@ -78,7 +88,7 @@ export function canForCourse(
 // role and allows comma-joined multi-role strings. Normalize any incoming role
 // string to a single domain Role before persisting: `member` -> `instructor`, a
 // multi-role string -> its highest-privilege known role, unknown -> `instructor`.
-const RANK: Record<Role, number> = { owner: 3, admin: 2, instructor: 1 };
+const RANK: Record<Role, number> = { owner: 3, admin: 2, instructor: 1, student: 0 };
 
 export function normalizeRole(raw: string): Role {
   let best: Role = 'instructor';

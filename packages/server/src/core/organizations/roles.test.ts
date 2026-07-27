@@ -2,8 +2,28 @@ import { describe, it, expect } from 'vitest';
 import { ROLES, isRole, parseRole, capability, canForCourse, normalizeRole } from './roles.js';
 
 describe('roles', () => {
-  it('exposes the three roles', () => {
-    expect([...ROLES]).toEqual(['owner', 'admin', 'instructor']);
+  it('exposes the staff roles plus student', () => {
+    expect([...ROLES]).toEqual(['owner', 'admin', 'instructor', 'student']);
+  });
+
+  it('treats student as a known role', () => {
+    expect(isRole('student')).toBe(true);
+    expect(parseRole('student')).toBe('student');
+  });
+
+  it('grants student content consumption only when enrolled', () => {
+    expect(capability('student', 'consume_content')).toBe('enrolled');
+  });
+
+  it('grants student no management capability', () => {
+    expect(capability('student', 'manage_users')).toBe(false);
+    expect(capability('student', 'create_course')).toBe(false);
+    expect(capability('student', 'view_student_progress')).toBe(false);
+    expect(capability('student', 'edit_assigned_course')).toBe(false);
+  });
+
+  it('ranks student below every staff role', () => {
+    expect(normalizeRole('student,instructor')).toBe('instructor');
   });
 
   it('parseRole accepts a known role and rejects an unknown one', () => {

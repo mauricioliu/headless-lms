@@ -5,7 +5,7 @@
 import type { DomainEvent } from "./shared.js";
 
 /** Domain roles. The authorization matrix lives in core (roles.ts). */
-export type Role = "owner" | "admin" | "instructor";
+export type Role = "owner" | "admin" | "instructor" | "student";
 
 export interface Organization {
   readonly id: string;
