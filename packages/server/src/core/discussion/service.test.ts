@@ -266,6 +266,13 @@ describe('settings', () => {
     expect(config.state).toBe('hidden');
   });
 
+  it('keeps a disabled course hidden even when the activity overrides the state', async () => {
+    const { service } = makeService();
+    await service.setSettings('o1', 'c1', { enabled: false });
+    await service.setThreadState('o1', 'a1', 'visible');
+    expect((await service.resolveConfig('o1', 'a1')).state).toBe('hidden');
+  });
+
   it('lists only the activities in the course that carry an override', async () => {
     const { service } = makeService();
     await service.setThreadState('o1', 'a1', 'locked');
