@@ -15,7 +15,9 @@ export default async function CourseContentTab({
 
   const modulesPromise = serverApi.listModules(courseId);
   // Discussion is optional; a failure to load the overrides must not take down
-  // the content tab.
+  // the content tab. This deliberately absorbs any signal from the call —
+  // including a Next.js redirect thrown by `unwrap` on a 401 — so don't narrow
+  // this catch without weighing that tradeoff again.
   const threadStatesPromise = serverApi
     .threadStates(courseId)
     .catch(() => ({}) as ThreadStates);

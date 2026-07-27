@@ -11,7 +11,13 @@ import { Field } from "@/components/forms/field";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import type { Activity, ActivitySettings, SaveActivityInput, ThreadState } from "@/lib/api/types";
+import type {
+  Activity,
+  ActivitySettings,
+  Module,
+  SaveActivityInput,
+  ThreadState,
+} from "@/lib/api/types";
 
 import { saveActivityAction } from "../actions";
 import { setActivityThreadStateAction } from "../discussion/actions";
@@ -105,25 +111,40 @@ export function ItemFormSheet({
     };
 
     startTransition(async () => {
+      let saved: Module[];
       try {
-        const saved = await saveActivityAction(courseId, moduleId, payload);
-        // Thread state is a separate discussion-context row, not part of the
-        // opaque settings blob, so it's a second call — and only when it
-        // actually changed (a brand-new activity left on "Course default"
-        // makes no second call at all).
-        if (thread !== (threadState ?? null)) {
-          const activityId = isEdit
-            ? item!.id
-            : saved.find((m) => m.id === moduleId)?.activities?.at(-1)?.id;
-          if (activityId) {
-            await setActivityThreadStateAction(activityId, thread);
-          }
-        }
-        toast.success("Saved");
-        onOpenChange(false);
+        saved = await saveActivityAction(courseId, moduleId, payload);
       } catch (err) {
         toast.error("Something went wrong", { description: (err as Error).message });
+        return;
       }
+
+      // The activity is saved from here on. Thread state is a separate
+      // discussion-context row, not part of the opaque settings blob, so it's
+      // a second call — and only when it actually changed (a brand-new
+      // activity left on "Course default" makes no second call at all). A
+      // failure here must not leave the sheet open in create mode — retrying
+      // would re-run the create branch and produce a duplicate activity — so
+      // close regardless and tell the user what actually failed.
+      if (thread !== (threadState ?? null)) {
+        const activityId = isEdit
+          ? item!.id
+          : saved.find((m) => m.id === moduleId)?.activities?.at(-1)?.id;
+        if (activityId) {
+          try {
+            await setActivityThreadStateAction(activityId, thread);
+          } catch (err) {
+            toast.warning("Activity saved, but the discussion setting did not apply", {
+              description: (err as Error).message,
+            });
+            onOpenChange(false);
+            return;
+          }
+        }
+      }
+
+      toast.success("Saved");
+      onOpenChange(false);
     });
   }
 
