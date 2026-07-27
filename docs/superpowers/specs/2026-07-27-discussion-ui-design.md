@@ -166,11 +166,13 @@ plan's entry carries a bare `Comment` and `openReports: number`.
   here and only here: the queue is a staff-scoped route, and identifying a spam
   account is exactly the decision a moderator is being asked to make.
 - Add `activityTitle: string`. The card says "Lesson 3"; the comment stores only
-  an `activityId`. The route resolves it through `container.content`.
+  an `activityId`. This rides along on the activity→course resolution the queue
+  now performs anyway (see the amendments below), so it costs no extra work.
 - Replace `openReports: number` with
   `reports: { reporter: CommentAuthor; reason: string; createdAt: string }[]`.
   A count is not actionable. Who flagged it and what they said is the whole
   basis for the decision.
+- Drop `courseId` from the embedded `Comment`, which no longer stores one.
 
 ### Reading a per-activity thread state
 
@@ -211,6 +213,34 @@ indent ladder to cap on mobile.
 `enabled: false`. Every course that exists when this ships stays silent until
 staff turns it on from the course's Discussion tab.
 
+And three rules the domain spec changed in `00b0a90`, after the plan was
+written. The plan predates them and contradicts all three.
+
+**A comment stores no `courseId`.** The course an activity sits in is content's
+fact and changes when a course is restructured, so discussion resolves it at
+read time and never copies it. This reaches furthest: the column and its FK come
+out of Task 2, the field out of the `Comment` type in Task 1 and the contract in
+Task 12, and the write out of Task 5. Task 4's settings resolution and Task 9's
+queue scoping both gain an activity→course resolution.
+
+That resolution is a new port on `DiscussionRepository`, alongside `authorsOf`
+and for the same reason: the adapter joins content's tables, so the domain reads
+no structure from content and the boundary in the domain spec holds. Two
+callers, one shape — settings resolution needs the course for one activity, the
+queue needs to filter a set of comments by course and label each with its
+activity title, which is one join yielding both.
+
+**Locked threads still accept reports.** Task 8 currently gates reactions and
+reports identically. They split: a locked thread refuses comments, replies and
+reactions, and accepts reports, because an archived thread can still hold
+something a moderator needs to see.
+
+**A removed comment is a placeholder only when the reader can see at least one
+of its replies.** Task 6 computes its `withReplies` set from every reply. It must
+compute it from the replies that reader is actually served — which excludes
+another person's pending comment. Otherwise a reader is shown a placeholder with
+nothing beneath it.
+
 ## Student — the thread under the lesson
 
 New directory `apps/student/src/components/player/discussion/`:
@@ -240,14 +270,18 @@ for a stale lesson is discarded when the lesson changes mid-flight.
 |---|---|
 | `config.enabled === false` | Nothing. No heading, no empty state. |
 | `state === 'hidden'` | Nothing. |
-| `state === 'locked'` | Thread read-only; the composer is replaced by a closed notice. |
+| `state === 'locked'` | Thread read-only; the composer is replaced by a closed notice. Reporting stays available. |
 | No comments, thread open | Composer plus a short invitation to start. |
 | Own comment, `pending` | Rendered to its author only, marked awaiting review. |
-| `removed` with replies | Muted placeholder naming the remover, replies kept. |
-| `removed` without replies | Never sent by the server; nothing to handle. |
+| `removed`, replies visible to this reader | Muted placeholder naming the remover, replies kept. |
+| `removed`, no replies this reader can see | Never sent by the server; nothing to handle. |
 
 Replying is suppressed on a pending comment — nothing may hang off a comment
 that is not yet published.
+
+Locked is read-only for everything except reporting, so the report action stays
+on every comment while post, reply, edit, delete and react all disappear. That
+is the one place the locked thread is not simply inert.
 
 **Mutations are optimistic with rollback.** Post, edit, delete, react and unreact
 apply locally, reconcile against the returned comment, and revert with a message
