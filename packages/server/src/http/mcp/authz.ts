@@ -5,7 +5,7 @@ import { capability, canForCourse } from '../../core/organizations/index.js';
 import type { Role, Permission } from '../../core/organizations/index.js';
 
 export interface McpPrincipal {
-  studentId: string;
+  orgUserId: string;
   orgId: string;
   role: Role;
   assignedCourseIds: readonly string[];

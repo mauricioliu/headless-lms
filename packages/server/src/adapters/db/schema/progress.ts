@@ -1,12 +1,20 @@
-// progress tables — one progress record per student per target (activity,
+// progress tables — one progress record per participant per target (activity,
 // module, or course). Tracks lifecycle: started_at on open, position
 // (typed resume payload) as the player reports it, completed_at when the rule is
 // satisfied (null = in progress). Target is denormalized (type + id, no FK) so a
 // record survives structure edits. Percentage and resume are derived on read;
 // nothing here is a stored percentage.
-import { pgTable, text, jsonb, timestamp, primaryKey, unique } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  text,
+  jsonb,
+  timestamp,
+  primaryKey,
+  unique,
+  foreignKey,
+} from 'drizzle-orm/pg-core';
 import { genId } from '../../../core/shared/id.js';
-import { organizations } from './organizations.js';
+import { organizations, orgUsers } from './organizations.js';
 
 export const progressRecords = pgTable(
   'progress_records',
@@ -17,7 +25,7 @@ export const progressRecords = pgTable(
     id: text('id')
       .notNull()
       .$defaultFn(() => genId('progress')),
-    studentId: text('student_id').notNull(),
+    orgUserId: text('org_user_id').notNull(),
     targetType: text('target_type', {
       enum: ['activity', 'module', 'course'],
     }).notNull(),
@@ -32,6 +40,11 @@ export const progressRecords = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),
-    targetUq: unique().on(t.orgId, t.studentId, t.targetType, t.targetId),
+    targetUq: unique().on(t.orgId, t.orgUserId, t.targetType, t.targetId),
+    // The one participant reference the schema previously left unenforced.
+    orgUserFk: foreignKey({
+      columns: [t.orgId, t.orgUserId],
+      foreignColumns: [orgUsers.orgId, orgUsers.id],
+    }),
   }),
 );

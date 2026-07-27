@@ -33,7 +33,7 @@ const COURSE: Course = {
 
 const ENTITLEMENT: Entitlement = {
   id: 'ent-1',
-  studentId: 'student-1',
+  orgUserId: 'student-1',
   firstName: 'Bob',
   lastName: 'Smith',
   studentEmail: 'bob@example.com',
@@ -136,7 +136,7 @@ function makeContainer(overrides?: {
 
 /** Admin principal with all read+write scopes including progress:read. */
 const ADMIN_PRINCIPAL: McpPrincipal = {
-  studentId: 'student-admin',
+  orgUserId: 'student-admin',
   orgId: 'org-1',
   role: 'admin',
   assignedCourseIds: [],
@@ -151,7 +151,7 @@ const ADMIN_PRINCIPAL: McpPrincipal = {
 
 /** Low-privilege member (instructor) with only read scopes. */
 const STUDENT_PRINCIPAL: McpPrincipal = {
-  studentId: 'student-1',
+  orgUserId: 'student-1',
   orgId: 'org-1',
   role: 'instructor',
   assignedCourseIds: [],
@@ -160,7 +160,7 @@ const STUDENT_PRINCIPAL: McpPrincipal = {
 
 /** Instructor principal with read scopes and course assignment. */
 const INSTRUCTOR_PRINCIPAL: McpPrincipal = {
-  studentId: 'student-inst',
+  orgUserId: 'student-inst',
   orgId: 'org-1',
   role: 'instructor',
   assignedCourseIds: ['course-1'],
@@ -169,7 +169,7 @@ const INSTRUCTOR_PRINCIPAL: McpPrincipal = {
 
 /** No-scope principal (simulates a token with no scopes granted). */
 const NO_SCOPE_PRINCIPAL: McpPrincipal = {
-  studentId: 'student-noscope',
+  orgUserId: 'student-noscope',
   orgId: 'org-1',
   role: 'admin',
   assignedCourseIds: [],
@@ -286,13 +286,13 @@ describe('registerTools — grant_entitlement', () => {
     registerTools(server, container, ADMIN_PRINCIPAL);
 
     const grant = callbacks.get('grant_entitlement')!;
-    const result = await grant({ studentId: 'student-1', contentId: 'course-1', expiresAt: null });
+    const result = await grant({ orgUserId: 'student-1', contentId: 'course-1', expiresAt: null });
 
     expect(result.isError).toBeFalsy();
     const parsed = JSON.parse(result.content[0]!.text);
     expect(parsed.id).toBe('ent-1');
     expect(container.entitlements.grant as Mock).toHaveBeenCalledWith('org-1', {
-      studentId: 'student-1',
+      orgUserId: 'student-1',
       contentId: 'course-1',
       expiresAt: null,
     });
@@ -309,7 +309,7 @@ describe('registerTools — grant_entitlement', () => {
     registerTools(server, container, studentWithWriteScope);
 
     const grant = callbacks.get('grant_entitlement')!;
-    const result = await grant({ studentId: 'student-1', contentId: 'course-1', expiresAt: null });
+    const result = await grant({ orgUserId: 'student-1', contentId: 'course-1', expiresAt: null });
 
     expect(result.isError).toBe(true);
     expect(result.content[0]!.text).toMatch(/Forbidden/);
@@ -326,7 +326,7 @@ describe('registerTools — grant_entitlement', () => {
     registerTools(server, container, adminNoWriteScope);
 
     const grant = callbacks.get('grant_entitlement')!;
-    const result = await grant({ studentId: 'student-1', contentId: 'course-1', expiresAt: null });
+    const result = await grant({ orgUserId: 'student-1', contentId: 'course-1', expiresAt: null });
 
     expect(result.isError).toBe(true);
     expect(container.entitlements.grant as Mock).not.toHaveBeenCalled();
@@ -340,7 +340,7 @@ describe('registerTools — list_entitlements', () => {
     registerTools(server, container, ADMIN_PRINCIPAL);
 
     const listEntitlements = callbacks.get('list_entitlements')!;
-    const result = await listEntitlements({ studentId: 'student-1', page: 1, pageSize: 20 });
+    const result = await listEntitlements({ orgUserId: 'student-1', page: 1, pageSize: 20 });
 
     expect(result.isError).toBeFalsy();
     const parsed = JSON.parse(result.content[0]!.text);
@@ -361,7 +361,7 @@ describe('registerTools — list_entitlements', () => {
     expect(container.entitlements.list as Mock).toHaveBeenCalled();
   });
 
-  it('lists entitlements org-wide (no studentId filter) when studentId not given', async () => {
+  it('lists entitlements org-wide (no orgUserId filter) when orgUserId not given', async () => {
     const container = makeContainer();
     const { server, callbacks } = makeStubServer();
     registerTools(server, container, STUDENT_PRINCIPAL);
@@ -372,7 +372,7 @@ describe('registerTools — list_entitlements', () => {
     expect(result.isError).toBeFalsy();
     expect(container.entitlements.list as Mock).toHaveBeenCalledWith(
       'org-1',
-      expect.objectContaining({ studentId: undefined }),
+      expect.objectContaining({ orgUserId: undefined }),
     );
   });
 });
@@ -384,11 +384,11 @@ describe('registerTools — get_student_progress', () => {
     registerTools(server, container, ADMIN_PRINCIPAL);
 
     const getProgress = callbacks.get('get_student_progress')!;
-    const result = await getProgress({ studentId: 'student-1' });
+    const result = await getProgress({ orgUserId: 'student-1' });
 
     expect(result.isError).toBeFalsy();
     const parsed = JSON.parse(result.content[0]!.text);
-    expect(parsed.studentId).toBe('student-1');
+    expect(parsed.orgUserId).toBe('student-1');
     expect(parsed.avgProgress).toBe(65);
     expect(parsed.entitlementCount).toBe(3);
     expect(container.reporting.students.get as Mock).toHaveBeenCalledWith('org-1', 'student-1');
@@ -400,7 +400,7 @@ describe('registerTools — get_student_progress', () => {
     registerTools(server, container, ADMIN_PRINCIPAL);
 
     const getProgress = callbacks.get('get_student_progress')!;
-    const result = await getProgress({ studentId: 'nonexistent' });
+    const result = await getProgress({ orgUserId: 'nonexistent' });
 
     expect(result.isError).toBe(true);
     expect(result.content[0]!.text).toMatch(/not found/);
@@ -416,7 +416,7 @@ describe('registerTools — get_student_progress', () => {
     registerTools(server, container, adminNoProgressScope);
 
     const getProgress = callbacks.get('get_student_progress')!;
-    const result = await getProgress({ studentId: 'student-1' });
+    const result = await getProgress({ orgUserId: 'student-1' });
 
     expect(result.isError).toBe(true);
     expect(result.content[0]!.text).toMatch(/Forbidden/);
@@ -433,7 +433,7 @@ describe('registerTools — get_student_progress', () => {
     registerTools(server, container, instructorWithProgressScope);
 
     const getProgress = callbacks.get('get_student_progress')!;
-    const result = await getProgress({ studentId: 'student-1' });
+    const result = await getProgress({ orgUserId: 'student-1' });
 
     expect(result.isError).toBe(true);
     expect(result.content[0]!.text).toMatch(/Forbidden/);

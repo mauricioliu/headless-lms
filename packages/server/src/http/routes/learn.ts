@@ -37,7 +37,7 @@ export async function learnRoutes(app: FastifyInstance, container: Container): P
     },
     handler: async (req) => {
       const scope = await resolveStudentScope(container, req);
-      return learn.listCourses(scope.orgId, scope.studentId);
+      return learn.listCourses(scope.orgId, scope.orgUserId);
     },
   });
 
@@ -72,7 +72,7 @@ export async function learnRoutes(app: FastifyInstance, container: Container): P
     },
     handler: async (req) => {
       const scope = await resolveStudentScope(container, req);
-      const course = await learn.getCourse(scope.orgId, scope.studentId, req.params.courseId);
+      const course = await learn.getCourse(scope.orgId, scope.orgUserId, req.params.courseId);
       if (!course) {
         throw new NotFoundError('Course', req.params.courseId);
       }
@@ -93,7 +93,7 @@ export async function learnRoutes(app: FastifyInstance, container: Container): P
     },
     handler: async (req) => {
       const scope = await resolveStudentScope(container, req);
-      const modules = await learn.listModules(scope.orgId, scope.studentId, req.params.courseId);
+      const modules = await learn.listModules(scope.orgId, scope.orgUserId, req.params.courseId);
       if (!modules) {
         throw new NotFoundError('Course', req.params.courseId);
       }
@@ -150,12 +150,12 @@ export async function learnRoutes(app: FastifyInstance, container: Container): P
       if (!module) {
         throw new NotFoundError('Activity', req.body.activity);
       }
-      const course = await learn.getCourse(scope.orgId, scope.studentId, module.courseId);
+      const course = await learn.getCourse(scope.orgId, scope.orgUserId, module.courseId);
       if (!course) {
         throw new NotFoundError('Activity', req.body.activity);
       }
       const record = await container.progress.report(scope.orgId, {
-        studentId: scope.studentId,
+        orgUserId: scope.orgUserId,
         activityId: req.body.activity,
         reports: req.body.reports,
       });
@@ -176,7 +176,7 @@ export async function learnRoutes(app: FastifyInstance, container: Container): P
     },
     handler: async (req) => {
       const scope = await resolveStudentScope(container, req);
-      const view = await learn.courseProgress(scope.orgId, scope.studentId, req.params.courseId);
+      const view = await learn.courseProgress(scope.orgId, scope.orgUserId, req.params.courseId);
       if (!view) {
         throw new NotFoundError('Course', req.params.courseId);
       }

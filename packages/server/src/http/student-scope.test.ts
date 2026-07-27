@@ -20,12 +20,12 @@ const req = (authUser: unknown, orgId: string | null = 'ext_org_1') =>
 const acme = { id: 'org_1', name: 'Acme', slug: 'acme' };
 
 describe('resolveStudentScope', () => {
-  it('resolves { studentId, orgId, org } from the session user + session org', async () => {
+  it('resolves { orgUserId, orgId, org } from the session user + session org', async () => {
     const scope = await resolveStudentScope(
       container({ student: { id: 'stu_1' }, org: acme }),
       req({ id: 'ext_1' }),
     );
-    expect(scope).toEqual({ studentId: 'stu_1', orgId: 'org_1', org: acme });
+    expect(scope).toEqual({ orgUserId: 'stu_1', orgId: 'org_1', org: acme });
   });
 
   it('throws NoStudentError when there is no session user', async () => {

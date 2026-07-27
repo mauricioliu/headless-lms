@@ -7,11 +7,11 @@ import type {
   MemberRecord,
   MemberWriteContext,
   OrgAdmin,
-  StudentLinker,
+  PersonResolver,
   AuthHeaders,
 } from './ports.js';
 import type { Organization, OrgUser, Invitation, CourseAssignment } from './model.js';
-import { STUDENT_ROLE, type Role } from './roles.js';
+import { STUDENT_ROLE, parseRole, type Role } from './roles.js';
 import {
   OrganizationRuleError,
   type Member,
@@ -27,11 +27,14 @@ import type {
   AcceptInviteInput,
   InviteRole,
   AssignCourseInput,
+  CreateParticipantInput,
 } from './types.js';
 import type { Logger, OutboxAppender } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 import type { Mailer } from '../shared/mailer.js';
 import { generateInviteToken, hashInviteToken } from '../shared/invite-token.js';
+import { splitName } from '../shared/name.js';
+import { ConflictError, NotFoundError } from '../shared/errors.js';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -64,7 +67,7 @@ export class OrganizationServiceImpl implements OrganizationService {
     private readonly repo: OrganizationsRepository,
     private readonly membersRepo: MembersRepository,
     private readonly orgAdmin: () => OrgAdmin,
-    private readonly students: StudentLinker,
+    private readonly people: PersonResolver,
     uow?: OrganizationsUnitOfWork,
     private readonly logger: Logger = noopLogger,
     private readonly mailer?: Pick<Mailer, 'send'>,
@@ -119,7 +122,7 @@ export class OrganizationServiceImpl implements OrganizationService {
 
   async addOrgUser(input: AddOrgUserInput): Promise<OrgUser> {
     const org = await this.requireOrg(input.orgExternalId);
-    const orgUser = await this.repo.insertOrgUser(org.id, input);
+    const orgUser = await this.repo.upsertOrgUser(org.id, input);
     this.logger.info('orgUser added', { orgId: org.id });
     return orgUser;
   }
@@ -129,18 +132,15 @@ export class OrganizationServiceImpl implements OrganizationService {
     this.logger.info('orgUser removed', { externalId });
   }
 
+  // An invitation creates nothing but itself. Everything needed to build the
+  // participation is in the token, and the row is minted at acceptance when the
+  // person is known — see acceptInvite.
   async createInvite(input: CreateInviteInput): Promise<Invitation> {
     const { orgId, email, role, inviterUserId } = input;
-    if (role === STUDENT_ROLE) {
-      if (!(await this.students.hasPendingStudent(orgId, email))) {
-        throw new OrganizationRuleError('No pending student with this email');
-      }
-    } else {
-      const existing = await this.membersRepo.findByEmail(orgId, email);
-      if (existing?.kind === 'member') {
-        this.logger.warn('invite rejected: already a member', { orgId });
-        throw new OrganizationRuleError('This email is already a member.');
-      }
+    const existing = await this.repo.findOrgUserByEmail(orgId, email);
+    if (existing?.userId) {
+      this.logger.warn('invite rejected: already a participant', { orgId, role });
+      throw new OrganizationRuleError('This email already belongs to this organization.');
     }
     const { token, tokenHash } = generateInviteToken();
     const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
@@ -195,21 +195,22 @@ export class OrganizationServiceImpl implements OrganizationService {
     if (!org) {
       return null;
     }
-    if (invitation.role === STUDENT_ROLE) {
-      const linked = await this.students.linkPendingStudent(
-        invitation.orgId,
-        invitation.email,
-        invitation.id,
-        input.userExternalId,
-      );
-      if (!linked) {
-        this.logger.warn('student invite accept refused: no pending student row', {
-          orgId: invitation.orgId,
-          invitationId: invitation.id,
-        });
-        return null;
-      }
-    } else {
+    // The account exists by now, so its domain person does too (the auth
+    // adapter provisions one on user creation).
+    const person = await this.people.getUserByExternalId(input.userExternalId);
+    if (!person) {
+      this.logger.warn('invite accept refused: no domain person for the account', {
+        orgId: invitation.orgId,
+        invitationId: invitation.id,
+      });
+      return null;
+    }
+    // Claim-or-create: an admin-built roster entry for this email is claimed so
+    // its entitlements survive; otherwise the participation is created now.
+    await this.claimOrCreateParticipant(invitation, person, input.userExternalId);
+    if (invitation.role !== STUDENT_ROLE) {
+      // Staff also need better-auth's member record; its afterAddMember hook
+      // stamps external_id onto the row we just settled.
       await this.orgAdmin().grantMembership(org.externalId, input.userExternalId, invitation.role);
     }
     await this.uow.run(async ({ organizations, outbox }) => {
@@ -230,6 +231,112 @@ export class OrganizationServiceImpl implements OrganizationService {
       role: invitation.role,
     });
     return { orgExternalId: org.externalId, role: invitation.role };
+  }
+
+  /**
+   * Settles the participation an accepted invitation implies.
+   *
+   * A roster entry the admin created earlier (`user_id` NULL) is claimed in
+   * place, so entitlements already granted against it stay attached. With no
+   * such entry — every staff invite, and any student invited without first
+   * being added — the participation is created here.
+   */
+  private async claimOrCreateParticipant(
+    invitation: Invitation,
+    person: { id: string; displayName: string },
+    userExternalId: string,
+  ): Promise<void> {
+    const claimed = await this.uow.run(async ({ organizations, outbox }) => {
+      const count = await organizations.claimOrgUser(
+        invitation.orgId,
+        invitation.email,
+        person.id,
+      );
+      if (count > 0) {
+        await outbox.append([
+          {
+            type: 'student.linked',
+            orgId: invitation.orgId,
+            email: invitation.email,
+            invitationId: invitation.id,
+            userExternalId,
+          },
+        ]);
+      }
+      return count > 0;
+    });
+    if (claimed) {
+      return;
+    }
+    const { first, last } = splitName(person.displayName);
+    await this.uow.run(async ({ organizations, outbox }) => {
+      const created = await organizations.insertPendingOrgUser({
+        orgId: invitation.orgId,
+        email: invitation.email,
+        firstName: first,
+        lastName: last,
+        role: parseRole(invitation.role),
+      });
+      const settled = await organizations.claimOrgUser(
+        invitation.orgId,
+        invitation.email,
+        person.id,
+      );
+      if (settled === 0) {
+        throw new Error('participation was created but could not be claimed');
+      }
+      await outbox.append([
+        { type: 'student.created', orgId: created.orgId, student: created },
+      ]);
+    });
+  }
+
+  // --- Roster (participants) -------------------------------------------------
+
+  async createParticipant(input: CreateParticipantInput): Promise<OrgUser> {
+    const existing = await this.repo.findOrgUserByEmail(input.orgId, input.email);
+    if (existing) {
+      throw new ConflictError('A participant with this email already exists');
+    }
+    const participant = await this.uow.run(async ({ organizations, outbox }) => {
+      const created = await organizations.insertPendingOrgUser(input);
+      await outbox.append([{ type: 'student.created', orgId: created.orgId, student: created }]);
+      return created;
+    });
+    this.logger.info('participant created', {
+      orgId: input.orgId,
+      orgUserId: participant.id,
+      role: input.role,
+    });
+    return participant;
+  }
+
+  async getParticipant(orgId: string, id: string): Promise<OrgUser | null> {
+    return this.repo.findOrgUserById(orgId, id);
+  }
+
+  async deleteParticipant(orgId: string, id: string): Promise<void> {
+    await this.uow.run(async ({ organizations, outbox }) => {
+      // Snapshot before the delete — the event carries the last known state.
+      const participant = await organizations.findOrgUserById(orgId, id);
+      if (!participant) {
+        throw new NotFoundError('Participant', id);
+      }
+      const ok = await organizations.deleteOrgUser(orgId, id);
+      if (!ok) {
+        throw new NotFoundError('Participant', id);
+      }
+      await outbox.append([{ type: 'student.deleted', orgId, student: participant }]);
+    });
+    this.logger.info('participant deleted', { orgId, orgUserId: id });
+  }
+
+  async getOrgUsersForUser(userId: string): Promise<OrgUser[]> {
+    return this.repo.findOrgUsersByUser(userId);
+  }
+
+  async getById(id: string): Promise<Organization | null> {
+    return this.repo.findById(id);
   }
 
   private async sendInviteEmail(invitation: Invitation, token: string): Promise<void> {
@@ -285,8 +392,8 @@ export class OrganizationServiceImpl implements OrganizationService {
     return this.repo.findAssignedCourseIds(orgId, orgUserId);
   }
 
-  async getOrgUserByUser(userId: string): Promise<OrgUser | null> {
-    return this.repo.findOrgUserByUser(userId);
+  async getOrgUser(orgId: string, userId: string): Promise<OrgUser | null> {
+    return this.repo.findOrgUser(orgId, userId);
   }
 
   // --- Member management (formerly the `team` context) -----------------------

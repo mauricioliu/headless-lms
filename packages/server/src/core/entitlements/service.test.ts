@@ -6,7 +6,7 @@ import type { NewDomainEvent, OutboxAppender } from '../shared/ports.js';
 
 const SAMPLE: Entitlement = {
   id: 'e1',
-  studentId: 's1',
+  orgUserId: 's1',
   firstName: 'Bob',
   lastName: 'Smith',
   studentEmail: 'bob@example.com',
@@ -57,10 +57,10 @@ describe('EntitlementsService', () => {
 
   it('grants an entitlement (insert) and returns it', async () => {
     const { svc, repo } = build();
-    const result = await svc.grant('org-1', { studentId: 's1', contentId: 'c1', expiresAt: null });
+    const result = await svc.grant('org-1', { orgUserId: 's1', contentId: 'c1', expiresAt: null });
     expect(result.id).toBe('e1');
     expect(repo.insert).toHaveBeenCalledWith('org-1', {
-      studentId: 's1',
+      orgUserId: 's1',
       contentId: 'c1',
       expiresAt: null,
     });
@@ -68,7 +68,7 @@ describe('EntitlementsService', () => {
 
   it('appends entitlement.created (org + full snapshot) inside the unit of work', async () => {
     const { svc, appended } = build();
-    await svc.grant('org-1', { studentId: 's1', contentId: 'c1', expiresAt: null });
+    await svc.grant('org-1', { orgUserId: 's1', contentId: 'c1', expiresAt: null });
     expect(appended).toEqual([{ type: 'entitlement.created', orgId: 'org-1', entitlement: SAMPLE }]);
   });
 
@@ -102,7 +102,7 @@ describe('EntitlementsService', () => {
       fakeRepo({ insert: vi.fn().mockRejectedValue(new Error('boom')) }),
     );
     await expect(
-      svc.grant('org-1', { studentId: 's1', contentId: 'c1', expiresAt: null }),
+      svc.grant('org-1', { orgUserId: 's1', contentId: 'c1', expiresAt: null }),
     ).rejects.toThrow('boom');
     expect(append).not.toHaveBeenCalled();
   });
@@ -117,7 +117,7 @@ describe('logging', () => {
     const svc = new EntitlementsServiceImpl(repo, uow, logger);
 
     const entitlement = await svc.grant('org-1', {
-      studentId: 's1',
+      orgUserId: 's1',
       contentId: 'c1',
       expiresAt: null,
     });
@@ -130,7 +130,7 @@ describe('logging', () => {
     expect(entries[0]?.meta).toMatchObject({
       orgId: 'org-1',
       entitlementId: entitlement.id,
-      studentId: 's1',
+      orgUserId: 's1',
       contentId: 'c1',
       contentType: 'course',
     });

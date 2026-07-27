@@ -30,7 +30,8 @@ export const organizations = pgTable('organizations', {
 });
 
 // A person's participation in one organization under one role — the single
-// org-scoped actor for staff and learners alike.
+// org-scoped actor for staff and learners alike. Everything actor-shaped
+// (entitlements, progress, course assignments) FKs (org_id, id) here.
 export const orgUsers = pgTable(
   'org_users',
   {
@@ -41,14 +42,28 @@ export const orgUsers = pgTable(
       .notNull()
       .$defaultFn(() => genId('orgUser')),
 
-    userId: text('user_id')
-      .notNull()
-      .references(() => users.id),
+    // The person. NULL for a roster entry an admin created before the human
+    // ever logged in — invitations never create rows, so this is the only
+    // way a participation exists without an account behind it.
+    userId: text('user_id').references(() => users.id),
     role: text('role', { enum: ['owner', 'admin', 'instructor', 'student'] }).notNull(),
-    externalId: text('external_id').notNull().unique(),
+    email: text('email').notNull(),
+    firstName: text('first_name').notNull(),
+    lastName: text('last_name').notNull(),
+    // better-auth's member record id. Staff only — students are not members of
+    // the auth-side organization, so theirs stays NULL.
+    externalId: text('external_id').unique(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
-  (t) => ({ pk: primaryKey({ columns: [t.orgId, t.id] }) }),
+  (t) => ({
+    pk: primaryKey({ columns: [t.orgId, t.id] }),
+    emailUq: unique().on(t.orgId, t.email),
+    userUq: unique().on(t.orgId, t.userId),
+  }),
 );
 
 export const invitations = pgTable(

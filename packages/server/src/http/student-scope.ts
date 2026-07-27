@@ -2,15 +2,15 @@
 // expects. Students are org-scoped: the org rides in the session (better-auth
 // `activeOrganizationId`, stamped at login and exposed as `req.orgId` by
 // `requireSession`) — no per-request header. `(orgId, externalId)` resolves the
-// one student row. A session that doesn't resolve to a portal student is an
+// one participation. A session that doesn't resolve to a portal student is an
 // authentication failure (→ 401).
 import type { FastifyRequest } from 'fastify';
 import type { Container } from '../app/container.js';
-import type { Organization } from '../core/organizations/index.js';
+import { STUDENT_ROLE, type Organization } from '../core/organizations/index.js';
 
 export interface StudentScope {
-  /** Domain `students.id` for the session's user in the portal org. */
-  studentId: string;
+  /** Domain `org_users.id` for the session's person in the portal org. */
+  orgUserId: string;
   /** The portal org's `organizations.id` the request is scoped to. */
   orgId: string;
   /** The portal org record (for branding surfaces). */
@@ -33,9 +33,13 @@ export async function resolveStudentScope(
   if (!org) {
     throw new NoStudentError('session organization not found');
   }
-  const student = await container.identity.getStudentByExternalId(org.id, authUser.id);
-  if (!student) {
-    throw new NoStudentError('no student for the current session');
+  const person = await container.identity.getUserByExternalId(authUser.id);
+  if (!person) {
+    throw new NoStudentError('no domain person for the current session');
   }
-  return { studentId: student.id, orgId: org.id, org };
+  const participation = await container.organizations.getOrgUser(org.id, person.id);
+  if (!participation || participation.role !== STUDENT_ROLE) {
+    throw new NoStudentError('no student participation for the current session');
+  }
+  return { orgUserId: participation.id, orgId: org.id, org };
 }

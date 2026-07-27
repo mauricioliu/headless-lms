@@ -7,8 +7,7 @@
 // composed at access-resolution time.
 import { pgTable, text, timestamp, primaryKey, foreignKey, unique } from 'drizzle-orm/pg-core';
 import { genId } from '../../../core/shared/id.js';
-import { organizations } from './organizations.js';
-import { students } from './identity.js';
+import { organizations, orgUsers } from './organizations.js';
 import { contentItems } from './content.js';
 
 export const entitlements = pgTable(
@@ -20,7 +19,7 @@ export const entitlements = pgTable(
     id: text('id')
       .notNull()
       .$defaultFn(() => genId('entitlement')),
-    studentId: text('student_id').notNull(),
+    orgUserId: text('org_user_id').notNull(),
     contentId: text('content_id').notNull(),
     status: text('status', { enum: ['active', 'revoked'] })
       .notNull()
@@ -37,13 +36,13 @@ export const entitlements = pgTable(
       columns: [t.orgId, t.contentId],
       foreignColumns: [contentItems.orgId, contentItems.id],
     }).onDelete('cascade'),
-    // students is org-scoped (composite PK) — the FK must match both columns.
-    // Grants die with their student: deleting the student row cascades here.
-    studentFk: foreignKey({
-      columns: [t.orgId, t.studentId],
-      foreignColumns: [students.orgId, students.id],
+    // org_users is org-scoped (composite PK) — the FK must match both columns.
+    // Grants die with their participant: deleting the org_users row cascades here.
+    orgUserFk: foreignKey({
+      columns: [t.orgId, t.orgUserId],
+      foreignColumns: [orgUsers.orgId, orgUsers.id],
     }).onDelete('cascade'),
-    // One grant per (org, student, content).
-    studentContentUq: unique().on(t.orgId, t.studentId, t.contentId),
+    // One grant per (org, participant, content).
+    orgUserContentUq: unique().on(t.orgId, t.orgUserId, t.contentId),
   }),
 );

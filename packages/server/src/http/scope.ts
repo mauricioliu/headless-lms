@@ -5,18 +5,27 @@
 //
 // Session + active org alone are not staff-only: every better-auth user
 // (including portal students) gets a mirrored domain `users` row, and a
-// student session carries their org as `activeOrganizationId` too. So a
-// student session would otherwise pass this resolver and drive the back-office
-// API. Requiring an org orgUser (mirroring the MCP path's principal check
-// in `http/mcp/principal.ts`) closes that hole.
+// student session carries their org as `activeOrganizationId` too. Students
+// now hold an `org_users` row like everyone else, so the participation
+// existing is no longer proof of staff — its role is what gates the
+// back-office API.
+//
+// The active org selects which participation applies, which is what makes an
+// org switcher work: one person can be owner in one org and instructor in
+// another, and the session says which they are acting as.
 import type { FastifyRequest } from 'fastify';
 import type { Container } from '../app/container.js';
+import { isStaffRole, type StaffRole } from '../core/organizations/index.js';
 
 export interface OrgScope {
-  /** Domain `organizations.id` (uuid) for the session's active org. */
+  /** Domain `organizations.id` for the session's active org. */
   orgId: string;
-  /** Domain `users.id` (uuid) of the acting staff user. */
+  /** Domain `users.id` of the acting person. */
   userId: string;
+  /** Domain `org_users.id` — the acting participation in this org. */
+  orgUserId: string;
+  /** The role held in this org. */
+  role: StaffRole;
   /** Better-auth organization id (for writes that go through the auth provider). */
   authOrgId: string;
 }
@@ -41,10 +50,16 @@ export async function resolveScope(container: Container, req: FastifyRequest): P
   if (!user) {
     throw new NoActiveOrgError('no domain user for the current user');
   }
-  const orgUser = await container.organizations.getOrgUserByUser(user.id);
-  if (!orgUser) {
-    throw new NoActiveOrgError('not an organization member');
+  const orgUser = await container.organizations.getOrgUser(org.id, user.id);
+  if (!orgUser || !isStaffRole(orgUser.role)) {
+    throw new NoActiveOrgError('not a staff member of the active organization');
   }
   container.requestContext.set({ orgId: org.id });
-  return { orgId: org.id, userId: user.id, authOrgId };
+  return {
+    orgId: org.id,
+    userId: user.id,
+    orgUserId: orgUser.id,
+    role: orgUser.role,
+    authOrgId,
+  };
 }

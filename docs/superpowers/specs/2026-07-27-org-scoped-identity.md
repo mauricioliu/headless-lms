@@ -102,14 +102,19 @@ Staff-only surfaces must filter `role != 'student'` explicitly. Today that separ
 
 ## Invitation flow
 
-Unchanged in shape. `createInvite` currently requires a pending student row to pre-exist for `role = 'student'` (`core/organizations/service.ts:134-137`) but does no such check for staff. After the refactor both roles create a pending `org_users` row at invite time, so the branch collapses:
+**An invitation creates no participation row.** Everything it needs is in the token; the row is minted at acceptance, when the person is known.
 
-1. Admin invites `email` with `role`.
-2. `org_users` row created with `user_id = NULL`, role, email, name.
-3. Invitation minted with the domain token, emailed.
-4. On acceptance: better-auth account exists → `users` row exists (created by the auth hook) → `claimOrgUser` stamps `user_id`. For staff, `orgAdmin.grantMembership` still runs so better-auth's `member` record is created, and the `afterAddMember` hook stamps `external_id` onto the existing row instead of inserting a new one.
+`createInvite` currently requires a pending student row to pre-exist for `role = 'student'` (`core/organizations/service.ts:134-137`) and does no such check for staff. Both branches go away:
 
-Admin-created students (`POST /students`) keep working: they create a pending `org_users` row exactly as before, just in the renamed table.
+1. Admin invites `email` with `role`. An invitation row + hashed token, nothing else.
+2. On acceptance the better-auth account exists, so the `users` row exists (created by the auth hook at `adapters/auth/index.ts:229-241`). Resolve it, then **claim-or-create** the participation:
+   - a pending `org_users` row for `(org_id, email)` exists → stamp `user_id` onto it (preserves entitlements already granted against that row),
+   - none exists → insert one with the token's role.
+3. For staff roles, `orgAdmin.grantMembership` still runs so better-auth's `member` record is created; its `afterAddMember` hook stamps `external_id` onto the row from step 2 rather than inserting a second one.
+
+The pending row therefore has exactly one origin: **roster creation by an admin**, never an invite. `POST /students` creates it (`user_id` NULL) so the participant can be granted entitlements before they ever log in — `apps/admin/src/app/(dashboard)/students/actions.ts:20-29` sends the invitation as a separate, optional step (`sendInvite: false` adds a student with no invitation at all). Staff invites have no roster equivalent, so their row is always created fresh at acceptance.
+
+This is why `org_users.user_id` is nullable: not because invitations need a placeholder, but because an admin-built roster legitimately predates any account.
 
 ## Touchpoints
 
@@ -181,20 +186,13 @@ Complete inventory. Non-test source unless noted.
 - `docs/architecture.md`
 - `AGENTS.md` — multi-tenancy section describes `students` as org-scoped identity
 
-## Data migration
+## Migration strategy
 
-Single migration, forward-only. The baseline is `0000_baseline.sql` and this is pre-1.0, but existing deployments exist, so the migration must preserve data.
+**No incremental migration. `0000_baseline.sql` is regenerated from the final schema and the local dev database is rebuilt from it.** Pre-1.0, no deployment to preserve — a single honest baseline beats a chain of migrations describing a shape that never shipped.
 
-1. Rename `memberships` → `org_users`; rename constraints/indexes.
-2. Add `email`, `first_name`, `last_name`, `updated_at` to `org_users`; make `user_id` and `external_id` nullable.
-3. Backfill `org_users.email/first_name/last_name` from the joined `users` row (staff `display_name` splits on first space; remainder → `last_name`, empty string when absent).
-4. Insert one `org_users` row per `students` row: `role = 'student'`, `user_id` = the `users.id` whose `external_id` matches `students.external_id` (NULL when the student is pending), `external_id = NULL`, preserving `students.id` as `org_users.id` so dependent FKs need no value rewrite.
-5. Rename `entitlements.student_id` → `org_user_id`, `progress_records.student_id` → `org_user_id`, `course_assignments.membership_id` → `org_user_id`; retarget composite FKs; add the missing `progress_records` FK.
-6. Drop `students`.
+Concretely: delete `packages/server/drizzle/` (SQL + `meta/`), run `pnpm db:generate` against the finished schema to emit a fresh `0000_baseline.sql`, then drop and recreate the dev database from it.
 
-Step 4 preserving `students.id` (prefix `stu_`) means existing student ids remain valid in `org_users`, so entitlements/progress rows keep pointing at the right participant. New rows get `orm_`. Mixed prefixes are cosmetic; no code branches on the prefix.
-
-A pre-existing human who is both staff in org A and a student in org A would collide on `UNIQUE (org_id, email)`. The migration must detect this and fail loudly with the offending rows rather than silently dropping one.
+This also sidesteps drizzle-kit's interactive rename prompt, which cannot render without a TTY.
 
 ## Verification
 

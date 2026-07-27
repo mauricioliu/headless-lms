@@ -96,7 +96,7 @@ export class ProgressServiceImpl implements ProgressService {
         ...modules.map((m) => m.id),
         courseId,
       ];
-      await scope.progress.findByTargets(orgId, input.studentId, lockIds, { forUpdate: true });
+      await scope.progress.findByTargets(orgId, input.orgUserId, lockIds, { forUpdate: true });
       const events: NewProgressEvent[] = [];
       let record = await this.ensureActivityRecord(orgId, input, scope, events);
       const state = mergeReports(record.position, input.reports);
@@ -125,7 +125,7 @@ export class ProgressServiceImpl implements ProgressService {
     events: NewProgressEvent[],
   ): Promise<ProgressRecord> {
     const target: ProgressTarget = {
-      studentId: input.studentId,
+      orgUserId: input.orgUserId,
       targetType: 'activity',
       targetId: input.activityId,
     };
@@ -136,7 +136,7 @@ export class ProgressServiceImpl implements ProgressService {
     const record = await scope.progress.insert(orgId, {
       id: genId('progress'),
       orgId,
-      studentId: input.studentId,
+      orgUserId: input.orgUserId,
       targetType: 'activity',
       targetId: input.activityId,
       startedAt: this.now(),
@@ -172,7 +172,7 @@ export class ProgressServiceImpl implements ProgressService {
       activityIds: m.activities.filter((a) => isActivityPublished(a.settings)).map((a) => a.id),
     }));
     const allIds = byModule.flatMap((m) => m.activityIds);
-    const records = await scope.progress.findByTargets(orgId, input.studentId, allIds);
+    const records = await scope.progress.findByTargets(orgId, input.orgUserId, allIds);
     const done = new Set(
       records.filter((r) => r.targetType === 'activity' && r.completedAt).map((r) => r.targetId),
     );
@@ -193,7 +193,7 @@ export class ProgressServiceImpl implements ProgressService {
     scope: ProgressWriteScope,
     events: NewProgressEvent[],
   ): Promise<void> {
-    const target: ProgressTarget = { studentId: input.studentId, targetType, targetId };
+    const target: ProgressTarget = { orgUserId: input.orgUserId, targetType, targetId };
     let existing = await scope.progress.findByTarget(orgId, target);
     if (existing?.completedAt) {
       return;
@@ -202,7 +202,7 @@ export class ProgressServiceImpl implements ProgressService {
       const inserted = await scope.progress.insert(orgId, {
         id: genId('progress'),
         orgId,
-        studentId: input.studentId,
+        orgUserId: input.orgUserId,
         targetType,
         targetId,
         startedAt: this.now(),
@@ -231,7 +231,7 @@ export class ProgressServiceImpl implements ProgressService {
     return this.repo.findByTarget(orgId, target);
   }
 
-  listByTargets(orgId: string, studentId: string, targetIds: string[]): Promise<ProgressRecord[]> {
-    return this.repo.findByTargets(orgId, studentId, targetIds);
+  listByTargets(orgId: string, orgUserId: string, targetIds: string[]): Promise<ProgressRecord[]> {
+    return this.repo.findByTargets(orgId, orgUserId, targetIds);
   }
 }

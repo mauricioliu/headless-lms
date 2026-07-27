@@ -21,7 +21,7 @@ export type ContentRef = z.infer<typeof ContentRef>;
 
 export const Entitlement = z.object({
   id: z.string(),
-  studentId: z.string(),
+  orgUserId: z.string(),
   firstName: z.string(),
   lastName: z.string(),
   studentEmail: z.string(),
@@ -38,7 +38,7 @@ export const EntitlementsQuery = ListQuery.extend({
   status: EntitlementStatus.optional(),
   source: z.string().optional(),
   /** Scope to a single student (used by the student detail view). */
-  studentId: z.string().optional(),
+  orgUserId: z.string().optional(),
   /** Scope to a single piece of content. */
   contentId: z.string().optional(),
   /** Scope to one content type. */
@@ -50,7 +50,7 @@ export const EntitlementsPage = paginated(Entitlement);
 export type EntitlementsPage = z.infer<typeof EntitlementsPage>;
 
 export const GrantEntitlement = z.object({
-  studentId: z.string(),
+  orgUserId: z.string(),
   contentId: z.string(),
   expiresAt: z.string().nullable(),
 });

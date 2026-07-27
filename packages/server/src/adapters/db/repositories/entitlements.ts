@@ -1,5 +1,5 @@
 // entitlements — Drizzle repository (implements the core outbound port). Org-scoped.
-// Rows are denormalized at read time by joining students (first/last name + email),
+// Rows are denormalized at read time by joining the participant (first/last name + email),
 // content_items (type) and the concrete content tables (title) — nothing beyond the
 // content id is stored on the grant. The "expired" status is DERIVED in SQL from
 // expires_at so no cron is needed to flip rows; the derived value is used both in
@@ -16,7 +16,7 @@ import type {
   Page,
 } from '../../../core/entitlements/model.js';
 import { entitlements } from '../schema/index.js';
-import { students } from '../schema/identity.js';
+import { orgUsers } from '../schema/organizations.js';
 import { contentItems, courses } from '../schema/content.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
@@ -38,9 +38,9 @@ const contentTitle = sql<string>`coalesce(${courses.title})`;
 // expression so the ordering matches the displayed value; `contentTitle` on the
 // coalesced join expression.
 const sortColumns = {
-  firstName: students.firstName,
-  lastName: students.lastName,
-  studentEmail: students.email,
+  firstName: orgUsers.firstName,
+  lastName: orgUsers.lastName,
+  studentEmail: orgUsers.email,
   contentTitle,
   status: derivedStatus,
   grantedAt: entitlements.grantedAt,
@@ -50,10 +50,10 @@ const sortColumns = {
 
 const selection = {
   id: entitlements.id,
-  studentId: entitlements.studentId,
-  firstName: students.firstName,
-  lastName: students.lastName,
-  studentEmail: students.email,
+  orgUserId: entitlements.orgUserId,
+  firstName: orgUsers.firstName,
+  lastName: orgUsers.lastName,
+  studentEmail: orgUsers.email,
   contentId: entitlements.contentId,
   contentType: contentItems.type,
   contentTitle,
@@ -65,7 +65,7 @@ const selection = {
 
 interface Row {
   id: string;
-  studentId: string;
+  orgUserId: string;
   firstName: string;
   lastName: string;
   studentEmail: string;
@@ -81,7 +81,7 @@ interface Row {
 function toEntitlement(row: Row): Entitlement {
   return {
     id: row.id,
-    studentId: row.studentId,
+    orgUserId: row.orgUserId,
     firstName: row.firstName,
     lastName: row.lastName,
     studentEmail: row.studentEmail,
@@ -99,15 +99,15 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
     private readonly logger: Logger = noopLogger,
   ) {}
 
-  /** entitlements → students + content_items (type) + one LEFT JOIN per
+  /** entitlements → org_users + content_items (type) + one LEFT JOIN per
    *  concrete content table (title). */
   private joined(where: SQL | undefined) {
     return this.db
       .select(selection)
       .from(entitlements)
       .innerJoin(
-        students,
-        and(eq(students.orgId, entitlements.orgId), eq(students.id, entitlements.studentId)),
+        orgUsers,
+        and(eq(orgUsers.orgId, entitlements.orgId), eq(orgUsers.id, entitlements.orgUserId)),
       )
       .innerJoin(
         contentItems,
@@ -128,8 +128,8 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
     if (query.source) {
       conditions.push(eq(entitlements.source, query.source));
     }
-    if (query.studentId) {
-      conditions.push(eq(entitlements.studentId, query.studentId));
+    if (query.orgUserId) {
+      conditions.push(eq(entitlements.orgUserId, query.orgUserId));
     }
     if (query.contentId) {
       conditions.push(eq(entitlements.contentId, query.contentId));
@@ -141,9 +141,9 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
       const pattern = `%${query.search}%`;
       conditions.push(
         or(
-          ilike(students.firstName, pattern),
-          ilike(students.lastName, pattern),
-          ilike(students.email, pattern),
+          ilike(orgUsers.firstName, pattern),
+          ilike(orgUsers.lastName, pattern),
+          ilike(orgUsers.email, pattern),
           ilike(contentTitle, pattern),
         ) as SQL,
       );
@@ -169,8 +169,8 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
       .select({ total: sql<number>`cast(count(*) as int)` })
       .from(entitlements)
       .innerJoin(
-        students,
-        and(eq(students.orgId, entitlements.orgId), eq(students.id, entitlements.studentId)),
+        orgUsers,
+        and(eq(orgUsers.orgId, entitlements.orgId), eq(orgUsers.id, entitlements.orgUserId)),
       )
       .innerJoin(
         contentItems,
@@ -195,7 +195,7 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
       .insert(entitlements)
       .values({
         orgId,
-        studentId: input.studentId,
+        orgUserId: input.orgUserId,
         contentId: input.contentId,
         status: 'active',
         source: 'manual',
@@ -203,7 +203,7 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
         expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
       })
       .onConflictDoUpdate({
-        target: [entitlements.orgId, entitlements.studentId, entitlements.contentId],
+        target: [entitlements.orgId, entitlements.orgUserId, entitlements.contentId],
         set: {
           status: 'active',
           source: 'manual',

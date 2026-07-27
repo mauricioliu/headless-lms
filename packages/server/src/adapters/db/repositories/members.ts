@@ -5,7 +5,7 @@ import { and, eq, ne } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { MembersRepository, MemberRecord } from '../../../core/organizations/index.js';
 import type { Member, MembersQuery, Page, StaffRole } from '../../../core/organizations/index.js';
-import { isStaffRole } from '../../../core/organizations/index.js';
+import { isStaffRole, STUDENT_ROLE } from '../../../core/organizations/index.js';
 import { orgUsers, invitations } from '../schema/organizations.js';
 import { users } from '../schema/identity.js';
 import { user } from '../../auth/schema.js';
@@ -37,20 +37,24 @@ export class DrizzleMembersRepository implements MembersRepository {
   ) {}
 
   private async loadAll(orgId: string): Promise<MemberRecord[]> {
+    // Learners share this table now, so the role filter is what keeps them off
+    // the staff list. Name/email come from the participation rather than the
+    // person: a roster entry has no person row until its invite is accepted.
     const memberRows = await this.db
       .select({
         id: orgUsers.id,
-        name: users.displayName,
-        email: users.email,
+        firstName: orgUsers.firstName,
+        lastName: orgUsers.lastName,
+        email: orgUsers.email,
         image: user.image,
         role: orgUsers.role,
         joinedAt: orgUsers.createdAt,
         memberExternalId: orgUsers.externalId,
       })
       .from(orgUsers)
-      .innerJoin(users, eq(users.id, orgUsers.userId))
+      .leftJoin(users, eq(users.id, orgUsers.userId))
       .leftJoin(user, eq(user.id, users.externalId))
-      .where(eq(orgUsers.orgId, orgId));
+      .where(and(eq(orgUsers.orgId, orgId), ne(orgUsers.role, STUDENT_ROLE)));
 
     // Student invitations live in the same table but belong to the students
     // surface, not the members list.
@@ -66,13 +70,13 @@ export class DrizzleMembersRepository implements MembersRepository {
         and(
           eq(invitations.orgId, orgId),
           eq(invitations.status, 'pending'),
-          ne(invitations.role, 'student'),
+          ne(invitations.role, STUDENT_ROLE),
         ),
       );
 
     const members: MemberRecord[] = memberRows.map((m) => ({
       id: m.id,
-      name: m.name,
+      name: `${m.firstName} ${m.lastName}`.trim(),
       email: m.email,
       image: m.image ?? null,
       role: roleOf(m.role),

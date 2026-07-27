@@ -12,6 +12,7 @@ import {
   StudentsQuery,
 } from '@headless-lms/api-contract';
 import { NotFoundError } from '../../core/shared/errors.js';
+import { STUDENT_ROLE } from '../../core/organizations/index.js';
 import type { Container } from '../../app/container.js';
 import { resolveScope } from '../scope.js';
 
@@ -70,8 +71,9 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
     },
     handler: async (req, reply) => {
       const scope = await resolveScope(container, req);
-      const created = await container.identity.createStudent({
+      const created = await container.organizations.createParticipant({
         orgId: scope.orgId,
+        role: STUDENT_ROLE,
         email: req.body.email,
         firstName: req.body.firstName,
         lastName: req.body.lastName,
@@ -97,7 +99,7 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
     },
     handler: async (req, reply) => {
       const scope = await resolveScope(container, req);
-      await container.identity.deleteStudent(scope.orgId, req.params.id);
+      await container.organizations.deleteParticipant(scope.orgId, req.params.id);
       return reply.code(204).send();
     },
   });

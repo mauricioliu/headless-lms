@@ -35,7 +35,7 @@ export class EntitlementsServiceImpl implements EntitlementsService {
     this.logger.info('entitlement granted', {
       orgId,
       entitlementId: entitlement.id,
-      studentId: entitlement.studentId,
+      orgUserId: entitlement.orgUserId,
       contentId: entitlement.content.id,
       contentType: entitlement.content.type,
     });

@@ -111,14 +111,14 @@ export function registerTools(
   // Lists entitlements. Requires entitlements:read scope.
   // Owner/admin/instructor (view_student_progress !== false) can see any student.
   // A student (consume_content) is restricted to their own entitlements by
-  // defaulting studentId to principal.studentId when not provided.
+  // defaulting orgUserId to principal.orgUserId when not provided.
   server.registerTool(
     'list_entitlements',
     {
       title: 'List Entitlements',
       description: 'List entitlements for a student',
       inputSchema: z.object({
-        studentId: z.string().optional(),
+        orgUserId: z.string().optional(),
         contentId: z.string().optional(),
         page: z.number().int().positive().default(1),
         pageSize: z.number().int().positive().max(100).default(20),
@@ -136,13 +136,13 @@ export function registerTools(
         return forbidden();
       }
 
-      const resolvedStudentId = args.studentId;
+      const resolvedStudentId = args.orgUserId;
 
       try {
         const page = await container.entitlements.list(principal.orgId, {
           page: args.page,
           pageSize: args.pageSize,
-          studentId: resolvedStudentId,
+          orgUserId: resolvedStudentId,
           contentId: args.contentId,
         });
         return json(page);
@@ -161,7 +161,7 @@ export function registerTools(
       title: 'Grant Entitlement',
       description: 'Grant a student access to a piece of content (e.g. a course)',
       inputSchema: z.object({
-        studentId: z.string().min(1),
+        orgUserId: z.string().min(1),
         contentId: z.string().min(1),
         expiresAt: z.string().nullable().optional(),
       }),
@@ -172,7 +172,7 @@ export function registerTools(
       }
       try {
         const entitlement = await container.entitlements.grant(principal.orgId, {
-          studentId: args.studentId,
+          orgUserId: args.orgUserId,
           contentId: args.contentId,
           expiresAt: args.expiresAt ?? null,
         });
@@ -192,7 +192,7 @@ export function registerTools(
       title: 'Get Student Progress',
       description: 'Get overall progress summary for a student',
       inputSchema: z.object({
-        studentId: z.string(),
+        orgUserId: z.string(),
       }),
     },
     async (args) => {
@@ -200,12 +200,12 @@ export function registerTools(
         return forbidden();
       }
       try {
-        const student = await container.reporting.students.get(principal.orgId, args.studentId);
+        const student = await container.reporting.students.get(principal.orgId, args.orgUserId);
         if (!student) {
-          return notFound('student', args.studentId);
+          return notFound('student', args.orgUserId);
         }
         return json({
-          studentId: args.studentId,
+          orgUserId: args.orgUserId,
           avgProgress: student.avgProgress,
           entitlementCount: student.entitlementCount,
         });

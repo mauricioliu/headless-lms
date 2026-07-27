@@ -14,7 +14,7 @@ function toRecord(row: Row): ProgressRecord {
   return {
     id: row.id,
     orgId: row.orgId,
-    studentId: row.studentId,
+    orgUserId: row.orgUserId,
     targetType: row.targetType as ProgressTargetType,
     targetId: row.targetId,
     startedAt: row.startedAt.toISOString(),
@@ -35,7 +35,7 @@ export class DrizzleProgressRepository implements ProgressRepository {
       .values({
         id: record.id,
         orgId,
-        studentId: record.studentId,
+        orgUserId: record.orgUserId,
         targetType: record.targetType,
         targetId: record.targetId,
         startedAt: new Date(record.startedAt),
@@ -54,7 +54,7 @@ export class DrizzleProgressRepository implements ProgressRepository {
       .where(
         and(
           eq(progressRecords.orgId, orgId),
-          eq(progressRecords.studentId, target.studentId),
+          eq(progressRecords.orgUserId, target.orgUserId),
           eq(progressRecords.targetType, target.targetType),
           eq(progressRecords.targetId, target.targetId),
         ),
@@ -65,7 +65,7 @@ export class DrizzleProgressRepository implements ProgressRepository {
 
   async findByTargets(
     orgId: string,
-    studentId: string,
+    orgUserId: string,
     targetIds: string[],
     opts?: { forUpdate?: boolean },
   ): Promise<ProgressRecord[]> {
@@ -78,7 +78,7 @@ export class DrizzleProgressRepository implements ProgressRepository {
       .where(
         and(
           eq(progressRecords.orgId, orgId),
-          eq(progressRecords.studentId, studentId),
+          eq(progressRecords.orgUserId, orgUserId),
           inArray(progressRecords.targetId, targetIds),
         ),
       );

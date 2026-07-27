@@ -15,7 +15,7 @@ export interface ProgressRecord {
   readonly id: string;
   readonly orgId: string;
   /** The learner's `students.id` (global, not org-scoped). */
-  readonly studentId: string;
+  readonly orgUserId: string;
   readonly targetType: ProgressTargetType;
   readonly targetId: string;
   startedAt: string;
@@ -29,7 +29,7 @@ export type ProgressId = string;
 
 /** Identifies a single target a student can make progress against. */
 export interface ProgressTarget {
-  studentId: string;
+  orgUserId: string;
   targetType: ProgressTargetType;
   targetId: string;
 }
@@ -45,7 +45,7 @@ export interface ProgressReportItem {
 }
 
 export interface ReportProgressInput {
-  studentId: string;
+  orgUserId: string;
   activityId: string;
   reports: ProgressReportItem[];
 }

@@ -1,5 +1,5 @@
 // identity context — public surface.
 export { IdentityServiceImpl } from './service.js';
-export type { IdentityService, UserProvisioner, StudentProvisioner } from './ports.js';
-export type { User, Student } from './model.js';
-export type { UserId, StudentId, RegisterUserInput, RegisterStudentInput } from './types.js';
+export type { IdentityService, UserProvisioner, UserResolver } from './ports.js';
+export type { User } from './model.js';
+export type { UserId, RegisterUserInput } from './types.js';

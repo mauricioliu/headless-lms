@@ -236,13 +236,9 @@ export async function buildContainer(
   };
 
   // Services (inject repos + peer services in dependency order)
-  const identityUow = new DrizzleUnitOfWork(db, (tx) => ({
-    identity: new DrizzleIdentityRepository(tx, identityLogger),
-    outbox: new DrizzleOutboxAppender(tx, identityLogger),
-  }));
+  // Identity owns only the person row — no events, so no unit of work.
   const identity = new IdentityServiceImpl(
     new DrizzleIdentityRepository(db, identityLogger),
-    identityUow,
     identityLogger,
   );
   const organizationsUow = new DrizzleUnitOfWork(db, (tx) => ({
@@ -253,7 +249,7 @@ export async function buildContainer(
     new DrizzleOrganizationsRepository(db, organizationsLogger),
     new DrizzleMembersRepository(db, organizationsLogger),
     orgAdminProvider,
-    // Identity slice: the invite lifecycle stamps/links student rows.
+    // Identity slice: invite acceptance resolves the accepting account to its person.
     identity,
     organizationsUow,
     organizationsLogger,

@@ -30,9 +30,19 @@ export async function buildPrincipal(
     throw new PrincipalError('no domain user for auth user', 401);
   }
 
-  const orgUser = await container.organizations.getOrgUserByUser(user.id);
+  // An OAuth bearer token carries no organization, so this interface picks its
+  // own rule: act only when the person participates in exactly one org, and
+  // refuse otherwise rather than guess. Binding the org into the token at
+  // consent time would remove the ambiguity instead of refusing it.
+  const orgUsers = await container.organizations.getOrgUsersForUser(user.id);
+  const orgUser = orgUsers.length === 1 ? orgUsers[0] : undefined;
   if (!orgUser) {
-    throw new PrincipalError('user has no org orgUser', 403);
+    throw new PrincipalError(
+      orgUsers.length === 0
+        ? 'user participates in no organization'
+        : 'token does not identify which organization to act in',
+      403,
+    );
   }
 
   const assignedCourseIds = await container.organizations.assignedCourseIds(
@@ -44,9 +54,8 @@ export async function buildPrincipal(
   const scopes = token.scopes.split(' ').filter(Boolean);
 
   return {
-    // Staff user id (orgUser-bearing principal); kept under `studentId` for
-    // the tool layer's existing self-scope defaulting.
-    studentId: user.id,
+    // The participation acted as — the tool layer's self-scope default.
+    orgUserId: orgUser.id,
     orgId: orgUser.orgId,
     role: parseRole(orgUser.role),
     assignedCourseIds,

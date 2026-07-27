@@ -34,7 +34,7 @@ export class DrizzleDashboardRepository implements DashboardReportRepository {
     const [entitlementCounts] = await this.db
       .select({
         activeEntitlements: sql<number>`count(*)`,
-        activeStudents: sql<number>`count(distinct ${entitlements.studentId})`,
+        activeStudents: sql<number>`count(distinct ${entitlements.orgUserId})`,
         expiringSoon: sql<number>`count(*) filter (where ${entitlements.expiresAt} is not null and ${entitlements.expiresAt} < now() + interval '14 days')`,
       })
       .from(entitlements)

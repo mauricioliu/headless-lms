@@ -21,14 +21,14 @@ export class LearnReportServiceImpl implements LearnReportService {
     private readonly logger: Logger = noopLogger,
   ) {}
 
-  async listCourses(orgId: string, studentId: string): Promise<Course[]> {
-    const refs = await this.reader.activeRefs(orgId, studentId);
+  async listCourses(orgId: string, orgUserId: string): Promise<Course[]> {
+    const refs = await this.reader.activeRefs(orgId, orgUserId);
     const courses = await Promise.all(refs.map((ref) => this.content.get(ref.orgId, ref.courseId)));
     return courses.filter((c): c is Course => c !== null && c.status === 'published');
   }
 
-  async getCourse(orgId: string, studentId: string, courseId: string): Promise<Course | null> {
-    const ref = await this.reader.activeRef(orgId, studentId, courseId);
+  async getCourse(orgId: string, orgUserId: string, courseId: string): Promise<Course | null> {
+    const ref = await this.reader.activeRef(orgId, orgUserId, courseId);
     if (!ref) {
       return null;
     }
@@ -36,8 +36,8 @@ export class LearnReportServiceImpl implements LearnReportService {
     return course && course.status === 'published' ? course : null;
   }
 
-  async listModules(orgId: string, studentId: string, courseId: string): Promise<Module[] | null> {
-    const ref = await this.reader.activeRef(orgId, studentId, courseId);
+  async listModules(orgId: string, orgUserId: string, courseId: string): Promise<Module[] | null> {
+    const ref = await this.reader.activeRef(orgId, orgUserId, courseId);
     if (!ref) {
       return null;
     }
@@ -50,10 +50,10 @@ export class LearnReportServiceImpl implements LearnReportService {
 
   async courseProgress(
     orgId: string,
-    studentId: string,
+    orgUserId: string,
     courseId: string,
   ): Promise<CourseProgressView | null> {
-    const ref = await this.reader.activeRef(orgId, studentId, courseId);
+    const ref = await this.reader.activeRef(orgId, orgUserId, courseId);
     if (!ref) {
       return null;
     }
@@ -61,7 +61,7 @@ export class LearnReportServiceImpl implements LearnReportService {
     const ids = modules.flatMap((m) =>
       m.activities.filter((a) => isActivityPublished(a.settings)).map((a) => a.id),
     );
-    const records = await this.progress.listByTargets(ref.orgId, studentId, ids);
+    const records = await this.progress.listByTargets(ref.orgId, orgUserId, ids);
     const activities: CourseProgressView['activities'] = {};
     const positions: CourseProgressView['positions'] = {};
     let done = 0;
@@ -78,7 +78,7 @@ export class LearnReportServiceImpl implements LearnReportService {
       }
     }
     const courseRecord = await this.progress.get(ref.orgId, {
-      studentId,
+      orgUserId,
       targetType: 'course',
       targetId: courseId,
     });

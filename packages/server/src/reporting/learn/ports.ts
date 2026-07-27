@@ -2,16 +2,16 @@
 import type { Course, Module, CourseRef, CourseProgressView } from './model.js';
 
 /**
- * Inbound: the student-scoped read use-cases. Scoped by `(orgId, studentId)` —
+ * Inbound: the student-scoped read use-cases. Scoped by `(orgId, orgUserId)` —
  * the portal org resolved at the boundary. `null` ⇒ not enrolled (→ 404).
  */
 export interface LearnReportService {
-  listCourses(orgId: string, studentId: string): Promise<Course[]>;
-  getCourse(orgId: string, studentId: string, courseId: string): Promise<Course | null>;
-  listModules(orgId: string, studentId: string, courseId: string): Promise<Module[] | null>;
+  listCourses(orgId: string, orgUserId: string): Promise<Course[]>;
+  getCourse(orgId: string, orgUserId: string, courseId: string): Promise<Course | null>;
+  listModules(orgId: string, orgUserId: string, courseId: string): Promise<Module[] | null>;
   courseProgress(
     orgId: string,
-    studentId: string,
+    orgUserId: string,
     courseId: string,
   ): Promise<CourseProgressView | null>;
 }
@@ -23,6 +23,6 @@ export interface LearnReportService {
  * Course/Module payload.
  */
 export interface LearnEntitlementReader {
-  activeRefs(orgId: string, studentId: string): Promise<CourseRef[]>;
-  activeRef(orgId: string, studentId: string, courseId: string): Promise<CourseRef | null>;
+  activeRefs(orgId: string, orgUserId: string): Promise<CourseRef[]>;
+  activeRef(orgId: string, orgUserId: string, courseId: string): Promise<CourseRef | null>;
 }

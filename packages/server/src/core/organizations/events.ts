@@ -4,4 +4,7 @@ export type {
   InvitationCreated,
   InvitationCanceled,
   InvitationAccepted,
+  StudentCreated,
+  StudentDeleted,
+  StudentLinked,
 } from '@headless-lms/types';

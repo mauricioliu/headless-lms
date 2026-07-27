@@ -1,61 +1,24 @@
 // identity context — ports.
-import type { User, Student } from './model.js';
-import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
-import type { RegisterUserInput, RegisterStudentInput, CreateStudentInput } from './types.js';
+import type { User } from './model.js';
+import type { RegisterUserInput } from './types.js';
 
-// Capabilities used by the auth adapter to provision a domain identity when a
-// credential user is created — narrow slices of the identity service.
+// Capability used by the auth adapter to provision a domain person when a
+// credential user is created — a narrow slice of the identity service.
 export interface UserProvisioner {
   registerUser(input: RegisterUserInput): Promise<User>;
 }
 
-export interface StudentProvisioner {
-  registerStudent(input: RegisterStudentInput): Promise<Student>;
+/** Resolves an auth account to the domain person. Used by the organizations
+ *  context at invite acceptance, so core never reads the auth schema. */
+export interface UserResolver {
+  getUserByExternalId(externalId: string): Promise<User | null>;
 }
 
 // Inbound port (use cases the service exposes).
-export interface IdentityService extends UserProvisioner, StudentProvisioner {
-  getUserByExternalId(externalId: string): Promise<User | null>;
-  // Students are org-scoped: the same login (externalId) resolves independently
-  // per org, so the portal org is required to pick the right row.
-  getStudentByExternalId(orgId: string, externalId: string): Promise<Student | null>;
-  // The org (as its better-auth external id) a login belongs to as a student, so
-  // the auth layer can stamp it onto the session at login. Null when the login is
-  // not a student (e.g. staff) or the row is ambiguous across orgs.
-  studentOrgExternalId(externalId: string): Promise<string | null>;
-  createStudent(input: CreateStudentInput): Promise<Student>;
-  getStudentById(orgId: string, id: string): Promise<Student | null>;
-  deleteStudent(orgId: string, id: string): Promise<void>;
-  /** A student row exists for (org, email) with no linked account yet. */
-  hasPendingStudent(orgId: string, email: string): Promise<boolean>;
-  /** Links the account to the org's pending row; false when none was pending. */
-  linkPendingStudent(
-    orgId: string,
-    email: string,
-    invitationId: string,
-    externalId: string,
-  ): Promise<boolean>;
-}
+export interface IdentityService extends UserProvisioner, UserResolver {}
 
 // Outbound port (persistence contract the repository fulfils).
-/** Atomic write scope: tx-bound repo + outbox appender, one transaction. */
-export interface IdentityWriteScope {
-  identity: IdentityRepository;
-  outbox: OutboxAppender;
-}
-export type IdentityUnitOfWork = UnitOfWork<IdentityWriteScope>;
-
 export interface IdentityRepository {
   insertUser(input: RegisterUserInput): Promise<User>;
   findUserByExternalId(externalId: string): Promise<User | null>;
-  insertStudent(input: RegisterStudentInput): Promise<Student>;
-  findStudentByExternalId(orgId: string, externalId: string): Promise<Student | null>;
-  findStudentOrgExternalId(externalId: string): Promise<string | null>;
-  findStudentByEmail(orgId: string, email: string): Promise<Student | null>;
-  findStudentById(orgId: string, id: string): Promise<Student | null>;
-  insertPendingStudent(input: CreateStudentInput): Promise<Student>;
-  /** Deletes the student and its dependent rows; false when no row matched. */
-  deleteStudent(orgId: string, id: string): Promise<boolean>;
-  /** Links the org's pending (unlinked) row for this email; returns rows updated. */
-  linkPendingStudent(orgId: string, email: string, externalId: string): Promise<number>;
 }

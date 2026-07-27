@@ -18,17 +18,17 @@ export class DrizzleLearnRepository implements LearnEntitlementReader {
     private readonly logger: Logger = noopLogger,
   ) {}
 
-  private baseFilters(orgId: string, studentId: string): SQL {
+  private baseFilters(orgId: string, orgUserId: string): SQL {
     return and(
       eq(entitlements.orgId, orgId),
-      eq(entitlements.studentId, studentId),
+      eq(entitlements.orgUserId, orgUserId),
       eq(entitlements.status, 'active'),
       or(isNull(entitlements.expiresAt), gt(entitlements.expiresAt, sql`now()`))!,
       eq(courses.status, 'published'),
     )!;
   }
 
-  async activeRefs(orgId: string, studentId: string): Promise<CourseRef[]> {
+  async activeRefs(orgId: string, orgUserId: string): Promise<CourseRef[]> {
     const rows = await this.db
       .select({ orgId: entitlements.orgId, courseId: entitlements.contentId })
       .from(entitlements)
@@ -36,11 +36,11 @@ export class DrizzleLearnRepository implements LearnEntitlementReader {
         courses,
         and(eq(courses.orgId, entitlements.orgId), eq(courses.id, entitlements.contentId)),
       )
-      .where(this.baseFilters(orgId, studentId));
+      .where(this.baseFilters(orgId, orgUserId));
     return rows;
   }
 
-  async activeRef(orgId: string, studentId: string, courseId: string): Promise<CourseRef | null> {
+  async activeRef(orgId: string, orgUserId: string, courseId: string): Promise<CourseRef | null> {
     const [row] = await this.db
       .select({ orgId: entitlements.orgId, courseId: entitlements.contentId })
       .from(entitlements)
@@ -48,7 +48,7 @@ export class DrizzleLearnRepository implements LearnEntitlementReader {
         courses,
         and(eq(courses.orgId, entitlements.orgId), eq(courses.id, entitlements.contentId)),
       )
-      .where(and(this.baseFilters(orgId, studentId), eq(entitlements.contentId, courseId)))
+      .where(and(this.baseFilters(orgId, orgUserId), eq(entitlements.contentId, courseId)))
       .limit(1);
     return row ?? null;
   }

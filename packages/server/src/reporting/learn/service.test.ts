@@ -10,7 +10,7 @@ function fakeProgress(records: ProgressRecord[]): ProgressService {
     get: async (_orgId, target) =>
       records.find((r) => r.targetType === target.targetType && r.targetId === target.targetId) ??
       null,
-    listByTargets: async (_orgId, _studentId, targetIds) =>
+    listByTargets: async (_orgId, _orgUserId, targetIds) =>
       records.filter((r) => r.targetType === 'activity' && targetIds.includes(r.targetId)),
   };
 }
@@ -21,7 +21,7 @@ function progressRecord(
   return {
     id: `p_${partial.targetId}`,
     orgId: 'o1',
-    studentId: 'stu_1',
+    orgUserId: 'stu_1',
     startedAt: '2026-07-23T09:00:00Z',
     position: null,
     completedAt: null,

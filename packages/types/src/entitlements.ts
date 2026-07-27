@@ -19,7 +19,7 @@ export interface ContentRef {
 
 export interface Entitlement {
   readonly id: string;
-  studentId: string;
+  orgUserId: string;
   firstName: string;
   lastName: string;
   studentEmail: string;
@@ -38,13 +38,13 @@ export interface EntitlementsQuery {
   sort?: string | undefined;
   status?: EntitlementStatus | undefined;
   source?: string | undefined;
-  studentId?: string | undefined;
+  orgUserId?: string | undefined;
   contentId?: string | undefined;
   type?: ContentType | undefined;
 }
 
 export interface GrantEntitlementInput {
-  studentId: string;
+  orgUserId: string;
   contentId: string;
   expiresAt: string | null;
 }

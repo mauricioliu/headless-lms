@@ -3,7 +3,7 @@ import { authorize } from './authz.js';
 import type { McpPrincipal } from './authz.js';
 
 const owner: McpPrincipal = {
-  studentId: 's1',
+  orgUserId: 's1',
   orgId: 'o1',
   role: 'owner',
   assignedCourseIds: ['c1', 'c2'],
@@ -11,7 +11,7 @@ const owner: McpPrincipal = {
 };
 
 const instructor: McpPrincipal = {
-  studentId: 's2',
+  orgUserId: 's2',
   orgId: 'o1',
   role: 'instructor',
   assignedCourseIds: ['c1'],

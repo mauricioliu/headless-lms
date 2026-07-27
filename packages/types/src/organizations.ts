@@ -28,12 +28,19 @@ export interface Organization {
 export interface OrgUser {
   readonly id: string;
   readonly orgId: string;
-  // The identity USER this participation belongs to.
-  readonly userId: string;
+  /**
+   * The identity USER this participation belongs to. NULL for a roster entry an
+   * admin created before the person ever logged in; stamped at invite acceptance.
+   */
+  readonly userId: string | null;
   readonly role: Role;
-  // Links to the better-auth member record.
-  readonly externalId: string;
+  readonly email: string;
+  readonly firstName: string;
+  readonly lastName: string;
+  /** better-auth member record id — staff only; NULL for students. */
+  readonly externalId: string | null;
   readonly createdAt: Date;
+  readonly updatedAt: Date;
 }
 
 export interface Invitation {
@@ -96,6 +103,22 @@ export interface AddOrgUserInput {
   // The identity USER this participation belongs to.
   userId: string;
   role: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+/**
+ * An admin adding someone to the org roster before they hold an account.
+ * The only way a participation exists with no person behind it — invitations
+ * create nothing, they are claimed at acceptance.
+ */
+export interface CreateParticipantInput {
+  orgId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
 }
 
 /** A request to mint an invitation: domain-owned token, emailed to the invitee. */
@@ -143,5 +166,35 @@ export interface InvitationAccepted extends DomainEvent {
   userExternalId: string;
 }
 
+// Participation events. The `student.*` type strings are the published
+// automation and integration contract, so they are kept verbatim even though
+// the payload is now the unified participation row.
+
+/** A participant was added to the roster (admin creation or portal registration). */
+export interface StudentCreated extends DomainEvent {
+  type: "student.created";
+  student: OrgUser;
+}
+
+/** A participant was removed; carries the last known state. */
+export interface StudentDeleted extends DomainEvent {
+  type: "student.deleted";
+  student: OrgUser;
+}
+
+/** A pending participant was claimed by an auth account (invite acceptance). */
+export interface StudentLinked extends DomainEvent {
+  type: "student.linked";
+  email: string;
+  invitationId: string;
+  userExternalId: string;
+}
+
 /** Domain events the organizations context emits. */
-export type OrganizationEvent = InvitationCreated | InvitationCanceled | InvitationAccepted;
+export type OrganizationEvent =
+  | InvitationCreated
+  | InvitationCanceled
+  | InvitationAccepted
+  | StudentCreated
+  | StudentDeleted
+  | StudentLinked;

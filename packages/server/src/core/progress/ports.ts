@@ -14,7 +14,7 @@ export interface ProgressService {
   /** Fetch the record for a single (student, target), or null. */
   get(orgId: string, target: ProgressTarget): Promise<ProgressRecord | null>;
   /** Records for a set of target ids — the read the reporting layer composes. */
-  listByTargets(orgId: string, studentId: string, targetIds: string[]): Promise<ProgressRecord[]>;
+  listByTargets(orgId: string, orgUserId: string, targetIds: string[]): Promise<ProgressRecord[]>;
 }
 
 // Outbound port (persistence contract the repository fulfils).
@@ -27,7 +27,7 @@ export interface ProgressRepository {
    *  row locks (ordered) to serialize concurrent reports for the same student+course. */
   findByTargets(
     orgId: string,
-    studentId: string,
+    orgUserId: string,
     targetIds: string[],
     opts?: { forUpdate?: boolean },
   ): Promise<ProgressRecord[]>;

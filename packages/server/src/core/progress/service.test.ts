@@ -19,15 +19,15 @@ function fakeRepo() {
         records.find(
           (r) =>
             r.orgId === orgId &&
-            r.studentId === target.studentId &&
+            r.orgUserId === target.orgUserId &&
             r.targetType === target.targetType &&
             r.targetId === target.targetId,
         ) ?? null
       );
     },
-    async findByTargets(orgId, studentId, targetIds) {
+    async findByTargets(orgId, orgUserId, targetIds) {
       return records.filter(
-        (r) => r.orgId === orgId && r.studentId === studentId && targetIds.includes(r.targetId),
+        (r) => r.orgId === orgId && r.orgUserId === orgUserId && targetIds.includes(r.targetId),
       );
     },
     async update(orgId, id, patch) {
@@ -98,7 +98,7 @@ function makeService(modules: Module[]) {
 }
 
 const input = (activityId: string, reports: ProgressReportItem[]) => ({
-  studentId: 's1',
+  orgUserId: 's1',
   activityId,
   reports,
 });
@@ -229,7 +229,7 @@ describe('ProgressService reads', () => {
   it('get and listByTargets return stored records', async () => {
     const { svc } = makeService(structure());
     await svc.report('org-1', input('a1', [{ completed: true }]));
-    const rec = await svc.get('org-1', { studentId: 's1', targetType: 'activity', targetId: 'a1' });
+    const rec = await svc.get('org-1', { orgUserId: 's1', targetType: 'activity', targetId: 'a1' });
     expect(rec?.completedAt).toBeTruthy();
     const list = await svc.listByTargets('org-1', 's1', ['a1', 'a2']);
     expect(list).toHaveLength(1);

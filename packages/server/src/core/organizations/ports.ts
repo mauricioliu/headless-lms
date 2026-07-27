@@ -12,6 +12,7 @@ import type {
   AcceptInviteInput,
   InviteRole,
   AssignCourseInput,
+  CreateParticipantInput,
 } from './types.js';
 
 /** Inbound HTTP headers carrying the session, forwarded to the auth provider. */
@@ -30,7 +31,11 @@ export interface OrganizationProvisioner {
   // Lets the adapter detect whether an org is already mirrored (used to make
   // the creator's orgUser hook resilient to firing before provisioning).
   getByExternalId(externalId: string): Promise<Organization | null>;
-  getOrgUserByUser(userId: string): Promise<OrgUser | null>;
+  /** The caller's participation in a specific org. Null when they hold none. */
+  getOrgUser(orgId: string, userId: string): Promise<OrgUser | null>;
+  /** Every org this person participates in, oldest first. */
+  getOrgUsersForUser(userId: string): Promise<OrgUser[]>;
+  getById(id: string): Promise<Organization | null>;
 }
 
 // Inbound port (use cases the service exposes).
@@ -59,6 +64,12 @@ export interface OrganizationService extends OrganizationProvisioner {
   assignCourse(input: AssignCourseInput): Promise<CourseAssignment>;
   unassignCourse(input: AssignCourseInput): Promise<void>;
   assignedCourseIds(orgId: string, orgUserId: string): Promise<string[]>;
+  // --- Roster (participants) ------------------------------------------------
+  // An admin adds someone before they hold an account; the row carries their
+  // entitlements until an invitation is accepted and stamps `user_id`.
+  createParticipant(input: CreateParticipantInput): Promise<OrgUser>;
+  getParticipant(orgId: string, id: string): Promise<OrgUser | null>;
+  deleteParticipant(orgId: string, id: string): Promise<void>;
   // Resolve an org by its public slug — used by the student portal boundary to
   // map the portal org slug to the tenant org id.
   getBySlug(slug: string): Promise<Organization | null>;
@@ -95,7 +106,7 @@ export interface OrganizationsRepository {
   findById(id: string): Promise<Organization | null>;
   findByExternalId(externalId: string): Promise<Organization | null>;
   findBySlug(slug: string): Promise<Organization | null>;
-  insertOrgUser(orgId: string, input: AddOrgUserInput): Promise<OrgUser>;
+  upsertOrgUser(orgId: string, input: AddOrgUserInput): Promise<OrgUser>;
   deleteOrgUserByExternalId(externalId: string): Promise<void>;
   /** Inserts a pending invitation, or re-issues the org's existing pending one
    *  for this email (fresh token/expiry/role) — atomic upsert. */
@@ -105,7 +116,18 @@ export interface OrganizationsRepository {
   insertCourseAssignment(orgId: string, input: AssignCourseInput): Promise<CourseAssignment>;
   deleteCourseAssignment(orgId: string, orgUserId: string, courseId: string): Promise<void>;
   findAssignedCourseIds(orgId: string, orgUserId: string): Promise<string[]>;
-  findOrgUserByUser(userId: string): Promise<OrgUser | null>;
+  /** The person's participation in one org. `(org_id, user_id)` is unique. */
+  findOrgUser(orgId: string, userId: string): Promise<OrgUser | null>;
+  /** Every org this person participates in, oldest first. */
+  findOrgUsersByUser(userId: string): Promise<OrgUser[]>;
+  findOrgUserById(orgId: string, id: string): Promise<OrgUser | null>;
+  findOrgUserByEmail(orgId: string, email: string): Promise<OrgUser | null>;
+  /** Roster entry with no person behind it yet (`user_id` NULL). */
+  insertPendingOrgUser(input: CreateParticipantInput): Promise<OrgUser>;
+  /** Deletes the participation and its dependent rows; false when none matched. */
+  deleteOrgUser(orgId: string, id: string): Promise<boolean>;
+  /** Stamps `user_id` onto the org's pending row for this email; rows updated. */
+  claimOrgUser(orgId: string, email: string, userId: string): Promise<number>;
 }
 
 /** A member row enriched with the ids needed to drive writes. */
@@ -124,19 +146,11 @@ export interface MembersRepository {
   findById(orgId: string, id: string): Promise<MemberRecord | null>;
 }
 
-/** Narrow identity-context slice the invite lifecycle needs: the pending student
- *  rows an invite targets and later links. Declared here (not imported from
- *  identity) so the contexts stay structurally coupled only at composition. */
-export interface StudentLinker {
-  /** A student row exists for (org, email) and has no linked account yet. */
-  hasPendingStudent(orgId: string, email: string): Promise<boolean>;
-  /** Links the account to the org's pending row; false when none was pending. */
-  linkPendingStudent(
-    orgId: string,
-    email: string,
-    invitationId: string,
-    externalId: string,
-  ): Promise<boolean>;
+/** Narrow identity-context slice the invite lifecycle needs: resolving the
+ *  accepting auth account to its domain person. Declared here (not imported
+ *  from identity) so the contexts stay coupled only at composition. */
+export interface PersonResolver {
+  getUserByExternalId(externalId: string): Promise<{ id: string; displayName: string } | null>;
 }
 
 /** Context for a write: domain org (reads/rules) + auth org & session (writes). */

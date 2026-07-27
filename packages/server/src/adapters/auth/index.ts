@@ -10,6 +10,7 @@ import type { Logger } from '../../core/shared/ports.js';
 import type { IdentityService } from '../../core/identity/index.js';
 import type { OrganizationProvisioner } from '../../core/organizations/index.js';
 import { ID_PREFIXES, prefixId } from '../../core/shared/id.js';
+import { splitName } from '../../core/shared/name.js';
 import { INVITE_COOKIE_NAME } from '../../core/shared/invite-token.js';
 import * as authSchema from './schema.js';
 import { ac, roles } from './access.js';
@@ -64,6 +65,12 @@ export interface CreateAuthOptions {
   secureCookies?: boolean;
   /** Admin app origin — the only origin whose signups are not invite-gated. */
   adminAppUrl: string;
+}
+
+/** The person row carries one display name; a participation carries first/last. */
+function splitParticipantName(displayName: string): { firstName: string; lastName: string } {
+  const { first, last } = splitName(displayName);
+  return { firstName: first, lastName: last };
 }
 
 export function createAuth(opts: CreateAuthOptions): Auth {
@@ -158,6 +165,8 @@ export function createAuth(opts: CreateAuthOptions): Auth {
               externalId: member.id,
               userId: owner.id,
               role: member.role,
+              email: owner.email,
+              ...splitParticipantName(owner.displayName),
             });
           },
           afterAddMember: async ({ member, user, organization: org }) => {
@@ -175,6 +184,8 @@ export function createAuth(opts: CreateAuthOptions): Auth {
               externalId: member.id,
               userId: user_.id,
               role: member.role,
+              email: user_.email,
+              ...splitParticipantName(user_.displayName),
             });
           },
           afterRemoveMember: async ({ member }) => {
@@ -242,15 +253,24 @@ export function createAuth(opts: CreateAuthOptions): Auth {
       session: {
         create: {
           before: async (session) => {
-            // Org-scoped students: stamp the student's org onto their session at
-            // login, so the API scopes reads by the session (`req.orgId`) instead
-            // of a per-request header. Staff logins have no student row → left
-            // untouched (their active org comes from the organization plugin).
-            const orgExternalId = await opts.identity.studentOrgExternalId(session.userId);
-            if (!orgExternalId) {
+            // Stamp the active org at login when the person participates in
+            // exactly one — students always, and staff who belong to a single
+            // org. With several, leave it alone: the organization plugin's
+            // active-org selection owns that case, which is what lets a staff
+            // user switch between orgs.
+            const person = await opts.identity.getUserByExternalId(session.userId);
+            if (!person) {
               return;
             }
-            return { data: { ...session, activeOrganizationId: orgExternalId } };
+            const participations = await opts.organizations.getOrgUsersForUser(person.id);
+            if (participations.length !== 1) {
+              return;
+            }
+            const org = await opts.organizations.getById(participations[0]!.orgId);
+            if (!org) {
+              return;
+            }
+            return { data: { ...session, activeOrganizationId: org.externalId } };
           },
         },
       },
