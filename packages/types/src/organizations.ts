@@ -58,14 +58,6 @@ export interface Invitation {
 /** Roles an invitation can carry — staff roles plus the portal student. Never owner. */
 export type InviteRole = "admin" | "instructor" | "student";
 
-export interface CourseAssignment {
-  readonly id: string;
-  readonly orgId: string;
-  readonly orgUserId: string;
-  readonly courseId: string;
-  readonly createdAt: Date;
-}
-
 export type OrganizationId = string;
 export type OrgUserId = string;
 export type InvitationId = string;
@@ -137,13 +129,6 @@ export interface AcceptInviteInput {
   userExternalId: string;
   /** The accepting account's email — must match the invitation. */
   email: string;
-}
-
-export interface AssignCourseInput {
-  // The owning org's better-auth id (used to locate the domain org).
-  orgExternalId: string;
-  orgUserId: string;
-  courseId: string;
 }
 
 /** An invitation was created or re-issued (any role; a resend rotates the token). */
