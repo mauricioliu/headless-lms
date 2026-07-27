@@ -9,19 +9,29 @@ export type {
   OrgAdmin,
   AuthHeaders,
 } from './ports.js';
-export type { Organization, Membership, Invitation, CourseAssignment } from './model.js';
+export type { Organization, OrgUser, Invitation, CourseAssignment } from './model.js';
 export { OrganizationRuleError } from './members.js';
 export type { Member, MemberStatus, MembersQuery, Page } from './members.js';
-export { ROLES, STUDENT_ROLE, isRole, parseRole, normalizeRole, capability, canForCourse } from './roles.js';
-export type { Role, Permission, Capability } from './roles.js';
+export {
+  ROLES,
+  STAFF_ROLES,
+  STUDENT_ROLE,
+  isRole,
+  isStaffRole,
+  parseRole,
+  normalizeRole,
+  capability,
+  canForCourse,
+} from './roles.js';
+export type { Role, StaffRole, Permission, Capability } from './roles.js';
 export type {
   OrganizationId,
-  MembershipId,
+  OrgUserId,
   InvitationId,
   CreateOrganizationInput,
   NewOrganizationInput,
   UpdateOrganizationInput,
-  AddMembershipInput,
+  AddOrgUserInput,
   CreateInviteInput,
   AcceptInviteInput,
   InviteRole,

@@ -4,7 +4,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { OrganizationsRepository } from '../../../core/organizations/ports.js';
 import type {
   Organization,
-  Membership,
+  OrgUser,
   Invitation,
   CourseAssignment,
 } from '../../../core/organizations/model.js';
@@ -13,12 +13,12 @@ import type { NewInvitationRow } from '../../../core/organizations/ports.js';
 import type {
   CreateOrganizationInput,
   UpdateOrganizationInput,
-  AddMembershipInput,
+  AddOrgUserInput,
   AssignCourseInput,
 } from '../../../core/organizations/types.js';
 import {
   organizations,
-  memberships,
+  orgUsers,
   invitations,
   courseAssignments,
 } from '../schema/organizations.js';
@@ -106,16 +106,16 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row ?? null;
   }
 
-  async insertMembership(orgId: string, input: AddMembershipInput): Promise<Membership> {
+  async insertOrgUser(orgId: string, input: AddOrgUserInput): Promise<OrgUser> {
     const [row] = await this.db
-      .insert(memberships)
+      .insert(orgUsers)
       .values({
         orgId,
         userId: input.userId,
         role: normalizeRole(input.role),
         externalId: input.externalId,
       })
-      .onConflictDoNothing({ target: memberships.externalId })
+      .onConflictDoNothing({ target: orgUsers.externalId })
       .returning();
     if (row) {
       return { ...row, role: parseRole(row.role) };
@@ -123,17 +123,17 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     // Already mirrored (hook fired more than once) — return the existing row.
     const [existing] = await this.db
       .select()
-      .from(memberships)
-      .where(eq(memberships.externalId, input.externalId))
+      .from(orgUsers)
+      .where(eq(orgUsers.externalId, input.externalId))
       .limit(1);
     if (!existing) {
-      throw new Error('failed to insert membership');
+      throw new Error('failed to insert orgUser');
     }
     return { ...existing, role: parseRole(existing.role) };
   }
 
-  async deleteMembershipByExternalId(externalId: string): Promise<void> {
-    await this.db.delete(memberships).where(eq(memberships.externalId, externalId));
+  async deleteOrgUserByExternalId(externalId: string): Promise<void> {
+    await this.db.delete(orgUsers).where(eq(orgUsers.externalId, externalId));
   }
 
   async upsertPendingInvitation(orgId: string, input: NewInvitationRow): Promise<Invitation> {
@@ -184,7 +184,7 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
   async insertCourseAssignment(orgId: string, input: AssignCourseInput): Promise<CourseAssignment> {
     const [row] = await this.db
       .insert(courseAssignments)
-      .values({ orgId, membershipId: input.membershipId, courseId: input.courseId })
+      .values({ orgId, orgUserId: input.orgUserId, courseId: input.courseId })
       .onConflictDoNothing()
       .returning();
     if (row) {
@@ -196,7 +196,7 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
       .where(
         and(
           eq(courseAssignments.orgId, orgId),
-          eq(courseAssignments.membershipId, input.membershipId),
+          eq(courseAssignments.orgUserId, input.orgUserId),
           eq(courseAssignments.courseId, input.courseId),
         ),
       )
@@ -209,7 +209,7 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
 
   async deleteCourseAssignment(
     orgId: string,
-    membershipId: string,
+    orgUserId: string,
     courseId: string,
   ): Promise<void> {
     await this.db
@@ -217,30 +217,30 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
       .where(
         and(
           eq(courseAssignments.orgId, orgId),
-          eq(courseAssignments.membershipId, membershipId),
+          eq(courseAssignments.orgUserId, orgUserId),
           eq(courseAssignments.courseId, courseId),
         ),
       );
   }
 
-  async findAssignedCourseIds(orgId: string, membershipId: string): Promise<string[]> {
+  async findAssignedCourseIds(orgId: string, orgUserId: string): Promise<string[]> {
     const rows = await this.db
       .select({ courseId: courseAssignments.courseId })
       .from(courseAssignments)
       .where(
-        and(eq(courseAssignments.orgId, orgId), eq(courseAssignments.membershipId, membershipId)),
+        and(eq(courseAssignments.orgId, orgId), eq(courseAssignments.orgUserId, orgUserId)),
       );
     return rows.map((r) => r.courseId);
   }
 
-  async findMembershipByUser(userId: string): Promise<Membership | null> {
-    // v1: a user is assumed to have a single membership; order by createdAt
+  async findOrgUserByUser(userId: string): Promise<OrgUser | null> {
+    // v1: a user is assumed to have a single orgUser; order by createdAt
     // for a deterministic result if more than one ever exists.
     const [row] = await this.db
       .select()
-      .from(memberships)
-      .where(eq(memberships.userId, userId))
-      .orderBy(memberships.createdAt)
+      .from(orgUsers)
+      .where(eq(orgUsers.userId, userId))
+      .orderBy(orgUsers.createdAt)
       .limit(1);
     return row ? { ...row, role: parseRole(row.role) } : null;
   }

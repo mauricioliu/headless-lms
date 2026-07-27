@@ -1,5 +1,5 @@
 // organizations context — domain entities, DTOs, and events.
-// The org is the tenant root that owns all org-scoped data; memberships and
+// The org is the tenant root that owns all org-scoped data; org users and
 // invitations are mirrored from the auth adapter's organization plugin.
 // Owner/member/inviter all reference the identity USER (staff), not a student.
 import type { DomainEvent } from "./shared.js";
@@ -18,10 +18,17 @@ export interface Organization {
   readonly createdAt: Date;
 }
 
-export interface Membership {
+/**
+ * A person's participation in one organization under one role.
+ *
+ * The single org-scoped actor: staff and learners are the same row shape,
+ * distinguished only by `role`. Named `org_users` rather than "membership"
+ * because a membership is also a purchasable content type in an LMS.
+ */
+export interface OrgUser {
   readonly id: string;
   readonly orgId: string;
-  // The identity USER this membership belongs to.
+  // The identity USER this participation belongs to.
   readonly userId: string;
   readonly role: Role;
   // Links to the better-auth member record.
@@ -47,13 +54,13 @@ export type InviteRole = "admin" | "instructor" | "student";
 export interface CourseAssignment {
   readonly id: string;
   readonly orgId: string;
-  readonly membershipId: string;
+  readonly orgUserId: string;
   readonly courseId: string;
   readonly createdAt: Date;
 }
 
 export type OrganizationId = string;
-export type MembershipId = string;
+export type OrgUserId = string;
 export type InvitationId = string;
 
 export interface CreateOrganizationInput {
@@ -81,12 +88,12 @@ export interface UpdateOrganizationInput {
   slug: string;
 }
 
-export interface AddMembershipInput {
+export interface AddOrgUserInput {
   // The owning org's better-auth id (used to locate the domain org).
   orgExternalId: string;
-  // The membership's own better-auth member id.
+  // The participation's own better-auth member id.
   externalId: string;
-  // The identity USER this membership belongs to.
+  // The identity USER this participation belongs to.
   userId: string;
   role: string;
 }
@@ -112,7 +119,7 @@ export interface AcceptInviteInput {
 export interface AssignCourseInput {
   // The owning org's better-auth id (used to locate the domain org).
   orgExternalId: string;
-  membershipId: string;
+  orgUserId: string;
   courseId: string;
 }
 
@@ -128,7 +135,7 @@ export interface InvitationCanceled extends DomainEvent {
   invitationId: string;
 }
 
-/** An invitation was accepted — student row linked or membership granted. */
+/** An invitation was accepted — the org-user participation was granted. */
 export interface InvitationAccepted extends DomainEvent {
   type: "invitation.accepted";
   invitationId: string;

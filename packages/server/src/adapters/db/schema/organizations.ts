@@ -1,6 +1,6 @@
 // organizations tables — the domain mirror of the auth adapter's organization
 // plugin. `organizations` is the tenant root (every org-scoped table FKs to it);
-// memberships and invitations carry a composite (org_id, id) key.
+// org users and invitations carry a composite (org_id, id) key.
 import { sql } from 'drizzle-orm';
 import {
   pgTable,
@@ -29,20 +29,22 @@ export const organizations = pgTable('organizations', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const memberships = pgTable(
-  'memberships',
+// A person's participation in one organization under one role — the single
+// org-scoped actor for staff and learners alike.
+export const orgUsers = pgTable(
+  'org_users',
   {
     orgId: text('org_id')
       .notNull()
       .references(() => organizations.id),
     id: text('id')
       .notNull()
-      .$defaultFn(() => genId('membership')),
+      .$defaultFn(() => genId('orgUser')),
 
     userId: text('user_id')
       .notNull()
       .references(() => users.id),
-    role: text('role', { enum: ['owner', 'admin', 'instructor'] }).notNull(),
+    role: text('role', { enum: ['owner', 'admin', 'instructor', 'student'] }).notNull(),
     externalId: text('external_id').notNull().unique(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -88,16 +90,16 @@ export const courseAssignments = pgTable(
     id: text('id')
       .notNull()
       .$defaultFn(() => genId('courseAssignment')),
-    membershipId: text('membership_id').notNull(),
+    orgUserId: text('org_user_id').notNull(),
     courseId: text('course_id').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),
-    uniqueAssignment: unique().on(t.orgId, t.membershipId, t.courseId),
-    membershipFk: foreignKey({
-      columns: [t.orgId, t.membershipId],
-      foreignColumns: [memberships.orgId, memberships.id],
+    uniqueAssignment: unique().on(t.orgId, t.orgUserId, t.courseId),
+    orgUserFk: foreignKey({
+      columns: [t.orgId, t.orgUserId],
+      foreignColumns: [orgUsers.orgId, orgUsers.id],
     }),
     courseFk: foreignKey({
       columns: [t.orgId, t.courseId],

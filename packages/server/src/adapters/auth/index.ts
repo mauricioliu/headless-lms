@@ -144,7 +144,7 @@ export function createAuth(opts: CreateAuthOptions): Auth {
               message: 'Invitations are managed by the invite system',
             });
           },
-          // New org → mirror it plus the creator's owner membership.
+          // New org → mirror it plus the creator's owner orgUser.
           afterCreateOrganization: async ({ organization: org, member, user }) => {
             const owner = await requireUser(user.id);
             await opts.organizations.createOrg({
@@ -153,7 +153,7 @@ export function createAuth(opts: CreateAuthOptions): Auth {
               slug: org.slug,
               ownerId: owner.id,
             });
-            await opts.organizations.addMembership({
+            await opts.organizations.addOrgUser({
               orgExternalId: org.id,
               externalId: member.id,
               userId: owner.id,
@@ -163,14 +163,14 @@ export function createAuth(opts: CreateAuthOptions): Auth {
           afterAddMember: async ({ member, user, organization: org }) => {
             // During org creation better-auth adds the creator and may fire this
             // hook before afterCreateOrganization has mirrored the org. In that
-            // case skip — the creator's membership is mirrored by
+            // case skip — the creator's orgUser is mirrored by
             // afterCreateOrganization. For genuine later adds the org exists.
             const mirrored = await opts.organizations.getByExternalId(org.id);
             if (!mirrored) {
               return;
             }
             const user_ = await requireUser(user.id);
-            await opts.organizations.addMembership({
+            await opts.organizations.addOrgUser({
               orgExternalId: org.id,
               externalId: member.id,
               userId: user_.id,
@@ -178,7 +178,7 @@ export function createAuth(opts: CreateAuthOptions): Auth {
             });
           },
           afterRemoveMember: async ({ member }) => {
-            await opts.organizations.removeMembership(member.id);
+            await opts.organizations.removeOrgUser(member.id);
           },
         },
       }),
@@ -305,7 +305,7 @@ export interface Auth {
       headers: Headers;
     }) => Promise<unknown>;
     removeMember: (input: { body: Record<string, unknown>; headers: Headers }) => Promise<unknown>;
-    // Grants a membership on an accepted staff invitation (server-side, no session).
+    // Grants a orgUser on an accepted staff invitation (server-side, no session).
     addMember: (input: {
       body: { userId: string; organizationId: string; role: string };
     }) => Promise<unknown>;

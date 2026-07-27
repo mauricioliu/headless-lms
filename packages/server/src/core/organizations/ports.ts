@@ -1,5 +1,5 @@
 // organizations context — ports.
-import type { Organization, Membership, Invitation, CourseAssignment } from './model.js';
+import type { Organization, OrgUser, Invitation, CourseAssignment } from './model.js';
 import type { Member, MembersQuery, Page } from './members.js';
 import type { Role } from './roles.js';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
@@ -7,7 +7,7 @@ import type {
   CreateOrganizationInput,
   NewOrganizationInput,
   UpdateOrganizationInput,
-  AddMembershipInput,
+  AddOrgUserInput,
   CreateInviteInput,
   AcceptInviteInput,
   InviteRole,
@@ -23,14 +23,14 @@ export type AuthHeaders = Record<string, string | string[] | undefined>;
 // before calling, so core stays decoupled from the auth schema.
 export interface OrganizationProvisioner {
   createOrg(input: CreateOrganizationInput): Promise<Organization>;
-  addMembership(input: AddMembershipInput): Promise<Membership>;
-  removeMembership(externalId: string): Promise<void>;
+  addOrgUser(input: AddOrgUserInput): Promise<OrgUser>;
+  removeOrgUser(externalId: string): Promise<void>;
   // Signup gate: whether this invite token entitles this email to sign up.
   inviteAllowsSignup(token: string, email: string): Promise<boolean>;
   // Lets the adapter detect whether an org is already mirrored (used to make
-  // the creator's membership hook resilient to firing before provisioning).
+  // the creator's orgUser hook resilient to firing before provisioning).
   getByExternalId(externalId: string): Promise<Organization | null>;
-  getMembershipByUser(userId: string): Promise<Membership | null>;
+  getOrgUserByUser(userId: string): Promise<OrgUser | null>;
 }
 
 // Inbound port (use cases the service exposes).
@@ -42,7 +42,7 @@ export interface OrganizationService extends OrganizationProvisioner {
   // The invitation a valid (pending, unexpired) token points at; null otherwise.
   peekInvite(token: string): Promise<Invitation | null>;
   // Token-based acceptance by the logged-in account: student → links the pending
-  // student row (via identity), staff → grants the membership. Returns the org
+  // student row (via identity), staff → grants the orgUser. Returns the org
   // the account should act in, for session stamping; null when refused.
   acceptInvite(input: AcceptInviteInput): Promise<{ orgExternalId: string; role: InviteRole } | null>;
   // Creates a new organization on the caller's behalf and makes it the session's
@@ -58,7 +58,7 @@ export interface OrganizationService extends OrganizationProvisioner {
   ): Promise<Organization>;
   assignCourse(input: AssignCourseInput): Promise<CourseAssignment>;
   unassignCourse(input: AssignCourseInput): Promise<void>;
-  assignedCourseIds(orgId: string, membershipId: string): Promise<string[]>;
+  assignedCourseIds(orgId: string, orgUserId: string): Promise<string[]>;
   // Resolve an org by its public slug — used by the student portal boundary to
   // map the portal org slug to the tenant org id.
   getBySlug(slug: string): Promise<Organization | null>;
@@ -95,23 +95,23 @@ export interface OrganizationsRepository {
   findById(id: string): Promise<Organization | null>;
   findByExternalId(externalId: string): Promise<Organization | null>;
   findBySlug(slug: string): Promise<Organization | null>;
-  insertMembership(orgId: string, input: AddMembershipInput): Promise<Membership>;
-  deleteMembershipByExternalId(externalId: string): Promise<void>;
+  insertOrgUser(orgId: string, input: AddOrgUserInput): Promise<OrgUser>;
+  deleteOrgUserByExternalId(externalId: string): Promise<void>;
   /** Inserts a pending invitation, or re-issues the org's existing pending one
    *  for this email (fresh token/expiry/role) — atomic upsert. */
   upsertPendingInvitation(orgId: string, input: NewInvitationRow): Promise<Invitation>;
   setInvitationStatus(orgId: string, id: string, status: string): Promise<void>;
   findInvitationByTokenHash(tokenHash: string): Promise<Invitation | null>;
   insertCourseAssignment(orgId: string, input: AssignCourseInput): Promise<CourseAssignment>;
-  deleteCourseAssignment(orgId: string, membershipId: string, courseId: string): Promise<void>;
-  findAssignedCourseIds(orgId: string, membershipId: string): Promise<string[]>;
-  findMembershipByUser(userId: string): Promise<Membership | null>;
+  deleteCourseAssignment(orgId: string, orgUserId: string, courseId: string): Promise<void>;
+  findAssignedCourseIds(orgId: string, orgUserId: string): Promise<string[]>;
+  findOrgUserByUser(userId: string): Promise<OrgUser | null>;
 }
 
 /** A member row enriched with the ids needed to drive writes. */
 export interface MemberRecord extends Member {
   kind: 'member' | 'invitation';
-  // better-auth member id (membership writes still go through the auth provider).
+  // better-auth member id (orgUser writes still go through the auth provider).
   memberExternalId: string | null;
   // Domain invitation id (invitations are domain-owned).
   invitationId: string | null;
@@ -146,7 +146,7 @@ export interface MemberWriteContext {
   headers: Record<string, string | string[] | undefined>;
 }
 
-/** Outbound: org membership writes, fulfilled by the auth provider (Better Auth). */
+/** Outbound: org orgUser writes, fulfilled by the auth provider (Better Auth). */
 export interface OrgAdmin {
   // Creates an org (owner inferred from the session) and returns its auth id.
   createOrganization(
@@ -162,7 +162,7 @@ export interface OrgAdmin {
     externalId: string,
     input: UpdateOrganizationInput,
   ): Promise<void>;
-  // Grants a membership server-side when an accepted invitation is honoured
+  // Grants a orgUser server-side when an accepted invitation is honoured
   // (no acting session — the invitee's acceptance IS the authorisation).
   grantMembership(orgExternalId: string, userExternalId: string, role: string): Promise<void>;
   updateRole(ctx: MemberWriteContext, memberExternalId: string, role: Role): Promise<void>;

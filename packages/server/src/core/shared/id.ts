@@ -12,7 +12,7 @@ export const ID_PREFIXES = {
   organization: 'org',
   user: 'usr',
   student: 'stu',
-  membership: 'orm',
+  orgUser: 'orm',
   invitation: 'ivt',
   courseAssignment: 'asn',
   course: 'crs',

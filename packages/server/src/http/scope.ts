@@ -7,7 +7,7 @@
 // (including portal students) gets a mirrored domain `users` row, and a
 // student session carries their org as `activeOrganizationId` too. So a
 // student session would otherwise pass this resolver and drive the back-office
-// API. Requiring an org membership (mirroring the MCP path's principal check
+// API. Requiring an org orgUser (mirroring the MCP path's principal check
 // in `http/mcp/principal.ts`) closes that hole.
 import type { FastifyRequest } from 'fastify';
 import type { Container } from '../app/container.js';
@@ -41,8 +41,8 @@ export async function resolveScope(container: Container, req: FastifyRequest): P
   if (!user) {
     throw new NoActiveOrgError('no domain user for the current user');
   }
-  const membership = await container.organizations.getMembershipByUser(user.id);
-  if (!membership) {
+  const orgUser = await container.organizations.getOrgUserByUser(user.id);
+  if (!orgUser) {
     throw new NoActiveOrgError('not an organization member');
   }
   container.requestContext.set({ orgId: org.id });

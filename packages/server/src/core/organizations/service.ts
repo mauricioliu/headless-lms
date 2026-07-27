@@ -10,7 +10,7 @@ import type {
   StudentLinker,
   AuthHeaders,
 } from './ports.js';
-import type { Organization, Membership, Invitation, CourseAssignment } from './model.js';
+import type { Organization, OrgUser, Invitation, CourseAssignment } from './model.js';
 import { STUDENT_ROLE, type Role } from './roles.js';
 import {
   OrganizationRuleError,
@@ -22,7 +22,7 @@ import type {
   CreateOrganizationInput,
   NewOrganizationInput,
   UpdateOrganizationInput,
-  AddMembershipInput,
+  AddOrgUserInput,
   CreateInviteInput,
   AcceptInviteInput,
   InviteRole,
@@ -117,16 +117,16 @@ export class OrganizationServiceImpl implements OrganizationService {
     return org;
   }
 
-  async addMembership(input: AddMembershipInput): Promise<Membership> {
+  async addOrgUser(input: AddOrgUserInput): Promise<OrgUser> {
     const org = await this.requireOrg(input.orgExternalId);
-    const membership = await this.repo.insertMembership(org.id, input);
-    this.logger.info('membership added', { orgId: org.id });
-    return membership;
+    const orgUser = await this.repo.insertOrgUser(org.id, input);
+    this.logger.info('orgUser added', { orgId: org.id });
+    return orgUser;
   }
 
-  async removeMembership(externalId: string): Promise<void> {
-    await this.repo.deleteMembershipByExternalId(externalId);
-    this.logger.info('membership removed', { externalId });
+  async removeOrgUser(externalId: string): Promise<void> {
+    await this.repo.deleteOrgUserByExternalId(externalId);
+    this.logger.info('orgUser removed', { externalId });
   }
 
   async createInvite(input: CreateInviteInput): Promise<Invitation> {
@@ -277,16 +277,16 @@ export class OrganizationServiceImpl implements OrganizationService {
 
   async unassignCourse(input: AssignCourseInput): Promise<void> {
     const org = await this.requireOrg(input.orgExternalId);
-    await this.repo.deleteCourseAssignment(org.id, input.membershipId, input.courseId);
+    await this.repo.deleteCourseAssignment(org.id, input.orgUserId, input.courseId);
     this.logger.info('course unassigned', { orgId: org.id, courseId: input.courseId });
   }
 
-  async assignedCourseIds(orgId: string, membershipId: string): Promise<string[]> {
-    return this.repo.findAssignedCourseIds(orgId, membershipId);
+  async assignedCourseIds(orgId: string, orgUserId: string): Promise<string[]> {
+    return this.repo.findAssignedCourseIds(orgId, orgUserId);
   }
 
-  async getMembershipByUser(userId: string): Promise<Membership | null> {
-    return this.repo.findMembershipByUser(userId);
+  async getOrgUserByUser(userId: string): Promise<OrgUser | null> {
+    return this.repo.findOrgUserByUser(userId);
   }
 
   // --- Member management (formerly the `team` context) -----------------------

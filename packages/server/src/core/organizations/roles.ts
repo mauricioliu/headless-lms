@@ -13,8 +13,21 @@ export const ROLES = [
   'student',
 ] as const satisfies readonly Role[];
 
+/**
+ * The roles that operate the back office. `student` participates in the org but
+ * never appears on a staff surface, so the member-management types are typed
+ * with this narrower union — the exclusion is a compiler guarantee, not a
+ * convention a query has to remember.
+ */
+export type StaffRole = Exclude<Role, 'student'>;
+export const STAFF_ROLES = ['owner', 'admin', 'instructor'] as const satisfies readonly StaffRole[];
+
 export function isRole(value: string): value is Role {
   return (ROLES as readonly string[]).includes(value);
+}
+
+export function isStaffRole(value: string): value is StaffRole {
+  return (STAFF_ROLES as readonly string[]).includes(value);
 }
 
 export function parseRole(value: string): Role {

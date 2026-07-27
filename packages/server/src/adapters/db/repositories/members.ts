@@ -1,18 +1,21 @@
 // organizations members — Drizzle read repository. Reads the domain mirror of the
-// org's members (memberships) and pending invitations, joined to the identity user
+// org's members (orgUsers) and pending invitations, joined to the identity user
 // for display. Writes go through the auth provider (see adapters/auth/org-admin.ts).
 import { and, eq, ne } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { MembersRepository, MemberRecord } from '../../../core/organizations/index.js';
-import type { Member, MembersQuery, Page, Role } from '../../../core/organizations/index.js';
-import { memberships, invitations } from '../schema/organizations.js';
+import type { Member, MembersQuery, Page, StaffRole } from '../../../core/organizations/index.js';
+import { isStaffRole } from '../../../core/organizations/index.js';
+import { orgUsers, invitations } from '../schema/organizations.js';
 import { users } from '../schema/identity.js';
 import { user } from '../../auth/schema.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
 
-const ROLES: Role[] = ['owner', 'admin', 'instructor'];
-const roleOf = (t: string): Role => (ROLES.includes(t as Role) ? (t as Role) : 'instructor');
+// The member surface is staff-only; a student participation never reaches here
+// (the queries below exclude it), so an unrecognized role falls back to the
+// least-privileged staff role rather than widening to the full Role union.
+const roleOf = (t: string): StaffRole => (isStaffRole(t) ? t : 'instructor');
 
 function toMember(r: MemberRecord): Member {
   return {
@@ -36,18 +39,18 @@ export class DrizzleMembersRepository implements MembersRepository {
   private async loadAll(orgId: string): Promise<MemberRecord[]> {
     const memberRows = await this.db
       .select({
-        id: memberships.id,
+        id: orgUsers.id,
         name: users.displayName,
         email: users.email,
         image: user.image,
-        role: memberships.role,
-        joinedAt: memberships.createdAt,
-        memberExternalId: memberships.externalId,
+        role: orgUsers.role,
+        joinedAt: orgUsers.createdAt,
+        memberExternalId: orgUsers.externalId,
       })
-      .from(memberships)
-      .innerJoin(users, eq(users.id, memberships.userId))
+      .from(orgUsers)
+      .innerJoin(users, eq(users.id, orgUsers.userId))
       .leftJoin(user, eq(user.id, users.externalId))
-      .where(eq(memberships.orgId, orgId));
+      .where(eq(orgUsers.orgId, orgId));
 
     // Student invitations live in the same table but belong to the students
     // surface, not the members list.

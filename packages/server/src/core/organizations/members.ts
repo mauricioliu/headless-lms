@@ -1,7 +1,7 @@
 // organizations context — member-management types (invite / change-role / remove).
 // The operational surface over the org's members and pending invitations. Roles
 // come from ./roles.ts (the single role model); writes go through Better Auth.
-import type { Role } from './roles.js';
+import type { StaffRole } from './roles.js';
 
 export type MemberStatus = 'active' | 'invited';
 
@@ -10,7 +10,7 @@ export interface Member {
   name: string;
   email: string;
   image?: string | null;
-  role: Role;
+  role: StaffRole;
   status: MemberStatus;
   joinedAt: string | null;
   invitedAt: string | null;
@@ -21,7 +21,7 @@ export interface MembersQuery {
   pageSize: number;
   search?: string | undefined;
   sort?: string | undefined;
-  role?: Role | undefined;
+  role?: StaffRole | undefined;
   status?: MemberStatus | undefined;
 }
 
