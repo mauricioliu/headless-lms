@@ -474,4 +474,141 @@ describe('listThread', () => {
     expect(view.comments).toHaveLength(0);
     expect(view.config.state).toBe('hidden');
   });
+
+  it('serves a removed comment as a placeholder when its reply is visible', async () => {
+    const { service } = makeService();
+    await enabled(service);
+    const root = await service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'bad',
+    });
+    await service.post('o1', staff, {
+      activityId: 'a1', parentId: root.id, body: 'reply',
+    });
+    await service.remove('o1', root.id, staff);
+
+    const view = await service.listThread('o1', 'a1', learner);
+    const placeholder = view.comments.find((c) => c.id === root.id);
+    expect(placeholder?.body).toBeNull();
+    expect(placeholder?.status).toBe('removed');
+    expect(placeholder?.removedBy?.id).toBe(staff.orgUserId);
+    expect(view.comments).toHaveLength(2);
+  });
+
+  it('does not serve a removed comment that has no replies', async () => {
+    const { service } = makeService();
+    await enabled(service);
+    const root = await service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'oops',
+    });
+    await service.remove('o1', root.id, learner);
+    const view = await service.listThread('o1', 'a1', learner);
+    expect(view.comments).toHaveLength(0);
+  });
+
+  it('hides a removed comment whose only reply this reader cannot see', async () => {
+    const { service } = makeService();
+    await enabled(service, { requireReview: true });
+    const root = await service.post('o1', staff, {
+      activityId: 'a1', parentId: null, body: 'root',
+    });
+    // The only reply is another learner's, still awaiting review.
+    await service.post('o1', learner, {
+      activityId: 'a1', parentId: root.id, body: 'pending reply',
+    });
+    await service.remove('o1', root.id, staff);
+
+    const other: Actor = { orgUserId: 'orm_other', isStaff: false };
+    const theirs = await service.listThread('o1', 'a1', other);
+    expect(theirs.comments).toHaveLength(0);
+
+    // Its author still sees both the reply and the placeholder holding it.
+    const own = await service.listThread('o1', 'a1', learner);
+    expect(own.comments).toHaveLength(2);
+  });
+
+  it('never serves a removed reply', async () => {
+    const { service } = makeService();
+    await enabled(service);
+    const root = await service.post('o1', staff, {
+      activityId: 'a1', parentId: null, body: 'root',
+    });
+    const reply = await service.post('o1', learner, {
+      activityId: 'a1', parentId: root.id, body: 'reply',
+    });
+    await service.remove('o1', reply.id, learner);
+    const view = await service.listThread('o1', 'a1', learner);
+    expect(view.comments.map((c) => c.id)).toEqual([root.id]);
+  });
+});
+
+describe('edit, remove, restore, approve', () => {
+  async function published() {
+    const ctx = makeService();
+    await enabled(ctx.service);
+    const comment = await ctx.service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'original',
+    });
+    return { ...ctx, comment };
+  }
+
+  it('lets an author edit their own comment', async () => {
+    const { service, comment } = await published();
+    const edited = await service.edit('o1', comment.id, learner, 'revised');
+    expect(edited.body).toBe('revised');
+    expect(edited.author.id).toBe(learner.orgUserId);
+  });
+
+  it('refuses an edit by anyone else, including staff', async () => {
+    const { service, comment } = await published();
+    await expect(service.edit('o1', comment.id, staff, 'nope')).rejects.toThrow(ForbiddenError);
+  });
+
+  it('lets an author remove their own comment and names them as remover', async () => {
+    const { service, comment, appended } = await published();
+    const removed = await service.remove('o1', comment.id, learner);
+    expect(removed.status).toBe('removed');
+    expect(removed.removedBy).toBe(learner.orgUserId);
+    expect(appended.at(-1)).toMatchObject({
+      type: 'comment.removed',
+      removedBy: learner.orgUserId,
+    });
+  });
+
+  it('lets staff remove another person comment', async () => {
+    const { service, comment } = await published();
+    const removed = await service.remove('o1', comment.id, staff);
+    expect(removed.removedBy).toBe(staff.orgUserId);
+  });
+
+  it('refuses removal by an unrelated learner', async () => {
+    const { service, comment } = await published();
+    const other: Actor = { orgUserId: 'orm_other', isStaff: false };
+    await expect(service.remove('o1', comment.id, other)).rejects.toThrow(ForbiddenError);
+  });
+
+  it('restores a removed comment to published, staff only', async () => {
+    const { service, comment } = await published();
+    await service.remove('o1', comment.id, staff);
+    await expect(service.restore('o1', comment.id, learner)).rejects.toThrow(ForbiddenError);
+    const restored = await service.restore('o1', comment.id, staff);
+    expect(restored.status).toBe('published');
+    expect(restored.removedBy).toBeNull();
+  });
+
+  it('approves a pending comment and emits comment.published', async () => {
+    const { service, appended } = makeService();
+    await enabled(service, { requireReview: true });
+    const pending = await service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'q',
+    });
+    await expect(service.approve('o1', pending.id, learner)).rejects.toThrow(ForbiddenError);
+    const approved = await service.approve('o1', pending.id, staff);
+    expect(approved.status).toBe('published');
+    expect(appended.at(-1)?.type).toBe('comment.published');
+  });
+
+  it('refuses to approve a comment that is not pending', async () => {
+    const { service, comment } = await published();
+    await expect(service.approve('o1', comment.id, staff)).rejects.toThrow(ForbiddenError);
+  });
 });

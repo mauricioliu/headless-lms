@@ -252,4 +252,92 @@ export class DiscussionServiceImpl {
     });
     return { config, comments };
   }
+
+  private async load(orgId: string, commentId: string): Promise<Comment> {
+    const comment = await this.repo.findComment(orgId, commentId);
+    if (!comment) {
+      throw new NotFoundError('Comment', commentId);
+    }
+    return comment;
+  }
+
+  async edit(
+    orgId: string,
+    commentId: string,
+    actor: Actor,
+    body: string,
+  ): Promise<ThreadComment> {
+    const comment = await this.load(orgId, commentId);
+    // Editing is the author's alone — moderators remove, they do not rewrite.
+    if (comment.orgUserId !== actor.orgUserId) {
+      throw new ForbiddenError('only the author may edit a comment');
+    }
+    if (comment.status === 'removed') {
+      throw new ForbiddenError('a removed comment cannot be edited');
+    }
+    const updated = await this.repo.updateComment(orgId, commentId, {
+      body,
+      updatedAt: this.now(),
+    });
+    return this.renderOne(orgId, updated ?? comment, actor);
+  }
+
+  async remove(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
+    const comment = await this.load(orgId, commentId);
+    if (comment.orgUserId !== actor.orgUserId && !actor.isStaff) {
+      throw new ForbiddenError('only the author or a moderator may remove a comment');
+    }
+    if (comment.status === 'removed') {
+      return comment;
+    }
+    return this.uow.run(async (scope) => {
+      const updated = await scope.discussion.updateComment(orgId, commentId, {
+        status: 'removed',
+        removedBy: actor.orgUserId,
+        updatedAt: this.now(),
+      });
+      const result = updated ?? comment;
+      await scope.outbox.append([
+        { type: 'comment.removed', orgId, comment: result, removedBy: actor.orgUserId },
+      ]);
+      this.logger.info('comment removed', { orgId, commentId, by: actor.orgUserId });
+      return result;
+    });
+  }
+
+  async restore(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
+    if (!actor.isStaff) {
+      throw new ForbiddenError('only a moderator may restore a comment');
+    }
+    const comment = await this.load(orgId, commentId);
+    if (comment.status !== 'removed') {
+      return comment;
+    }
+    const updated = await this.repo.updateComment(orgId, commentId, {
+      status: 'published',
+      removedBy: null,
+      updatedAt: this.now(),
+    });
+    return updated ?? comment;
+  }
+
+  async approve(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
+    if (!actor.isStaff) {
+      throw new ForbiddenError('only a moderator may approve a comment');
+    }
+    const comment = await this.load(orgId, commentId);
+    if (comment.status !== 'pending') {
+      throw new ForbiddenError('only a pending comment can be approved');
+    }
+    return this.uow.run(async (scope) => {
+      const updated = await scope.discussion.updateComment(orgId, commentId, {
+        status: 'published',
+        updatedAt: this.now(),
+      });
+      const result = updated ?? comment;
+      await scope.outbox.append([{ type: 'comment.published', orgId, comment: result }]);
+      this.logger.info('comment published', { orgId, commentId });
+      return result;
+    });
+  }
 }
