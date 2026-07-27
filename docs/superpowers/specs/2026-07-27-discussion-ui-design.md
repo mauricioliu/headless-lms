@@ -5,7 +5,8 @@ Companion to `docs/domain/discussion.md` and the implementation plan at
 generated SDK: it builds the domain, the persistence, the routes and the client,
 but nothing renders any of it. This spec covers the two surfaces that consume it
 — the comment thread in the student player and the moderation tab in the admin
-dashboard — and the contract changes those surfaces force back into the plan.
+dashboard — the contract changes those surfaces force back into the plan, and the
+consolidation of the person shape that trying to render an author exposed.
 
 ## The author problem
 
@@ -31,24 +32,119 @@ avatar — is why the second hop exists.
 
 So `DiscussionRepository.rolesOf`, already a batched lookup the thread read calls
 once (`ports.ts:651`, used at Task 6), becomes `authorsOf` and writes that same
-join. It returns the org user with its profile rather than a role string:
+join, returning the org user with its profile rather than a role string:
 
 ```ts
 authorsOf(orgId: string, orgUserIds: string[]): Promise<Record<string, CommentAuthor>>
 ```
 
-where `CommentAuthor` is `{ id, name, image, role }` — `id` the `org_users` id,
-`name` composed from the participation's first and last name as the existing
-DTOs do, `image` from better-auth, `role` the person's current role in this org.
-
 This preserves the spec rule that staff-ness is read fresh and never stored, and
 strengthens it: the role is read at every read, and `authorIsStaff` collapses out
 of the contract entirely — a caller-supplied boolean is replaced by a value the
-service derives itself. `Member` and `Student` are reporting views over the same
-table, not entities, so there is nothing to reuse from them and nothing to
-migrate.
+service derives itself.
 
 Cost: one query, same shape, more columns selected. No extra round trip.
+
+Writing that join for a third time is what the next section stops.
+
+## Consolidating the person shape
+
+`{ id, name, email, image }` is currently declared ten times. Discussion would be
+the eleventh, so the consolidation lands as part of this work rather than after
+it.
+
+| Where | Name |
+|---|---|
+| `api-contract/src/members.ts:12` | `Member` |
+| `api-contract/src/students.ts:5` | `Student` |
+| `core/organizations/members.ts:8` | `Member` |
+| `reporting/students/model.ts:3` | `Student` |
+| `http/fastify.d.ts:6` | `AuthUser` |
+| `adapters/auth/index.ts:336` | inline in the `getSession` return type |
+| `adapters/db/repositories/members.ts:29` | `MemberRecord` |
+| `adapters/db/repositories/students.ts:27` | `StudentRow` |
+| `apps/admin/src/lib/api/types.ts:120` | `SessionUser` |
+| `apps/admin/.../server-session.ts:28`, `:54` | `ServerSession.user`, twice |
+| `apps/student/.../server-session.ts:26`, `:39` | `ServerSession.user`, twice |
+
+Two of these also violate the type-ownership rule in AGENTS.md: `core/organizations/members.ts`
+and `reporting/students/model.ts` declare their shapes locally rather than
+re-exporting from `@headless-lms/types`, which has no `Member` or `Student` at
+all.
+
+### Two shapes, not one
+
+These are not all the same type, and collapsing them into one would be a bug.
+`Member` and `Student` key `id` on `org_users.id` — the participation.
+`AuthUser`, `SessionUser` and both `ServerSession.user`s key `id` on the
+better-auth user id — the person. Identical field lists, different referents; one
+merged type would produce an id that is unsafe to pass anywhere.
+
+So two declarations in `@headless-lms/types`:
+
+```ts
+// identity.ts — the person, keyed on the auth engine's user id.
+export interface UserProfile {
+  readonly id: string;
+  name: string;
+  email: string;
+  image: string | null;
+}
+
+// organizations.ts — one person's participation in one org, keyed on org_users.id.
+export interface OrgUserProfile {
+  readonly id: string;
+  name: string;
+  email: string;
+  image: string | null;
+}
+```
+
+They are structurally identical and deliberately kept separate: the distinction
+being encoded is which id the row carries, and merging them erases exactly the
+thing that matters.
+
+### What each consumer becomes
+
+| Type | Becomes |
+|---|---|
+| `core/organizations` `Member` | `OrgUserProfile & { role: StaffRole; status; joinedAt; invitedAt }` |
+| `reporting/students` `Student` | `OrgUserProfile & { entitlementCount; avgProgress; joinedAt; lastActiveAt; hasAccount }` |
+| `http` `AuthUser` | `UserProfile & { emailVerified: boolean }` |
+| `adapters/auth` `getSession` | returns `AuthUser` instead of an inline shape |
+| discussion `CommentAuthor` | `Omit<OrgUserProfile, 'email'> & { role: OrgRole }` |
+
+`CommentAuthor` omitting `email` is the point rather than an inconvenience: it
+makes "learners never see each other's addresses" a property the compiler
+enforces, not a convention someone has to remember. The moderation queue, which
+does need it, carries `authorEmail` as a separate field on `QueueEntry`.
+
+The contract mirrors both as zod objects in `api-contract/src/shared.ts`, with
+`Member`, `Student` and `CommentAuthor` built by `.extend()` and `.omit()` off
+them.
+
+### Two details this forces
+
+**Role enum collision.** `api-contract/src/members.ts:6` already exports `Role` as
+the staff-only three-value enum. The four-value one lands as `OrgRole` in
+`shared.ts` and `members.Role` is left alone.
+
+**`image` nullability is standardised** to `string | null`. It is currently
+`.nullable().optional()` on the contract's `Member` and `Student` and plain
+`string | null` elsewhere. Making it uniformly nullable-but-required changes the
+generated SDK types, so both apps' local aliases are checked after `pnpm gen:sdk`.
+
+### The repeated join
+
+`adapters/db/repositories/` gains a shared select fragment and join helper for
+`orgUsers → users → user`, used by the members repo, the students repo and the
+new discussion repo. `.eslintrc.cjs:107-109` already sanctions this — "db
+repositories read the auth adapter's mirrored `user` table for display joins" —
+so it consolidates existing licensed behaviour rather than opening a new seam.
+
+Both apps then delete their local person declarations and take the regenerated
+SDK types. `SessionUser` keeps its `role` and `scopedCourseIds`, which are
+admin-session concerns and belong nowhere else.
 
 ## Contract changes
 
@@ -209,6 +305,12 @@ a failed action leaves the card in place and reports through the existing
 Domain and route behaviour is covered by the existing plan's tests, extended for
 the amended shapes: `authorsOf` resolution, the one-level reply rejection, and
 the new thread-states route.
+
+The person-shape consolidation is a type change with no behaviour change, so its
+verification is the existing suite plus `pnpm typecheck` across every workspace —
+the members and students surfaces must serve byte-identical payloads afterwards.
+The one place behaviour can shift is `image` nullability, so the members and
+students route tests assert `image: null` rather than an absent key.
 
 For the UI, the logic worth testing is the logic that is not React:
 `use-thread.ts` — the config gate, the optimistic apply/rollback, and discarding
