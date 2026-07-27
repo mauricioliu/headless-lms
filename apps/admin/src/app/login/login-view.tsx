@@ -84,7 +84,7 @@ export function LoginView() {
             {denied && (
               <div className="mt-5 flex items-start gap-2.5 rounded-lg border border-warning/20 bg-warning-soft px-3 py-2.5 text-sm text-warning">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                <p>That account doesn&apos;t have access to the management dashboard.</p>
+                <p>That account doesn&apos;t have access.</p>
               </div>
             )}
 
