@@ -51,6 +51,7 @@ import type {
   Paginated,
   QueueEntry,
   Student,
+  ThreadStates,
 } from "./types";
 
 
@@ -161,6 +162,13 @@ export const serverApi = {
       }),
     );
     return entries;
+  },
+  async threadStates(courseId: string): Promise<ThreadStates> {
+    ensureConfigured();
+    const { states } = unwrap(
+      await Discussion.getThreadStates({ path: { courseId }, ...(await authHeaders()) }),
+    );
+    return states;
   },
 
   // members

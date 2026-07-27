@@ -1,5 +1,6 @@
 import { requireAuth } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
+import type { ThreadStates } from "@/lib/api/types";
 
 import { ModuleList } from "../_components/module-list";
 
@@ -13,13 +14,18 @@ export default async function CourseContentTab({
   const { courseId } = await params;
 
   const modulesPromise = serverApi.listModules(courseId);
-  await requireAuth(modulesPromise);
-  const modules = await modulesPromise;
+  // Discussion is optional; a failure to load the overrides must not take down
+  // the content tab.
+  const threadStatesPromise = serverApi
+    .threadStates(courseId)
+    .catch(() => ({}) as ThreadStates);
+  await requireAuth(modulesPromise, threadStatesPromise);
+  const [modules, threadStates] = await Promise.all([modulesPromise, threadStatesPromise]);
 
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-sm font-medium text-ink-2">Curriculum</h2>
-      <ModuleList courseId={courseId} modules={modules} canEdit />
+      <ModuleList courseId={courseId} modules={modules} threadStates={threadStates} canEdit />
     </section>
   );
 }

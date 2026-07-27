@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { Discussion } from "@headless-lms/sdk";
 
 import { ensureConfigured, authHeaders, unwrap, expectOk } from "@/lib/api/server-call";
-import type { DiscussionSettings, SetDiscussionSettings } from "@/lib/api/types";
+import type { DiscussionSettings, SetDiscussionSettings, ThreadState } from "@/lib/api/types";
 
 function revalidateDiscussion(): void {
   revalidatePath("/courses/[courseId]/discussion", "page");
@@ -56,4 +56,20 @@ export async function resolveCommentReportsAction(commentId: string): Promise<vo
     await Discussion.resolveCommentReports({ path: { commentId }, ...(await authHeaders()) }),
   );
   revalidateDiscussion();
+}
+
+/** null clears the override so the course setting applies again. */
+export async function setActivityThreadStateAction(
+  activityId: string,
+  state: ThreadState | null,
+): Promise<void> {
+  ensureConfigured();
+  expectOk(
+    await Discussion.setActivityThreadState({
+      path: { activityId },
+      body: { state },
+      ...(await authHeaders()),
+    }),
+  );
+  revalidatePath("/courses/[courseId]/content", "page");
 }
