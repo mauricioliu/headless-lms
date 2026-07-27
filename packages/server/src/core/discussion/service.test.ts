@@ -719,3 +719,111 @@ describe('reactions', () => {
     expect(reactions).toHaveLength(0);
   });
 });
+
+describe('reports and queue', () => {
+  async function withComment() {
+    const ctx = makeService();
+    await enabled(ctx.service);
+    const comment = await ctx.service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'bad',
+    });
+    return { ...ctx, comment };
+  }
+
+  it('does not change the comment status', async () => {
+    const { service, comment } = await withComment();
+    await service.report('o1', comment.id, staff, 'abuse');
+    const after = await service.listThread('o1', 'a1', staff);
+    expect(after.comments[0]?.status).toBe('published');
+  });
+
+  it('emits comment.reported', async () => {
+    const { service, comment, appended } = await withComment();
+    await service.report('o1', comment.id, staff, 'abuse');
+    expect(appended.at(-1)?.type).toBe('comment.reported');
+  });
+
+  it('is one report per person per comment and emits once', async () => {
+    const { service, comment, reports, appended } = await withComment();
+    await service.report('o1', comment.id, staff, 'first');
+    const before = appended.length;
+    await service.report('o1', comment.id, staff, 'second');
+    expect(reports).toHaveLength(1);
+    expect(appended).toHaveLength(before);
+  });
+
+  it('accepts a report on a locked thread', async () => {
+    const { service, comment, reports } = await withComment();
+    await service.setThreadState('o1', 'a1', 'locked');
+    await service.report('o1', comment.id, staff, 'still bad');
+    expect(reports).toHaveLength(1);
+  });
+
+  it('refuses a report on a hidden thread', async () => {
+    const { service, comment } = await withComment();
+    await service.setThreadState('o1', 'a1', 'hidden');
+    await expect(service.report('o1', comment.id, staff, 'x')).rejects.toThrow(ForbiddenError);
+  });
+
+  it('lists a reported comment with its author, activity and reports', async () => {
+    const fake = fakeRepo();
+    fake.authors.set('orm_learner', {
+      id: 'orm_learner', name: 'Ana Diaz', image: null, role: 'student',
+      email: 'ana@example.test',
+    });
+    const { service, comment } = await (async () => {
+      const ctx = makeService(fake);
+      await enabled(ctx.service);
+      const c = await ctx.service.post('o1', learner, {
+        activityId: 'a1', parentId: null, body: 'bad',
+      });
+      return { ...ctx, comment: c };
+    })();
+    const other: Actor = { orgUserId: 'orm_other', isStaff: false };
+    await service.report('o1', comment.id, staff, 'spam');
+    await service.report('o1', comment.id, other, 'rude');
+
+    const entries = await service.queue('o1', { kind: 'reported', courseId: 'c1' });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.comment.id).toBe(comment.id);
+    expect(entries[0]?.author.name).toBe('Ana Diaz');
+    expect(entries[0]?.authorEmail).toBe('ana@example.test');
+    expect(entries[0]?.activityTitle).toBe('Lesson one');
+    expect(entries[0]?.courseId).toBe('c1');
+    expect(entries[0]?.reports.map((r) => r.reason).sort()).toEqual(['rude', 'spam']);
+    expect(entries[0]?.reports[0]?.reporter.id).toBeDefined();
+  });
+
+  it('drops a comment out of the reported queue once its reports resolve', async () => {
+    const { service, comment } = await withComment();
+    await service.report('o1', comment.id, staff, 'a');
+    await service.resolveReports('o1', comment.id, staff);
+    expect(await service.queue('o1', { kind: 'reported', courseId: 'c1' })).toHaveLength(0);
+  });
+
+  it('lists pending comments in the queue', async () => {
+    const { service } = makeService();
+    await enabled(service, { requireReview: true });
+    const pending = await service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'q',
+    });
+    const entries = await service.queue('o1', { kind: 'pending', courseId: 'c1' });
+    expect(entries.map((e) => e.comment.id)).toEqual([pending.id]);
+  });
+
+  it('scopes the queue to the requested course', async () => {
+    const { service } = makeService();
+    await enabled(service, { requireReview: true });
+    await service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'q' });
+    expect(await service.queue('o1', { kind: 'pending', courseId: 'c2' })).toHaveLength(0);
+    expect(await service.queue('o1', { kind: 'pending' })).toHaveLength(1);
+  });
+
+  it('refuses resolution by a learner', async () => {
+    const { service, comment } = await withComment();
+    await service.report('o1', comment.id, staff, 'a');
+    await expect(service.resolveReports('o1', comment.id, learner)).rejects.toThrow(
+      ForbiddenError,
+    );
+  });
+});

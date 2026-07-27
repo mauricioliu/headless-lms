@@ -12,13 +12,22 @@ import { genId } from '../shared/id.js';
 import { NotFoundError, ForbiddenError } from '../shared/errors.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
-import type { Comment, CommentAuthor, DiscussionSettings, ThreadState } from './model.js';
+import type {
+  Comment,
+  CommentAuthor,
+  CommentReport,
+  DiscussionSettings,
+  ThreadState,
+} from './model.js';
 import type { PostCommentInput, ResolvedThreadConfig, ThreadComment } from './types.js';
 import type {
   Actor,
   AuthorRecord,
   DiscussionRepository,
+  DiscussionService,
   DiscussionUnitOfWork,
+  QueueEntry,
+  QueueQuery,
   ThreadView,
 } from './ports.js';
 
@@ -31,12 +40,7 @@ export const DEFAULT_SETTINGS = {
   reactions: true,
 } as const;
 
-// Implements DiscussionService incrementally: Task 6 lands the settings/
-// thread-state methods below; tasks 7-11 add post/edit/remove/... to this
-// same class. The `implements DiscussionService` clause returns once every
-// method exists — declaring it now would fail typecheck against methods that
-// don't exist yet.
-export class DiscussionServiceImpl {
+export class DiscussionServiceImpl implements DiscussionService {
   constructor(
     private readonly repo: DiscussionRepository,
     private readonly uow: DiscussionUnitOfWork,
@@ -383,6 +387,89 @@ export class DiscussionServiceImpl {
       await scope.outbox.append([{ type: 'comment.published', orgId, comment: updated }]);
       this.logger.info('comment published', { orgId, commentId });
       return updated;
+    });
+  }
+
+  async report(
+    orgId: string,
+    commentId: string,
+    actor: Actor,
+    reason: string,
+  ): Promise<CommentReport> {
+    const { config } = await this.loadWithConfig(orgId, commentId);
+    // Locked accepts reports — an archived thread can still hold something a
+    // moderator needs to see. Hidden does not: nothing in it is being served,
+    // so nobody is looking at a comment to flag.
+    if (config.state === 'hidden') {
+      throw new ForbiddenError('discussion is not open on this activity');
+    }
+    const report: CommentReport = {
+      id: genId('commentReport'),
+      orgId,
+      commentId,
+      orgUserId: actor.orgUserId,
+      reason,
+      resolvedAt: null,
+      createdAt: this.now(),
+    };
+    return this.uow.run(async (scope) => {
+      const saved = await scope.discussion.insertReport(orgId, report);
+      if (!saved) {
+        // Already reported by this person — the existing open report stands and
+        // a second event would double-count any threshold automation.
+        return report;
+      }
+      await scope.outbox.append([{ type: 'comment.reported', orgId, report: saved }]);
+      this.logger.info('comment reported', { orgId, commentId });
+      return saved;
+    });
+  }
+
+  async resolveReports(orgId: string, commentId: string, actor: Actor): Promise<void> {
+    if (!actor.isStaff) {
+      throw new ForbiddenError('only a moderator may resolve a report');
+    }
+    await this.load(orgId, commentId);
+    await this.repo.resolveReportsFor(orgId, commentId, this.now());
+  }
+
+  async queue(orgId: string, query: QueueQuery): Promise<QueueEntry[]> {
+    const rows =
+      query.kind === 'pending'
+        ? await this.repo.listByStatusWithContext(orgId, 'pending', query.courseId)
+        : await this.repo.listReportedWithContext(orgId, query.courseId);
+    if (rows.length === 0) {
+      return [];
+    }
+    const commentIds = rows.map((r) => r.comment.id);
+    const reports = await this.repo.listOpenReports(orgId, commentIds);
+    // One lookup covers both the comment authors and everyone who flagged them.
+    const people = new Set<string>();
+    for (const r of rows) {
+      people.add(r.comment.orgUserId);
+    }
+    for (const r of reports) {
+      people.add(r.orgUserId);
+    }
+    const authors = await this.repo.authorsOf(orgId, [...people]);
+    const unknown = { id: '', name: 'Unknown', image: null, role: 'student' as const, email: '' };
+
+    return rows.map(({ comment, courseId, activityTitle }) => {
+      const record = authors[comment.orgUserId] ?? { ...unknown, id: comment.orgUserId };
+      return {
+        comment,
+        author: this.toAuthor(record),
+        authorEmail: record.email,
+        courseId,
+        activityTitle,
+        reports: reports
+          .filter((r) => r.commentId === comment.id)
+          .map((r) => ({
+            reporter: this.toAuthor(authors[r.orgUserId] ?? { ...unknown, id: r.orgUserId }),
+            reason: r.reason,
+            createdAt: r.createdAt,
+          })),
+      };
     });
   }
 }
