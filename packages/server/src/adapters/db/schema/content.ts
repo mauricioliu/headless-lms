@@ -41,7 +41,7 @@ export const contentItems = pgTable(
     // FK target for type-pinned references from concrete content tables.
     typeUq: unique().on(t.orgId, t.id, t.type),
     // Widened per new content type.
-    typeCk: check('content_items_type_check', sql`${t.type} in ('course')`),
+    typeCk: check('content_items_type_check', sql`${t.type} in ('course', 'download')`),
   }),
 );
 
@@ -169,5 +169,84 @@ export const activityAssets = pgTable(
       foreignColumns: [assets.orgId, assets.id],
     }),
     activityAssetUq: unique().on(t.orgId, t.activityId, t.assetId),
+  }),
+);
+
+// A download: an ordered set of media-library assets. Shares its PK with a
+// registry row (same id) via the type-pinned composite FK, exactly like courses.
+export const downloads = pgTable(
+  'downloads',
+  {
+    orgId: text('org_id')
+      .notNull()
+      .references(() => organizations.id),
+    id: text('id')
+      .notNull()
+      .$defaultFn(() => genId('download')),
+    // Pinned to 'download' so the composite FK below cannot attach this row to
+    // a registry row of another content type.
+    type: text('type')
+      .notNull()
+      .generatedAlwaysAs(sql`'download'`),
+    title: text('title').notNull(),
+    slug: text('slug').notNull(),
+    description: text('description').notNull().default(''),
+    status: text('status', { enum: ['draft', 'published'] })
+      .notNull()
+      .default('draft'),
+    category: text('category').notNull().default(''),
+    thumbnailAssetId: text('thumbnail_asset_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.orgId, t.id] }),
+    slugUq: unique().on(t.orgId, t.slug),
+    contentItemFk: foreignKey({
+      columns: [t.orgId, t.id, t.type],
+      foreignColumns: [contentItems.orgId, contentItems.id, contentItems.type],
+    }).onDelete('cascade'),
+    // Restrictive: a thumbnail in use blocks deleting the asset.
+    thumbnailFk: foreignKey({
+      columns: [t.orgId, t.thumbnailAssetId],
+      foreignColumns: [assets.orgId, assets.id],
+    }),
+  }),
+);
+
+// download ↔ asset: the ordered set. Mirrors activity_assets one level
+// shallower — a download has no intermediate structure.
+export const downloadAssets = pgTable(
+  'download_assets',
+  {
+    orgId: text('org_id')
+      .notNull()
+      .references(() => organizations.id),
+    id: text('id')
+      .notNull()
+      .$defaultFn(() => genId('downloadAsset')),
+    downloadId: text('download_id').notNull(),
+    assetId: text('asset_id').notNull(),
+    seq: integer('seq').notNull().default(0),
+    // Author's label; null falls back to the asset's filename.
+    displayName: text('display_name'),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.orgId, t.id] }),
+    // The link cascades with its download; the asset is owned by the assets
+    // domain and survives (assetFk stays restrictive).
+    downloadFk: foreignKey({
+      columns: [t.orgId, t.downloadId],
+      foreignColumns: [downloads.orgId, downloads.id],
+    }).onDelete('cascade'),
+    assetFk: foreignKey({
+      columns: [t.orgId, t.assetId],
+      foreignColumns: [assets.orgId, assets.id],
+    }),
+    // Lets delivery key on asset_id rather than the link row id.
+    downloadAssetUq: unique().on(t.orgId, t.downloadId, t.assetId),
   }),
 );
