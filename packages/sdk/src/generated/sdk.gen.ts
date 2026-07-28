@@ -61,6 +61,9 @@ import type {
   EditCommentData,
   EditCommentErrors,
   EditCommentResponses,
+  EditStaffCommentData,
+  EditStaffCommentErrors,
+  EditStaffCommentResponses,
   GetActivityThreadData,
   GetActivityThreadErrors,
   GetActivityThreadResponses,
@@ -92,6 +95,9 @@ import type {
   GetModerationQueueResponses,
   GetOverviewData,
   GetOverviewResponses,
+  GetStaffActivityThreadData,
+  GetStaffActivityThreadErrors,
+  GetStaffActivityThreadResponses,
   GetStudentData,
   GetStudentErrors,
   GetStudentResponses,
@@ -142,6 +148,9 @@ import type {
   PostCommentResponses,
   PostMcpData,
   PostMcpResponses,
+  PostStaffCommentData,
+  PostStaffCommentErrors,
+  PostStaffCommentResponses,
   ReactToCommentData,
   ReactToCommentErrors,
   ReactToCommentResponses,
@@ -183,8 +192,10 @@ import type {
   RevokeConnectedAppErrors,
   RevokeConnectedAppResponses,
   SetActivityThreadStateData,
+  SetActivityThreadStateErrors,
   SetActivityThreadStateResponses,
   SetDiscussionSettingsData,
+  SetDiscussionSettingsErrors,
   SetDiscussionSettingsResponses,
   SetEntitlementStatusData,
   SetEntitlementStatusErrors,
@@ -841,6 +852,26 @@ export class Discussion {
   }
 
   /**
+   * Revise your own comment as staff
+   */
+  public static editStaffComment<ThrowOnError extends boolean = false>(
+    options: Options<EditStaffCommentData, ThrowOnError>,
+  ): RequestResult<EditStaffCommentResponses, EditStaffCommentErrors, ThrowOnError> {
+    return (options.client ?? client).patch<
+      EditStaffCommentResponses,
+      EditStaffCommentErrors,
+      ThrowOnError
+    >({
+      url: "/api/discussion/comments/{commentId}",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
    * Restore a removed comment
    */
   public static restoreComment<ThrowOnError extends boolean = false>(
@@ -867,6 +898,39 @@ export class Discussion {
   }
 
   /**
+   * Read an activity's comment thread as staff
+   */
+  public static getStaffActivityThread<ThrowOnError extends boolean = false>(
+    options: Options<GetStaffActivityThreadData, ThrowOnError>,
+  ): RequestResult<GetStaffActivityThreadResponses, GetStaffActivityThreadErrors, ThrowOnError> {
+    return (options.client ?? client).get<
+      GetStaffActivityThreadResponses,
+      GetStaffActivityThreadErrors,
+      ThrowOnError
+    >({ url: "/api/discussion/activities/{activityId}/thread", ...options });
+  }
+
+  /**
+   * Post a comment or reply on an activity as staff
+   */
+  public static postStaffComment<ThrowOnError extends boolean = false>(
+    options: Options<PostStaffCommentData, ThrowOnError>,
+  ): RequestResult<PostStaffCommentResponses, PostStaffCommentErrors, ThrowOnError> {
+    return (options.client ?? client).post<
+      PostStaffCommentResponses,
+      PostStaffCommentErrors,
+      ThrowOnError
+    >({
+      url: "/api/discussion/activities/{activityId}/comments",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
    * Read a course's discussion settings
    */
   public static getDiscussionSettings<ThrowOnError extends boolean = false>(
@@ -883,8 +947,12 @@ export class Discussion {
    */
   public static setDiscussionSettings<ThrowOnError extends boolean = false>(
     options: Options<SetDiscussionSettingsData, ThrowOnError>,
-  ): RequestResult<SetDiscussionSettingsResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).patch<SetDiscussionSettingsResponses, unknown, ThrowOnError>({
+  ): RequestResult<SetDiscussionSettingsResponses, SetDiscussionSettingsErrors, ThrowOnError> {
+    return (options.client ?? client).patch<
+      SetDiscussionSettingsResponses,
+      SetDiscussionSettingsErrors,
+      ThrowOnError
+    >({
       url: "/api/discussion/courses/{courseId}/settings",
       ...options,
       headers: {
@@ -911,8 +979,12 @@ export class Discussion {
    */
   public static setActivityThreadState<ThrowOnError extends boolean = false>(
     options: Options<SetActivityThreadStateData, ThrowOnError>,
-  ): RequestResult<SetActivityThreadStateResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).put<SetActivityThreadStateResponses, unknown, ThrowOnError>({
+  ): RequestResult<SetActivityThreadStateResponses, SetActivityThreadStateErrors, ThrowOnError> {
+    return (options.client ?? client).put<
+      SetActivityThreadStateResponses,
+      SetActivityThreadStateErrors,
+      ThrowOnError
+    >({
       url: "/api/discussion/activities/{activityId}/thread-state",
       ...options,
       headers: {
