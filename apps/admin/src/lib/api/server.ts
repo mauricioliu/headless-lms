@@ -98,6 +98,12 @@ export const serverApi = {
       }),
     );
   },
+  async getDownload(downloadId: string): Promise<Download> {
+    ensureConfigured();
+    return unwrap(
+      await Downloads.getDownload({ path: { downloadId }, ...(await authHeaders()) }),
+    );
+  },
 
   // students
   async listStudents(params: ListParams): Promise<Paginated<Student>> {
