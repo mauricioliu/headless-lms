@@ -42,6 +42,7 @@ import type {
   ConnectedApp,
   Course,
   Download,
+  DownloadAsset,
   Entitlement,
   IntegrationConnection,
   ListParams,
@@ -102,6 +103,12 @@ export const serverApi = {
     ensureConfigured();
     return unwrap(
       await Downloads.getDownload({ path: { downloadId }, ...(await authHeaders()) }),
+    );
+  },
+  async listDownloadAssets(downloadId: string): Promise<DownloadAsset[]> {
+    ensureConfigured();
+    return unwrap(
+      await Downloads.listDownloadAssets({ path: { downloadId }, ...(await authHeaders()) }),
     );
   },
 
