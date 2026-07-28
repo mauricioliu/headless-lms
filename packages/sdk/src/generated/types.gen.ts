@@ -1001,7 +1001,7 @@ export type ModerateRemoveCommentResponses = {
 export type ModerateRemoveCommentResponse =
   ModerateRemoveCommentResponses[keyof ModerateRemoveCommentResponses];
 
-export type EditStaffCommentData = {
+export type EditComment2Data = {
   body: {
     body: string;
   };
@@ -1012,7 +1012,7 @@ export type EditStaffCommentData = {
   url: "/api/discussion/comments/{commentId}";
 };
 
-export type EditStaffCommentErrors = {
+export type EditComment2Errors = {
   /**
    * Default Response
    */
@@ -1029,9 +1029,9 @@ export type EditStaffCommentErrors = {
   };
 };
 
-export type EditStaffCommentError = EditStaffCommentErrors[keyof EditStaffCommentErrors];
+export type EditComment2Error = EditComment2Errors[keyof EditComment2Errors];
 
-export type EditStaffCommentResponses = {
+export type EditComment2Responses = {
   /**
    * Default Response
    */
@@ -1063,7 +1063,7 @@ export type EditStaffCommentResponses = {
   };
 };
 
-export type EditStaffCommentResponse = EditStaffCommentResponses[keyof EditStaffCommentResponses];
+export type EditComment2Response = EditComment2Responses[keyof EditComment2Responses];
 
 export type RestoreCommentData = {
   body?: never;
@@ -1148,7 +1148,7 @@ export type ResolveCommentReportsResponses = {
   204: unknown;
 };
 
-export type GetStaffActivityThreadData = {
+export type GetActivityThread2Data = {
   body?: never;
   path: {
     activityId: string;
@@ -1157,7 +1157,7 @@ export type GetStaffActivityThreadData = {
   url: "/api/discussion/activities/{activityId}/thread";
 };
 
-export type GetStaffActivityThreadErrors = {
+export type GetActivityThread2Errors = {
   /**
    * Default Response
    */
@@ -1167,10 +1167,9 @@ export type GetStaffActivityThreadErrors = {
   };
 };
 
-export type GetStaffActivityThreadError =
-  GetStaffActivityThreadErrors[keyof GetStaffActivityThreadErrors];
+export type GetActivityThread2Error = GetActivityThread2Errors[keyof GetActivityThread2Errors];
 
-export type GetStaffActivityThreadResponses = {
+export type GetActivityThread2Responses = {
   /**
    * Default Response
    */
@@ -1211,8 +1210,8 @@ export type GetStaffActivityThreadResponses = {
   };
 };
 
-export type GetStaffActivityThreadResponse =
-  GetStaffActivityThreadResponses[keyof GetStaffActivityThreadResponses];
+export type GetActivityThread2Response =
+  GetActivityThread2Responses[keyof GetActivityThread2Responses];
 
 export type SetThreadStateData = {
   body: {
@@ -1244,7 +1243,7 @@ export type SetThreadStateResponses = {
   204: unknown;
 };
 
-export type PostStaffCommentData = {
+export type PostComment2Data = {
   body: {
     body: string;
     parentId?: string | null;
@@ -1256,7 +1255,7 @@ export type PostStaffCommentData = {
   url: "/api/discussion/activities/{activityId}/thread/comments";
 };
 
-export type PostStaffCommentErrors = {
+export type PostComment2Errors = {
   /**
    * Default Response
    */
@@ -1273,9 +1272,9 @@ export type PostStaffCommentErrors = {
   };
 };
 
-export type PostStaffCommentError = PostStaffCommentErrors[keyof PostStaffCommentErrors];
+export type PostComment2Error = PostComment2Errors[keyof PostComment2Errors];
 
-export type PostStaffCommentResponses = {
+export type PostComment2Responses = {
   /**
    * Default Response
    */
@@ -1307,7 +1306,7 @@ export type PostStaffCommentResponses = {
   };
 };
 
-export type PostStaffCommentResponse = PostStaffCommentResponses[keyof PostStaffCommentResponses];
+export type PostComment2Response = PostComment2Responses[keyof PostComment2Responses];
 
 export type GetDiscussionSettingsData = {
   body?: never;

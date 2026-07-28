@@ -58,12 +58,15 @@ import type {
   DisconnectIntegrationData,
   DisconnectIntegrationErrors,
   DisconnectIntegrationResponses,
+  EditComment2Data,
+  EditComment2Errors,
+  EditComment2Responses,
   EditCommentData,
   EditCommentErrors,
   EditCommentResponses,
-  EditStaffCommentData,
-  EditStaffCommentErrors,
-  EditStaffCommentResponses,
+  GetActivityThread2Data,
+  GetActivityThread2Errors,
+  GetActivityThread2Responses,
   GetActivityThreadData,
   GetActivityThreadErrors,
   GetActivityThreadResponses,
@@ -95,9 +98,6 @@ import type {
   GetModerationQueueResponses,
   GetOverviewData,
   GetOverviewResponses,
-  GetStaffActivityThreadData,
-  GetStaffActivityThreadErrors,
-  GetStaffActivityThreadResponses,
   GetStudentData,
   GetStudentErrors,
   GetStudentResponses,
@@ -143,14 +143,14 @@ import type {
   ModerateRemoveCommentData,
   ModerateRemoveCommentErrors,
   ModerateRemoveCommentResponses,
+  PostComment2Data,
+  PostComment2Errors,
+  PostComment2Responses,
   PostCommentData,
   PostCommentErrors,
   PostCommentResponses,
   PostMcpData,
   PostMcpResponses,
-  PostStaffCommentData,
-  PostStaffCommentErrors,
-  PostStaffCommentResponses,
   ReactToCommentData,
   ReactToCommentErrors,
   ReactToCommentResponses,
@@ -692,9 +692,7 @@ export class Learn {
       ThrowOnError
     >({ url: "/api/learn/courses/{courseId}/progress", ...options });
   }
-}
 
-export class Discussion {
   /**
    * Read an activity's comment thread
    */
@@ -812,7 +810,9 @@ export class Discussion {
       },
     });
   }
+}
 
+export class Discussion {
   /**
    * List comments awaiting review or carrying unresolved reports
    */
@@ -854,12 +854,12 @@ export class Discussion {
   /**
    * Revise your own comment as staff
    */
-  public static editStaffComment<ThrowOnError extends boolean = false>(
-    options: Options<EditStaffCommentData, ThrowOnError>,
-  ): RequestResult<EditStaffCommentResponses, EditStaffCommentErrors, ThrowOnError> {
+  public static editComment<ThrowOnError extends boolean = false>(
+    options: Options<EditComment2Data, ThrowOnError>,
+  ): RequestResult<EditComment2Responses, EditComment2Errors, ThrowOnError> {
     return (options.client ?? client).patch<
-      EditStaffCommentResponses,
-      EditStaffCommentErrors,
+      EditComment2Responses,
+      EditComment2Errors,
       ThrowOnError
     >({
       url: "/api/discussion/comments/{commentId}",
@@ -900,12 +900,12 @@ export class Discussion {
   /**
    * Read an activity's comment thread as staff
    */
-  public static getStaffActivityThread<ThrowOnError extends boolean = false>(
-    options: Options<GetStaffActivityThreadData, ThrowOnError>,
-  ): RequestResult<GetStaffActivityThreadResponses, GetStaffActivityThreadErrors, ThrowOnError> {
+  public static getActivityThread<ThrowOnError extends boolean = false>(
+    options: Options<GetActivityThread2Data, ThrowOnError>,
+  ): RequestResult<GetActivityThread2Responses, GetActivityThread2Errors, ThrowOnError> {
     return (options.client ?? client).get<
-      GetStaffActivityThreadResponses,
-      GetStaffActivityThreadErrors,
+      GetActivityThread2Responses,
+      GetActivityThread2Errors,
       ThrowOnError
     >({ url: "/api/discussion/activities/{activityId}/thread", ...options });
   }
@@ -933,21 +933,19 @@ export class Discussion {
   /**
    * Post a comment or reply on an activity as staff
    */
-  public static postStaffComment<ThrowOnError extends boolean = false>(
-    options: Options<PostStaffCommentData, ThrowOnError>,
-  ): RequestResult<PostStaffCommentResponses, PostStaffCommentErrors, ThrowOnError> {
-    return (options.client ?? client).post<
-      PostStaffCommentResponses,
-      PostStaffCommentErrors,
-      ThrowOnError
-    >({
-      url: "/api/discussion/activities/{activityId}/thread/comments",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
+  public static postComment<ThrowOnError extends boolean = false>(
+    options: Options<PostComment2Data, ThrowOnError>,
+  ): RequestResult<PostComment2Responses, PostComment2Errors, ThrowOnError> {
+    return (options.client ?? client).post<PostComment2Responses, PostComment2Errors, ThrowOnError>(
+      {
+        url: "/api/discussion/activities/{activityId}/thread/comments",
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
       },
-    });
+    );
   }
 
   /**

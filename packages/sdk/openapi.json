@@ -1354,7 +1354,7 @@
         "operationId": "getActivityThread",
         "summary": "Read an activity's comment thread",
         "tags": [
-          "Discussion"
+          "Learn"
         ],
         "parameters": [
           {
@@ -1584,7 +1584,7 @@
         "operationId": "postComment",
         "summary": "Post a comment or reply on an activity",
         "tags": [
-          "Discussion"
+          "Learn"
         ],
         "requestBody": {
           "required": true,
@@ -1815,7 +1815,7 @@
         "operationId": "editComment",
         "summary": "Revise your own comment",
         "tags": [
-          "Discussion"
+          "Learn"
         ],
         "requestBody": {
           "required": true,
@@ -2039,7 +2039,7 @@
         "operationId": "removeOwnComment",
         "summary": "Remove your own comment",
         "tags": [
-          "Discussion"
+          "Learn"
         ],
         "parameters": [
           {
@@ -2162,7 +2162,7 @@
         "operationId": "reactToComment",
         "summary": "Add a reaction to a comment",
         "tags": [
-          "Discussion"
+          "Learn"
         ],
         "requestBody": {
           "required": true,
@@ -2253,7 +2253,7 @@
         "operationId": "unreactToComment",
         "summary": "Remove your reaction from a comment",
         "tags": [
-          "Discussion"
+          "Learn"
         ],
         "requestBody": {
           "required": true,
@@ -2346,7 +2346,7 @@
         "operationId": "reportComment",
         "summary": "Flag a comment for moderator attention",
         "tags": [
-          "Discussion"
+          "Learn"
         ],
         "requestBody": {
           "required": true,
@@ -2917,7 +2917,7 @@
         }
       },
       "patch": {
-        "operationId": "editStaffComment",
+        "operationId": "editComment",
         "summary": "Revise your own comment as staff",
         "tags": [
           "Discussion"
@@ -3339,7 +3339,7 @@
     },
     "/api/discussion/activities/{activityId}/thread": {
       "get": {
-        "operationId": "getStaffActivityThread",
+        "operationId": "getActivityThread",
         "summary": "Read an activity's comment thread as staff",
         "tags": [
           "Discussion"
@@ -3656,7 +3656,7 @@
     },
     "/api/discussion/activities/{activityId}/thread/comments": {
       "post": {
-        "operationId": "postStaffComment",
+        "operationId": "postComment",
         "summary": "Post a comment or reply on an activity as staff",
         "tags": [
           "Discussion"

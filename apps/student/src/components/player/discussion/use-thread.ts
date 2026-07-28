@@ -4,7 +4,7 @@
 // reducer in ./thread-state so the rules stay testable; this file owns only the
 // network calls and the request-ordering guard.
 import * as React from "react";
-import { Discussion } from "@headless-lms/sdk";
+import { Learn } from "@headless-lms/sdk";
 import type { CommentAuthor, ThreadComment } from "@/lib/api/types";
 
 import { ensureClientSdk } from "@/lib/api/client-sdk";
@@ -41,7 +41,7 @@ export function useThread(activityId: string): UseThread {
     ensureClientSdk();
     dispatch({ kind: "loading" });
     let cancelled = false;
-    void Discussion.getActivityThread({ path: { activityId } })
+    void Learn.getActivityThread({ path: { activityId } })
       .then((res) => {
         if (cancelled || current.current !== activityId) return;
         if (res.data) dispatch({ kind: "loaded", view: res.data });
@@ -79,7 +79,7 @@ export function useThread(activityId: string): UseThread {
     async (body: string, parentId: string | null) => {
       ensureClientSdk();
       try {
-        const res = await Discussion.postComment({
+        const res = await Learn.postComment({
           path: { activityId },
           body: { body, parentId },
         });
@@ -96,7 +96,7 @@ export function useThread(activityId: string): UseThread {
   const edit = React.useCallback(async (id: string, body: string) => {
     ensureClientSdk();
     try {
-      const res = await Discussion.editComment({ path: { commentId: id }, body: { body } });
+      const res = await Learn.editComment({ path: { commentId: id }, body: { body } });
       if (!res.data) throw new Error("Could not save your change");
       dispatch({ kind: "replaced", id, comment: res.data });
     } catch (err: unknown) {
@@ -111,7 +111,7 @@ export function useThread(activityId: string): UseThread {
         () => dispatch({ kind: "removed", id, by }),
         async () => {
           ensureClientSdk();
-          await Discussion.removeOwnComment({ path: { commentId: id } });
+          await Learn.removeOwnComment({ path: { commentId: id } });
         },
       ),
     [optimistic],
@@ -124,9 +124,9 @@ export function useThread(activityId: string): UseThread {
         async () => {
           ensureClientSdk();
           if (on) {
-            await Discussion.reactToComment({ path: { commentId: id }, body: { emoji } });
+            await Learn.reactToComment({ path: { commentId: id }, body: { emoji } });
           } else {
-            await Discussion.unreactToComment({ path: { commentId: id }, body: { emoji } });
+            await Learn.unreactToComment({ path: { commentId: id }, body: { emoji } });
           }
         },
       ),
@@ -139,7 +139,7 @@ export function useThread(activityId: string): UseThread {
   const report = React.useCallback(async (id: string, reason: string) => {
     ensureClientSdk();
     try {
-      await Discussion.reportComment({ path: { commentId: id }, body: { reason } });
+      await Learn.reportComment({ path: { commentId: id }, body: { reason } });
     } catch (err: unknown) {
       dispatch({ kind: "failed", message: message(err) });
       throw err;

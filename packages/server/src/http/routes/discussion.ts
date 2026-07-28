@@ -93,7 +93,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     preHandler: app.requireSession,
     schema: {
       operationId: 'getActivityThread',
-      tags: ['Discussion'],
+      tags: ['Learn'],
       summary: "Read an activity's comment thread",
       params: DiscussionActivityParam,
       response: { 200: ThreadView, 404: ErrorBody },
@@ -112,7 +112,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     preHandler: app.requireSession,
     schema: {
       operationId: 'postComment',
-      tags: ['Discussion'],
+      tags: ['Learn'],
       summary: 'Post a comment or reply on an activity',
       params: DiscussionActivityParam,
       body: PostComment,
@@ -136,7 +136,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     preHandler: app.requireSession,
     schema: {
       operationId: 'editComment',
-      tags: ['Discussion'],
+      tags: ['Learn'],
       summary: 'Revise your own comment',
       params: CommentIdParam,
       body: EditComment,
@@ -156,7 +156,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     preHandler: app.requireSession,
     schema: {
       operationId: 'removeOwnComment',
-      tags: ['Discussion'],
+      tags: ['Learn'],
       summary: 'Remove your own comment',
       params: CommentIdParam,
       response: { 200: Comment, 403: ErrorBody, 404: ErrorBody },
@@ -175,7 +175,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     preHandler: app.requireSession,
     schema: {
       operationId: 'reactToComment',
-      tags: ['Discussion'],
+      tags: ['Learn'],
       summary: 'Add a reaction to a comment',
       params: CommentIdParam,
       body: ReactToComment,
@@ -196,7 +196,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     preHandler: app.requireSession,
     schema: {
       operationId: 'unreactToComment',
-      tags: ['Discussion'],
+      tags: ['Learn'],
       summary: 'Remove your reaction from a comment',
       params: CommentIdParam,
       body: ReactToComment,
@@ -217,7 +217,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     preHandler: app.requireSession,
     schema: {
       operationId: 'reportComment',
-      tags: ['Discussion'],
+      tags: ['Learn'],
       summary: 'Flag a comment for moderator attention',
       params: CommentIdParam,
       body: ReportComment,
@@ -332,7 +332,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     url: '/api/discussion/activities/:activityId/thread',
     preHandler: app.requireSession,
     schema: {
-      operationId: 'getStaffActivityThread',
+      operationId: 'getActivityThread',
       tags: ['Discussion'],
       summary: "Read an activity's comment thread as staff",
       params: DiscussionActivityParam,
@@ -351,7 +351,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     url: '/api/discussion/activities/:activityId/thread/comments',
     preHandler: app.requireSession,
     schema: {
-      operationId: 'postStaffComment',
+      operationId: 'postComment',
       tags: ['Discussion'],
       summary: 'Post a comment or reply on an activity as staff',
       params: DiscussionActivityParam,
@@ -375,7 +375,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     url: '/api/discussion/comments/:commentId',
     preHandler: app.requireSession,
     schema: {
-      operationId: 'editStaffComment',
+      operationId: 'editComment',
       tags: ['Discussion'],
       summary: 'Revise your own comment as staff',
       params: CommentIdParam,
