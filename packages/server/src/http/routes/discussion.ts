@@ -106,7 +106,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
 
   r.route({
     method: 'POST',
-    url: '/api/learn/activities/:activityId/comments',
+    url: '/api/learn/activities/:activityId/thread/comments',
     preHandler: app.requireSession,
     schema: {
       operationId: 'postComment',
@@ -346,7 +346,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
 
   r.route({
     method: 'POST',
-    url: '/api/discussion/activities/:activityId/comments',
+    url: '/api/discussion/activities/:activityId/thread/comments',
     preHandler: app.requireSession,
     schema: {
       operationId: 'postStaffComment',

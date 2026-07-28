@@ -715,7 +715,7 @@ export class Discussion {
     options: Options<PostCommentData, ThrowOnError>,
   ): RequestResult<PostCommentResponses, PostCommentErrors, ThrowOnError> {
     return (options.client ?? client).post<PostCommentResponses, PostCommentErrors, ThrowOnError>({
-      url: "/api/learn/activities/{activityId}/comments",
+      url: "/api/learn/activities/{activityId}/thread/comments",
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -921,7 +921,7 @@ export class Discussion {
       PostStaffCommentErrors,
       ThrowOnError
     >({
-      url: "/api/discussion/activities/{activityId}/comments",
+      url: "/api/discussion/activities/{activityId}/thread/comments",
       ...options,
       headers: {
         "Content-Type": "application/json",

@@ -565,7 +565,7 @@ export type PostCommentData = {
     activityId: string;
   };
   query?: never;
-  url: "/api/learn/activities/{activityId}/comments";
+  url: "/api/learn/activities/{activityId}/thread/comments";
 };
 
 export type PostCommentErrors = {
@@ -1223,7 +1223,7 @@ export type PostStaffCommentData = {
     activityId: string;
   };
   query?: never;
-  url: "/api/discussion/activities/{activityId}/comments";
+  url: "/api/discussion/activities/{activityId}/thread/comments";
 };
 
 export type PostStaffCommentErrors = {

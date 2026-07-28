@@ -1579,7 +1579,7 @@
         }
       }
     },
-    "/api/learn/activities/{activityId}/comments": {
+    "/api/learn/activities/{activityId}/thread/comments": {
       "post": {
         "operationId": "postComment",
         "summary": "Post a comment or reply on an activity",
@@ -3567,7 +3567,7 @@
         }
       }
     },
-    "/api/discussion/activities/{activityId}/comments": {
+    "/api/discussion/activities/{activityId}/thread/comments": {
       "post": {
         "operationId": "postStaffComment",
         "summary": "Post a comment or reply on an activity as staff",
