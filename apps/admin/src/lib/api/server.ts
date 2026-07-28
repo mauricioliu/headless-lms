@@ -154,11 +154,11 @@ export const serverApi = {
       }),
     );
   },
-  async courseEntitlements(courseId: string): Promise<Entitlement[]> {
+  async contentEntitlements(contentId: string): Promise<Entitlement[]> {
     ensureConfigured();
     const page = unwrap(
       await Entitlements.listEntitlements({
-        query: { contentId: courseId, pageSize: 100 },
+        query: { contentId, pageSize: 100 },
         ...(await authHeaders()),
       }),
     );
