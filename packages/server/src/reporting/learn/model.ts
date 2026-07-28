@@ -3,10 +3,10 @@
 // resolves against the content service.
 export type { Course, Module } from '../../core/content/index.js';
 
-/** An active-enrollment pointer: the org + course a student may consume. */
-export interface CourseRef {
+/** An active-entitlement pointer: the org + content item a student may consume. */
+export interface ContentRef {
   orgId: string;
-  courseId: string;
+  contentId: string;
 }
 
 /** Per-course progress for the student surface. Derived on read against the

@@ -23,7 +23,7 @@ export class LearnReportServiceImpl implements LearnReportService {
 
   async listCourses(orgId: string, orgUserId: string): Promise<Course[]> {
     const refs = await this.reader.activeRefs(orgId, orgUserId);
-    const courses = await Promise.all(refs.map((ref) => this.content.get(ref.orgId, ref.courseId)));
+    const courses = await Promise.all(refs.map((ref) => this.content.get(ref.orgId, ref.contentId)));
     return courses.filter((c): c is Course => c !== null && c.status === 'published');
   }
 

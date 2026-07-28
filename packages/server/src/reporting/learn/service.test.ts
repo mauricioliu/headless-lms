@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LearnReportServiceImpl } from './service.js';
-import type { LearnEntitlementReader, CourseRef } from './index.js';
+import type { LearnEntitlementReader, ContentRef } from './index.js';
 import type { ContentService, Course, Module } from '../../core/content/index.js';
 import type { ProgressRecord, ProgressService } from '../../core/progress/index.js';
 
@@ -45,11 +45,11 @@ function course(id: string, status: 'draft' | 'published' = 'published'): Course
   };
 }
 
-function fakeReader(refs: CourseRef[]): LearnEntitlementReader {
+function fakeReader(refs: ContentRef[]): LearnEntitlementReader {
   return {
     activeRefs: async (orgId) => refs.filter((r) => r.orgId === orgId),
     activeRef: async (orgId, _s, courseId) =>
-      refs.find((r) => r.orgId === orgId && r.courseId === courseId) ?? null,
+      refs.find((r) => r.orgId === orgId && r.contentId === courseId) ?? null,
   };
 }
 
@@ -68,8 +68,8 @@ describe('LearnReportServiceImpl', () => {
   it('lists only published courses the student is enrolled in', async () => {
     const svc = new LearnReportServiceImpl(
       fakeReader([
-        { orgId: 'o1', courseId: 'c1' },
-        { orgId: 'o1', courseId: 'c2' },
+        { orgId: 'o1', contentId: 'c1' },
+        { orgId: 'o1', contentId: 'c2' },
       ]),
       fakeContent({ c1: course('c1', 'published'), c2: course('c2', 'draft') }, {}),
       fakeProgress([]),
@@ -80,7 +80,7 @@ describe('LearnReportServiceImpl', () => {
 
   it('returns null for a course the student is not enrolled in', async () => {
     const svc = new LearnReportServiceImpl(
-      fakeReader([{ orgId: 'o1', courseId: 'c1' }]),
+      fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
       fakeContent({ c1: course('c1') }, {}),
       fakeProgress([]),
     );
@@ -90,7 +90,7 @@ describe('LearnReportServiceImpl', () => {
 
   it('does not return a course enrolled in another org', async () => {
     const svc = new LearnReportServiceImpl(
-      fakeReader([{ orgId: 'o2', courseId: 'c1' }]),
+      fakeReader([{ orgId: 'o2', contentId: 'c1' }]),
       fakeContent({ c1: course('c1') }, {}),
       fakeProgress([]),
     );
@@ -113,7 +113,7 @@ describe('LearnReportServiceImpl', () => {
       },
     ];
     const svc = new LearnReportServiceImpl(
-      fakeReader([{ orgId: 'o1', courseId: 'c1' }]),
+      fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
       fakeContent({ c1: course('c1') }, { c1: modules }),
       fakeProgress([]),
     );
@@ -149,7 +149,7 @@ describe('LearnReportServiceImpl.courseProgress', () => {
 
   it('maps records to statuses and derives percent from published activities only', async () => {
     const svc = new LearnReportServiceImpl(
-      fakeReader([{ orgId: 'o1', courseId: 'c1' }]),
+      fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
       fakeContent({ c1: course('c1') }, { c1: progressModules }),
       fakeProgress([
         progressRecord({ targetType: 'activity', targetId: 'a1', completedAt: '2026-07-23T09:30:00Z' }),
@@ -169,7 +169,7 @@ describe('LearnReportServiceImpl.courseProgress', () => {
 
   it('completed reflects the course target record', async () => {
     const svc = new LearnReportServiceImpl(
-      fakeReader([{ orgId: 'o1', courseId: 'c1' }]),
+      fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
       fakeContent({ c1: course('c1') }, { c1: progressModules }),
       fakeProgress([
         progressRecord({ targetType: 'activity', targetId: 'a1', completedAt: '2026-07-23T09:30:00Z' }),
@@ -183,7 +183,7 @@ describe('LearnReportServiceImpl.courseProgress', () => {
 
   it('includes stored positions keyed by activity, omitting recordless activities', async () => {
     const svc = new LearnReportServiceImpl(
-      fakeReader([{ orgId: 'o1', courseId: 'c1' }]),
+      fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
       fakeContent({ c1: course('c1') }, { c1: progressModules }),
       fakeProgress([
         progressRecord({
