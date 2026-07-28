@@ -14,7 +14,7 @@ import { Learn } from "@headless-lms/sdk";
 
 import { redirectIfNoStudent, unwrap } from "./shared";
 import { ensureConfigured, authHeaders } from "./server-call";
-import type { Course, CourseSummary, Module, Org } from "./types";
+import type { Course, CourseSummary, Download, DownloadDetail, Module, Org } from "./types";
 
 export const learnApi = {
   async listCourses(): Promise<CourseSummary[]> {
@@ -59,5 +59,29 @@ export const learnApi = {
       return null;
     }
     return res.data ?? null;
+  },
+  async listDownloads(): Promise<Download[]> {
+    ensureConfigured();
+    return unwrap(await Learn.listLearnDownloads(await authHeaders()));
+  },
+  async getDownload(downloadId: string): Promise<DownloadDetail | null> {
+    ensureConfigured();
+    const res = await Learn.getLearnDownload({ path: { downloadId }, ...(await authHeaders()) });
+    if (res.error) {
+      redirectIfNoStudent(res.response?.status);
+      if ((res.response?.status ?? 0) === 404) return null;
+      throw new Error(`getDownload failed: ${res.response?.status}`);
+    }
+    return res.data ?? null;
+  },
+  /** Sign a fresh short-lived URL for an org asset (e.g. a download thumbnail). */
+  async assetUrl(assetId: string): Promise<string | null> {
+    ensureConfigured();
+    const res = await Learn.requestLearnAssetDownload({
+      path: { id: assetId },
+      body: {},
+      ...(await authHeaders()),
+    });
+    return res.error ? null : (res.data?.url ?? null);
   },
 };
