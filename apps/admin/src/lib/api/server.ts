@@ -24,6 +24,7 @@ import {
   ConnectedApps,
   Courses,
   Dashboard,
+  Downloads,
   Entitlements,
   Integrations,
   Organizations,
@@ -40,6 +41,7 @@ import type {
   AvailableIntegration,
   ConnectedApp,
   Course,
+  Download,
   Entitlement,
   IntegrationConnection,
   ListParams,
@@ -84,6 +86,17 @@ export const serverApi = {
       await Courses.listCourses({ query: { pageSize: 100, sort: "title" }, ...(await authHeaders()) }),
     );
     return page.rows.map((c) => ({ id: c.id, title: c.title }));
+  },
+
+  // downloads
+  async listDownloads(params: ListParams): Promise<Paginated<Download>> {
+    ensureConfigured();
+    return unwrap(
+      await Downloads.listDownloads({
+        query: toQuery(params, ["status", "category"]),
+        ...(await authHeaders()),
+      }),
+    );
   },
 
   // students

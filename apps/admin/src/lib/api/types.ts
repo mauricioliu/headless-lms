@@ -11,6 +11,7 @@ import type {
   GetAssetResponse,
   GetAutomationResponse,
   GetCourseResponse,
+  GetDownloadResponse,
   GetOverviewResponse,
   GetStudentResponse,
   ListAssetsResponse,
@@ -20,6 +21,8 @@ import type {
   ListConnectedAppsResponse,
   ListConnectionsResponse,
   ListCoursesResponse,
+  ListDownloadAssetsResponse,
+  ListDownloadsResponse,
   ListEntitlementsResponse,
   ListMembersResponse,
   ListModulesResponse,
@@ -32,6 +35,10 @@ import type {
 
 export type Course = GetCourseResponse;
 export type CourseStatus = Course["status"];
+
+export type Download = GetDownloadResponse;
+export type DownloadStatus = Download["status"];
+export type DownloadAsset = ListDownloadAssetsResponse[number];
 
 export type Module = ListModulesResponse[number];
 
@@ -110,6 +117,7 @@ export type DownloadTicket = RequestAssetDownloadResponse;
 
 // Page envelopes (shape: { rows, total, page, pageSize }).
 export type CoursesPage = ListCoursesResponse;
+export type DownloadsPage = ListDownloadsResponse;
 export type StudentsPage = ListStudentsResponse;
 export type EntitlementsPage = ListEntitlementsResponse;
 export type MembersPage = ListMembersResponse;
