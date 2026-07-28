@@ -140,6 +140,12 @@ export function ItemFormSheet({
             onOpenChange(false);
             return;
           }
+        } else {
+          toast.warning("Activity saved, but the discussion setting did not apply", {
+            description: "Could not find the new activity to apply it to.",
+          });
+          onOpenChange(false);
+          return;
         }
       }
 
