@@ -28,6 +28,7 @@ import {
 import { ContentServiceImpl } from '../core/content/index.js';
 import { EntitlementsServiceImpl } from '../core/entitlements/index.js';
 import { ProgressServiceImpl } from '../core/progress/index.js';
+import { DiscussionServiceImpl } from '../core/discussion/index.js';
 import { IdentityServiceImpl } from '../core/identity/index.js';
 import { OrganizationServiceImpl, type OrgAdmin } from '../core/organizations/index.js';
 import { AssetsServiceImpl } from '../core/assets/index.js';
@@ -44,6 +45,7 @@ import { ID_PREFIXES } from '../core/shared/id.js';
 
 import { DrizzleEntitlementsRepository } from '../adapters/db/repositories/entitlements.js';
 import { DrizzleProgressRepository } from '../adapters/db/repositories/progress.js';
+import { DrizzleDiscussionRepository } from '../adapters/db/repositories/discussion.js';
 import { DrizzleIdentityRepository } from '../adapters/db/repositories/identity.js';
 import { DrizzleOrganizationsRepository } from '../adapters/db/repositories/organizations.js';
 import { DrizzleMembersRepository } from '../adapters/db/repositories/members.js';
@@ -165,6 +167,7 @@ export interface Container {
   content: ContentServiceImpl;
   entitlements: EntitlementsServiceImpl;
   progress: ProgressServiceImpl;
+  discussion: DiscussionServiceImpl;
   assets: AssetsServiceImpl;
   integrations: IntegrationsServiceImpl;
   automations: AutomationsServiceImpl;
@@ -216,6 +219,7 @@ export async function buildContainer(
   const contentLogger = logger.child({ name: 'content' });
   const entitlementsLogger = logger.child({ name: 'entitlements' });
   const progressLogger = logger.child({ name: 'progress' });
+  const discussionLogger = logger.child({ name: 'discussion' });
   const assetsLogger = logger.child({ name: 'assets' });
   const integrationsLogger = logger.child({ name: 'integrations' });
   const automationsLogger = logger.child({ name: 'automations' });
@@ -301,6 +305,17 @@ export async function buildContainer(
     progressUow,
     () => new Date().toISOString(),
     progressLogger,
+  );
+  // Discussion: comment writes + outbox append in one tx.
+  const discussionUow = new DrizzleUnitOfWork(db, (tx) => ({
+    discussion: new DrizzleDiscussionRepository(tx, discussionLogger),
+    outbox: new DrizzleOutboxAppender(tx, outboxLogger),
+  }));
+  const discussion = new DiscussionServiceImpl(
+    new DrizzleDiscussionRepository(db, discussionLogger),
+    discussionUow,
+    () => new Date().toISOString(),
+    discussionLogger,
   );
   const assets = new AssetsServiceImpl(
     storage,
@@ -437,6 +452,7 @@ export async function buildContainer(
     content,
     entitlements,
     progress,
+    discussion,
     assets,
     integrations,
     automations,

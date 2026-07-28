@@ -1,12 +1,8 @@
 // Students resource schemas.
 import { z } from "zod";
-import { ListQuery, paginated } from "./shared.js";
+import { ListQuery, paginated, OrgUserProfileSchema } from "./shared.js";
 
-export const Student = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string(),
-  image: z.string().nullable().optional(),
+export const Student = OrgUserProfileSchema.extend({
   entitlementCount: z.number().int(),
   /** 0–100, averaged across active entitlements. */
   avgProgress: z.number().int(),

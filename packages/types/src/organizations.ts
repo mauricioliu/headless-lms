@@ -43,6 +43,19 @@ export interface OrgUser {
   readonly updatedAt: Date;
 }
 
+/**
+ * One person's participation in one org, as displayed. `id` is `org_users.id`.
+ * `name` is composed from the participation's first and last name; `image` comes
+ * from the auth engine's user record, so it is null for a roster entry that has
+ * no person behind it yet.
+ */
+export interface OrgUserProfile {
+  readonly id: string;
+  name: string;
+  email: string;
+  image: string | null;
+}
+
 export interface Invitation {
   readonly id: string;
   readonly orgId: string;

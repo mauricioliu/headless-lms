@@ -64,4 +64,8 @@ export class EntitlementsServiceImpl implements EntitlementsService {
     }
     return entitlement;
   }
+
+  hasCourseAccess(orgId: string, orgUserId: string, courseId: string): Promise<boolean> {
+    return this.repo.hasCourseAccess(orgId, orgUserId, courseId);
+  }
 }

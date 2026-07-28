@@ -491,6 +491,809 @@ export type GetLearnCourseProgressResponses = {
 export type GetLearnCourseProgressResponse =
   GetLearnCourseProgressResponses[keyof GetLearnCourseProgressResponses];
 
+export type ListActivityCommentsData = {
+  body?: never;
+  path: {
+    activityId: string;
+  };
+  query?: never;
+  url: "/api/learn/activities/{activityId}/comments";
+};
+
+export type ListActivityCommentsErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type ListActivityCommentsError =
+  ListActivityCommentsErrors[keyof ListActivityCommentsErrors];
+
+export type ListActivityCommentsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    config: {
+      enabled: boolean;
+      threaded: boolean;
+      requireReview: boolean;
+      reactions: boolean;
+      state: "visible" | "hidden" | "locked";
+    };
+    comments: Array<{
+      id: string;
+      parentId: string | null;
+      author: {
+        id: string;
+        name: string;
+        image: string | null;
+        role: "owner" | "admin" | "instructor" | "student";
+      };
+      isOwn: boolean;
+      body: string | null;
+      status: "pending" | "published" | "removed";
+      removedBy: {
+        id: string;
+        name: string;
+        image: string | null;
+        role: "owner" | "admin" | "instructor" | "student";
+      } | null;
+      reactions: Array<{
+        emoji: string;
+        count: number;
+        reacted: boolean;
+      }>;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+  };
+};
+
+export type ListActivityCommentsResponse =
+  ListActivityCommentsResponses[keyof ListActivityCommentsResponses];
+
+export type PostCommentData = {
+  body: {
+    body: string;
+    parentId?: string | null;
+  };
+  path: {
+    activityId: string;
+  };
+  query?: never;
+  url: "/api/learn/activities/{activityId}/comments";
+};
+
+export type PostCommentErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type PostCommentError = PostCommentErrors[keyof PostCommentErrors];
+
+export type PostCommentResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    parentId: string | null;
+    author: {
+      id: string;
+      name: string;
+      image: string | null;
+      role: "owner" | "admin" | "instructor" | "student";
+    };
+    isOwn: boolean;
+    body: string | null;
+    status: "pending" | "published" | "removed";
+    removedBy: {
+      id: string;
+      name: string;
+      image: string | null;
+      role: "owner" | "admin" | "instructor" | "student";
+    } | null;
+    reactions: Array<{
+      emoji: string;
+      count: number;
+      reacted: boolean;
+    }>;
+    createdAt: string;
+    updatedAt: string;
+  };
+};
+
+export type PostCommentResponse = PostCommentResponses[keyof PostCommentResponses];
+
+export type RemoveOwnCommentData = {
+  body?: never;
+  path: {
+    commentId: string;
+  };
+  query?: never;
+  url: "/api/learn/comments/{commentId}";
+};
+
+export type RemoveOwnCommentErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type RemoveOwnCommentError = RemoveOwnCommentErrors[keyof RemoveOwnCommentErrors];
+
+export type RemoveOwnCommentResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    activityId: string;
+    parentId: string | null;
+    orgUserId: string;
+    body: string;
+    status: "pending" | "published" | "removed";
+    removedBy: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+};
+
+export type RemoveOwnCommentResponse = RemoveOwnCommentResponses[keyof RemoveOwnCommentResponses];
+
+export type EditCommentData = {
+  body: {
+    body: string;
+  };
+  path: {
+    commentId: string;
+  };
+  query?: never;
+  url: "/api/learn/comments/{commentId}";
+};
+
+export type EditCommentErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type EditCommentError = EditCommentErrors[keyof EditCommentErrors];
+
+export type EditCommentResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    parentId: string | null;
+    author: {
+      id: string;
+      name: string;
+      image: string | null;
+      role: "owner" | "admin" | "instructor" | "student";
+    };
+    isOwn: boolean;
+    body: string | null;
+    status: "pending" | "published" | "removed";
+    removedBy: {
+      id: string;
+      name: string;
+      image: string | null;
+      role: "owner" | "admin" | "instructor" | "student";
+    } | null;
+    reactions: Array<{
+      emoji: string;
+      count: number;
+      reacted: boolean;
+    }>;
+    createdAt: string;
+    updatedAt: string;
+  };
+};
+
+export type EditCommentResponse = EditCommentResponses[keyof EditCommentResponses];
+
+export type UnreactToCommentData = {
+  body?: never;
+  path: {
+    commentId: string;
+    emoji: string;
+  };
+  query?: never;
+  url: "/api/learn/comments/{commentId}/reactions/{emoji}";
+};
+
+export type UnreactToCommentErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type UnreactToCommentError = UnreactToCommentErrors[keyof UnreactToCommentErrors];
+
+export type UnreactToCommentResponses = {
+  /**
+   * Default Response
+   */
+  204: unknown;
+};
+
+export type ReactToCommentData = {
+  body?: never;
+  path: {
+    commentId: string;
+    emoji: string;
+  };
+  query?: never;
+  url: "/api/learn/comments/{commentId}/reactions/{emoji}";
+};
+
+export type ReactToCommentErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type ReactToCommentError = ReactToCommentErrors[keyof ReactToCommentErrors];
+
+export type ReactToCommentResponses = {
+  /**
+   * Default Response
+   */
+  204: unknown;
+};
+
+export type ReportCommentData = {
+  body: {
+    reason?: string;
+  };
+  path: {
+    commentId: string;
+  };
+  query?: never;
+  url: "/api/learn/comments/{commentId}/reports";
+};
+
+export type ReportCommentErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type ReportCommentError = ReportCommentErrors[keyof ReportCommentErrors];
+
+export type ReportCommentResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    commentId: string;
+    orgUserId: string;
+    reason: string;
+    resolvedAt: string | null;
+    createdAt: string;
+  };
+};
+
+export type ReportCommentResponse = ReportCommentResponses[keyof ReportCommentResponses];
+
+export type GetModerationQueueData = {
+  body?: never;
+  path?: never;
+  query: {
+    kind: "pending" | "reported";
+    courseId?: string;
+  };
+  url: "/api/discussion/queue";
+};
+
+export type GetModerationQueueResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    entries: Array<{
+      comment: {
+        id: string;
+        activityId: string;
+        parentId: string | null;
+        orgUserId: string;
+        body: string;
+        status: "pending" | "published" | "removed";
+        removedBy: string | null;
+        createdAt: string;
+        updatedAt: string;
+      };
+      author: {
+        id: string;
+        name: string;
+        image: string | null;
+        role: "owner" | "admin" | "instructor" | "student";
+      };
+      authorEmail: string;
+      courseId: string;
+      activityTitle: string;
+      reports: Array<{
+        reporter: {
+          id: string;
+          name: string;
+          image: string | null;
+          role: "owner" | "admin" | "instructor" | "student";
+        };
+        reason: string;
+        createdAt: string;
+      }>;
+    }>;
+  };
+};
+
+export type GetModerationQueueResponse =
+  GetModerationQueueResponses[keyof GetModerationQueueResponses];
+
+export type ModerateRemoveCommentData = {
+  body?: never;
+  path: {
+    commentId: string;
+  };
+  query?: never;
+  url: "/api/discussion/comments/{commentId}";
+};
+
+export type ModerateRemoveCommentErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type ModerateRemoveCommentError =
+  ModerateRemoveCommentErrors[keyof ModerateRemoveCommentErrors];
+
+export type ModerateRemoveCommentResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    activityId: string;
+    parentId: string | null;
+    orgUserId: string;
+    body: string;
+    status: "pending" | "published" | "removed";
+    removedBy: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+};
+
+export type ModerateRemoveCommentResponse =
+  ModerateRemoveCommentResponses[keyof ModerateRemoveCommentResponses];
+
+export type EditComment2Data = {
+  body: {
+    body?: string;
+    status?: "published";
+  };
+  path: {
+    commentId: string;
+  };
+  query?: never;
+  url: "/api/discussion/comments/{commentId}";
+};
+
+export type EditComment2Errors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type EditComment2Error = EditComment2Errors[keyof EditComment2Errors];
+
+export type EditComment2Responses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    activityId: string;
+    parentId: string | null;
+    orgUserId: string;
+    body: string;
+    status: "pending" | "published" | "removed";
+    removedBy: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+};
+
+export type EditComment2Response = EditComment2Responses[keyof EditComment2Responses];
+
+export type DismissCommentReportsData = {
+  body?: never;
+  path: {
+    commentId: string;
+  };
+  query?: never;
+  url: "/api/discussion/comments/{commentId}/reports";
+};
+
+export type DismissCommentReportsErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type DismissCommentReportsError =
+  DismissCommentReportsErrors[keyof DismissCommentReportsErrors];
+
+export type DismissCommentReportsResponses = {
+  /**
+   * Default Response
+   */
+  204: unknown;
+};
+
+export type ListActivityComments2Data = {
+  body?: never;
+  path: {
+    activityId: string;
+  };
+  query?: never;
+  url: "/api/discussion/activities/{activityId}/comments";
+};
+
+export type ListActivityComments2Errors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type ListActivityComments2Error =
+  ListActivityComments2Errors[keyof ListActivityComments2Errors];
+
+export type ListActivityComments2Responses = {
+  /**
+   * Default Response
+   */
+  200: {
+    config: {
+      enabled: boolean;
+      threaded: boolean;
+      requireReview: boolean;
+      reactions: boolean;
+      state: "visible" | "hidden" | "locked";
+    };
+    comments: Array<{
+      id: string;
+      parentId: string | null;
+      author: {
+        id: string;
+        name: string;
+        image: string | null;
+        role: "owner" | "admin" | "instructor" | "student";
+      };
+      isOwn: boolean;
+      body: string | null;
+      status: "pending" | "published" | "removed";
+      removedBy: {
+        id: string;
+        name: string;
+        image: string | null;
+        role: "owner" | "admin" | "instructor" | "student";
+      } | null;
+      reactions: Array<{
+        emoji: string;
+        count: number;
+        reacted: boolean;
+      }>;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+  };
+};
+
+export type ListActivityComments2Response =
+  ListActivityComments2Responses[keyof ListActivityComments2Responses];
+
+export type SetActivityCommentsStateData = {
+  body: {
+    state: "visible" | "hidden" | "locked" | null;
+  };
+  path: {
+    activityId: string;
+  };
+  query?: never;
+  url: "/api/discussion/activities/{activityId}/comments";
+};
+
+export type SetActivityCommentsStateErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type SetActivityCommentsStateError =
+  SetActivityCommentsStateErrors[keyof SetActivityCommentsStateErrors];
+
+export type SetActivityCommentsStateResponses = {
+  /**
+   * Default Response
+   */
+  204: unknown;
+};
+
+export type PostComment2Data = {
+  body: {
+    body: string;
+    parentId?: string | null;
+  };
+  path: {
+    activityId: string;
+  };
+  query?: never;
+  url: "/api/discussion/activities/{activityId}/comments";
+};
+
+export type PostComment2Errors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type PostComment2Error = PostComment2Errors[keyof PostComment2Errors];
+
+export type PostComment2Responses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    parentId: string | null;
+    author: {
+      id: string;
+      name: string;
+      image: string | null;
+      role: "owner" | "admin" | "instructor" | "student";
+    };
+    isOwn: boolean;
+    body: string | null;
+    status: "pending" | "published" | "removed";
+    removedBy: {
+      id: string;
+      name: string;
+      image: string | null;
+      role: "owner" | "admin" | "instructor" | "student";
+    } | null;
+    reactions: Array<{
+      emoji: string;
+      count: number;
+      reacted: boolean;
+    }>;
+    createdAt: string;
+    updatedAt: string;
+  };
+};
+
+export type PostComment2Response = PostComment2Responses[keyof PostComment2Responses];
+
+export type GetDiscussionSettingsData = {
+  body?: never;
+  path: {
+    courseId: string;
+  };
+  query?: never;
+  url: "/api/discussion/courses/{courseId}/settings";
+};
+
+export type GetDiscussionSettingsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    orgId: string;
+    courseId: string;
+    enabled: boolean;
+    threaded: boolean;
+    requireReview: boolean;
+    reactions: boolean;
+  };
+};
+
+export type GetDiscussionSettingsResponse =
+  GetDiscussionSettingsResponses[keyof GetDiscussionSettingsResponses];
+
+export type SetDiscussionSettingsData = {
+  body: {
+    enabled?: boolean;
+    threaded?: boolean;
+    requireReview?: boolean;
+    reactions?: boolean;
+  };
+  path: {
+    courseId: string;
+  };
+  query?: never;
+  url: "/api/discussion/courses/{courseId}/settings";
+};
+
+export type SetDiscussionSettingsErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type SetDiscussionSettingsError =
+  SetDiscussionSettingsErrors[keyof SetDiscussionSettingsErrors];
+
+export type SetDiscussionSettingsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    orgId: string;
+    courseId: string;
+    enabled: boolean;
+    threaded: boolean;
+    requireReview: boolean;
+    reactions: boolean;
+  };
+};
+
+export type SetDiscussionSettingsResponse =
+  SetDiscussionSettingsResponses[keyof SetDiscussionSettingsResponses];
+
+export type ListCourseCommentStatesData = {
+  body?: never;
+  path: {
+    courseId: string;
+  };
+  query?: never;
+  url: "/api/discussion/courses/{courseId}/comment-states";
+};
+
+export type ListCourseCommentStatesResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    states: {
+      [key: string]: "visible" | "hidden" | "locked";
+    };
+  };
+};
+
+export type ListCourseCommentStatesResponse =
+  ListCourseCommentStatesResponses[keyof ListCourseCommentStatesResponses];
+
 export type ListModulesData = {
   body?: never;
   path: {
@@ -805,7 +1608,7 @@ export type ListStudentsResponses = {
       id: string;
       name: string;
       email: string;
-      image?: string | null;
+      image: string | null;
       entitlementCount: number;
       avgProgress: number;
       joinedAt: string;
@@ -851,7 +1654,7 @@ export type CreateStudentResponses = {
     id: string;
     name: string;
     email: string;
-    image?: string | null;
+    image: string | null;
     entitlementCount: number;
     avgProgress: number;
     joinedAt: string;
@@ -919,7 +1722,7 @@ export type GetStudentResponses = {
     id: string;
     name: string;
     email: string;
-    image?: string | null;
+    image: string | null;
     entitlementCount: number;
     avgProgress: number;
     joinedAt: string;
@@ -1427,7 +2230,7 @@ export type ListMembersResponses = {
       id: string;
       name: string;
       email: string;
-      image?: string | null;
+      image: string | null;
       role: "owner" | "admin" | "instructor";
       status: "active" | "invited";
       joinedAt: string | null;
@@ -1479,7 +2282,7 @@ export type UpdateMemberRoleResponses = {
     id: string;
     name: string;
     email: string;
-    image?: string | null;
+    image: string | null;
     role: "owner" | "admin" | "instructor";
     status: "active" | "invited";
     joinedAt: string | null;

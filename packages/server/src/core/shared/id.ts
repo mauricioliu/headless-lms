@@ -26,6 +26,8 @@ export const ID_PREFIXES = {
   event: 'evt',
   automation: 'atm',
   automationRun: 'run',
+  comment: 'cmt',
+  commentReport: 'crp',
 } as const;
 
 export type IdType = keyof typeof ID_PREFIXES;

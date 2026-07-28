@@ -1,10 +1,7 @@
 // reporting/students — read model over identity + entitlements + progress. Framework-free.
+import type { OrgUserProfile } from '@headless-lms/types';
 
-export interface Student {
-  readonly id: string;
-  name: string;
-  email: string;
-  image?: string | null;
+export interface Student extends OrgUserProfile {
   entitlementCount: number;
   avgProgress: number;
   joinedAt: string;

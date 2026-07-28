@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { RowActions } from "@/components/data-table/row-actions";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import type { Activity, Module } from "@/lib/api/types";
+import type { Activity, Module, CommentStates } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
 import { ItemRow } from "./item-row";
@@ -59,11 +59,13 @@ function SortableModule({
   courseId,
   index,
   canEdit,
+  commentStates,
 }: {
   module: Module;
   courseId: string;
   index: number;
   canEdit: boolean;
+  commentStates: CommentStates;
 }) {
   const router = useRouter();
   const sensors = useDndSensors();
@@ -272,6 +274,7 @@ function SortableModule({
             courseId={courseId}
             moduleId={module.id}
             item={sheetItem}
+            commentsState={sheetItem ? (commentStates[sheetItem.id] ?? null) : null}
           />
           <ConfirmDialog
             open={confirmOpen}
@@ -377,10 +380,12 @@ function ModuleComposer({ courseId }: { courseId: string }) {
 export function ModuleList({
   courseId,
   modules,
+  commentStates,
   canEdit,
 }: {
   courseId: string;
   modules: Module[];
+  commentStates: CommentStates;
   canEdit: boolean;
 }) {
   const router = useRouter();
@@ -448,6 +453,7 @@ export function ModuleList({
                   index={i}
                   courseId={courseId}
                   canEdit={canEdit}
+                  commentStates={commentStates}
                 />
               ))}
             </div>
@@ -462,6 +468,7 @@ export function ModuleList({
               index={i}
               courseId={courseId}
               canEdit={canEdit}
+              commentStates={commentStates}
             />
           ))}
         </div>

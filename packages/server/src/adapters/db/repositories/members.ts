@@ -11,6 +11,7 @@ import { users } from '../schema/identity.js';
 import { user } from '../../auth/schema.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
+import { orgUserProfileColumns } from './org-user-profile.js';
 
 // The member surface is staff-only; a student participation never reaches here
 // (the queries below exclude it), so an unrecognized role falls back to the
@@ -42,11 +43,7 @@ export class DrizzleMembersRepository implements MembersRepository {
     // person: a roster entry has no person row until its invite is accepted.
     const memberRows = await this.db
       .select({
-        id: orgUsers.id,
-        firstName: orgUsers.firstName,
-        lastName: orgUsers.lastName,
-        email: orgUsers.email,
-        image: user.image,
+        ...orgUserProfileColumns,
         role: orgUsers.role,
         joinedAt: orgUsers.createdAt,
         memberExternalId: orgUsers.externalId,
@@ -76,7 +73,7 @@ export class DrizzleMembersRepository implements MembersRepository {
 
     const members: MemberRecord[] = memberRows.map((m) => ({
       id: m.id,
-      name: `${m.firstName} ${m.lastName}`.trim(),
+      name: m.name,
       email: m.email,
       image: m.image ?? null,
       role: roleOf(m.role),

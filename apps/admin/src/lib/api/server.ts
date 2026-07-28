@@ -24,6 +24,7 @@ import {
   ConnectedApps,
   Courses,
   Dashboard,
+  Discussion,
   Entitlements,
   Integrations,
   Organizations,
@@ -40,6 +41,7 @@ import type {
   AvailableIntegration,
   ConnectedApp,
   Course,
+  DiscussionSettings,
   Entitlement,
   IntegrationConnection,
   ListParams,
@@ -47,7 +49,9 @@ import type {
   Module,
   OverviewStats,
   Paginated,
+  QueueEntry,
   Student,
+  CommentStates,
 } from "./types";
 
 
@@ -137,6 +141,34 @@ export const serverApi = {
       }),
     );
     return page.rows;
+  },
+
+  // discussion (course-scoped settings + moderation queue)
+  async discussionSettings(courseId: string): Promise<DiscussionSettings> {
+    ensureConfigured();
+    return unwrap(
+      await Discussion.getDiscussionSettings({ path: { courseId }, ...(await authHeaders()) }),
+    );
+  },
+  async moderationQueue(
+    courseId: string,
+    kind: "pending" | "reported",
+  ): Promise<QueueEntry[]> {
+    ensureConfigured();
+    const { entries } = unwrap(
+      await Discussion.getModerationQueue({
+        query: { kind, courseId },
+        ...(await authHeaders()),
+      }),
+    );
+    return entries;
+  },
+  async commentStates(courseId: string): Promise<CommentStates> {
+    ensureConfigured();
+    const { states } = unwrap(
+      await Discussion.listCourseCommentStates({ path: { courseId }, ...(await authHeaders()) }),
+    );
+    return states;
   },
 
   // members

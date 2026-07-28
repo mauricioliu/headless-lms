@@ -23,8 +23,10 @@ import { cache } from "react";
 export const API_URL =
   process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+type SessionPerson = { id: string; name: string; email: string; image: string | null };
+
 export interface ServerSession {
-  user: { id: string; name: string; email: string; image: string | null };
+  user: SessionPerson;
 }
 
 export const getServerSession = cache(async (): Promise<ServerSession | null> => {
@@ -36,7 +38,7 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
   });
   if (!res.ok) return null;
   const data = (await res.json()) as {
-    user?: { id: string; name: string; email: string; image?: string | null };
+    user?: SessionPerson;
   } | null;
   if (!data?.user) return null;
   return {

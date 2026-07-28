@@ -8,11 +8,26 @@ import { toast } from "sonner";
 
 import { FormSheet } from "@/components/forms/form-sheet";
 import { Field } from "@/components/forms/field";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import type { Activity, ActivitySettings, SaveActivityInput } from "@/lib/api/types";
+import type {
+  Activity,
+  ActivitySettings,
+  Module,
+  SaveActivityInput,
+  CommentsState,
+} from "@/lib/api/types";
 
 import { saveActivityAction } from "../actions";
+import { setCommentsStateAction } from "../discussion/actions";
+
+const COMMENTS_STATE_OPTIONS: { value: CommentsState | null; label: string }[] = [
+  { value: null, label: "Course default" },
+  { value: "visible", label: "Visible" },
+  { value: "hidden", label: "Hidden" },
+  { value: "locked", label: "Locked" },
+];
 
 const schema = z.object({
   title: z
@@ -46,12 +61,14 @@ export function ItemFormSheet({
   courseId,
   moduleId,
   item,
+  commentsState,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   courseId: string;
   moduleId: string;
   item: Activity | null;
+  commentsState?: CommentsState | null;
 }) {
   const isEdit = item != null;
   const [isPending, startTransition] = React.useTransition();
@@ -67,11 +84,18 @@ export function ItemFormSheet({
     defaultValues: toDefaults(item),
   });
 
-  // Re-seed the form whenever the sheet opens for a different target.
+  const [comments, setComments] = React.useState<CommentsState | null>(commentsState ?? null);
+
+  // Re-seed the form (and the comments-state control) whenever the sheet opens
+  // for a different target.
   React.useEffect(() => {
-    if (open) reset(toDefaults(item));
+    if (open) {
+      reset(toDefaults(item));
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- re-seeding a local control from the opening target, not syncing derived state
+      setComments(commentsState ?? null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, item]);
+  }, [open, item, commentsState]);
 
   function onValid(values: FormValues) {
     // Preserve any settings fields the editor doesn't surface (e.g. body).
@@ -87,13 +111,46 @@ export function ItemFormSheet({
     };
 
     startTransition(async () => {
+      let saved: Module[];
       try {
-        await saveActivityAction(courseId, moduleId, payload);
-        toast.success("Saved");
-        onOpenChange(false);
+        saved = await saveActivityAction(courseId, moduleId, payload);
       } catch (err) {
         toast.error("Something went wrong", { description: (err as Error).message });
+        return;
       }
+
+      // The activity is saved from here on. Comments state is a separate
+      // discussion-context row, not part of the opaque settings blob, so it's
+      // a second call — and only when it actually changed (a brand-new
+      // activity left on "Course default" makes no second call at all). A
+      // failure here must not leave the sheet open in create mode — retrying
+      // would re-run the create branch and produce a duplicate activity — so
+      // close regardless and tell the user what actually failed.
+      if (comments !== (commentsState ?? null)) {
+        const activityId = isEdit
+          ? item!.id
+          : saved.find((m) => m.id === moduleId)?.activities?.at(-1)?.id;
+        if (activityId) {
+          try {
+            await setCommentsStateAction(activityId, comments);
+          } catch (err) {
+            toast.warning("Activity saved, but the discussion setting did not apply", {
+              description: (err as Error).message,
+            });
+            onOpenChange(false);
+            return;
+          }
+        } else {
+          toast.warning("Activity saved, but the discussion setting did not apply", {
+            description: "Could not find the new activity to apply it to.",
+          });
+          onOpenChange(false);
+          return;
+        }
+      }
+
+      toast.success("Saved");
+      onOpenChange(false);
     });
   }
 
@@ -132,6 +189,27 @@ export function ItemFormSheet({
             />
           </div>
         </Field>
+
+        <div className="space-y-1.5">
+          <Label>Discussion</Label>
+          <div className="inline-flex flex-wrap gap-1 rounded-md border border-line p-0.5">
+            {COMMENTS_STATE_OPTIONS.map((option) => (
+              <button
+                key={option.label}
+                type="button"
+                onClick={() => setComments(option.value)}
+                className={`rounded px-2.5 py-1 text-xs font-medium ${
+                  comments === option.value ? "bg-surface-2 text-ink" : "text-ink-3 hover:text-ink"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-ink-3">
+            Inherits the course setting unless overridden here.
+          </p>
+        </div>
       </form>
     </FormSheet>
   );
