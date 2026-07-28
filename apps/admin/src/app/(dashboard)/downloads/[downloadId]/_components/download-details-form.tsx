@@ -87,11 +87,7 @@ export function DownloadDetailsForm({ download }: { download: Download }) {
           <Textarea id="description" rows={5} {...register("description")} />
         </Field>
 
-        <ThumbnailField
-          downloadId={download.id}
-          title={download.title}
-          thumbnailAssetId={download.thumbnailAssetId}
-        />
+        <ThumbnailField downloadId={download.id} thumbnailAssetId={download.thumbnailAssetId} />
       </div>
 
       <div className="flex items-center justify-end gap-2 border-t border-line pt-5">
@@ -109,11 +105,9 @@ export function DownloadDetailsForm({ download }: { download: Download }) {
 // Saves immediately on file select — it doesn't wait for the form submit.
 function ThumbnailField({
   downloadId,
-  title,
   thumbnailAssetId,
 }: {
   downloadId: string;
-  title: string;
   thumbnailAssetId: string | null;
 }) {
   const router = useRouter();
@@ -144,13 +138,9 @@ function ThumbnailField({
       });
       await putToStorage(ticket.uploadUrl, ticket.headers ?? {}, file);
       await confirmAssetAction(ticket.asset.id);
-      // `title` is required by `updateDownloadAction`'s patch type even
-      // though the API itself accepts a partial update — resend the current
-      // title so this patch only actually changes the thumbnail.
-      await updateDownloadAction(downloadId, {
-        title,
-        thumbnailAssetId: ticket.asset.id,
-      });
+      // Thumbnail-only patch: omit every other field so a concurrent edit to
+      // the title/category/description elsewhere isn't clobbered.
+      await updateDownloadAction(downloadId, { thumbnailAssetId: ticket.asset.id });
       toast.success("Thumbnail updated");
       router.refresh();
     } catch (e) {

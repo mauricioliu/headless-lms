@@ -20,6 +20,20 @@ export interface DownloadInput {
   description?: string;
 }
 
+/**
+ * A genuine partial update — `title` is optional so a caller changing only
+ * one field (e.g. the thumbnail) can omit the rest instead of resending a
+ * stale value that would clobber a concurrent edit. Split from `DownloadInput`
+ * rather than widening it, since create still requires a title.
+ */
+export interface DownloadPatch {
+  title?: string;
+  category?: string;
+  description?: string;
+  status?: Download["status"];
+  thumbnailAssetId?: string | null;
+}
+
 export async function createDownloadAction(input: DownloadInput): Promise<Download> {
   ensureConfigured();
   const download = unwrap(
@@ -34,7 +48,7 @@ export async function createDownloadAction(input: DownloadInput): Promise<Downlo
 
 export async function updateDownloadAction(
   downloadId: string,
-  patch: DownloadInput & { status?: Download["status"]; thumbnailAssetId?: string | null },
+  patch: DownloadPatch,
 ): Promise<Download> {
   ensureConfigured();
   const download = unwrap(
