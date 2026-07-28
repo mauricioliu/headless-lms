@@ -264,7 +264,7 @@ export async function buildContainer(
   );
   // Content: reads on the root db; course writes + outbox append in one tx.
   const contentUow = new DrizzleUnitOfWork(db, (tx) => ({
-    courses: new DrizzleContentRepository(tx, contentLogger),
+    content: new DrizzleContentRepository(tx, contentLogger),
     outbox: new DrizzleOutboxAppender(tx, outboxLogger),
   }));
   const content = new ContentServiceImpl(
