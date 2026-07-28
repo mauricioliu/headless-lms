@@ -89,6 +89,7 @@ export class AssetsServiceImpl implements AssetsService {
     orgId: string,
     id: string,
     filename?: string,
+    expiresInSeconds?: number,
   ): Promise<DownloadTicket | null> {
     const asset = await this.repo.findById(orgId, id);
     if (!asset) {
@@ -97,6 +98,7 @@ export class AssetsServiceImpl implements AssetsService {
     const url = await this.storage.presignDownload({
       key: asset.key,
       downloadFilename: filename ?? asset.filename,
+      ...(expiresInSeconds === undefined ? {} : { expiresInSeconds }),
     });
     return { url, asset };
   }
