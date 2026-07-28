@@ -36,6 +36,8 @@ import type {
 
 export type Course = GetCourseResponse;
 export type CourseStatus = Course["status"];
+/** Course-wide delivery settings, stored server-side and always complete. */
+export type CourseSettings = Course["settings"];
 
 export type Module = ListModulesResponse[number];
 
@@ -66,7 +68,14 @@ export interface ActivitySettings {
   body?: string;
   published?: boolean;
   content?: ActivityContent;
+  /** What marks this activity complete for a student. */
+  completion?: ActivityCompletionRule;
+  /** Per-activity override of the course's transcript-download setting. */
+  transcriptDownloads?: ActivityTranscriptRule;
 }
+
+export type ActivityCompletionRule = "view" | "video" | "manual";
+export type ActivityTranscriptRule = "inherit" | "always" | "never";
 
 /**
  * Form payload for creating/updating an activity. Maps onto the SDK's

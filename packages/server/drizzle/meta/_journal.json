@@ -15,6 +15,13 @@
       "when": 1785240139224,
       "tag": "0001_cool_maria_hill",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785241410180,
+      "tag": "0002_modern_winter_soldier",
+      "breakpoints": true
     }
   ]
 }

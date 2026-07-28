@@ -14,6 +14,7 @@ function makeCourse(over: Partial<Course> = {}): Course {
     status: 'draft',
     category: '',
     thumbnailAssetId: null,
+    settings: { transcriptDownloads: false },
     moduleCount: 0,
     activityCount: 0,
     enrolledCount: 0,
@@ -116,6 +117,20 @@ describe('ContentServiceImpl', () => {
     expect(repo.update).toHaveBeenCalledWith('org1', 'c1', { title: 'Renamed' });
     expect(result).toBe(updated);
     expect(appended).toEqual([{ type: 'course.updated', orgId: 'org1', course: updated }]);
+  });
+
+  it('forwards a partial settings patch untouched (the repository merges it)', async () => {
+    const repo = makeRepo();
+    const updated = makeCourse({ settings: { transcriptDownloads: true } });
+    (repo.update as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
+
+    const { svc } = build(repo);
+    const result = await svc.update('org1', 'c1', { settings: { transcriptDownloads: true } });
+
+    expect(repo.update).toHaveBeenCalledWith('org1', 'c1', {
+      settings: { transcriptDownloads: true },
+    });
+    expect(result.settings).toEqual({ transcriptDownloads: true });
   });
 
   it('throws NotFoundError and appends nothing when update finds no course', async () => {

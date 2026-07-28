@@ -15,6 +15,13 @@ export type ContentType = "course" | "download";
 
 export type CourseStatus = "draft" | "published";
 
+/** Course-wide delivery settings. Stored as a jsonb blob, always read back
+ *  complete — missing keys fall back to their defaults. */
+export interface CourseSettings {
+  /** Students may download a text transcript for every video in the course. */
+  transcriptDownloads: boolean;
+}
+
 export interface Course {
   readonly id: string;
   title: string;
@@ -24,6 +31,7 @@ export interface Course {
   category: string;
   /** Media-library asset rendered as the course's cover. */
   thumbnailAssetId: string | null;
+  settings: CourseSettings;
   moduleCount: number;
   activityCount: number;
   enrolledCount: number;
@@ -79,6 +87,8 @@ export interface UpdateCourseInput {
   status?: CourseStatus | undefined;
   /** null clears the cover. */
   thumbnailAssetId?: string | null | undefined;
+  /** Merged over the stored settings — keys left out keep their value. */
+  settings?: Partial<CourseSettings> | undefined;
 }
 
 export type DownloadStatus = "draft" | "published";

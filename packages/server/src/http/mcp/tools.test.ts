@@ -25,6 +25,7 @@ const COURSE: Course = {
   status: 'published',
   category: 'Engineering',
   thumbnailAssetId: null,
+  settings: { transcriptDownloads: false },
   moduleCount: 3,
   activityCount: 12,
   enrolledCount: 5,

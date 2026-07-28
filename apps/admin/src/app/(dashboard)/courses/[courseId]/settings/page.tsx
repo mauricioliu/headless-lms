@@ -7,6 +7,7 @@ import { SettingsSection } from "./_components/settings-section";
 import { BasicsForm } from "./_components/basics-form";
 import { ThumbnailField } from "./_components/thumbnail-field";
 import { CommentsSettings } from "./_components/comments-settings";
+import { CourseSettingsForm } from "../_components/course-settings-form";
 
 export default async function CourseSettingsTab({
   params,
@@ -52,6 +53,8 @@ export default async function CourseSettingsTab({
       >
         <CommentsSettings settings={discussion} />
       </SettingsSection>
+
+      <CourseSettingsForm course={course} />
     </div>
   );
 }

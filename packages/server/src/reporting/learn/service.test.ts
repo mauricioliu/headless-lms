@@ -38,6 +38,7 @@ function course(id: string, status: 'draft' | 'published' = 'published'): Course
     status,
     category: '',
     thumbnailAssetId: null,
+    settings: { transcriptDownloads: false },
     moduleCount: 0,
     activityCount: 0,
     enrolledCount: 0,

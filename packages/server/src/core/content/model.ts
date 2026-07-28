@@ -2,6 +2,7 @@
 export type {
   CourseStatus,
   Course,
+  CourseSettings,
   Activity,
   Module,
   SaveActivityInput,

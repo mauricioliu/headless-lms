@@ -10,6 +10,7 @@ import type {
   ActivityContent,
   ActivitySettings,
   Course,
+  CourseSettings,
   Module,
   SaveActivityInput,
 } from "@/lib/api/types";
@@ -177,6 +178,23 @@ export async function setCoursePublishedAction(
   ensureConfigured();
   const course = unwrap(
     await Courses.updateCourse({ path: { id: courseId }, body: { status }, ...(await authHeaders()) }),
+  );
+  revalidateBuilder();
+  return course;
+}
+
+/** Course settings tab. Partial patch — omitted keys keep their stored value. */
+export async function updateCourseSettingsAction(
+  courseId: string,
+  settings: Partial<CourseSettings>,
+): Promise<Course> {
+  ensureConfigured();
+  const course = unwrap(
+    await Courses.updateCourse({
+      path: { id: courseId },
+      body: { settings },
+      ...(await authHeaders()),
+    }),
   );
   revalidateBuilder();
   return course;

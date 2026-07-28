@@ -68,6 +68,9 @@ export const courses = pgTable(
     category: text('category').notNull().default(''),
     // Media-library asset rendered as the course's cover. Null = no cover.
     thumbnailAssetId: text('thumbnail_asset_id'),
+    // Course-wide delivery toggles (CourseSettings). Modelled, unlike the
+    // per-activity blob: a fixed surface the API validates.
+    settings: jsonb('settings').notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
