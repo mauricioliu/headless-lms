@@ -39,6 +39,8 @@ import { StudentsReportServiceImpl } from '../reporting/students/index.js';
 import { DashboardReportServiceImpl } from '../reporting/dashboard/index.js';
 import { LearnReportServiceImpl } from '../reporting/learn/index.js';
 import { Mailer } from '../core/shared/mailer.js';
+import { SettingsService, type ScopeChainResolver } from '../core/shared/settings.js';
+import { ID_PREFIXES } from '../core/shared/id.js';
 
 import { DrizzleEntitlementsRepository } from '../adapters/db/repositories/entitlements.js';
 import { DrizzleProgressRepository } from '../adapters/db/repositories/progress.js';
@@ -52,6 +54,7 @@ import { DrizzleStudentsRepository } from '../adapters/db/repositories/students.
 import { DrizzleDashboardRepository } from '../adapters/db/repositories/dashboard.js';
 import { DrizzleLearnRepository } from '../adapters/db/repositories/learn.js';
 import { DrizzleCredentialStore } from '../adapters/db/repositories/credentials.js';
+import { DrizzleSettingsRepository } from '../adapters/db/repositories/settings.js';
 import { DrizzleConnectionsRepository } from '../adapters/db/repositories/integrations.js';
 import {
   DrizzleAutomationsRepository,
@@ -165,6 +168,9 @@ export interface Container {
   assets: AssetsServiceImpl;
   integrations: IntegrationsServiceImpl;
   automations: AutomationsServiceImpl;
+  /** Cross-cutting settings store. Not a context — a leaf every context may use;
+   *  inject `settings.for('<namespace>')` into a service, never the service itself. */
+  settings: SettingsService;
   // Reporting read layer (composed cross-context reads; owns no domain rules).
   reporting: {
     students: StudentsReportServiceImpl;
@@ -303,6 +309,27 @@ export async function buildContainer(
     assetsLogger,
   );
 
+  // Settings: generic store + the scope chain it cannot work out for itself.
+  // Hierarchy is the owning domain's knowledge, so composition supplies the
+  // expansion; settings never learns what a course or an activity is.
+  const resolveScopeChain: ScopeChainResolver = async (orgId, scopeId) => {
+    if (scopeId.startsWith(`${ID_PREFIXES.activity}_`)) {
+      const activity = await content.getActivity(orgId, scopeId);
+      if (!activity) {
+        return [orgId, scopeId];
+      }
+      const module = await content.getModule(orgId, activity.moduleId);
+      return module ? [orgId, module.courseId, scopeId] : [orgId, scopeId];
+    }
+    // The org id addresses org-wide defaults; anything else is its own scope
+    // sitting directly under the org.
+    return scopeId === orgId ? [orgId] : [orgId, scopeId];
+  };
+  const settings = new SettingsService(
+    new DrizzleSettingsRepository(db, logger.child({ name: 'settings' })),
+    resolveScopeChain,
+  );
+
   const reporting = {
     students: new StudentsReportServiceImpl(
       new DrizzleStudentsRepository(db, reportingLogger),
@@ -413,6 +440,7 @@ export async function buildContainer(
     assets,
     integrations,
     automations,
+    settings,
     reporting,
     storage,
     mailer,

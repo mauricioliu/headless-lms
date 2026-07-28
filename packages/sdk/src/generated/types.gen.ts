@@ -942,7 +942,7 @@ export type ListEntitlementsData = {
     source?: string;
     orgUserId?: string;
     contentId?: string;
-    type?: "course";
+    type?: "course" | "download";
   };
   url: "/api/entitlements";
 };
@@ -960,7 +960,7 @@ export type ListEntitlementsResponses = {
       studentEmail: string;
       content: {
         id: string;
-        type: "course";
+        type: "course" | "download";
         title: string;
       };
       status: "active" | "expired" | "revoked";
@@ -999,7 +999,7 @@ export type GrantEntitlementResponses = {
     studentEmail: string;
     content: {
       id: string;
-      type: "course";
+      type: "course" | "download";
       title: string;
     };
     status: "active" | "expired" | "revoked";
@@ -1047,7 +1047,7 @@ export type SetEntitlementStatusResponses = {
     studentEmail: string;
     content: {
       id: string;
-      type: "course";
+      type: "course" | "download";
       title: string;
     };
     status: "active" | "expired" | "revoked";
@@ -2375,6 +2375,151 @@ export type ReconnectIntegrationResponses = {
 
 export type ReconnectIntegrationResponse =
   ReconnectIntegrationResponses[keyof ReconnectIntegrationResponses];
+
+export type GetScopeSettingsData = {
+  body?: never;
+  path: {
+    scopeId: string;
+  };
+  query?: never;
+  url: "/api/settings/{scopeId}";
+};
+
+export type GetScopeSettingsErrors = {
+  /**
+   * Default Response
+   */
+  400: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  401: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type GetScopeSettingsError = GetScopeSettingsErrors[keyof GetScopeSettingsErrors];
+
+export type GetScopeSettingsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    scopeId: string;
+    namespaces: {
+      [key: string]: {
+        stored: {
+          [key: string]: unknown;
+        };
+        effective: {
+          [key: string]: unknown;
+        };
+      };
+    };
+  };
+};
+
+export type GetScopeSettingsResponse = GetScopeSettingsResponses[keyof GetScopeSettingsResponses];
+
+export type GetNamespaceSettingsData = {
+  body?: never;
+  path: {
+    scopeId: string;
+    namespace: string;
+  };
+  query?: never;
+  url: "/api/settings/{scopeId}/{namespace}";
+};
+
+export type GetNamespaceSettingsErrors = {
+  /**
+   * Default Response
+   */
+  400: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  401: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type GetNamespaceSettingsError =
+  GetNamespaceSettingsErrors[keyof GetNamespaceSettingsErrors];
+
+export type GetNamespaceSettingsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    stored: {
+      [key: string]: unknown;
+    };
+    effective: {
+      [key: string]: unknown;
+    };
+  };
+};
+
+export type GetNamespaceSettingsResponse =
+  GetNamespaceSettingsResponses[keyof GetNamespaceSettingsResponses];
+
+export type PatchNamespaceSettingsData = {
+  body: {
+    [key: string]: unknown;
+  };
+  path: {
+    scopeId: string;
+    namespace: string;
+  };
+  query?: never;
+  url: "/api/settings/{scopeId}/{namespace}";
+};
+
+export type PatchNamespaceSettingsErrors = {
+  /**
+   * Default Response
+   */
+  400: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  401: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type PatchNamespaceSettingsError =
+  PatchNamespaceSettingsErrors[keyof PatchNamespaceSettingsErrors];
+
+export type PatchNamespaceSettingsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    stored: {
+      [key: string]: unknown;
+    };
+    effective: {
+      [key: string]: unknown;
+    };
+  };
+};
+
+export type PatchNamespaceSettingsResponse =
+  PatchNamespaceSettingsResponses[keyof PatchNamespaceSettingsResponses];
 
 export type DeleteMcpData = {
   body?: never;

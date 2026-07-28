@@ -77,8 +77,14 @@ import type {
   GetLearnOrgResponses,
   GetMcpData,
   GetMcpResponses,
+  GetNamespaceSettingsData,
+  GetNamespaceSettingsErrors,
+  GetNamespaceSettingsResponses,
   GetOverviewData,
   GetOverviewResponses,
+  GetScopeSettingsData,
+  GetScopeSettingsErrors,
+  GetScopeSettingsResponses,
   GetStudentData,
   GetStudentErrors,
   GetStudentResponses,
@@ -119,6 +125,9 @@ import type {
   ListModulesResponses,
   ListStudentsData,
   ListStudentsResponses,
+  PatchNamespaceSettingsData,
+  PatchNamespaceSettingsErrors,
+  PatchNamespaceSettingsResponses,
   PostMcpData,
   PostMcpResponses,
   ReconnectIntegrationData,
@@ -1100,6 +1109,54 @@ export class Integrations {
       ThrowOnError
     >({
       url: "/api/integrations/{id}/reconnect",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+}
+
+export class Settings {
+  /**
+   * Resolved settings for a scope, across every namespace
+   */
+  public static getScopeSettings<ThrowOnError extends boolean = false>(
+    options: Options<GetScopeSettingsData, ThrowOnError>,
+  ): RequestResult<GetScopeSettingsResponses, GetScopeSettingsErrors, ThrowOnError> {
+    return (options.client ?? client).get<
+      GetScopeSettingsResponses,
+      GetScopeSettingsErrors,
+      ThrowOnError
+    >({ url: "/api/settings/{scopeId}", ...options });
+  }
+
+  /**
+   * Resolved settings for one domain's namespace at a scope
+   */
+  public static getNamespaceSettings<ThrowOnError extends boolean = false>(
+    options: Options<GetNamespaceSettingsData, ThrowOnError>,
+  ): RequestResult<GetNamespaceSettingsResponses, GetNamespaceSettingsErrors, ThrowOnError> {
+    return (options.client ?? client).get<
+      GetNamespaceSettingsResponses,
+      GetNamespaceSettingsErrors,
+      ThrowOnError
+    >({ url: "/api/settings/{scopeId}/{namespace}", ...options });
+  }
+
+  /**
+   * Merge values into one domain's namespace at a scope
+   */
+  public static patchNamespaceSettings<ThrowOnError extends boolean = false>(
+    options: Options<PatchNamespaceSettingsData, ThrowOnError>,
+  ): RequestResult<PatchNamespaceSettingsResponses, PatchNamespaceSettingsErrors, ThrowOnError> {
+    return (options.client ?? client).patch<
+      PatchNamespaceSettingsResponses,
+      PatchNamespaceSettingsErrors,
+      ThrowOnError
+    >({
+      url: "/api/settings/{scopeId}/{namespace}",
       ...options,
       headers: {
         "Content-Type": "application/json",
