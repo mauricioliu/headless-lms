@@ -4,7 +4,14 @@
 // the outbox append commit in ONE transaction (transactional outbox). This
 // service never publishes — the outbox relay republishes committed events to
 // the EventBus at-least-once.
-import type { Activity, Course, Download, Module, SaveActivityInput } from './model.js';
+import type {
+  Activity,
+  Course,
+  Download,
+  DownloadAsset,
+  Module,
+  SaveActivityInput,
+} from './model.js';
 import type {
   ContentService,
   ContentRepository,
@@ -12,6 +19,7 @@ import type {
   ContentUnitOfWork,
 } from './ports.js';
 import type {
+  AddDownloadAssetInput,
   CreateCourseInput,
   CreateDownloadInput,
   ListCoursesQuery,
@@ -21,7 +29,7 @@ import type {
   UpdateDownloadInput,
 } from './types.js';
 import type { Logger } from '../shared/ports.js';
-import { NotFoundError } from '../shared/errors.js';
+import { NotFoundError, ConflictError } from '../shared/errors.js';
 import { noopLogger } from '../shared/logger.js';
 
 /** URL-safe slug derived from a title. Domain rule owned by the service. */
@@ -222,5 +230,60 @@ export class ContentServiceImpl implements ContentService {
       await outbox.append([{ type: 'download.deleted', orgId, download }]);
     });
     this.logger.info('download deleted', { orgId, downloadId: id });
+  }
+
+  // --- download asset links (structure edits — no events) -----------------
+
+  listDownloadAssets(orgId: string, downloadId: string): Promise<DownloadAsset[]> {
+    return this.repo.listDownloadAssets(orgId, downloadId);
+  }
+
+  async addDownloadAsset(
+    orgId: string,
+    downloadId: string,
+    input: AddDownloadAssetInput,
+  ): Promise<DownloadAsset[]> {
+    const assets = await this.repo.addDownloadAsset(orgId, downloadId, input);
+    this.logger.info('download asset added', { orgId, downloadId, assetId: input.assetId });
+    return assets;
+  }
+
+  async removeDownloadAsset(
+    orgId: string,
+    downloadId: string,
+    assetId: string,
+  ): Promise<DownloadAsset[]> {
+    const assets = await this.repo.removeDownloadAsset(orgId, downloadId, assetId);
+    this.logger.info('download asset removed', { orgId, downloadId, assetId });
+    return assets;
+  }
+
+  async renameDownloadAsset(
+    orgId: string,
+    downloadId: string,
+    assetId: string,
+    displayName: string | null,
+  ): Promise<DownloadAsset[]> {
+    const assets = await this.repo.renameDownloadAsset(orgId, downloadId, assetId, displayName);
+    this.logger.info('download asset renamed', { orgId, downloadId, assetId });
+    return assets;
+  }
+
+  /** The caller must send the COMPLETE ordered set — a partial list would
+   *  silently unlink whatever it omitted. */
+  async reorderDownloadAssets(
+    orgId: string,
+    downloadId: string,
+    assetIds: string[],
+  ): Promise<DownloadAsset[]> {
+    const current = await this.repo.listDownloadAssets(orgId, downloadId);
+    const currentIds = new Set(current.map((a) => a.assetId));
+    const sameSize = currentIds.size === assetIds.length;
+    if (!sameSize || !assetIds.every((id) => currentIds.has(id))) {
+      throw new ConflictError("Ordered asset ids does not match the download's current assets");
+    }
+    const assets = await this.repo.reorderDownloadAssets(orgId, downloadId, assetIds);
+    this.logger.debug('download assets reordered', { orgId, downloadId });
+    return assets;
   }
 }

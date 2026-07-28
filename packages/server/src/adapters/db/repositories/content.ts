@@ -6,8 +6,9 @@
 import { eq, and, sql, count, asc, desc, ilike, or, type SQL, type AnyColumn } from 'drizzle-orm';
 import type { DbExecutor } from '../index.js';
 import type { ContentRepository } from '../../../core/content/ports.js';
-import type { Course, CourseStatus, Download } from '../../../core/content/model.js';
+import type { Course, CourseStatus, Download, DownloadAsset } from '../../../core/content/model.js';
 import type {
+  AddDownloadAssetInput,
   CreateCourseInput,
   CreateDownloadInput,
   ListCoursesQuery,
@@ -274,5 +275,42 @@ export class DrizzleContentRepository implements ContentRepository {
 
   async deleteDownload(_orgId: string, _id: string): Promise<boolean> {
     this.failDownloads('delete');
+  }
+
+  async listDownloadAssets(_orgId: string, _downloadId: string): Promise<DownloadAsset[]> {
+    this.failDownloads('listAssets');
+  }
+
+  async addDownloadAsset(
+    _orgId: string,
+    _downloadId: string,
+    _input: AddDownloadAssetInput,
+  ): Promise<DownloadAsset[]> {
+    this.failDownloads('addAsset');
+  }
+
+  async removeDownloadAsset(
+    _orgId: string,
+    _downloadId: string,
+    _assetId: string,
+  ): Promise<DownloadAsset[]> {
+    this.failDownloads('removeAsset');
+  }
+
+  async renameDownloadAsset(
+    _orgId: string,
+    _downloadId: string,
+    _assetId: string,
+    _displayName: string | null,
+  ): Promise<DownloadAsset[]> {
+    this.failDownloads('renameAsset');
+  }
+
+  async reorderDownloadAssets(
+    _orgId: string,
+    _downloadId: string,
+    _assetIds: string[],
+  ): Promise<DownloadAsset[]> {
+    this.failDownloads('reorderAssets');
   }
 }

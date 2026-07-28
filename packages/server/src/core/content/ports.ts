@@ -1,5 +1,13 @@
-import type { Activity, Course, Download, Module, SaveActivityInput } from './model.js';
 import type {
+  Activity,
+  Course,
+  Download,
+  DownloadAsset,
+  Module,
+  SaveActivityInput,
+} from './model.js';
+import type {
+  AddDownloadAssetInput,
   CreateCourseInput,
   CreateDownloadInput,
   ListCoursesQuery,
@@ -53,6 +61,22 @@ export interface ContentService {
   updateDownload(orgId: string, id: string, patch: UpdateDownloadInput): Promise<Download>;
   /** @throws NotFoundError when no download with this id exists in the org. */
   removeDownload(orgId: string, id: string): Promise<void>;
+
+  listDownloadAssets(orgId: string, downloadId: string): Promise<DownloadAsset[]>;
+  addDownloadAsset(
+    orgId: string,
+    downloadId: string,
+    input: AddDownloadAssetInput,
+  ): Promise<DownloadAsset[]>;
+  removeDownloadAsset(orgId: string, downloadId: string, assetId: string): Promise<DownloadAsset[]>;
+  renameDownloadAsset(
+    orgId: string,
+    downloadId: string,
+    assetId: string,
+    displayName: string | null,
+  ): Promise<DownloadAsset[]>;
+  /** @throws ConflictError when assetIds is not exactly the download's current asset set. */
+  reorderDownloadAssets(orgId: string, downloadId: string, assetIds: string[]): Promise<DownloadAsset[]>;
 }
 
 // TODO
@@ -69,6 +93,21 @@ export interface ContentRepository {
   createDownload(orgId: string, input: CreateDownloadInput, slug: string): Promise<Download>;
   updateDownload(orgId: string, id: string, patch: UpdateDownloadInput): Promise<Download | null>;
   deleteDownload(orgId: string, id: string): Promise<boolean>;
+
+  listDownloadAssets(orgId: string, downloadId: string): Promise<DownloadAsset[]>;
+  addDownloadAsset(
+    orgId: string,
+    downloadId: string,
+    input: AddDownloadAssetInput,
+  ): Promise<DownloadAsset[]>;
+  removeDownloadAsset(orgId: string, downloadId: string, assetId: string): Promise<DownloadAsset[]>;
+  renameDownloadAsset(
+    orgId: string,
+    downloadId: string,
+    assetId: string,
+    displayName: string | null,
+  ): Promise<DownloadAsset[]>;
+  reorderDownloadAssets(orgId: string, downloadId: string, assetIds: string[]): Promise<DownloadAsset[]>;
 }
 
 export interface ContentTxScope {
