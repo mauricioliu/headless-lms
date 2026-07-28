@@ -15,7 +15,7 @@ import type { OrgUserProfile, Role } from "./organizations.js";
 export type CommentStatus = "pending" | "published" | "removed";
 
 /** Per-activity override of the course's discussion settings. */
-export type ThreadState = "visible" | "hidden" | "locked";
+export type CommentsState = "visible" | "hidden" | "locked";
 
 export interface Comment {
   readonly id: string;
@@ -40,7 +40,7 @@ export interface Comment {
  * standing is never stored on a comment.
  *
  * Deliberately omits `email`. Learners read each other's comments, and the
- * thread must not be a directory of the cohort's addresses. The moderation
+ * list must not be a directory of the cohort's addresses. The moderation
  * queue, which does need it, carries `authorEmail` on its own entry type.
  */
 export interface CommentAuthor extends Omit<OrgUserProfile, "email"> {
@@ -71,26 +71,26 @@ export interface DiscussionSettings {
   readonly orgId: string;
   readonly courseId: string;
   enabled: boolean;
-  /** false = replies are not accepted; the thread is a flat list. */
+  /** false = replies are not accepted; comments are a flat list. */
   threaded: boolean;
   requireReview: boolean;
   reactions: boolean;
 }
 
-export interface ActivityThreadState {
+export interface ActivityCommentsState {
   readonly orgId: string;
   readonly activityId: string;
-  state: ThreadState;
+  state: CommentsState;
 }
 
 /** The course settings with an activity's override applied. What the service
  *  actually decides against. */
-export interface ResolvedThreadConfig {
+export interface CommentsConfig {
   enabled: boolean;
   threaded: boolean;
   requireReview: boolean;
   reactions: boolean;
-  state: ThreadState;
+  state: CommentsState;
 }
 
 export interface PostCommentInput {
@@ -102,7 +102,7 @@ export interface PostCommentInput {
 
 /** One comment as served to a reader: the row plus what the reader is allowed
  *  to see. `body` is null when the comment is removed. */
-export interface ThreadComment {
+export interface CommentView {
   id: string;
   parentId: string | null;
   author: CommentAuthor;

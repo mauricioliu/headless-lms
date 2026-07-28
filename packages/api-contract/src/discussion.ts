@@ -1,8 +1,8 @@
-// Discussion resource schemas. A thread attaches to an activity; settings are
-// per course with an optional per-activity thread state.
+// Discussion resource schemas. Comments attach to an activity; settings are
+// per course with an optional per-activity comments state.
 //
 // The author is the participation's profile minus its email — learners read each
-// other's comments and the thread must not be a directory of the cohort's
+// other's comments and the list must not be a directory of the cohort's
 // addresses. The moderation queue carries `authorEmail` separately.
 import { z } from "zod";
 import { OrgRole, OrgUserProfileSchema } from "./shared.js";
@@ -10,8 +10,8 @@ import { OrgRole, OrgUserProfileSchema } from "./shared.js";
 export const CommentStatus = z.enum(["pending", "published", "removed"]);
 export type CommentStatus = z.infer<typeof CommentStatus>;
 
-export const ThreadState = z.enum(["visible", "hidden", "locked"]);
-export type ThreadState = z.infer<typeof ThreadState>;
+export const CommentsState = z.enum(["visible", "hidden", "locked"]);
+export type CommentsState = z.infer<typeof CommentsState>;
 
 export const CommentAuthor = OrgUserProfileSchema.omit({ email: true }).extend({
   role: OrgRole,
@@ -26,7 +26,7 @@ export const ReactionSummary = z.object({
 });
 export type ReactionSummary = z.infer<typeof ReactionSummary>;
 
-export const ThreadComment = z.object({
+export const CommentView = z.object({
   id: z.string(),
   /** null = a root comment. Replies nest one level. */
   parentId: z.string().nullable(),
@@ -43,22 +43,22 @@ export const ThreadComment = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 });
-export type ThreadComment = z.infer<typeof ThreadComment>;
+export type CommentView = z.infer<typeof CommentView>;
 
-export const ResolvedThreadConfig = z.object({
+export const CommentsConfig = z.object({
   enabled: z.boolean(),
   threaded: z.boolean(),
   requireReview: z.boolean(),
   reactions: z.boolean(),
-  state: ThreadState,
+  state: CommentsState,
 });
-export type ResolvedThreadConfig = z.infer<typeof ResolvedThreadConfig>;
+export type CommentsConfig = z.infer<typeof CommentsConfig>;
 
-export const ThreadView = z.object({
-  config: ResolvedThreadConfig,
-  comments: z.array(ThreadComment),
+export const ActivityComments = z.object({
+  config: CommentsConfig,
+  comments: z.array(CommentView),
 });
-export type ThreadView = z.infer<typeof ThreadView>;
+export type ActivityComments = z.infer<typeof ActivityComments>;
 
 export const PostComment = z.object({
   body: z.string().min(1).max(10_000),
@@ -138,11 +138,11 @@ export const SetDiscussionSettings = z.object({
 });
 export type SetDiscussionSettings = z.infer<typeof SetDiscussionSettings>;
 
-export const SetThreadState = z.object({
+export const SetCommentsState = z.object({
   /**
    * null clears the override so the course setting applies again.
    *
-   * Spelled as a literal union rather than `ThreadState.nullable()`: hey-api's
+   * Spelled as a literal union rather than `CommentsState.nullable()`: hey-api's
    * openapi-ts (0.99.0) drops the `null` arm when a required property is a
    * `{ type: "string", enum: [...], nullable: true }` schema, generating
    * `"visible" | "hidden" | "locked"` with no `null`. A literal union instead
@@ -151,14 +151,14 @@ export const SetThreadState = z.object({
    */
   state: z.union([z.literal("visible"), z.literal("hidden"), z.literal("locked"), z.null()]),
 });
-export type SetThreadState = z.infer<typeof SetThreadState>;
+export type SetCommentsState = z.infer<typeof SetCommentsState>;
 
 /** Explicit overrides only, keyed by activity id. An activity that is absent
  *  inherits its course setting. */
-export const ThreadStates = z.object({
-  states: z.record(z.string(), ThreadState),
+export const CommentStates = z.object({
+  states: z.record(z.string(), CommentsState),
 });
-export type ThreadStates = z.infer<typeof ThreadStates>;
+export type CommentStates = z.infer<typeof CommentStates>;
 
 export const QueueReport = z.object({
   reporter: CommentAuthor,

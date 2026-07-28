@@ -1,54 +1,54 @@
-// Everything about the thread that is not React: grouping, permissions and the
-// optimistic transitions. Kept separate so the rules are testable without a
-// renderer, the way lib/video-tracking.ts is.
+// Everything about an activity's comments that is not React: grouping,
+// permissions and the optimistic transitions. Kept separate so the rules are
+// testable without a renderer, the way lib/video-tracking.ts is.
 import type {
   CommentAuthor,
-  ResolvedThreadConfig,
-  ThreadComment,
-  ThreadView,
+  CommentsConfig,
+  CommentView,
+  ActivityComments,
 } from "@/lib/api/types";
 
-export type ThreadStatus = "loading" | "ready" | "error" | "off";
+export type CommentsStatus = "loading" | "ready" | "error" | "off";
 
-export interface ThreadPanelState {
-  status: ThreadStatus;
-  config: ResolvedThreadConfig | null;
-  comments: ThreadComment[];
-  /** Set by a failed mutation; the thread stays on screen. */
+export interface CommentsPanelState {
+  status: CommentsStatus;
+  config: CommentsConfig | null;
+  comments: CommentView[];
+  /** Set by a failed mutation; the comments stay on screen. */
   error: string | null;
 }
 
-export const initialThreadState: ThreadPanelState = {
+export const initialCommentsState: CommentsPanelState = {
   status: "loading",
   config: null,
   comments: [],
   error: null,
 };
 
-export type ThreadAction =
+export type CommentsAction =
   | { kind: "loading" }
-  | { kind: "loaded"; view: ThreadView }
+  | { kind: "loaded"; view: ActivityComments }
   | { kind: "failed"; message: string }
-  | { kind: "inserted"; comment: ThreadComment }
-  | { kind: "replaced"; id: string; comment: ThreadComment }
+  | { kind: "inserted"; comment: CommentView }
+  | { kind: "replaced"; id: string; comment: CommentView }
   | { kind: "removed"; id: string; by: CommentAuthor }
   | { kind: "reacted"; id: string; emoji: string; on: boolean }
   /** Rollback: put back the snapshot taken before an optimistic change. */
-  | { kind: "restored"; comments: ThreadComment[] };
+  | { kind: "restored"; comments: CommentView[] };
 
 function mapOne(
-  comments: ThreadComment[],
+  comments: CommentView[],
   id: string,
-  fn: (c: ThreadComment) => ThreadComment,
-): ThreadComment[] {
+  fn: (c: CommentView) => CommentView,
+): CommentView[] {
   return comments.map((c) => (c.id === id ? fn(c) : c));
 }
 
 function toggleReaction(
-  comment: ThreadComment,
+  comment: CommentView,
   emoji: string,
   on: boolean,
-): ThreadComment {
+): CommentView {
   const existing = comment.reactions.find((r) => r.emoji === emoji);
   if (on) {
     // Idempotent: a stale render can dispatch "on" twice for the same reader
@@ -75,10 +75,10 @@ function toggleReaction(
   return { ...comment, reactions };
 }
 
-export function threadReducer(
-  state: ThreadPanelState,
-  action: ThreadAction,
-): ThreadPanelState {
+export function commentsReducer(
+  state: CommentsPanelState,
+  action: CommentsAction,
+): CommentsPanelState {
   switch (action.kind) {
     case "loading":
       return { ...state, status: "loading", error: null };
@@ -101,7 +101,7 @@ export function threadReducer(
       return { ...state, comments: mapOne(state.comments, action.id, () => action.comment) };
     case "removed":
       // Mark rather than delete: a root with replies must stay as a placeholder,
-      // and groupThread decides whether it is still shown.
+      // and groupComments decides whether it is still shown.
       return {
         ...state,
         comments: mapOne(state.comments, action.id, (c) => ({
@@ -123,9 +123,9 @@ export function threadReducer(
   }
 }
 
-export interface ThreadNode {
-  comment: ThreadComment;
-  replies: ThreadComment[];
+export interface CommentNode {
+  comment: CommentView;
+  replies: CommentView[];
 }
 
 /**
@@ -134,10 +134,10 @@ export interface ThreadNode {
  * survives only while a visible reply hangs off it, and a removed reply is
  * never shown, because replies nest one level and hold nothing in place.
  */
-export function groupThread(comments: ThreadComment[]): ThreadNode[] {
+export function groupComments(comments: CommentView[]): CommentNode[] {
   const roots = comments.filter((c) => c.parentId === null);
   const rootIds = new Set(roots.map((r) => r.id));
-  const byParent = new Map<string, ThreadComment[]>();
+  const byParent = new Map<string, CommentView[]>();
   for (const c of comments) {
     if (c.parentId === null || c.status === "removed" || !rootIds.has(c.parentId)) {
       continue;
@@ -159,12 +159,12 @@ export interface CommentPermissions {
 
 /**
  * What this comment offers this reader. Locked is read-only for everything
- * except reporting — an archived thread can still hold something a moderator
+ * except reporting — locked comments can still hold something a moderator
  * needs to see — and an author may still withdraw their own comment.
  */
 export function permissions(
-  config: ResolvedThreadConfig,
-  comment: ThreadComment,
+  config: CommentsConfig,
+  comment: CommentView,
 ): CommentPermissions {
   const open = config.enabled && config.state === "visible";
   const live = comment.status !== "removed";
@@ -179,6 +179,6 @@ export function permissions(
 }
 
 /** Whether the composer is offered at all. */
-export function canPost(config: ResolvedThreadConfig): boolean {
+export function canPost(config: CommentsConfig): boolean {
   return config.enabled && config.state === "visible";
 }

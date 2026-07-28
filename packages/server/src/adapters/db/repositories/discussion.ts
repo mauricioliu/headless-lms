@@ -16,10 +16,10 @@ import type {
   CommentReaction,
   CommentReport,
   DiscussionSettings,
-  ThreadState,
+  CommentsState,
 } from '../../../core/discussion/model.js';
 import {
-  activityThreadStates,
+  activityCommentStates,
   commentReactions,
   commentReports,
   comments,
@@ -269,59 +269,59 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
     return row!;
   }
 
-  async findThreadState(orgId: string, activityId: string): Promise<ThreadState | null> {
+  async findCommentsState(orgId: string, activityId: string): Promise<CommentsState | null> {
     const [row] = await this.db
       .select()
-      .from(activityThreadStates)
+      .from(activityCommentStates)
       .where(
         and(
-          eq(activityThreadStates.orgId, orgId),
-          eq(activityThreadStates.activityId, activityId),
+          eq(activityCommentStates.orgId, orgId),
+          eq(activityCommentStates.activityId, activityId),
         ),
       )
       .limit(1);
     return row?.state ?? null;
   }
 
-  async listThreadStatesByCourse(
+  async listCommentStatesByCourse(
     orgId: string,
     courseId: string,
-  ): Promise<Record<string, ThreadState>> {
+  ): Promise<Record<string, CommentsState>> {
     const rows = await this.db
-      .select({ activityId: activityThreadStates.activityId, state: activityThreadStates.state })
-      .from(activityThreadStates)
+      .select({ activityId: activityCommentStates.activityId, state: activityCommentStates.state })
+      .from(activityCommentStates)
       .innerJoin(
         activities,
         and(
-          eq(activities.orgId, activityThreadStates.orgId),
-          eq(activities.id, activityThreadStates.activityId),
+          eq(activities.orgId, activityCommentStates.orgId),
+          eq(activities.id, activityCommentStates.activityId),
         ),
       )
       .innerJoin(
         modules,
         and(eq(modules.orgId, activities.orgId), eq(modules.id, activities.moduleId)),
       )
-      .where(and(eq(activityThreadStates.orgId, orgId), eq(modules.courseId, courseId)));
+      .where(and(eq(activityCommentStates.orgId, orgId), eq(modules.courseId, courseId)));
     return Object.fromEntries(rows.map((r) => [r.activityId, r.state]));
   }
 
-  async upsertThreadState(orgId: string, activityId: string, state: ThreadState): Promise<void> {
+  async upsertCommentsState(orgId: string, activityId: string, state: CommentsState): Promise<void> {
     await this.db
-      .insert(activityThreadStates)
+      .insert(activityCommentStates)
       .values({ orgId, activityId, state })
       .onConflictDoUpdate({
-        target: [activityThreadStates.orgId, activityThreadStates.activityId],
+        target: [activityCommentStates.orgId, activityCommentStates.activityId],
         set: { state },
       });
   }
 
-  async clearThreadState(orgId: string, activityId: string): Promise<void> {
+  async clearCommentsState(orgId: string, activityId: string): Promise<void> {
     await this.db
-      .delete(activityThreadStates)
+      .delete(activityCommentStates)
       .where(
         and(
-          eq(activityThreadStates.orgId, orgId),
-          eq(activityThreadStates.activityId, activityId),
+          eq(activityCommentStates.orgId, orgId),
+          eq(activityCommentStates.activityId, activityId),
         ),
       );
   }

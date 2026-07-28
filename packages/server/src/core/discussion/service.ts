@@ -1,10 +1,11 @@
 // discussion context — service implementation (inbound port).
 //
-// Owns every discussion rule: which settings apply to a thread, whether a new
-// comment lands pending, who may edit/remove/moderate, and what a given reader
-// is served. The caller's staff standing arrives as an `Actor` resolved at the
-// HTTP edge — core never looks a role up to make a decision. Profiles and roles
-// ARE read back to render an author, which is presentation, not authorisation.
+// Owns every discussion rule: which settings apply to an activity's comments,
+// whether a new comment lands pending, who may edit/remove/moderate, and what
+// a given reader is served. The caller's staff standing arrives as an `Actor`
+// resolved at the HTTP edge — core never looks a role up to make a decision.
+// Profiles and roles ARE read back to render an author, which is presentation,
+// not authorisation.
 //
 // A comment stores no course. Every path that needs one resolves it from the
 // activity through the repository.
@@ -17,9 +18,9 @@ import type {
   CommentAuthor,
   CommentReport,
   DiscussionSettings,
-  ThreadState,
+  CommentsState,
 } from './model.js';
-import type { PostCommentInput, ResolvedThreadConfig, ThreadComment } from './types.js';
+import type { PostCommentInput, CommentsConfig, CommentView } from './types.js';
 import type {
   Actor,
   AuthorRecord,
@@ -28,7 +29,7 @@ import type {
   DiscussionUnitOfWork,
   QueueEntry,
   QueueQuery,
-  ThreadView,
+  ActivityComments,
 } from './ports.js';
 
 /** A course with no stored settings. Discussion is opt-in, so the common case
@@ -65,24 +66,24 @@ export class DiscussionServiceImpl implements DiscussionService {
     return this.repo.upsertSettings(orgId, { ...current, ...patch });
   }
 
-  async setThreadState(
+  async setCommentsState(
     orgId: string,
     activityId: string,
-    state: ThreadState | null,
+    state: CommentsState | null,
   ): Promise<void> {
     const courseId = await this.repo.courseOfActivity(orgId, activityId);
     if (!courseId) {
       throw new NotFoundError('Activity', activityId);
     }
     if (state === null) {
-      await this.repo.clearThreadState(orgId, activityId);
+      await this.repo.clearCommentsState(orgId, activityId);
       return;
     }
-    await this.repo.upsertThreadState(orgId, activityId, state);
+    await this.repo.upsertCommentsState(orgId, activityId, state);
   }
 
-  listThreadStates(orgId: string, courseId: string): Promise<Record<string, ThreadState>> {
-    return this.repo.listThreadStatesByCourse(orgId, courseId);
+  listCommentStates(orgId: string, courseId: string): Promise<Record<string, CommentsState>> {
+    return this.repo.listCommentStatesByCourse(orgId, courseId);
   }
 
   /** The course an activity sits in. Content owns this fact; discussion reads
@@ -95,13 +96,13 @@ export class DiscussionServiceImpl implements DiscussionService {
     return courseId;
   }
 
-  async resolveConfig(orgId: string, activityId: string): Promise<ResolvedThreadConfig> {
+  async resolveConfig(orgId: string, activityId: string): Promise<CommentsConfig> {
     const courseId = await this.courseOf(orgId, activityId);
     const settings = await this.getSettings(orgId, courseId);
-    const override = await this.repo.findThreadState(orgId, activityId);
+    const override = await this.repo.findCommentsState(orgId, activityId);
     // Discussion off for the course cannot be overridden back on by an
     // activity: the course switch is the master.
-    const state: ThreadState = !settings.enabled ? 'hidden' : (override ?? 'visible');
+    const state: CommentsState = !settings.enabled ? 'hidden' : (override ?? 'visible');
     return {
       enabled: settings.enabled,
       threaded: settings.threaded,
@@ -111,7 +112,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     };
   }
 
-  /** Strip the email a profile row carries — a thread must never expose one. */
+  /** Strip the email a profile row carries — comments must never expose one. */
   private toAuthor(record: AuthorRecord): CommentAuthor {
     return { id: record.id, name: record.name, image: record.image, role: record.role };
   }
@@ -124,12 +125,12 @@ export class DiscussionServiceImpl implements DiscussionService {
 
   /** Render one comment with no reaction context. Used by post and edit, where
    *  the caller has just written the row and needs it back in the same shape
-   *  the thread serves. */
+   *  comments are served. */
   private async renderOne(
     orgId: string,
     comment: Comment,
     actor: Actor,
-  ): Promise<ThreadComment> {
+  ): Promise<CommentView> {
     const ids = [comment.orgUserId, ...(comment.removedBy ? [comment.removedBy] : [])];
     const records = await this.repo.authorsOf(orgId, [...new Set(ids)]);
     const author = records[comment.orgUserId];
@@ -151,7 +152,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     };
   }
 
-  async post(orgId: string, actor: Actor, input: PostCommentInput): Promise<ThreadComment> {
+  async post(orgId: string, actor: Actor, input: PostCommentInput): Promise<CommentView> {
     const config = await this.resolveConfig(orgId, input.activityId);
     if (config.state !== 'visible') {
       throw new ForbiddenError('discussion is not open on this activity');
@@ -201,7 +202,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     return this.renderOne(orgId, saved, actor);
   }
 
-  async listThread(orgId: string, activityId: string, actor: Actor): Promise<ThreadView> {
+  async listComments(orgId: string, activityId: string, actor: Actor): Promise<ActivityComments> {
     const config = await this.resolveConfig(orgId, activityId);
     if (config.state === 'hidden') {
       return { config, comments: [] };
@@ -290,7 +291,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     commentId: string,
     actor: Actor,
     body: string,
-  ): Promise<ThreadComment> {
+  ): Promise<CommentView> {
     const { comment, config } = await this.loadWithConfig(orgId, commentId);
     if (config.state !== 'visible') {
       throw new ForbiddenError('discussion is not open on this activity');
@@ -364,12 +365,12 @@ export class DiscussionServiceImpl implements DiscussionService {
     return updated;
   }
 
-  /** Load a comment together with its thread's resolved config. Both gates
-   *  below need the pair, and neither should read the row twice. */
+  /** Load a comment together with its activity's resolved comments config.
+   *  Both gates below need the pair, and neither should read the row twice. */
   private async loadWithConfig(
     orgId: string,
     commentId: string,
-  ): Promise<{ comment: Comment; config: ResolvedThreadConfig }> {
+  ): Promise<{ comment: Comment; config: CommentsConfig }> {
     const comment = await this.load(orgId, commentId);
     const config = await this.resolveConfig(orgId, comment.activityId);
     return { comment, config };
@@ -377,7 +378,7 @@ export class DiscussionServiceImpl implements DiscussionService {
 
   async react(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void> {
     const { config } = await this.loadWithConfig(orgId, commentId);
-    // Writing to the thread — locked and hidden both refuse.
+    // Writing to comments — locked and hidden both refuse.
     if (config.state !== 'visible') {
       throw new ForbiddenError('discussion is not open on this activity');
     }
@@ -450,7 +451,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     reason: string,
   ): Promise<CommentReport> {
     const { config } = await this.loadWithConfig(orgId, commentId);
-    // Locked accepts reports — an archived thread can still hold something a
+    // Locked accepts reports — a locked activity can still hold something a
     // moderator needs to see. Hidden does not: nothing in it is being served,
     // so nobody is looking at a comment to flag.
     if (config.state === 'hidden') {

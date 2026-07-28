@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { setDiscussionSettingsAction } from "../actions";
 
 const FIELDS = [
-  { key: "enabled", label: "Enabled", hint: "Show a comment thread on this course's lessons." },
+  { key: "enabled", label: "Enabled", hint: "Show comments on this course's lessons." },
   { key: "threaded", label: "Replies", hint: "Let learners reply to a comment." },
   {
     key: "requireReview",

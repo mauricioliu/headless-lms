@@ -491,16 +491,16 @@ export type GetLearnCourseProgressResponses = {
 export type GetLearnCourseProgressResponse =
   GetLearnCourseProgressResponses[keyof GetLearnCourseProgressResponses];
 
-export type GetActivityThreadData = {
+export type ListActivityCommentsData = {
   body?: never;
   path: {
     activityId: string;
   };
   query?: never;
-  url: "/api/learn/activities/{activityId}/thread";
+  url: "/api/learn/activities/{activityId}/comments";
 };
 
-export type GetActivityThreadErrors = {
+export type ListActivityCommentsErrors = {
   /**
    * Default Response
    */
@@ -510,9 +510,10 @@ export type GetActivityThreadErrors = {
   };
 };
 
-export type GetActivityThreadError = GetActivityThreadErrors[keyof GetActivityThreadErrors];
+export type ListActivityCommentsError =
+  ListActivityCommentsErrors[keyof ListActivityCommentsErrors];
 
-export type GetActivityThreadResponses = {
+export type ListActivityCommentsResponses = {
   /**
    * Default Response
    */
@@ -553,8 +554,8 @@ export type GetActivityThreadResponses = {
   };
 };
 
-export type GetActivityThreadResponse =
-  GetActivityThreadResponses[keyof GetActivityThreadResponses];
+export type ListActivityCommentsResponse =
+  ListActivityCommentsResponses[keyof ListActivityCommentsResponses];
 
 export type PostCommentData = {
   body: {
@@ -565,7 +566,7 @@ export type PostCommentData = {
     activityId: string;
   };
   query?: never;
-  url: "/api/learn/activities/{activityId}/thread/comments";
+  url: "/api/learn/activities/{activityId}/comments";
 };
 
 export type PostCommentErrors = {
@@ -1038,16 +1039,16 @@ export type DismissCommentReportsResponses = {
   204: unknown;
 };
 
-export type GetActivityThread2Data = {
+export type ListActivityComments2Data = {
   body?: never;
   path: {
     activityId: string;
   };
   query?: never;
-  url: "/api/discussion/activities/{activityId}/thread";
+  url: "/api/discussion/activities/{activityId}/comments";
 };
 
-export type GetActivityThread2Errors = {
+export type ListActivityComments2Errors = {
   /**
    * Default Response
    */
@@ -1057,9 +1058,10 @@ export type GetActivityThread2Errors = {
   };
 };
 
-export type GetActivityThread2Error = GetActivityThread2Errors[keyof GetActivityThread2Errors];
+export type ListActivityComments2Error =
+  ListActivityComments2Errors[keyof ListActivityComments2Errors];
 
-export type GetActivityThread2Responses = {
+export type ListActivityComments2Responses = {
   /**
    * Default Response
    */
@@ -1100,10 +1102,10 @@ export type GetActivityThread2Responses = {
   };
 };
 
-export type GetActivityThread2Response =
-  GetActivityThread2Responses[keyof GetActivityThread2Responses];
+export type ListActivityComments2Response =
+  ListActivityComments2Responses[keyof ListActivityComments2Responses];
 
-export type SetThreadStateData = {
+export type SetActivityCommentsStateData = {
   body: {
     state: "visible" | "hidden" | "locked" | null;
   };
@@ -1111,10 +1113,10 @@ export type SetThreadStateData = {
     activityId: string;
   };
   query?: never;
-  url: "/api/discussion/activities/{activityId}/thread";
+  url: "/api/discussion/activities/{activityId}/comments";
 };
 
-export type SetThreadStateErrors = {
+export type SetActivityCommentsStateErrors = {
   /**
    * Default Response
    */
@@ -1124,9 +1126,10 @@ export type SetThreadStateErrors = {
   };
 };
 
-export type SetThreadStateError = SetThreadStateErrors[keyof SetThreadStateErrors];
+export type SetActivityCommentsStateError =
+  SetActivityCommentsStateErrors[keyof SetActivityCommentsStateErrors];
 
-export type SetThreadStateResponses = {
+export type SetActivityCommentsStateResponses = {
   /**
    * Default Response
    */
@@ -1142,7 +1145,7 @@ export type PostComment2Data = {
     activityId: string;
   };
   query?: never;
-  url: "/api/discussion/activities/{activityId}/thread/comments";
+  url: "/api/discussion/activities/{activityId}/comments";
 };
 
 export type PostComment2Errors = {
@@ -1268,16 +1271,16 @@ export type SetDiscussionSettingsResponses = {
 export type SetDiscussionSettingsResponse =
   SetDiscussionSettingsResponses[keyof SetDiscussionSettingsResponses];
 
-export type ListCourseThreadsData = {
+export type ListCourseCommentStatesData = {
   body?: never;
   path: {
     courseId: string;
   };
   query?: never;
-  url: "/api/discussion/courses/{courseId}/threads";
+  url: "/api/discussion/courses/{courseId}/comment-states";
 };
 
-export type ListCourseThreadsResponses = {
+export type ListCourseCommentStatesResponses = {
   /**
    * Default Response
    */
@@ -1288,8 +1291,8 @@ export type ListCourseThreadsResponses = {
   };
 };
 
-export type ListCourseThreadsResponse =
-  ListCourseThreadsResponses[keyof ListCourseThreadsResponses];
+export type ListCourseCommentStatesResponse =
+  ListCourseCommentStatesResponses[keyof ListCourseCommentStatesResponses];
 
 export type ListModulesData = {
   body?: never;

@@ -15,6 +15,13 @@
       "when": 1785153808484,
       "tag": "0001_worthless_cerebro",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785234800171,
+      "tag": "0002_daily_frog_thor",
+      "breakpoints": true
     }
   ]
 }

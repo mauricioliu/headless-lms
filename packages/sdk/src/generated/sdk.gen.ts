@@ -64,12 +64,6 @@ import type {
   EditCommentData,
   EditCommentErrors,
   EditCommentResponses,
-  GetActivityThread2Data,
-  GetActivityThread2Errors,
-  GetActivityThread2Responses,
-  GetActivityThreadData,
-  GetActivityThreadErrors,
-  GetActivityThreadResponses,
   GetAssetData,
   GetAssetErrors,
   GetAssetResponses,
@@ -103,6 +97,12 @@ import type {
   GetStudentResponses,
   GrantEntitlementData,
   GrantEntitlementResponses,
+  ListActivityComments2Data,
+  ListActivityComments2Errors,
+  ListActivityComments2Responses,
+  ListActivityCommentsData,
+  ListActivityCommentsErrors,
+  ListActivityCommentsResponses,
   ListAssetsData,
   ListAssetsErrors,
   ListAssetsResponses,
@@ -123,10 +123,10 @@ import type {
   ListConnectionsData,
   ListConnectionsErrors,
   ListConnectionsResponses,
+  ListCourseCommentStatesData,
+  ListCourseCommentStatesResponses,
   ListCoursesData,
   ListCoursesResponses,
-  ListCourseThreadsData,
-  ListCourseThreadsResponses,
   ListEntitlementsData,
   ListEntitlementsResponses,
   ListLearnCoursesData,
@@ -185,15 +185,15 @@ import type {
   RevokeConnectedAppData,
   RevokeConnectedAppErrors,
   RevokeConnectedAppResponses,
+  SetActivityCommentsStateData,
+  SetActivityCommentsStateErrors,
+  SetActivityCommentsStateResponses,
   SetDiscussionSettingsData,
   SetDiscussionSettingsErrors,
   SetDiscussionSettingsResponses,
   SetEntitlementStatusData,
   SetEntitlementStatusErrors,
   SetEntitlementStatusResponses,
-  SetThreadStateData,
-  SetThreadStateErrors,
-  SetThreadStateResponses,
   UnreactToCommentData,
   UnreactToCommentErrors,
   UnreactToCommentResponses,
@@ -688,16 +688,16 @@ export class Learn {
   }
 
   /**
-   * Read an activity's comment thread
+   * Read an activity's comments
    */
-  public static getActivityThread<ThrowOnError extends boolean = false>(
-    options: Options<GetActivityThreadData, ThrowOnError>,
-  ): RequestResult<GetActivityThreadResponses, GetActivityThreadErrors, ThrowOnError> {
+  public static listActivityComments<ThrowOnError extends boolean = false>(
+    options: Options<ListActivityCommentsData, ThrowOnError>,
+  ): RequestResult<ListActivityCommentsResponses, ListActivityCommentsErrors, ThrowOnError> {
     return (options.client ?? client).get<
-      GetActivityThreadResponses,
-      GetActivityThreadErrors,
+      ListActivityCommentsResponses,
+      ListActivityCommentsErrors,
       ThrowOnError
-    >({ url: "/api/learn/activities/{activityId}/thread", ...options });
+    >({ url: "/api/learn/activities/{activityId}/comments", ...options });
   }
 
   /**
@@ -707,7 +707,7 @@ export class Learn {
     options: Options<PostCommentData, ThrowOnError>,
   ): RequestResult<PostCommentResponses, PostCommentErrors, ThrowOnError> {
     return (options.client ?? client).post<PostCommentResponses, PostCommentErrors, ThrowOnError>({
-      url: "/api/learn/activities/{activityId}/thread/comments",
+      url: "/api/learn/activities/{activityId}/comments",
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -852,30 +852,34 @@ export class Discussion {
   }
 
   /**
-   * Read an activity's comment thread as staff
+   * Read an activity's comments as staff
    */
-  public static getActivityThread<ThrowOnError extends boolean = false>(
-    options: Options<GetActivityThread2Data, ThrowOnError>,
-  ): RequestResult<GetActivityThread2Responses, GetActivityThread2Errors, ThrowOnError> {
+  public static listActivityComments<ThrowOnError extends boolean = false>(
+    options: Options<ListActivityComments2Data, ThrowOnError>,
+  ): RequestResult<ListActivityComments2Responses, ListActivityComments2Errors, ThrowOnError> {
     return (options.client ?? client).get<
-      GetActivityThread2Responses,
-      GetActivityThread2Errors,
+      ListActivityComments2Responses,
+      ListActivityComments2Errors,
       ThrowOnError
-    >({ url: "/api/discussion/activities/{activityId}/thread", ...options });
+    >({ url: "/api/discussion/activities/{activityId}/comments", ...options });
   }
 
   /**
-   * Override or clear an activity's thread state
+   * Override or clear an activity's comments state
    */
-  public static setThreadState<ThrowOnError extends boolean = false>(
-    options: Options<SetThreadStateData, ThrowOnError>,
-  ): RequestResult<SetThreadStateResponses, SetThreadStateErrors, ThrowOnError> {
+  public static setActivityCommentsState<ThrowOnError extends boolean = false>(
+    options: Options<SetActivityCommentsStateData, ThrowOnError>,
+  ): RequestResult<
+    SetActivityCommentsStateResponses,
+    SetActivityCommentsStateErrors,
+    ThrowOnError
+  > {
     return (options.client ?? client).patch<
-      SetThreadStateResponses,
-      SetThreadStateErrors,
+      SetActivityCommentsStateResponses,
+      SetActivityCommentsStateErrors,
       ThrowOnError
     >({
-      url: "/api/discussion/activities/{activityId}/thread",
+      url: "/api/discussion/activities/{activityId}/comments",
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -892,7 +896,7 @@ export class Discussion {
   ): RequestResult<PostComment2Responses, PostComment2Errors, ThrowOnError> {
     return (options.client ?? client).post<PostComment2Responses, PostComment2Errors, ThrowOnError>(
       {
-        url: "/api/discussion/activities/{activityId}/thread/comments",
+        url: "/api/discussion/activities/{activityId}/comments",
         ...options,
         headers: {
           "Content-Type": "application/json",
@@ -935,13 +939,13 @@ export class Discussion {
   }
 
   /**
-   * Read every per-activity thread-state override in a course
+   * Read every per-activity comments-state override in a course
    */
-  public static listCourseThreads<ThrowOnError extends boolean = false>(
-    options: Options<ListCourseThreadsData, ThrowOnError>,
-  ): RequestResult<ListCourseThreadsResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).get<ListCourseThreadsResponses, unknown, ThrowOnError>({
-      url: "/api/discussion/courses/{courseId}/threads",
+  public static listCourseCommentStates<ThrowOnError extends boolean = false>(
+    options: Options<ListCourseCommentStatesData, ThrowOnError>,
+  ): RequestResult<ListCourseCommentStatesResponses, unknown, ThrowOnError> {
+    return (options.client ?? client).get<ListCourseCommentStatesResponses, unknown, ThrowOnError>({
+      url: "/api/discussion/courses/{courseId}/comment-states",
       ...options,
     });
   }

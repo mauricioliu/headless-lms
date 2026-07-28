@@ -9,14 +9,14 @@ import type {
   CommentReaction,
   CommentReport,
   DiscussionSettings,
-  ThreadState,
+  CommentsState,
 } from './model.js';
-import type { PostCommentInput, ResolvedThreadConfig, ThreadComment } from './types.js';
+import type { PostCommentInput, CommentsConfig, CommentView } from './types.js';
 
-/** Everything a reader needs to render one activity's thread. */
-export interface ThreadView {
-  config: ResolvedThreadConfig;
-  comments: ThreadComment[];
+/** Everything a reader needs to render one activity's comments. */
+export interface ActivityComments {
+  config: CommentsConfig;
+  comments: CommentView[];
 }
 
 /** One entry in a moderator's work queue. Carries what the decision needs:
@@ -26,7 +26,7 @@ export interface QueueEntry {
   comment: Comment;
   author: CommentAuthor;
   /** Present only here. The queue is staff-scoped, and identifying a spam
-   *  account is the decision being asked for. Never on a ThreadComment. */
+   *  account is the decision being asked for. Never on a CommentView. */
   authorEmail: string;
   /** Resolved from content at read time, never stored. */
   courseId: string;
@@ -55,8 +55,8 @@ export interface Actor {
   role: Role;
 }
 
-/** A profile row as the repository loads it. `email` is stripped before a
- *  thread is served and kept only for the moderation queue. */
+/** A profile row as the repository loads it. `email` is stripped before
+ *  comments are served and kept only for the moderation queue. */
 export interface AuthorRecord extends CommentAuthor {
   email: string;
 }
@@ -77,19 +77,19 @@ export interface DiscussionService {
     patch: Partial<Omit<DiscussionSettings, 'orgId' | 'courseId'>>,
   ): Promise<DiscussionSettings>;
   /** null clears the override so the course setting applies again. */
-  setThreadState(orgId: string, activityId: string, state: ThreadState | null): Promise<void>;
+  setCommentsState(orgId: string, activityId: string, state: CommentsState | null): Promise<void>;
   /** Every explicit override in a course, keyed by activity id. Activities with
    *  no override are absent — they inherit. */
-  listThreadStates(orgId: string, courseId: string): Promise<Record<string, ThreadState>>;
+  listCommentStates(orgId: string, courseId: string): Promise<Record<string, CommentsState>>;
   /** Course settings with the activity's override applied. Resolves the course
    *  from the activity. */
-  resolveConfig(orgId: string, activityId: string): Promise<ResolvedThreadConfig>;
+  resolveConfig(orgId: string, activityId: string): Promise<CommentsConfig>;
 
   /** Post a root comment or a reply. Lands pending where review is required and
    *  the poster is not staff. */
-  post(orgId: string, actor: Actor, input: PostCommentInput): Promise<ThreadComment>;
+  post(orgId: string, actor: Actor, input: PostCommentInput): Promise<CommentView>;
   /** Author-only. Throws ForbiddenError for anyone else, staff included. */
-  edit(orgId: string, commentId: string, actor: Actor, body: string): Promise<ThreadComment>;
+  edit(orgId: string, commentId: string, actor: Actor, body: string): Promise<CommentView>;
   /** The author, or anyone whose role is staff. */
   remove(orgId: string, commentId: string, actor: Actor): Promise<Comment>;
   /** Staff only. Returns the comment to published. */
@@ -99,13 +99,13 @@ export interface DiscussionService {
   /** Make a comment published, whichever state it is in. Staff only. */
   publish(orgId: string, commentId: string, actor: Actor): Promise<Comment>;
 
-  /** The thread as this reader may see it. */
-  listThread(orgId: string, activityId: string, actor: Actor): Promise<ThreadView>;
+  /** The activity's comments as this reader may see them. */
+  listComments(orgId: string, activityId: string, actor: Actor): Promise<ActivityComments>;
 
   react(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void>;
   unreact(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void>;
 
-  /** Accepted even on a locked thread — an archived thread can still hold
+  /** Accepted even on locked comments — a locked activity can still hold
    *  something a moderator needs to see. */
   report(orgId: string, commentId: string, actor: Actor, reason: string): Promise<CommentReport>;
   /** Staff only. Resolves every open report on the comment at once. */
@@ -149,11 +149,14 @@ export interface DiscussionRepository {
   courseExists(orgId: string, courseId: string): Promise<boolean>;
   findSettings(orgId: string, courseId: string): Promise<DiscussionSettings | null>;
   upsertSettings(orgId: string, settings: DiscussionSettings): Promise<DiscussionSettings>;
-  findThreadState(orgId: string, activityId: string): Promise<ThreadState | null>;
+  findCommentsState(orgId: string, activityId: string): Promise<CommentsState | null>;
   /** Overrides for every activity in the course, keyed by activity id. */
-  listThreadStatesByCourse(orgId: string, courseId: string): Promise<Record<string, ThreadState>>;
-  upsertThreadState(orgId: string, activityId: string, state: ThreadState): Promise<void>;
-  clearThreadState(orgId: string, activityId: string): Promise<void>;
+  listCommentStatesByCourse(
+    orgId: string,
+    courseId: string,
+  ): Promise<Record<string, CommentsState>>;
+  upsertCommentsState(orgId: string, activityId: string, state: CommentsState): Promise<void>;
+  clearCommentsState(orgId: string, activityId: string): Promise<void>;
 
   /** The course an activity sits in, via its module. null when the activity
    *  does not exist. Content's fact, resolved here rather than copied. */

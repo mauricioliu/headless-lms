@@ -1,20 +1,20 @@
 "use client";
 
-// Fetch and mutate one activity's thread. All state transitions go through the
-// reducer in ./thread-state so the rules stay testable; this file owns only the
-// network calls and the request-ordering guard.
+// Fetch and mutate one activity's comments. All state transitions go through
+// the reducer in ./comment-state so the rules stay testable; this file owns
+// only the network calls and the request-ordering guard.
 import * as React from "react";
 import { Learn } from "@headless-lms/sdk";
-import type { CommentAuthor, ThreadComment } from "@/lib/api/types";
+import type { CommentAuthor, CommentView } from "@/lib/api/types";
 
 import { ensureClientSdk } from "@/lib/api/client-sdk";
-import { initialThreadState, threadReducer, type ThreadPanelState } from "./thread-state";
+import { initialCommentsState, commentsReducer, type CommentsPanelState } from "./comment-state";
 
 function message(err: unknown): string {
   return err instanceof Error && err.message ? err.message : "Something went wrong";
 }
 
-export interface UseThread extends ThreadPanelState {
+export interface UseComments extends CommentsPanelState {
   post: (body: string, parentId: string | null) => Promise<void>;
   edit: (id: string, body: string) => Promise<void>;
   remove: (id: string, by: CommentAuthor) => Promise<void>;
@@ -22,8 +22,8 @@ export interface UseThread extends ThreadPanelState {
   report: (id: string, reason: string) => Promise<void>;
 }
 
-export function useThread(activityId: string): UseThread {
-  const [state, dispatch] = React.useReducer(threadReducer, initialThreadState);
+export function useComments(activityId: string): UseComments {
+  const [state, dispatch] = React.useReducer(commentsReducer, initialCommentsState);
   // Guards a response for a lesson the reader has already left.
   const current = React.useRef(activityId);
   // Mirrors state.comments every render so optimistic() can snapshot the
@@ -41,7 +41,7 @@ export function useThread(activityId: string): UseThread {
     ensureClientSdk();
     dispatch({ kind: "loading" });
     let cancelled = false;
-    void Learn.getActivityThread({ path: { activityId } })
+    void Learn.listActivityComments({ path: { activityId } })
       .then((res) => {
         if (cancelled || current.current !== activityId) return;
         if (res.data) dispatch({ kind: "loaded", view: res.data });
@@ -149,4 +149,4 @@ export function useThread(activityId: string): UseThread {
   return { ...state, post, edit, remove, react, report };
 }
 
-export type { ThreadComment };
+export type { CommentView };

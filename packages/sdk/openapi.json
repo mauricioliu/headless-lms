@@ -1349,10 +1349,10 @@
         }
       }
     },
-    "/api/learn/activities/{activityId}/thread": {
+    "/api/learn/activities/{activityId}/comments": {
       "get": {
-        "operationId": "getActivityThread",
-        "summary": "Read an activity's comment thread",
+        "operationId": "listActivityComments",
+        "summary": "Read an activity's comments",
         "tags": [
           "Learn"
         ],
@@ -1577,9 +1577,7 @@
             }
           }
         }
-      }
-    },
-    "/api/learn/activities/{activityId}/thread/comments": {
+      },
       "post": {
         "operationId": "postComment",
         "summary": "Post a comment or reply on an activity",
@@ -2987,10 +2985,10 @@
         }
       }
     },
-    "/api/discussion/activities/{activityId}/thread": {
+    "/api/discussion/activities/{activityId}/comments": {
       "get": {
-        "operationId": "getActivityThread",
-        "summary": "Read an activity's comment thread as staff",
+        "operationId": "listActivityComments",
+        "summary": "Read an activity's comments as staff",
         "tags": [
           "Discussion"
         ],
@@ -3216,95 +3214,6 @@
           }
         }
       },
-      "patch": {
-        "operationId": "setThreadState",
-        "summary": "Override or clear an activity's thread state",
-        "tags": [
-          "Discussion"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "state": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          "visible"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "hidden"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "locked"
-                        ]
-                      }
-                    ],
-                    "nullable": true
-                  }
-                },
-                "required": [
-                  "state"
-                ]
-              }
-            }
-          }
-        },
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "path",
-            "name": "activityId",
-            "required": true
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/discussion/activities/{activityId}/thread/comments": {
       "post": {
         "operationId": "postComment",
         "summary": "Post a comment or reply on an activity as staff",
@@ -3533,6 +3442,93 @@
             }
           }
         }
+      },
+      "patch": {
+        "operationId": "setActivityCommentsState",
+        "summary": "Override or clear an activity's comments state",
+        "tags": [
+          "Discussion"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "visible"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "hidden"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "locked"
+                        ]
+                      }
+                    ],
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "activityId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/discussion/courses/{courseId}/settings": {
@@ -3699,10 +3695,10 @@
         }
       }
     },
-    "/api/discussion/courses/{courseId}/threads": {
+    "/api/discussion/courses/{courseId}/comment-states": {
       "get": {
-        "operationId": "listCourseThreads",
-        "summary": "Read every per-activity thread-state override in a course",
+        "operationId": "listCourseCommentStates",
+        "summary": "Read every per-activity comments-state override in a course",
         "tags": [
           "Discussion"
         ],

@@ -1,5 +1,5 @@
 // discussion tables — comments on an activity, their reactions and reports,
-// plus per-course settings and an optional per-activity thread state.
+// plus per-course settings and an optional per-activity comments state.
 //
 // The author is always an org_users participation, so one column covers both
 // learners and staff. Staff-ness is NOT stored — it is read from the author's
@@ -72,7 +72,7 @@ export const comments = pgTable(
       'comments_removed_by_check',
       sql`(${t.status} = 'removed') = (${t.removedBy} is not null)`,
     ),
-    threadIdx: index('comments_thread_idx').on(t.orgId, t.activityId, t.status, t.createdAt),
+    activityIdx: index('comments_activity_idx').on(t.orgId, t.activityId, t.status, t.createdAt),
     // The queue filters by status org-wide, then narrows by course through the
     // activity join — so the index leads on status, not on a stored course.
     queueIdx: index('comments_queue_idx').on(t.orgId, t.status, t.createdAt),
@@ -158,8 +158,8 @@ export const discussionSettings = pgTable(
 );
 
 // One row per activity that overrides its course. Absent = the course setting.
-export const activityThreadStates = pgTable(
-  'activity_thread_states',
+export const activityCommentStates = pgTable(
+  'activity_comment_states',
   {
     orgId: text('org_id')
       .notNull()

@@ -16,13 +16,13 @@ import type {
   ActivitySettings,
   Module,
   SaveActivityInput,
-  ThreadState,
+  CommentsState,
 } from "@/lib/api/types";
 
 import { saveActivityAction } from "../actions";
-import { setThreadStateAction } from "../discussion/actions";
+import { setCommentsStateAction } from "../discussion/actions";
 
-const THREAD_OPTIONS: { value: ThreadState | null; label: string }[] = [
+const COMMENTS_STATE_OPTIONS: { value: CommentsState | null; label: string }[] = [
   { value: null, label: "Course default" },
   { value: "visible", label: "Visible" },
   { value: "hidden", label: "Hidden" },
@@ -61,14 +61,14 @@ export function ItemFormSheet({
   courseId,
   moduleId,
   item,
-  threadState,
+  commentsState,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   courseId: string;
   moduleId: string;
   item: Activity | null;
-  threadState?: ThreadState | null;
+  commentsState?: CommentsState | null;
 }) {
   const isEdit = item != null;
   const [isPending, startTransition] = React.useTransition();
@@ -84,18 +84,18 @@ export function ItemFormSheet({
     defaultValues: toDefaults(item),
   });
 
-  const [thread, setThread] = React.useState<ThreadState | null>(threadState ?? null);
+  const [comments, setComments] = React.useState<CommentsState | null>(commentsState ?? null);
 
-  // Re-seed the form (and the thread-state control) whenever the sheet opens
+  // Re-seed the form (and the comments-state control) whenever the sheet opens
   // for a different target.
   React.useEffect(() => {
     if (open) {
       reset(toDefaults(item));
       // eslint-disable-next-line react-hooks/set-state-in-effect -- re-seeding a local control from the opening target, not syncing derived state
-      setThread(threadState ?? null);
+      setComments(commentsState ?? null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, item, threadState]);
+  }, [open, item, commentsState]);
 
   function onValid(values: FormValues) {
     // Preserve any settings fields the editor doesn't surface (e.g. body).
@@ -119,20 +119,20 @@ export function ItemFormSheet({
         return;
       }
 
-      // The activity is saved from here on. Thread state is a separate
+      // The activity is saved from here on. Comments state is a separate
       // discussion-context row, not part of the opaque settings blob, so it's
       // a second call — and only when it actually changed (a brand-new
       // activity left on "Course default" makes no second call at all). A
       // failure here must not leave the sheet open in create mode — retrying
       // would re-run the create branch and produce a duplicate activity — so
       // close regardless and tell the user what actually failed.
-      if (thread !== (threadState ?? null)) {
+      if (comments !== (commentsState ?? null)) {
         const activityId = isEdit
           ? item!.id
           : saved.find((m) => m.id === moduleId)?.activities?.at(-1)?.id;
         if (activityId) {
           try {
-            await setThreadStateAction(activityId, thread);
+            await setCommentsStateAction(activityId, comments);
           } catch (err) {
             toast.warning("Activity saved, but the discussion setting did not apply", {
               description: (err as Error).message,
@@ -193,13 +193,13 @@ export function ItemFormSheet({
         <div className="space-y-1.5">
           <Label>Discussion</Label>
           <div className="inline-flex flex-wrap gap-1 rounded-md border border-line p-0.5">
-            {THREAD_OPTIONS.map((option) => (
+            {COMMENTS_STATE_OPTIONS.map((option) => (
               <button
                 key={option.label}
                 type="button"
-                onClick={() => setThread(option.value)}
+                onClick={() => setComments(option.value)}
                 className={`rounded px-2.5 py-1 text-xs font-medium ${
-                  thread === option.value ? "bg-surface-2 text-ink" : "text-ink-3 hover:text-ink"
+                  comments === option.value ? "bg-surface-2 text-ink" : "text-ink-3 hover:text-ink"
                 }`}
               >
                 {option.label}

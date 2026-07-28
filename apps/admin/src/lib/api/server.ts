@@ -51,7 +51,7 @@ import type {
   Paginated,
   QueueEntry,
   Student,
-  ThreadStates,
+  CommentStates,
 } from "./types";
 
 
@@ -163,10 +163,10 @@ export const serverApi = {
     );
     return entries;
   },
-  async threadStates(courseId: string): Promise<ThreadStates> {
+  async commentStates(courseId: string): Promise<CommentStates> {
     ensureConfigured();
     const { states } = unwrap(
-      await Discussion.listCourseThreads({ path: { courseId }, ...(await authHeaders()) }),
+      await Discussion.listCourseCommentStates({ path: { courseId }, ...(await authHeaders()) }),
     );
     return states;
   },

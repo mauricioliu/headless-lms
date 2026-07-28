@@ -5,7 +5,7 @@ export type {
   DiscussionRepository,
   DiscussionUnitOfWork,
   DiscussionWriteScope,
-  ThreadView,
+  ActivityComments,
   QueueEntry,
   QueueQuery,
   Actor,
@@ -19,8 +19,8 @@ export type {
   CommentReaction,
   CommentReport,
   DiscussionSettings,
-  ActivityThreadState,
-  ThreadState,
+  ActivityCommentsState,
+  CommentsState,
 } from './model.js';
-export type { PostCommentInput, ResolvedThreadConfig, ThreadComment } from './types.js';
+export type { PostCommentInput, CommentsConfig, CommentView } from './types.js';
 export type { DiscussionEvent } from './events.js';

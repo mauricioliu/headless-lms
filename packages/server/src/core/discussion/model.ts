@@ -6,6 +6,6 @@ export type {
   CommentReaction,
   CommentReport,
   DiscussionSettings,
-  ActivityThreadState,
-  ThreadState,
+  ActivityCommentsState,
+  CommentsState,
 } from '@headless-lms/types';

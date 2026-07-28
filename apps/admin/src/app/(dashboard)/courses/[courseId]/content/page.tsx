@@ -1,6 +1,6 @@
 import { requireAuth } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
-import type { ThreadStates } from "@/lib/api/types";
+import type { CommentStates } from "@/lib/api/types";
 
 import { ModuleList } from "../_components/module-list";
 
@@ -18,16 +18,16 @@ export default async function CourseContentTab({
   // the content tab. This deliberately absorbs any signal from the call —
   // including a Next.js redirect thrown by `unwrap` on a 401 — so don't narrow
   // this catch without weighing that tradeoff again.
-  const threadStatesPromise = serverApi
-    .threadStates(courseId)
-    .catch(() => ({}) as ThreadStates);
-  await requireAuth(modulesPromise, threadStatesPromise);
-  const [modules, threadStates] = await Promise.all([modulesPromise, threadStatesPromise]);
+  const commentStatesPromise = serverApi
+    .commentStates(courseId)
+    .catch(() => ({}) as CommentStates);
+  await requireAuth(modulesPromise, commentStatesPromise);
+  const [modules, commentStates] = await Promise.all([modulesPromise, commentStatesPromise]);
 
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-sm font-medium text-ink-2">Curriculum</h2>
-      <ModuleList courseId={courseId} modules={modules} threadStates={threadStates} canEdit />
+      <ModuleList courseId={courseId} modules={modules} commentStates={commentStates} canEdit />
     </section>
   );
 }

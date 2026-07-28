@@ -11,7 +11,7 @@ import type {
   CommentReaction,
   CommentReport,
   DiscussionSettings,
-  ThreadState,
+  CommentsState,
 } from './model.js';
 import type { NewDiscussionEvent } from './events.js';
 import { NotFoundError, ForbiddenError } from '../shared/errors.js';
@@ -24,7 +24,7 @@ export function fakeRepo() {
   const reactions: CommentReaction[] = [];
   const reports: CommentReport[] = [];
   const settings = new Map<string, DiscussionSettings>();
-  const threadStates = new Map<string, ThreadState>();
+  const commentStates = new Map<string, CommentsState>();
   const authors = new Map<string, AuthorRecord>();
   const activityCourse = new Map<string, string>([
     ['a1', 'c1'],
@@ -142,12 +142,12 @@ export function fakeRepo() {
       settings.set(`${orgId}:${next.courseId}`, { ...next });
       return { ...next };
     },
-    async findThreadState(orgId, activityId) {
-      return threadStates.get(`${orgId}:${activityId}`) ?? null;
+    async findCommentsState(orgId, activityId) {
+      return commentStates.get(`${orgId}:${activityId}`) ?? null;
     },
-    async listThreadStatesByCourse(orgId, courseId) {
-      const out: Record<string, ThreadState> = {};
-      for (const [key, state] of threadStates) {
+    async listCommentStatesByCourse(orgId, courseId) {
+      const out: Record<string, CommentsState> = {};
+      for (const [key, state] of commentStates) {
         const [keyOrg, activityId] = key.split(':');
         if (keyOrg === orgId && activityCourse.get(activityId!) === courseId) {
           out[activityId!] = state;
@@ -155,11 +155,11 @@ export function fakeRepo() {
       }
       return out;
     },
-    async upsertThreadState(orgId, activityId, state) {
-      threadStates.set(`${orgId}:${activityId}`, state);
+    async upsertCommentsState(orgId, activityId, state) {
+      commentStates.set(`${orgId}:${activityId}`, state);
     },
-    async clearThreadState(orgId, activityId) {
-      threadStates.delete(`${orgId}:${activityId}`);
+    async clearCommentsState(orgId, activityId) {
+      commentStates.delete(`${orgId}:${activityId}`);
     },
     async courseOfActivity(_orgId, activityId) {
       return activityCourse.get(activityId) ?? null;
@@ -185,7 +185,7 @@ export function fakeRepo() {
       return out;
     },
   };
-  return { repo, comments, reactions, reports, settings, threadStates, authors, activityCourse };
+  return { repo, comments, reactions, reports, settings, commentStates, authors, activityCourse };
 }
 
 export function fakeUow(repo: DiscussionRepository) {
@@ -249,18 +249,18 @@ describe('settings', () => {
     await expect(service.resolveConfig('o1', 'nope')).rejects.toThrow(NotFoundError);
   });
 
-  it("lets an activity's thread state override the course", async () => {
+  it("lets an activity's comments state override the course", async () => {
     const { service } = makeService();
     await service.setSettings('o1', 'c1', { enabled: true });
-    await service.setThreadState('o1', 'a1', 'locked');
+    await service.setCommentsState('o1', 'a1', 'locked');
     expect((await service.resolveConfig('o1', 'a1')).state).toBe('locked');
   });
 
   it('falls back to the course setting once the override is cleared', async () => {
     const { service } = makeService();
     await service.setSettings('o1', 'c1', { enabled: true });
-    await service.setThreadState('o1', 'a1', 'hidden');
-    await service.setThreadState('o1', 'a1', null);
+    await service.setCommentsState('o1', 'a1', 'hidden');
+    await service.setCommentsState('o1', 'a1', null);
     expect((await service.resolveConfig('o1', 'a1')).state).toBe('visible');
   });
 
@@ -274,14 +274,14 @@ describe('settings', () => {
   it('keeps a disabled course hidden even when the activity overrides the state', async () => {
     const { service } = makeService();
     await service.setSettings('o1', 'c1', { enabled: false });
-    await service.setThreadState('o1', 'a1', 'visible');
+    await service.setCommentsState('o1', 'a1', 'visible');
     expect((await service.resolveConfig('o1', 'a1')).state).toBe('hidden');
   });
 
   it('lists only the activities in the course that carry an override', async () => {
     const { service } = makeService();
-    await service.setThreadState('o1', 'a1', 'locked');
-    expect(await service.listThreadStates('o1', 'c1')).toEqual({ a1: 'locked' });
+    await service.setCommentsState('o1', 'a1', 'locked');
+    expect(await service.listCommentStates('o1', 'c1')).toEqual({ a1: 'locked' });
   });
 
   it('throws NotFoundError from setSettings for a course that does not exist', async () => {
@@ -291,14 +291,14 @@ describe('settings', () => {
     );
   });
 
-  it('throws NotFoundError from setThreadState for an activity that does not exist', async () => {
+  it('throws NotFoundError from setCommentsState for an activity that does not exist', async () => {
     const { service } = makeService();
-    await expect(service.setThreadState('o1', 'nope', 'locked')).rejects.toThrow(NotFoundError);
+    await expect(service.setCommentsState('o1', 'nope', 'locked')).rejects.toThrow(NotFoundError);
   });
 
-  it('throws NotFoundError from clearing a thread state for an activity that does not exist', async () => {
+  it('throws NotFoundError from clearing a comments state for an activity that does not exist', async () => {
     const { service } = makeService();
-    await expect(service.setThreadState('o1', 'nope', null)).rejects.toThrow(NotFoundError);
+    await expect(service.setCommentsState('o1', 'nope', null)).rejects.toThrow(NotFoundError);
   });
 });
 
@@ -377,10 +377,10 @@ describe('post', () => {
     ).rejects.toThrow(ForbiddenError);
   });
 
-  it('refuses to post to a locked thread', async () => {
+  it('refuses to post when comments are locked', async () => {
     const { service } = makeService();
     await enabled(service);
-    await service.setThreadState('o1', 'a1', 'locked');
+    await service.setCommentsState('o1', 'a1', 'locked');
     await expect(
       service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'x' }),
     ).rejects.toThrow(ForbiddenError);
@@ -444,7 +444,7 @@ describe('post', () => {
   });
 });
 
-describe('listThread', () => {
+describe('listComments', () => {
   it('serves a pending comment to its author but not to another learner', async () => {
     const { service } = makeService();
     await enabled(service, { requireReview: true });
@@ -452,14 +452,14 @@ describe('listThread', () => {
       activityId: 'a1', parentId: null, body: 'q',
     });
 
-    const own = await service.listThread('o1', 'a1', learner);
+    const own = await service.listComments('o1', 'a1', learner);
     expect(own.comments.map((c) => c.id)).toContain(pending.id);
 
     const other: Actor = { orgUserId: 'orm_other', role: 'student' };
-    const theirs = await service.listThread('o1', 'a1', other);
+    const theirs = await service.listComments('o1', 'a1', other);
     expect(theirs.comments).toHaveLength(0);
 
-    const moderator = await service.listThread('o1', 'a1', staff);
+    const moderator = await service.listComments('o1', 'a1', staff);
     expect(moderator.comments.map((c) => c.id)).toContain(pending.id);
   });
 
@@ -472,7 +472,7 @@ describe('listThread', () => {
     const { service } = makeService(fake);
     await enabled(service);
     await service.post('o1', staff, { activityId: 'a1', parentId: null, body: 'hello' });
-    const view = await service.listThread('o1', 'a1', learner);
+    const view = await service.listComments('o1', 'a1', learner);
     expect(view.comments[0]?.author).toEqual({
       id: 'orm_staff', name: 'Sarah Chen', image: null, role: 'instructor',
     });
@@ -482,16 +482,16 @@ describe('listThread', () => {
     const { service } = makeService();
     await enabled(service);
     await service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'mine' });
-    expect((await service.listThread('o1', 'a1', learner)).comments[0]?.isOwn).toBe(true);
-    expect((await service.listThread('o1', 'a1', staff)).comments[0]?.isOwn).toBe(false);
+    expect((await service.listComments('o1', 'a1', learner)).comments[0]?.isOwn).toBe(true);
+    expect((await service.listComments('o1', 'a1', staff)).comments[0]?.isOwn).toBe(false);
   });
 
-  it('serves nothing for a hidden thread', async () => {
+  it('serves nothing when comments are hidden', async () => {
     const { service } = makeService();
     await enabled(service);
     await service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'hi' });
-    await service.setThreadState('o1', 'a1', 'hidden');
-    const view = await service.listThread('o1', 'a1', learner);
+    await service.setCommentsState('o1', 'a1', 'hidden');
+    const view = await service.listComments('o1', 'a1', learner);
     expect(view.comments).toHaveLength(0);
     expect(view.config.state).toBe('hidden');
   });
@@ -507,7 +507,7 @@ describe('listThread', () => {
     });
     await service.remove('o1', root.id, staff);
 
-    const view = await service.listThread('o1', 'a1', learner);
+    const view = await service.listComments('o1', 'a1', learner);
     const placeholder = view.comments.find((c) => c.id === root.id);
     expect(placeholder?.body).toBeNull();
     expect(placeholder?.status).toBe('removed');
@@ -522,7 +522,7 @@ describe('listThread', () => {
       activityId: 'a1', parentId: null, body: 'oops',
     });
     await service.remove('o1', root.id, learner);
-    const view = await service.listThread('o1', 'a1', learner);
+    const view = await service.listComments('o1', 'a1', learner);
     expect(view.comments).toHaveLength(0);
   });
 
@@ -539,11 +539,11 @@ describe('listThread', () => {
     await service.remove('o1', root.id, staff);
 
     const other: Actor = { orgUserId: 'orm_other', role: 'student' };
-    const theirs = await service.listThread('o1', 'a1', other);
+    const theirs = await service.listComments('o1', 'a1', other);
     expect(theirs.comments).toHaveLength(0);
 
     // Its author still sees both the reply and the placeholder holding it.
-    const own = await service.listThread('o1', 'a1', learner);
+    const own = await service.listComments('o1', 'a1', learner);
     expect(own.comments).toHaveLength(2);
   });
 
@@ -557,7 +557,7 @@ describe('listThread', () => {
       activityId: 'a1', parentId: root.id, body: 'reply',
     });
     await service.remove('o1', reply.id, learner);
-    const view = await service.listThread('o1', 'a1', learner);
+    const view = await service.listComments('o1', 'a1', learner);
     expect(view.comments.map((c) => c.id)).toEqual([root.id]);
   });
 
@@ -570,11 +570,11 @@ describe('listThread', () => {
     await service.react('o1', c.id, learner, '👍');
     await service.react('o1', c.id, staff, '👍');
 
-    const view = await service.listThread('o1', 'a1', learner);
+    const view = await service.listComments('o1', 'a1', learner);
     expect(view.comments[0]?.reactions).toEqual([{ emoji: '👍', count: 2, reacted: true }]);
 
     const other: Actor = { orgUserId: 'orm_other', role: 'student' };
-    const theirs = await service.listThread('o1', 'a1', other);
+    const theirs = await service.listComments('o1', 'a1', other);
     expect(theirs.comments[0]?.reactions).toEqual([{ emoji: '👍', count: 2, reacted: false }]);
   });
 
@@ -584,7 +584,7 @@ describe('listThread', () => {
     await enabled(service);
     await service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'hi' });
     fake.repo.authorsOf = async () => ({});
-    await expect(service.listThread('o1', 'a1', learner)).rejects.toThrow(NotFoundError);
+    await expect(service.listComments('o1', 'a1', learner)).rejects.toThrow(NotFoundError);
   });
 });
 
@@ -610,9 +610,9 @@ describe('edit, remove, restore, approve', () => {
     await expect(service.edit('o1', comment.id, staff, 'nope')).rejects.toThrow(ForbiddenError);
   });
 
-  it('refuses an edit on a locked thread, even by the author', async () => {
+  it('refuses an edit when comments are locked, even by the author', async () => {
     const { service, comment } = await published();
-    await service.setThreadState('o1', 'a1', 'locked');
+    await service.setCommentsState('o1', 'a1', 'locked');
     await expect(service.edit('o1', comment.id, learner, 'revised')).rejects.toThrow(
       ForbiddenError,
     );
@@ -793,24 +793,24 @@ describe('reactions', () => {
     await expect(service.react('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
   });
 
-  it('refuses on a locked thread', async () => {
+  it('refuses when comments are locked', async () => {
     const { service, comment } = await withComment();
-    await service.setThreadState('o1', 'a1', 'locked');
+    await service.setCommentsState('o1', 'a1', 'locked');
     await expect(service.react('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
   });
 
-  it('refuses to remove a reaction on a locked thread', async () => {
+  it('refuses to remove a reaction when comments are locked', async () => {
     const { service, comment } = await withComment();
     await service.react('o1', comment.id, learner, '👍');
-    await service.setThreadState('o1', 'a1', 'locked');
+    await service.setCommentsState('o1', 'a1', 'locked');
     await expect(service.unreact('o1', comment.id, learner, '👍')).rejects.toThrow(
       ForbiddenError,
     );
   });
 
-  it('refuses a reaction on a hidden thread', async () => {
+  it('refuses a reaction when comments are hidden', async () => {
     const { service, comment } = await withComment();
-    await service.setThreadState('o1', 'a1', 'hidden');
+    await service.setCommentsState('o1', 'a1', 'hidden');
     await expect(service.react('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
   });
 
@@ -836,7 +836,7 @@ describe('reports and queue', () => {
   it('does not change the comment status', async () => {
     const { service, comment } = await withComment();
     await service.report('o1', comment.id, staff, 'abuse');
-    const after = await service.listThread('o1', 'a1', staff);
+    const after = await service.listComments('o1', 'a1', staff);
     expect(after.comments[0]?.status).toBe('published');
   });
 
@@ -855,16 +855,16 @@ describe('reports and queue', () => {
     expect(appended).toHaveLength(before);
   });
 
-  it('accepts a report on a locked thread', async () => {
+  it('accepts a report when comments are locked', async () => {
     const { service, comment, reports } = await withComment();
-    await service.setThreadState('o1', 'a1', 'locked');
+    await service.setCommentsState('o1', 'a1', 'locked');
     await service.report('o1', comment.id, staff, 'still bad');
     expect(reports).toHaveLength(1);
   });
 
-  it('refuses a report on a hidden thread', async () => {
+  it('refuses a report when comments are hidden', async () => {
     const { service, comment } = await withComment();
-    await service.setThreadState('o1', 'a1', 'hidden');
+    await service.setCommentsState('o1', 'a1', 'hidden');
     await expect(service.report('o1', comment.id, staff, 'x')).rejects.toThrow(ForbiddenError);
   });
 

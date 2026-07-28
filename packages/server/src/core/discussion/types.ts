@@ -1,6 +1,6 @@
 // discussion context — DTOs, owned by @headless-lms/types.
 export type {
   PostCommentInput,
-  ResolvedThreadConfig,
-  ThreadComment,
+  CommentsConfig,
+  CommentView,
 } from '@headless-lms/types';

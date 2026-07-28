@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import type { ResolvedThreadConfig, ThreadComment } from "@/lib/api/types";
+import type { CommentsConfig, CommentView } from "@/lib/api/types";
 
 import { initials } from "@/lib/format";
-import { permissions } from "./thread-state";
+import { permissions } from "./comment-state";
 import { CommentComposer } from "./comment-composer";
 
 const EMOJI = ["👍", "🎉", "🤔"];
@@ -31,8 +31,8 @@ export function CommentItem({
   onReact,
   onReport,
 }: {
-  comment: ThreadComment;
-  config: ResolvedThreadConfig;
+  comment: CommentView;
+  config: CommentsConfig;
   isReply?: boolean;
   onReply?: (body: string) => Promise<void>;
   onEdit: (body: string) => Promise<void>;

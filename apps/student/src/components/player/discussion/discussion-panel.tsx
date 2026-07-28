@@ -3,31 +3,31 @@
 import * as React from "react";
 
 import { useApp } from "@/lib/store";
-import { canPost, groupThread } from "./thread-state";
-import { useThread } from "./use-thread";
+import { canPost, groupComments } from "./comment-state";
+import { useComments } from "./use-comments";
 import { CommentComposer } from "./comment-composer";
 import { CommentItem } from "./comment-item";
 
 export function DiscussionPanel({ activityId }: { activityId: string }) {
-  const thread = useThread(activityId);
+  const panel = useComments(activityId);
   const { showToast } = useApp();
 
-  // Surface a refused mutation once, then let the thread carry on.
+  // Surface a refused mutation once, then let the comments carry on.
   const lastError = React.useRef<string | null>(null);
   React.useEffect(() => {
-    if (thread.error && thread.error !== lastError.current) {
-      lastError.current = thread.error;
-      showToast(thread.error);
+    if (panel.error && panel.error !== lastError.current) {
+      lastError.current = panel.error;
+      showToast(panel.error);
     }
-    if (!thread.error) lastError.current = null;
-  }, [thread.error, showToast]);
+    if (!panel.error) lastError.current = null;
+  }, [panel.error, showToast]);
 
   // Disabled for the course, or hidden on this activity: render nothing at all.
-  if (thread.status === "off" || thread.status === "loading") {
+  if (panel.status === "off" || panel.status === "loading") {
     return null;
   }
 
-  if (thread.status === "error" || !thread.config) {
+  if (panel.status === "error" || !panel.config) {
     return (
       <section className="mx-auto w-full max-w-3xl px-6 pb-10">
         <div className="border-t border-line pt-6">
@@ -46,8 +46,8 @@ export function DiscussionPanel({ activityId }: { activityId: string }) {
     );
   }
 
-  const config = thread.config;
-  const nodes = groupThread(thread.comments);
+  const config = panel.config;
+  const nodes = groupComments(panel.comments);
   const count = nodes.reduce((n, node) => n + 1 + node.replies.length, 0);
   const open = canPost(config);
 
@@ -63,7 +63,7 @@ export function DiscussionPanel({ activityId }: { activityId: string }) {
             <CommentComposer
               placeholder="Ask a question or share what helped"
               submitLabel="Post"
-              onSubmit={(body) => thread.post(body, null)}
+              onSubmit={(body) => panel.post(body, null)}
             />
           </div>
         ) : (
@@ -84,16 +84,16 @@ export function DiscussionPanel({ activityId }: { activityId: string }) {
               <CommentItem
                 comment={comment}
                 config={config}
-                onReply={(body) => thread.post(body, comment.id)}
-                onEdit={(body) => thread.edit(comment.id, body)}
-                onRemove={() => thread.remove(comment.id, comment.author)}
-                onReact={(emoji, on) => thread.react(comment.id, emoji, on)}
+                onReply={(body) => panel.post(body, comment.id)}
+                onEdit={(body) => panel.edit(comment.id, body)}
+                onRemove={() => panel.remove(comment.id, comment.author)}
+                onReact={(emoji, on) => panel.react(comment.id, emoji, on)}
                 onReport={async (reason) => {
                   try {
-                    await thread.report(comment.id, reason);
+                    await panel.report(comment.id, reason);
                     showToast("Reported — thank you");
                   } catch {
-                    // Already surfaced via the thread.error effect above.
+                    // Already surfaced via the panel.error effect above.
                   }
                 }}
               />
@@ -103,15 +103,15 @@ export function DiscussionPanel({ activityId }: { activityId: string }) {
                   comment={reply}
                   config={config}
                   isReply
-                  onEdit={(body) => thread.edit(reply.id, body)}
-                  onRemove={() => thread.remove(reply.id, reply.author)}
-                  onReact={(emoji, on) => thread.react(reply.id, emoji, on)}
+                  onEdit={(body) => panel.edit(reply.id, body)}
+                  onRemove={() => panel.remove(reply.id, reply.author)}
+                  onReact={(emoji, on) => panel.react(reply.id, emoji, on)}
                   onReport={async (reason) => {
                     try {
-                      await thread.report(reply.id, reason);
+                      await panel.report(reply.id, reason);
                       showToast("Reported — thank you");
                     } catch {
-                      // Already surfaced via the thread.error effect above.
+                      // Already surfaced via the panel.error effect above.
                     }
                   }}
                 />
