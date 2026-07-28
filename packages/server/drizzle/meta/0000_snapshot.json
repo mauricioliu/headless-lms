@@ -1,5 +1,5 @@
 {
-  "id": "531a26fc-447f-49ec-979f-acc87b9ac098",
+  "id": "0042716b-0b18-4400-90e3-cb336902b9b3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -631,7 +631,7 @@
       "checkConstraints": {
         "content_items_type_check": {
           "name": "content_items_type_check",
-          "value": "\"content_items\".\"type\" in ('course')"
+          "value": "\"content_items\".\"type\" in ('course', 'download')"
         }
       },
       "isRLSEnabled": false
@@ -783,6 +783,269 @@
       "uniqueConstraints": {
         "courses_org_id_slug_unique": {
           "name": "courses_org_id_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "org_id",
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.download_assets": {
+      "name": "download_assets",
+      "schema": "",
+      "columns": {
+        "org_id": {
+          "name": "org_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "download_id": {
+          "name": "download_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "asset_id": {
+          "name": "asset_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seq": {
+          "name": "seq",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "download_assets_org_id_organizations_id_fk": {
+          "name": "download_assets_org_id_organizations_id_fk",
+          "tableFrom": "download_assets",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "download_assets_org_id_download_id_downloads_org_id_id_fk": {
+          "name": "download_assets_org_id_download_id_downloads_org_id_id_fk",
+          "tableFrom": "download_assets",
+          "tableTo": "downloads",
+          "columnsFrom": [
+            "org_id",
+            "download_id"
+          ],
+          "columnsTo": [
+            "org_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "download_assets_org_id_asset_id_assets_org_id_id_fk": {
+          "name": "download_assets_org_id_asset_id_assets_org_id_id_fk",
+          "tableFrom": "download_assets",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "org_id",
+            "asset_id"
+          ],
+          "columnsTo": [
+            "org_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "download_assets_org_id_id_pk": {
+          "name": "download_assets_org_id_id_pk",
+          "columns": [
+            "org_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "download_assets_org_id_download_id_asset_id_unique": {
+          "name": "download_assets_org_id_download_id_asset_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "org_id",
+            "download_id",
+            "asset_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.downloads": {
+      "name": "downloads",
+      "schema": "",
+      "columns": {
+        "org_id": {
+          "name": "org_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "generated": {
+            "as": "'download'",
+            "type": "stored"
+          }
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "thumbnail_asset_id": {
+          "name": "thumbnail_asset_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "downloads_org_id_organizations_id_fk": {
+          "name": "downloads_org_id_organizations_id_fk",
+          "tableFrom": "downloads",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "downloads_org_id_id_type_content_items_org_id_id_type_fk": {
+          "name": "downloads_org_id_id_type_content_items_org_id_id_type_fk",
+          "tableFrom": "downloads",
+          "tableTo": "content_items",
+          "columnsFrom": [
+            "org_id",
+            "id",
+            "type"
+          ],
+          "columnsTo": [
+            "org_id",
+            "id",
+            "type"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "downloads_org_id_thumbnail_asset_id_assets_org_id_id_fk": {
+          "name": "downloads_org_id_thumbnail_asset_id_assets_org_id_id_fk",
+          "tableFrom": "downloads",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "org_id",
+            "thumbnail_asset_id"
+          ],
+          "columnsTo": [
+            "org_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "downloads_org_id_id_pk": {
+          "name": "downloads_org_id_id_pk",
+          "columns": [
+            "org_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "downloads_org_id_slug_unique": {
+          "name": "downloads_org_id_slug_unique",
           "nullsNotDistinct": false,
           "columns": [
             "org_id",
