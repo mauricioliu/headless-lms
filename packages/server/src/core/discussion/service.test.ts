@@ -30,6 +30,7 @@ export function fakeRepo() {
     ['a1', 'c1'],
     ['a2', 'c1'],
   ]);
+  const existingCourses = new Set<string>(['c1', 'c2']);
   const activityTitle = new Map<string, string>([
     ['a1', 'Lesson one'],
     ['a2', 'Lesson two'],
@@ -130,6 +131,9 @@ export function fakeRepo() {
           r.resolvedAt = resolvedAt;
         }
       }
+    },
+    async courseExists(_orgId, courseId) {
+      return existingCourses.has(courseId);
     },
     async findSettings(orgId, courseId) {
       return settings.get(`${orgId}:${courseId}`) ?? null;
@@ -278,6 +282,23 @@ describe('settings', () => {
     const { service } = makeService();
     await service.setThreadState('o1', 'a1', 'locked');
     expect(await service.listThreadStates('o1', 'c1')).toEqual({ a1: 'locked' });
+  });
+
+  it('throws NotFoundError from setSettings for a course that does not exist', async () => {
+    const { service } = makeService();
+    await expect(service.setSettings('o1', 'nope', { enabled: true })).rejects.toThrow(
+      NotFoundError,
+    );
+  });
+
+  it('throws NotFoundError from setThreadState for an activity that does not exist', async () => {
+    const { service } = makeService();
+    await expect(service.setThreadState('o1', 'nope', 'locked')).rejects.toThrow(NotFoundError);
+  });
+
+  it('throws NotFoundError from clearing a thread state for an activity that does not exist', async () => {
+    const { service } = makeService();
+    await expect(service.setThreadState('o1', 'nope', null)).rejects.toThrow(NotFoundError);
   });
 });
 

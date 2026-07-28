@@ -58,6 +58,9 @@ export class DiscussionServiceImpl implements DiscussionService {
     courseId: string,
     patch: Partial<Omit<DiscussionSettings, 'orgId' | 'courseId'>>,
   ): Promise<DiscussionSettings> {
+    if (!(await this.repo.courseExists(orgId, courseId))) {
+      throw new NotFoundError('Course', courseId);
+    }
     const current = await this.getSettings(orgId, courseId);
     return this.repo.upsertSettings(orgId, { ...current, ...patch });
   }
@@ -67,6 +70,10 @@ export class DiscussionServiceImpl implements DiscussionService {
     activityId: string,
     state: ThreadState | null,
   ): Promise<void> {
+    const courseId = await this.repo.courseOfActivity(orgId, activityId);
+    if (!courseId) {
+      throw new NotFoundError('Activity', activityId);
+    }
     if (state === null) {
       await this.repo.clearThreadState(orgId, activityId);
       return;

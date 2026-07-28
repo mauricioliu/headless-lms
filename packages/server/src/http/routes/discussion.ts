@@ -416,7 +416,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
       summary: "Update a course's discussion settings",
       params: DiscussionCourseParam,
       body: SetDiscussionSettings,
-      response: { 200: DiscussionSettings },
+      response: { 200: DiscussionSettings, 404: ErrorBody },
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
@@ -452,7 +452,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
       summary: "Override or clear an activity's thread state",
       params: DiscussionActivityParam,
       body: SetThreadState,
-      response: { 204: z.void() },
+      response: { 204: z.void(), 404: ErrorBody },
     },
     handler: async (req, reply) => {
       const scope = await resolveScope(container, req);

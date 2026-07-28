@@ -25,7 +25,7 @@ import {
   comments,
   discussionSettings,
 } from '../schema/discussion.js';
-import { activities, modules } from '../schema/content.js';
+import { activities, courses, modules } from '../schema/content.js';
 import { orgUsers } from '../schema/organizations.js';
 import { users } from '../schema/identity.js';
 import { user } from '../../auth/schema.js';
@@ -225,6 +225,15 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
           isNull(commentReports.resolvedAt),
         ),
       );
+  }
+
+  async courseExists(orgId: string, courseId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: courses.id })
+      .from(courses)
+      .where(and(eq(courses.orgId, orgId), eq(courses.id, courseId)))
+      .limit(1);
+    return row !== undefined;
   }
 
   async findSettings(orgId: string, courseId: string): Promise<DiscussionSettings | null> {

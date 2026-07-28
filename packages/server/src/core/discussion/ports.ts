@@ -141,6 +141,9 @@ export interface DiscussionRepository {
   /** Resolves every open report on one comment. */
   resolveReportsFor(orgId: string, commentId: string, resolvedAt: string): Promise<void>;
 
+  /** Whether the course exists in this org, for the settings write's existence
+   *  check — a bogus or cross-org id must 404, not fall through to the FK. */
+  courseExists(orgId: string, courseId: string): Promise<boolean>;
   findSettings(orgId: string, courseId: string): Promise<DiscussionSettings | null>;
   upsertSettings(orgId: string, settings: DiscussionSettings): Promise<DiscussionSettings>;
   findThreadState(orgId: string, activityId: string): Promise<ThreadState | null>;
