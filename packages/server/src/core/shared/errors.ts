@@ -23,3 +23,12 @@ export class ConflictError extends Error {
     this.name = 'ConflictError';
   }
 }
+
+/** The caller is authenticated but not permitted to perform this command.
+ *  The HTTP layer maps this to 403. */
+export class ForbiddenError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ForbiddenError';
+  }
+}

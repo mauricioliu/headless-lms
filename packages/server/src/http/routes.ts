@@ -7,6 +7,7 @@ import type { Container } from '../app/container.js';
 import type { ServerConfig } from './config.js';
 import { coursesRoutes } from './routes/courses.js';
 import { learnRoutes } from './routes/learn.js';
+import { discussionRoutes } from './routes/discussion.js';
 import { activitiesRoutes } from './routes/activities.js';
 import { studentsRoutes } from './routes/students.js';
 import { entitlementsRoutes } from './routes/entitlements.js';
@@ -41,6 +42,7 @@ export function registerRoutes(
     instance.addHook('onRequest', instance.requireSession);
     await coursesRoutes(instance, container);
     await learnRoutes(instance, container);
+    await discussionRoutes(instance, container);
     await activitiesRoutes(instance, container);
     await studentsRoutes(instance, container);
     await entitlementsRoutes(instance, container);

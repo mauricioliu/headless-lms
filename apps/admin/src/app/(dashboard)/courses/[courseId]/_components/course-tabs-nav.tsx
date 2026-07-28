@@ -6,6 +6,7 @@ import {
   BarChart3,
   KeyRound,
   Layers,
+  MessagesSquare,
   Settings2,
   SlidersHorizontal,
   type LucideIcon,
@@ -22,6 +23,7 @@ const TABS: { segment: string; label: string; icon: LucideIcon }[] = [
   { segment: "content", label: "Content", icon: Layers },
   { segment: "analytics", label: "Analytics", icon: BarChart3 },
   { segment: "access", label: "Access", icon: KeyRound },
+  { segment: "discussion", label: "Discussion", icon: MessagesSquare },
   { segment: "settings", label: "Settings", icon: SlidersHorizontal },
 ];
 

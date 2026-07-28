@@ -1,14 +1,10 @@
 import 'fastify';
+import type { UserProfile } from '@headless-lms/types';
 
-// Minimal shape of the authenticated user attached to a request by
-// `requireSession`. Defined locally so `http` need not import the auth adapter
-// (the boundary linter allows http -> app/core only).
-export interface AuthUser {
-  id: string;
-  email: string;
-  name: string;
+// The authenticated person attached to a request by `requireSession`. `id` is
+// the auth engine's user id, not org_users.id — see UserProfile.
+export interface AuthUser extends UserProfile {
   emailVerified: boolean;
-  image?: string | null;
 }
 
 declare module 'fastify' {

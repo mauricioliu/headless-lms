@@ -11,6 +11,8 @@ import type {
   GetAssetResponse,
   GetAutomationResponse,
   GetCourseResponse,
+  GetDiscussionSettingsResponse,
+  GetModerationQueueResponse,
   GetOverviewResponse,
   GetStudentResponse,
   ListAssetsResponse,
@@ -20,12 +22,14 @@ import type {
   ListConnectedAppsResponse,
   ListConnectionsResponse,
   ListCoursesResponse,
+  ListCourseCommentStatesResponse,
   ListEntitlementsResponse,
   ListMembersResponse,
   ListModulesResponse,
   ListStudentsResponse,
   RequestAssetDownloadResponse,
   RequestUploadResponse,
+  SetDiscussionSettingsData,
 } from "@headless-lms/sdk";
 
 // --- entities (straight from the SDK responses) ----------------------------
@@ -124,13 +128,25 @@ export type EntitlementsPage = ListEntitlementsResponse;
 export type MembersPage = ListMembersResponse;
 export type AssetsPage = ListAssetsResponse;
 
+// --- discussion --------------------------------------------------------------
+
+export type ModerationQueue = GetModerationQueueResponse;
+export type QueueEntry = ModerationQueue["entries"][number];
+export type QueueReport = QueueEntry["reports"][number];
+export type DiscussionSettings = GetDiscussionSettingsResponse;
+export type CommentStates = ListCourseCommentStatesResponse["states"];
+export type CommentsState = CommentStates[string];
+// `SetDiscussionSettingsData["body"]` is already required (not optional), so
+// no `NonNullable<>` is needed here.
+export type SetDiscussionSettings = SetDiscussionSettingsData["body"];
+
 // --- auth / session (not part of the resource API) -------------------------
 
 export interface SessionUser {
   id: string;
   name: string;
   email: string;
-  image?: string | null;
+  image: string | null;
   /** Active org role + the courses an instructor is scoped to. */
   role: Role;
   scopedCourseIds: string[];

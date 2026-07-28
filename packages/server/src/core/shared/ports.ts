@@ -1,5 +1,3 @@
-// Deployment-swappable ports live in @headless-lms/types; re-exported so core
-// keeps one import site for every port.
 import type {
   DomainEvent,
   NewDomainEvent,

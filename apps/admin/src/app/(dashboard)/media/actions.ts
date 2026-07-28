@@ -6,8 +6,21 @@ import { revalidatePath } from "next/cache";
 import { Assets } from "@headless-lms/sdk";
 
 import { ensureConfigured, authHeaders, unwrap, expectOk } from "@/lib/api/server-call";
-import type { AssetKind, UploadTicket } from "@/lib/api/types";
+import { toQuery } from "@/lib/api/shared";
+import type { Asset, AssetKind, ListParams, Paginated, UploadTicket } from "@/lib/api/types";
 
+
+/**
+ * Client-callable asset list. The media *page* reads through `serverApi` during
+ * SSR; this exists for client surfaces that filter and page on their own —
+ * currently the editor's library picker dialog.
+ */
+export async function listAssetsAction(params: ListParams): Promise<Paginated<Asset>> {
+  ensureConfigured();
+  return unwrap(
+    await Assets.listAssets({ query: toQuery(params, ["kind"]), ...(await authHeaders()) }),
+  );
+}
 
 export async function deleteAssetAction(id: string): Promise<void> {
   ensureConfigured();

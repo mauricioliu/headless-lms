@@ -50,7 +50,7 @@ export interface ContentRepository {
 }
 
 export interface ContentTxScope {
-  courses: ContentRepository;
+  content: ContentRepository;
   outbox: OutboxAppender;
 }
 

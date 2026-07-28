@@ -15,8 +15,8 @@ import { STUDENT_ROLE } from '../../../core/organizations/index.js';
 import { user } from '../../auth/schema.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
+import { orgUserProfileColumns, orgUserNameExpr } from './org-user-profile.js';
 
-const nameExpr = sql<string>`${orgUsers.firstName} || ' ' || ${orgUsers.lastName}`;
 const entitlementCountExpr = sql<number>`count(${entitlements.id})`;
 // Completion now lives in the progress domain; the students report no longer
 // derives a percentage from entitlements. Placeholder until wired to progress.
@@ -79,10 +79,7 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
 
     const rows = await this.db
       .select({
-        id: orgUsers.id,
-        name: nameExpr,
-        email: orgUsers.email,
-        image: user.image,
+        ...orgUserProfileColumns,
         createdAt: orgUsers.createdAt,
         entitlementCount: entitlementCountExpr,
         avgProgress: avgProgressExpr,
@@ -115,7 +112,7 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
     const [row] = await this.db
       .select({
         id: orgUsers.id,
-        name: nameExpr,
+        name: orgUserNameExpr,
         email: orgUsers.email,
         image: user.image,
         createdAt: orgUsers.createdAt,
@@ -153,7 +150,7 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
         return [dir(orgUsers.createdAt)];
       case 'name':
       default:
-        return [dir(nameExpr)];
+        return [dir(orgUserNameExpr)];
     }
   }
 }

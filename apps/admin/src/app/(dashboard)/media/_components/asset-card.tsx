@@ -23,18 +23,28 @@ function kindMeta(a: Asset): { label: string; icon: React.ReactNode } {
   return { label: "File", icon: <FileText /> };
 }
 
-/** A single tile in the media grid: thumbnail, name, meta, and hover actions. */
+/**
+ * A single tile in the media grid: thumbnail, name, meta, and hover actions.
+ *
+ * Two modes. In the library (the default) the tile opens a preview and carries
+ * copy/delete hover actions. Passing `onSelect` switches it to picker mode: the
+ * tile *chooses* the asset and the destructive actions are omitted — a picker
+ * has no business deleting what the author is browsing.
+ */
 export function AssetCard({
   asset,
   onPreview,
   onCopyLink,
   onDelete,
+  onSelect,
 }: {
   asset: Asset;
-  onPreview: (asset: Asset) => void;
-  onCopyLink: (asset: Asset) => void;
-  onDelete: (asset: Asset) => void;
+  onPreview?: (asset: Asset) => void;
+  onCopyLink?: (asset: Asset) => void;
+  onDelete?: (asset: Asset) => void;
+  onSelect?: (asset: Asset) => void;
 }) {
+  const selecting = !!onSelect;
   const previewable = (isImage(asset) || isVideo(asset)) && asset.status === "ready";
 
   // Lazily broker a short-lived presigned thumbnail URL via a Server Action when
@@ -60,9 +70,10 @@ export function AssetCard({
     <div className="group relative flex flex-col">
       <button
         type="button"
-        onClick={() => onPreview(asset)}
-        className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-surface-2 outline-1 -outline-offset-1 outline-ink/5 transition-colors hover:outline-ink/10 focus-visible:outline-2 focus-visible:outline-brand"
-        aria-label={`Preview ${asset.filename}`}
+        onClick={() => (onSelect ?? onPreview)?.(asset)}
+        disabled={selecting && pending}
+        className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-surface-2 outline-1 -outline-offset-1 outline-ink/5 transition-colors hover:outline-ink/10 focus-visible:outline-2 focus-visible:outline-brand disabled:cursor-not-allowed"
+        aria-label={`${selecting ? "Select" : "Preview"} ${asset.filename}`}
       >
         {pending ? (
           <span className="absolute inset-0 grid place-items-center text-ink-4">
@@ -86,14 +97,20 @@ export function AssetCard({
       </button>
 
       {/* floating actions */}
-      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-        <CardAction label="Copy link" onClick={() => onCopyLink(asset)} disabled={pending}>
-          <Copy />
-        </CardAction>
-        <CardAction label="Delete" variant="danger" onClick={() => onDelete(asset)}>
-          <Trash2 />
-        </CardAction>
-      </div>
+      {!selecting && (onCopyLink || onDelete) && (
+        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          {onCopyLink && (
+            <CardAction label="Copy link" onClick={() => onCopyLink(asset)} disabled={pending}>
+              <Copy />
+            </CardAction>
+          )}
+          {onDelete && (
+            <CardAction label="Delete" variant="danger" onClick={() => onDelete(asset)}>
+              <Trash2 />
+            </CardAction>
+          )}
+        </div>
+      )}
 
       <div className="mt-2 flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col">

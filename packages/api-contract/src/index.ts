@@ -15,3 +15,5 @@ export * from "./dashboard.js";
 export * from "./assets.js";
 export * from "./connected-apps.js";
 export * from "./integrations.js";
+export * from "./settings.js";
+export * from "./discussion.js";

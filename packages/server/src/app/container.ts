@@ -2,34 +2,29 @@
 import { createDb } from '../adapters/db/index.js';
 import { DrizzleUnitOfWork } from '../adapters/db/unit-of-work.js';
 import { InMemoryEventBus } from '../adapters/events/index.js';
-import {
-  PollingOutboxRelay,
-  type PollingOutboxRelayConfig,
-} from '../adapters/events/outbox-relay.js';
+import { PollingOutboxRelay, type PollingOutboxRelayConfig, } from '../adapters/events/outbox-relay.js';
 import { InlineAutomationEngine } from '../adapters/workflows/index.js';
 import { DrizzleOutboxAppender, DrizzleOutboxStore } from '../adapters/db/repositories/outbox.js';
 import { EmailAdapter, StubTemplateRenderer } from '../adapters/email/index.js';
 import {
   createRootLogger,
-  requestLogContext,
   type LogLevel,
   type PinoInstance,
+  requestLogContext,
   type RequestLogContext,
 } from '../adapters/logging/index.js';
 import { StorageAdapter } from '../adapters/storage/index.js';
-import { createAuth, type Auth } from '../adapters/auth/index.js';
+import { type Auth, createAuth } from '../adapters/auth/index.js';
 import { createOrgAdmin } from '../adapters/auth/org-admin.js';
 import { stampSessionActiveOrg } from '../adapters/auth/session-stamp.js';
-import {
-  createConnectedAppsRepo,
-  type ConnectedAppsRepo,
-} from '../adapters/auth/connected-apps.js';
+import { type ConnectedAppsRepo, createConnectedAppsRepo, } from '../adapters/auth/connected-apps.js';
 
 import { ContentServiceImpl } from '../core/content/index.js';
 import { EntitlementsServiceImpl } from '../core/entitlements/index.js';
 import { ProgressServiceImpl } from '../core/progress/index.js';
+import { DiscussionServiceImpl } from '../core/discussion/index.js';
 import { IdentityServiceImpl } from '../core/identity/index.js';
-import { OrganizationServiceImpl, type OrgAdmin } from '../core/organizations/index.js';
+import { type OrgAdmin, OrganizationServiceImpl } from '../core/organizations/index.js';
 import { AssetsServiceImpl } from '../core/assets/index.js';
 import { IntegrationsServiceImpl } from '../core/integrations/index.js';
 import { AutomationsServiceImpl } from '../core/automations/index.js';
@@ -39,9 +34,11 @@ import { StudentsReportServiceImpl } from '../reporting/students/index.js';
 import { DashboardReportServiceImpl } from '../reporting/dashboard/index.js';
 import { LearnReportServiceImpl } from '../reporting/learn/index.js';
 import { Mailer } from '../core/shared/mailer.js';
+import { SettingsService } from '../core/shared/settings.js';
 
 import { DrizzleEntitlementsRepository } from '../adapters/db/repositories/entitlements.js';
 import { DrizzleProgressRepository } from '../adapters/db/repositories/progress.js';
+import { DrizzleDiscussionRepository } from '../adapters/db/repositories/discussion.js';
 import { DrizzleIdentityRepository } from '../adapters/db/repositories/identity.js';
 import { DrizzleOrganizationsRepository } from '../adapters/db/repositories/organizations.js';
 import { DrizzleMembersRepository } from '../adapters/db/repositories/members.js';
@@ -52,10 +49,11 @@ import { DrizzleStudentsRepository } from '../adapters/db/repositories/students.
 import { DrizzleDashboardRepository } from '../adapters/db/repositories/dashboard.js';
 import { DrizzleLearnRepository } from '../adapters/db/repositories/learn.js';
 import { DrizzleCredentialStore } from '../adapters/db/repositories/credentials.js';
+import { DrizzleSettingsRepository } from '../adapters/db/repositories/settings.js';
 import { DrizzleConnectionsRepository } from '../adapters/db/repositories/integrations.js';
 import {
-  DrizzleAutomationsRepository,
   DrizzleAutomationRunsRepository,
+  DrizzleAutomationsRepository,
 } from '../adapters/db/repositories/automations.js';
 import type {
   CredentialStore,
@@ -162,9 +160,13 @@ export interface Container {
   content: ContentServiceImpl;
   entitlements: EntitlementsServiceImpl;
   progress: ProgressServiceImpl;
+  discussion: DiscussionServiceImpl;
   assets: AssetsServiceImpl;
   integrations: IntegrationsServiceImpl;
   automations: AutomationsServiceImpl;
+  /** Cross-cutting settings store. Not a context — a leaf every context may use;
+   *  inject `settings.for('<namespace>')` into a service, never the service itself. */
+  settings: SettingsService;
   // Reporting read layer (composed cross-context reads; owns no domain rules).
   reporting: {
     students: StudentsReportServiceImpl;
@@ -210,6 +212,7 @@ export async function buildContainer(
   const contentLogger = logger.child({ name: 'content' });
   const entitlementsLogger = logger.child({ name: 'entitlements' });
   const progressLogger = logger.child({ name: 'progress' });
+  const discussionLogger = logger.child({ name: 'discussion' });
   const assetsLogger = logger.child({ name: 'assets' });
   const integrationsLogger = logger.child({ name: 'integrations' });
   const automationsLogger = logger.child({ name: 'automations' });
@@ -264,7 +267,7 @@ export async function buildContainer(
   );
   // Content: reads on the root db; course writes + outbox append in one tx.
   const contentUow = new DrizzleUnitOfWork(db, (tx) => ({
-    courses: new DrizzleContentRepository(tx, contentLogger),
+    content: new DrizzleContentRepository(tx, contentLogger),
     outbox: new DrizzleOutboxAppender(tx, outboxLogger),
   }));
   const content = new ContentServiceImpl(
@@ -296,11 +299,26 @@ export async function buildContainer(
     () => new Date().toISOString(),
     progressLogger,
   );
+  // Discussion: comment writes + outbox append in one tx.
+  const discussionUow = new DrizzleUnitOfWork(db, (tx) => ({
+    discussion: new DrizzleDiscussionRepository(tx, discussionLogger),
+    outbox: new DrizzleOutboxAppender(tx, outboxLogger),
+  }));
+  const discussion = new DiscussionServiceImpl(
+    new DrizzleDiscussionRepository(db, discussionLogger),
+    discussionUow,
+    () => new Date().toISOString(),
+    discussionLogger,
+  );
   const assets = new AssetsServiceImpl(
     storage,
     new DrizzleAssetsRepository(db, assetsLogger),
     () => new Date().toISOString(),
     assetsLogger,
+  );
+
+  const settings = new SettingsService(
+    new DrizzleSettingsRepository(db, logger.child({ name: 'settings' })),
   );
 
   const reporting = {
@@ -410,9 +428,11 @@ export async function buildContainer(
     content,
     entitlements,
     progress,
+    discussion,
     assets,
     integrations,
     automations,
+    settings,
     reporting,
     storage,
     mailer,

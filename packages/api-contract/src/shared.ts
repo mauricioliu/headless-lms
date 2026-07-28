@@ -30,3 +30,26 @@ export function paginated<T extends z.ZodTypeAny>(row: T) {
     pageSize: z.number().int(),
   });
 }
+
+/** All four org roles. `members.ts` exports a staff-only three-value `Role`;
+ *  this is the full set, used wherever a learner can also appear. */
+export const OrgRole = z.enum(["owner", "admin", "instructor", "student"]);
+export type OrgRole = z.infer<typeof OrgRole>;
+
+/** Mirrors UserProfile in @headless-lms/types — keyed on the auth user id. */
+export const UserProfileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  image: z.string().nullable(),
+});
+export type UserProfileSchema = z.infer<typeof UserProfileSchema>;
+
+/** Mirrors OrgUserProfile in @headless-lms/types — keyed on org_users.id. */
+export const OrgUserProfileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  image: z.string().nullable(),
+});
+export type OrgUserProfileSchema = z.infer<typeof OrgUserProfileSchema>;

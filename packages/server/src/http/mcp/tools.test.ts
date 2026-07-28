@@ -49,6 +49,7 @@ const STUDENT: Student = {
   id: 'student-1',
   name: 'Bob',
   email: 'bob@example.com',
+  image: null,
   entitlementCount: 3,
   avgProgress: 65,
   joinedAt: '2026-01-01T00:00:00Z',
