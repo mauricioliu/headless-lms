@@ -245,4 +245,29 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
     const [row] = rows;
     return row ? toEntitlement(row) : null;
   }
+
+  /** Existence check scoped to the course case: same status predicate as
+   *  `list` (revoked never counts; an elapsed expiry reads as expired, not
+   *  active), joined to content_items and constrained to type = 'course' so a
+   *  grant on some other content type can never be mistaken for course access. */
+  async hasCourseAccess(orgId: string, orgUserId: string, courseId: string): Promise<boolean> {
+    const rows = await this.db
+      .select({ id: entitlements.id })
+      .from(entitlements)
+      .innerJoin(
+        contentItems,
+        and(eq(contentItems.orgId, entitlements.orgId), eq(contentItems.id, entitlements.contentId)),
+      )
+      .where(
+        and(
+          eq(entitlements.orgId, orgId),
+          eq(entitlements.orgUserId, orgUserId),
+          eq(entitlements.contentId, courseId),
+          eq(contentItems.type, 'course'),
+          sql`${derivedStatus} = 'active'`,
+        ),
+      )
+      .limit(1);
+    return rows.length > 0;
+  }
 }

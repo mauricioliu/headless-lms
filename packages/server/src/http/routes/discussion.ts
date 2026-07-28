@@ -32,8 +32,10 @@ import type { Actor } from '../../core/discussion/index.js';
 import { resolveScope } from '../scope.js';
 import { resolveStudentScope } from '../student-scope.js';
 
-/** Resolve an activity to its course, then assert the person is enrolled.
- *  Mirrors routes/learn.ts — a 404 for content they cannot open. */
+/** Resolve an activity to its course, then assert the person holds active
+ *  course access. Mirrors routes/learn.ts — a 404 for content they cannot
+ *  open. The entitlements context is the authority for access; a reporting
+ *  read must never be used to infer it. */
 async function gate(
   container: Container,
   orgId: string,
@@ -45,8 +47,8 @@ async function gate(
   if (!module) {
     throw new NotFoundError('Activity', activityId);
   }
-  const course = await container.reporting.learn.getCourse(orgId, orgUserId, module.courseId);
-  if (!course) {
+  const allowed = await container.entitlements.hasCourseAccess(orgId, orgUserId, module.courseId);
+  if (!allowed) {
     throw new NotFoundError('Activity', activityId);
   }
 }

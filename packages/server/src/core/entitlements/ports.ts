@@ -7,6 +7,10 @@ export interface EntitlementsService {
   list(orgId: string, query: EntitlementsQuery): Promise<Page<Entitlement>>;
   grant(orgId: string, input: GrantEntitlementInput): Promise<Entitlement>;
   setStatus(orgId: string, id: string, status: 'active' | 'revoked'): Promise<Entitlement | null>;
+  /** Whether this participation currently holds active access to the course.
+   *  The authority for course access — a reporting read must never be used to
+   *  infer it. */
+  hasCourseAccess(orgId: string, orgUserId: string, courseId: string): Promise<boolean>;
 }
 
 // Outbound port (persistence contract the repository fulfils).
@@ -14,6 +18,10 @@ export interface EntitlementsRepository {
   list(orgId: string, query: EntitlementsQuery): Promise<Page<Entitlement>>;
   insert(orgId: string, input: GrantEntitlementInput): Promise<Entitlement>;
   setStatus(orgId: string, id: string, status: 'active' | 'revoked'): Promise<Entitlement | null>;
+  /** Whether this participation currently holds active access to the course.
+   *  The authority for course access — a reporting read must never be used to
+   *  infer it. */
+  hasCourseAccess(orgId: string, orgUserId: string, courseId: string): Promise<boolean>;
 }
 
 /** Tx-scoped port bundle for this context's mutating use cases — every member
