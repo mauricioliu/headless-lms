@@ -227,6 +227,411 @@ export type UpdateCourseResponses = {
 
 export type UpdateCourseResponse = UpdateCourseResponses[keyof UpdateCourseResponses];
 
+export type ListDownloadsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    sort?: string;
+    status?: "draft" | "published";
+    category?: string;
+  };
+  url: "/api/downloads";
+};
+
+export type ListDownloadsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    rows: Array<{
+      id: string;
+      title: string;
+      slug: string;
+      description: string;
+      status: "draft" | "published";
+      category: string;
+      thumbnailAssetId: string | null;
+      assetCount: number;
+      totalSize: number;
+      entitledCount: number;
+      updatedAt: string;
+      createdAt: string;
+    }>;
+    total: number;
+    page: number;
+    pageSize: number;
+  };
+};
+
+export type ListDownloadsResponse = ListDownloadsResponses[keyof ListDownloadsResponses];
+
+export type CreateDownloadData = {
+  body: {
+    title: string;
+    description?: string;
+    category?: string;
+  };
+  path?: never;
+  query?: never;
+  url: "/api/downloads";
+};
+
+export type CreateDownloadResponses = {
+  /**
+   * Default Response
+   */
+  201: {
+    id: string;
+    title: string;
+    slug: string;
+    description: string;
+    status: "draft" | "published";
+    category: string;
+    thumbnailAssetId: string | null;
+    assetCount: number;
+    totalSize: number;
+    entitledCount: number;
+    updatedAt: string;
+    createdAt: string;
+  };
+};
+
+export type CreateDownloadResponse = CreateDownloadResponses[keyof CreateDownloadResponses];
+
+export type DeleteDownloadData = {
+  body?: never;
+  path: {
+    downloadId: string;
+  };
+  query?: never;
+  url: "/api/downloads/{downloadId}";
+};
+
+export type DeleteDownloadErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type DeleteDownloadError = DeleteDownloadErrors[keyof DeleteDownloadErrors];
+
+export type DeleteDownloadResponses = {
+  /**
+   * Default Response
+   */
+  204: unknown;
+};
+
+export type GetDownloadData = {
+  body?: never;
+  path: {
+    downloadId: string;
+  };
+  query?: never;
+  url: "/api/downloads/{downloadId}";
+};
+
+export type GetDownloadErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type GetDownloadError = GetDownloadErrors[keyof GetDownloadErrors];
+
+export type GetDownloadResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    title: string;
+    slug: string;
+    description: string;
+    status: "draft" | "published";
+    category: string;
+    thumbnailAssetId: string | null;
+    assetCount: number;
+    totalSize: number;
+    entitledCount: number;
+    updatedAt: string;
+    createdAt: string;
+  };
+};
+
+export type GetDownloadResponse = GetDownloadResponses[keyof GetDownloadResponses];
+
+export type UpdateDownloadData = {
+  body: {
+    title?: string;
+    description?: string;
+    category?: string;
+    status?: "draft" | "published";
+    thumbnailAssetId?: string | null;
+  };
+  path: {
+    downloadId: string;
+  };
+  query?: never;
+  url: "/api/downloads/{downloadId}";
+};
+
+export type UpdateDownloadErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type UpdateDownloadError = UpdateDownloadErrors[keyof UpdateDownloadErrors];
+
+export type UpdateDownloadResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    title: string;
+    slug: string;
+    description: string;
+    status: "draft" | "published";
+    category: string;
+    thumbnailAssetId: string | null;
+    assetCount: number;
+    totalSize: number;
+    entitledCount: number;
+    updatedAt: string;
+    createdAt: string;
+  };
+};
+
+export type UpdateDownloadResponse = UpdateDownloadResponses[keyof UpdateDownloadResponses];
+
+export type ListDownloadAssetsData = {
+  body?: never;
+  path: {
+    downloadId: string;
+  };
+  query?: never;
+  url: "/api/downloads/{downloadId}/assets";
+};
+
+export type ListDownloadAssetsErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type ListDownloadAssetsError = ListDownloadAssetsErrors[keyof ListDownloadAssetsErrors];
+
+export type ListDownloadAssetsResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    id: string;
+    assetId: string;
+    seq: number;
+    displayName: string | null;
+    filename: string;
+    contentType: string;
+    size: number;
+  }>;
+};
+
+export type ListDownloadAssetsResponse =
+  ListDownloadAssetsResponses[keyof ListDownloadAssetsResponses];
+
+export type AddDownloadAssetData = {
+  body: {
+    assetId: string;
+    displayName?: string;
+  };
+  path: {
+    downloadId: string;
+  };
+  query?: never;
+  url: "/api/downloads/{downloadId}/assets";
+};
+
+export type AddDownloadAssetErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type AddDownloadAssetError = AddDownloadAssetErrors[keyof AddDownloadAssetErrors];
+
+export type AddDownloadAssetResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    id: string;
+    assetId: string;
+    seq: number;
+    displayName: string | null;
+    filename: string;
+    contentType: string;
+    size: number;
+  }>;
+};
+
+export type AddDownloadAssetResponse = AddDownloadAssetResponses[keyof AddDownloadAssetResponses];
+
+export type ReorderDownloadAssetsData = {
+  body: {
+    assetIds: Array<string>;
+  };
+  path: {
+    downloadId: string;
+  };
+  query?: never;
+  url: "/api/downloads/{downloadId}/assets/order";
+};
+
+export type ReorderDownloadAssetsErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  409: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type ReorderDownloadAssetsError =
+  ReorderDownloadAssetsErrors[keyof ReorderDownloadAssetsErrors];
+
+export type ReorderDownloadAssetsResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    id: string;
+    assetId: string;
+    seq: number;
+    displayName: string | null;
+    filename: string;
+    contentType: string;
+    size: number;
+  }>;
+};
+
+export type ReorderDownloadAssetsResponse =
+  ReorderDownloadAssetsResponses[keyof ReorderDownloadAssetsResponses];
+
+export type RemoveDownloadAssetData = {
+  body?: never;
+  path: {
+    downloadId: string;
+    assetId: string;
+  };
+  query?: never;
+  url: "/api/downloads/{downloadId}/assets/{assetId}";
+};
+
+export type RemoveDownloadAssetErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type RemoveDownloadAssetError = RemoveDownloadAssetErrors[keyof RemoveDownloadAssetErrors];
+
+export type RemoveDownloadAssetResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    id: string;
+    assetId: string;
+    seq: number;
+    displayName: string | null;
+    filename: string;
+    contentType: string;
+    size: number;
+  }>;
+};
+
+export type RemoveDownloadAssetResponse =
+  RemoveDownloadAssetResponses[keyof RemoveDownloadAssetResponses];
+
+export type RenameDownloadAssetData = {
+  body: {
+    displayName: string | null;
+  };
+  path: {
+    downloadId: string;
+    assetId: string;
+  };
+  query?: never;
+  url: "/api/downloads/{downloadId}/assets/{assetId}";
+};
+
+export type RenameDownloadAssetErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type RenameDownloadAssetError = RenameDownloadAssetErrors[keyof RenameDownloadAssetErrors];
+
+export type RenameDownloadAssetResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    id: string;
+    assetId: string;
+    seq: number;
+    displayName: string | null;
+    filename: string;
+    contentType: string;
+    size: number;
+  }>;
+};
+
+export type RenameDownloadAssetResponse =
+  RenameDownloadAssetResponses[keyof RenameDownloadAssetResponses];
+
 export type ListLearnCoursesData = {
   body?: never;
   path?: never;
@@ -490,6 +895,113 @@ export type GetLearnCourseProgressResponses = {
 
 export type GetLearnCourseProgressResponse =
   GetLearnCourseProgressResponses[keyof GetLearnCourseProgressResponses];
+
+export type ListLearnDownloadsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/learn/downloads";
+};
+
+export type ListLearnDownloadsResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    description: string;
+    status: "draft" | "published";
+    category: string;
+    thumbnailAssetId: string | null;
+    assetCount: number;
+    totalSize: number;
+    entitledCount: number;
+    updatedAt: string;
+    createdAt: string;
+  }>;
+};
+
+export type ListLearnDownloadsResponse =
+  ListLearnDownloadsResponses[keyof ListLearnDownloadsResponses];
+
+export type GetLearnDownloadData = {
+  body?: never;
+  path: {
+    downloadId: string;
+  };
+  query?: never;
+  url: "/api/learn/downloads/{downloadId}";
+};
+
+export type GetLearnDownloadErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type GetLearnDownloadError = GetLearnDownloadErrors[keyof GetLearnDownloadErrors];
+
+export type GetLearnDownloadResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    download: {
+      id: string;
+      title: string;
+      slug: string;
+      description: string;
+      status: "draft" | "published";
+      category: string;
+      thumbnailAssetId: string | null;
+      assetCount: number;
+      totalSize: number;
+      entitledCount: number;
+      updatedAt: string;
+      createdAt: string;
+    };
+    assets: Array<{
+      id: string;
+      assetId: string;
+      seq: number;
+      displayName: string | null;
+      filename: string;
+      contentType: string;
+      size: number;
+    }>;
+  };
+};
+
+export type GetLearnDownloadResponse = GetLearnDownloadResponses[keyof GetLearnDownloadResponses];
+
+export type GetLearnDownloadAssetData = {
+  body?: never;
+  path: {
+    downloadId: string;
+    assetId: string;
+  };
+  query?: never;
+  url: "/api/learn/downloads/{downloadId}/assets/{assetId}";
+};
+
+export type GetLearnDownloadAssetErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type GetLearnDownloadAssetError =
+  GetLearnDownloadAssetErrors[keyof GetLearnDownloadAssetErrors];
 
 export type ListModulesData = {
   body?: never;
@@ -942,7 +1454,7 @@ export type ListEntitlementsData = {
     source?: string;
     orgUserId?: string;
     contentId?: string;
-    type?: "course";
+    type?: "course" | "download";
   };
   url: "/api/entitlements";
 };
@@ -960,7 +1472,7 @@ export type ListEntitlementsResponses = {
       studentEmail: string;
       content: {
         id: string;
-        type: "course";
+        type: "course" | "download";
         title: string;
       };
       status: "active" | "expired" | "revoked";
@@ -999,7 +1511,7 @@ export type GrantEntitlementResponses = {
     studentEmail: string;
     content: {
       id: string;
-      type: "course";
+      type: "course" | "download";
       title: string;
     };
     status: "active" | "expired" | "revoked";
@@ -1047,7 +1559,7 @@ export type SetEntitlementStatusResponses = {
     studentEmail: string;
     content: {
       id: string;
-      type: "course";
+      type: "course" | "download";
       title: string;
     };
     status: "active" | "expired" | "revoked";
