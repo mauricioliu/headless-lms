@@ -93,6 +93,8 @@ moderates; there is no narrower moderator role.
 
 An author has full control of their own comments: read, revise, remove, with no
 time limit and regardless of replies. Edits are neither versioned nor evented.
+A locked thread still lets an author withdraw their own comment; it refuses a
+revision.
 
 ### Review
 

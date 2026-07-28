@@ -589,6 +589,14 @@ describe('edit, remove, restore, approve', () => {
     await expect(service.edit('o1', comment.id, staff, 'nope')).rejects.toThrow(ForbiddenError);
   });
 
+  it('refuses an edit on a locked thread, even by the author', async () => {
+    const { service, comment } = await published();
+    await service.setThreadState('o1', 'a1', 'locked');
+    await expect(service.edit('o1', comment.id, learner, 'revised')).rejects.toThrow(
+      ForbiddenError,
+    );
+  });
+
   it('lets an author remove their own comment and names them as remover', async () => {
     const { service, comment, appended } = await published();
     const removed = await service.remove('o1', comment.id, learner);

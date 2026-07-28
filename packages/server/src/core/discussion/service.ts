@@ -278,7 +278,10 @@ export class DiscussionServiceImpl implements DiscussionService {
     actor: Actor,
     body: string,
   ): Promise<ThreadComment> {
-    const comment = await this.load(orgId, commentId);
+    const { comment, config } = await this.loadWithConfig(orgId, commentId);
+    if (config.state !== 'visible') {
+      throw new ForbiddenError('discussion is not open on this activity');
+    }
     // Editing is the author's alone — moderators remove, they do not rewrite.
     if (comment.orgUserId !== actor.orgUserId) {
       throw new ForbiddenError('only the author may edit a comment');
