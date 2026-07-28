@@ -292,30 +292,67 @@ describe('download delivery', () => {
   const download = { id: 'd1', status: 'published' } as never;
 
   it('returns null when the student has no entitlement', async () => {
+    const captured: { expiry?: number; filename?: string } = {};
     const svc = new LearnReportServiceImpl(
-      fakeEntitlementReader(),
-      fakeContentService({ getDownload: async () => download }),
+      fakeEntitlementReader({
+        // Both would let the request through if gate 1 were bypassed — only
+        // the missing entitlement (activeDownloadRef → null) can produce
+        // null here.
+        downloadHasAsset: async () => true,
+      }),
+      fakeContentService({
+        getDownload: async () => download,
+        listDownloadAssets: async () => [
+          {
+            id: 'da1',
+            assetId: 'a1',
+            seq: 0,
+            displayName: null,
+            filename: 'ch1.pdf',
+            contentType: 'application/pdf',
+            size: 10,
+          },
+        ],
+      }),
       fakeProgress([]),
-      fakeAssets(),
+      fakeAssets(captured),
       300,
     );
 
     expect(await svc.downloadAssetUrl('o1', 'stu_1', 'd1', 'a1')).toBeNull();
+    expect(captured.expiry).toBeUndefined();
   });
 
   it('returns null when the asset belongs to a different download', async () => {
+    const captured: { expiry?: number; filename?: string } = {};
     const svc = new LearnReportServiceImpl(
       fakeEntitlementReader({
         activeDownloadRef: async () => ({ orgId: 'o1', contentId: 'd1' }),
         downloadHasAsset: async () => false,
       }),
-      fakeContentService({ getDownload: async () => download }),
+      fakeContentService({
+        getDownload: async () => download,
+        // The link lookup itself would succeed for the requested asset id —
+        // only the downloadHasAsset gate can produce null here.
+        listDownloadAssets: async () => [
+          {
+            id: 'da1',
+            assetId: 'a_other',
+            seq: 0,
+            displayName: null,
+            filename: 'other.pdf',
+            contentType: 'application/pdf',
+            size: 10,
+          },
+        ],
+      }),
       fakeProgress([]),
-      fakeAssets(),
+      fakeAssets(captured),
       300,
     );
 
     expect(await svc.downloadAssetUrl('o1', 'stu_1', 'd1', 'a_other')).toBeNull();
+    expect(captured.expiry).toBeUndefined();
   });
 
   it('signs with the configured expiry and the display name', async () => {

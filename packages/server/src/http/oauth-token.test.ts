@@ -16,6 +16,7 @@ const containerConfig: Config = {
   credentialStoreKey: '',
   studentPortalUrl: 'http://localhost:8002',
   adminAppUrl: 'http://localhost:8001',
+  deliveryExpirySeconds: 300,
 };
 
 const serverConfig: ServerConfig = {

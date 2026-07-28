@@ -114,10 +114,8 @@ export interface Config {
   /** Log level for the process-wide logger (HTTP + domain + relay). Default "info". */
   logging?: LoggingConfig;
   /** Presigned URL lifetime for entitled download delivery, seconds. Mirrors
-   *  ServerConfig.deliveryExpirySeconds — createContainer threads it through.
-   *  Optional here (default 300) so direct buildContainer callers (tests) need
-   *  not supply it. */
-  deliveryExpirySeconds?: number;
+   *  ServerConfig.deliveryExpirySeconds — createContainer threads it through. */
+  deliveryExpirySeconds: number;
 }
 
 /** Tuning for the transactional-outbox relay. Every field is optional; the
@@ -322,7 +320,7 @@ export async function buildContainer(
       content,
       progress,
       assets,
-      config.deliveryExpirySeconds ?? 300,
+      config.deliveryExpirySeconds,
       reportingLogger,
     ),
   };
