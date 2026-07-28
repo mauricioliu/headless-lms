@@ -1,8 +1,10 @@
 import type {
   ListActivityCommentsResponse,
   GetLearnCourseResponse,
+  GetLearnDownloadResponse,
   GetLearnOrgResponse,
   ListLearnCoursesResponse,
+  ListLearnDownloadsResponse,
   ListLearnModulesResponse,
 } from "@headless-lms/sdk";
 
@@ -18,6 +20,9 @@ export type ActivityComments = ListActivityCommentsResponse;
 export type CommentsConfig = ActivityComments["config"];
 export type CommentView = ActivityComments["comments"][number];
 export type CommentAuthor = CommentView["author"];
+export type Download = ListLearnDownloadsResponse[number];
+export type DownloadDetail = GetLearnDownloadResponse;
+export type DownloadAsset = DownloadDetail["assets"][number];
 
 /** The editor-agnostic content wrapper stored under `settings.content`. */
 export interface ActivityContent {

@@ -25,6 +25,7 @@ import {
   Courses,
   Dashboard,
   Discussion,
+  Downloads,
   Entitlements,
   Integrations,
   Organizations,
@@ -42,6 +43,8 @@ import type {
   ConnectedApp,
   Course,
   DiscussionSettings,
+  Download,
+  DownloadAsset,
   Entitlement,
   IntegrationConnection,
   ListParams,
@@ -82,12 +85,48 @@ export const serverApi = {
       await Courses.listModules({ path: { courseId }, ...(await authHeaders()) }),
     );
   },
-  async coursesLite(): Promise<{ id: string; title: string }[]> {
+  // Both content types offered by the entitlements grant pickers, tagged with
+  // their type so the UI can group course vs. download options.
+  async contentLite(): Promise<{ id: string; title: string; type: "course" | "download" }[]> {
     ensureConfigured();
-    const page = unwrap(
-      await Courses.listCourses({ query: { pageSize: 100, sort: "title" }, ...(await authHeaders()) }),
+    const [coursesPage, downloadsPage] = await Promise.all([
+      Courses.listCourses({ query: { pageSize: 100, sort: "title" }, ...(await authHeaders()) }),
+      Downloads.listDownloads({ query: { pageSize: 100, sort: "title" }, ...(await authHeaders()) }),
+    ]);
+    const courses = unwrap(coursesPage).rows.map((c) => ({
+      id: c.id,
+      title: c.title,
+      type: "course" as const,
+    }));
+    const downloads = unwrap(downloadsPage).rows.map((d) => ({
+      id: d.id,
+      title: d.title,
+      type: "download" as const,
+    }));
+    return [...courses, ...downloads].sort((a, b) => a.title.localeCompare(b.title));
+  },
+
+  // downloads
+  async listDownloads(params: ListParams): Promise<Paginated<Download>> {
+    ensureConfigured();
+    return unwrap(
+      await Downloads.listDownloads({
+        query: toQuery(params, ["status", "category"]),
+        ...(await authHeaders()),
+      }),
     );
-    return page.rows.map((c) => ({ id: c.id, title: c.title }));
+  },
+  async getDownload(downloadId: string): Promise<Download> {
+    ensureConfigured();
+    return unwrap(
+      await Downloads.getDownload({ path: { downloadId }, ...(await authHeaders()) }),
+    );
+  },
+  async listDownloadAssets(downloadId: string): Promise<DownloadAsset[]> {
+    ensureConfigured();
+    return unwrap(
+      await Downloads.listDownloadAssets({ path: { downloadId }, ...(await authHeaders()) }),
+    );
   },
 
   // students
@@ -132,11 +171,11 @@ export const serverApi = {
       }),
     );
   },
-  async courseEntitlements(courseId: string): Promise<Entitlement[]> {
+  async contentEntitlements(contentId: string): Promise<Entitlement[]> {
     ensureConfigured();
     const page = unwrap(
       await Entitlements.listEntitlements({
-        query: { contentId: courseId, pageSize: 100 },
+        query: { contentId, pageSize: 100 },
         ...(await authHeaders()),
       }),
     );

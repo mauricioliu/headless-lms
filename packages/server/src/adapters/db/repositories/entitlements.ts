@@ -11,7 +11,7 @@ import type {
 } from '@headless-lms/types';
 import { entitlements } from '../schema/index.js';
 import { orgUsers } from '../schema/index.js';
-import { contentItems, courses } from '../schema/content.js';
+import { contentItems, courses, downloads } from '../schema/content.js';
 import type { Logger } from '@headless-lms/types';
 import { noopLogger } from '../../../core/shared/logger.js';
 
@@ -26,7 +26,7 @@ end`;
 // Display name of the granted content, whatever its type. One LEFT JOIN per
 // concrete content table; exactly one hits per row (type-pinned FKs), so the
 // COALESCE picks the single non-null title. Extended per new content type.
-const contentTitle = sql<string>`coalesce(${courses.title})`;
+const contentTitle = sql<string>`coalesce(${courses.title}, ${downloads.title})`;
 
 // Sortable columns by the client-facing field name. `status` sorts on the derived
 // expression so the ordering matches the displayed value; `contentTitle` on the
@@ -111,6 +111,10 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
         courses,
         and(eq(courses.orgId, entitlements.orgId), eq(courses.id, entitlements.contentId)),
       )
+      .leftJoin(
+        downloads,
+        and(eq(downloads.orgId, entitlements.orgId), eq(downloads.id, entitlements.contentId)),
+      )
       .where(where);
   }
 
@@ -173,6 +177,10 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
       .leftJoin(
         courses,
         and(eq(courses.orgId, entitlements.orgId), eq(courses.id, entitlements.contentId)),
+      )
+      .leftJoin(
+        downloads,
+        and(eq(downloads.orgId, entitlements.orgId), eq(downloads.id, entitlements.contentId)),
       )
       .where(where);
 

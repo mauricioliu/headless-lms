@@ -1,29 +1,27 @@
-import { Download } from "lucide-react";
-
-import { PageHeader } from "@/components/page-header";
 import { requireAuth } from "@/lib/auth/server-session";
+import { serverApi } from "@/lib/api/server";
+import { parseListParams } from "@/lib/table/parse-list-params";
 
-// Placeholder route behind the Content › Downloads nav entry. Nothing is wired
-// to the API yet — it exists so the submenu link resolves.
-export default async function DownloadsPage() {
-  await requireAuth();
+import { DownloadsTable } from "./downloads-table";
 
-  return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Downloads" subtitle="Downloadable files offered as content." />
-      <div className="rounded-lg border border-line bg-surface px-3 py-16">
-        <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-center">
-          <div className="grid size-10 place-items-center rounded-full bg-surface-2 text-ink-3">
-            <Download className="size-5" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <p className="font-medium text-ink">Downloads aren&apos;t available yet</p>
-            <p className="text-sm text-ink-3 text-pretty">
-              This section is a placeholder. There&apos;s nothing behind it for now.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+// Downloads list page: reads URL params, fetches server-side, renders the table.
+export default async function DownloadsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const params = parseListParams(sp, {
+    pageSize: 20,
+    initialSort: [{ id: "updatedAt", desc: true }],
+  });
+
+  // Start the data fetch immediately, await the session gate, then await the
+  // data. The fetch only needs the forwarded cookie (not the session result),
+  // so the two API round-trips run in parallel instead of sequentially.
+  const dataPromise = serverApi.listDownloads(params);
+  await requireAuth(dataPromise);
+  const { rows, total } = await dataPromise;
+
+  return <DownloadsTable rows={rows} total={total} params={params} />;
 }

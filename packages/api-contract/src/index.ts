@@ -3,6 +3,7 @@
 // from, and the generated SDK is derived off.
 export * from "./shared.js";
 export * from "./content.js";
+export * from "./downloads.js";
 export * from "./activities.js";
 export * from "./learn.js";
 export * from "./students.js";

@@ -1,5 +1,12 @@
 // reporting/learn — ports.
-import type { Course, Module, CourseRef, CourseProgressView } from './model.js';
+import type {
+  Course,
+  Module,
+  ContentRef,
+  CourseProgressView,
+  Download,
+  DownloadAsset,
+} from './model.js';
 
 /**
  * Inbound: the student-scoped read use-cases. Scoped by `(orgId, orgUserId)` —
@@ -14,6 +21,20 @@ export interface LearnReportService {
     orgUserId: string,
     courseId: string,
   ): Promise<CourseProgressView | null>;
+  listDownloads(orgId: string, orgUserId: string): Promise<Download[]>;
+  getDownload(
+    orgId: string,
+    orgUserId: string,
+    downloadId: string,
+  ): Promise<{ download: Download; assets: DownloadAsset[] } | null>;
+  /** Entitlement-gated. Returns null (→ 404) for every failure — never 403,
+   *  which would confirm the resource exists to someone not entitled to it. */
+  downloadAssetUrl(
+    orgId: string,
+    orgUserId: string,
+    downloadId: string,
+    assetId: string,
+  ): Promise<{ url: string; filename: string } | null>;
 }
 
 /**
@@ -23,6 +44,15 @@ export interface LearnReportService {
  * Course/Module payload.
  */
 export interface LearnEntitlementReader {
-  activeRefs(orgId: string, orgUserId: string): Promise<CourseRef[]>;
-  activeRef(orgId: string, orgUserId: string, courseId: string): Promise<CourseRef | null>;
+  activeRefs(orgId: string, orgUserId: string): Promise<ContentRef[]>;
+  activeRef(orgId: string, orgUserId: string, courseId: string): Promise<ContentRef | null>;
+  /** Active, non-expired grants to PUBLISHED downloads, scoped to the org. */
+  activeDownloadRefs(orgId: string, orgUserId: string): Promise<ContentRef[]>;
+  activeDownloadRef(
+    orgId: string,
+    orgUserId: string,
+    downloadId: string,
+  ): Promise<ContentRef | null>;
+  /** Whether this asset is linked to this download. The paywall's second gate. */
+  downloadHasAsset(orgId: string, downloadId: string, assetId: string): Promise<boolean>;
 }

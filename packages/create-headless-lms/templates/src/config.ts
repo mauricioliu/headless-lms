@@ -58,6 +58,9 @@ export function loadServerConfig(): ServerConfig {
     // can never drift from what better-auth is configured with.
     publicUrl: container.authBaseURL,
     clientOrigins: parseClientOrigins(),
+    // Separate from STORAGE_DOWNLOAD_EXPIRY: raising the general storage
+    // default must never silently extend entitled/paywalled link lifetimes.
+    deliveryExpirySeconds: Number(process.env.DELIVERY_URL_EXPIRY ?? 300),
     container,
   };
 }

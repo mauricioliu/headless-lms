@@ -15,8 +15,14 @@ export interface AssetsService {
   confirm(orgId: string, id: string): Promise<Asset | null>;
   list(orgId: string, query: AssetsQuery): Promise<Page<Asset>>;
   get(orgId: string, id: string): Promise<Asset | null>;
-  /** Short-lived presigned URL to download/serve the asset. */
-  requestDownload(orgId: string, id: string, filename?: string): Promise<DownloadTicket | null>;
+  /** Short-lived presigned URL to download/serve the asset. `expiresInSeconds`
+   *  overrides the adapter default — entitled delivery passes its own. */
+  requestDownload(
+    orgId: string,
+    id: string,
+    filename?: string,
+    expiresInSeconds?: number,
+  ): Promise<DownloadTicket | null>;
   /** Remove the object from storage and the registry. */
   remove(orgId: string, id: string): Promise<boolean>;
 }

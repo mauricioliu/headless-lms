@@ -18,6 +18,8 @@ export const ID_PREFIXES = {
   module: 'mod',
   activity: 'act',
   activityAsset: 'aca',
+  download: 'dwn',
+  downloadAsset: 'dla',
   asset: 'ast',
   entitlement: 'ent',
   progress: 'prg',

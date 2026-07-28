@@ -35,5 +35,8 @@ export async function createContainer(
   config: ServerConfig,
   options?: BuildContainerOptions,
 ): Promise<Container> {
-  return buildContainer(config.container, options);
+  return buildContainer(
+    { ...config.container, deliveryExpirySeconds: config.deliveryExpirySeconds },
+    options,
+  );
 }

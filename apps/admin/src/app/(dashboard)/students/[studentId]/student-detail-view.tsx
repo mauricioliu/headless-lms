@@ -14,7 +14,7 @@ import { isManager } from "@/lib/roles";
 import { formatDate, relativeTime } from "@/lib/format";
 import type { Entitlement, Student } from "@/lib/api/types";
 
-import { GrantAccessSheet, type LiteCourse } from "../_components/grant-access-sheet";
+import { GrantAccessSheet, type LiteContent } from "../_components/grant-access-sheet";
 import { resendStudentInviteAction } from "../actions";
 
 /**
@@ -26,11 +26,11 @@ import { resendStudentInviteAction } from "../actions";
 export function StudentDetailView({
   student,
   entitlements,
-  courses,
+  content,
 }: {
   student: Student;
   entitlements: Entitlement[];
-  courses: LiteCourse[];
+  content: LiteContent[];
 }) {
   const user = useCurrentUser();
   const [grantOpen, setGrantOpen] = React.useState(false);
@@ -89,7 +89,7 @@ export function StudentDetailView({
         open={grantOpen}
         onOpenChange={setGrantOpen}
         studentId={student.id}
-        courses={courses}
+        content={content}
       />
     </div>
   );

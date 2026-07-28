@@ -42,6 +42,10 @@ export const can = {
   /** Instructors may edit content only for their assigned courses. */
   editCourse: (u: SessionUser, courseId: string) =>
     isManager(u.role) || (u.role === "instructor" && u.scopedCourseIds.includes(courseId)),
+  createDownload: (u: SessionUser) => isManager(u.role),
+  editDownload: (u: SessionUser) => isManager(u.role),
+  deleteDownload: (u: SessionUser) => isManager(u.role),
+  publishDownload: (u: SessionUser) => isManager(u.role),
   manageStudents: (u: SessionUser) => isManager(u.role),
   manageEntitlements: (u: SessionUser) => isManager(u.role),
   viewMembers: (u: SessionUser) => isManager(u.role),

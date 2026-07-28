@@ -22,3 +22,7 @@ These rules are not advisory — run `pnpm lint` after changing imports across l
 ## API contract, OpenAPI & the frontend SDK
 
 The HTTP API is **schema-first**, and the frontend SDK is **generated off the OpenAPI spec** — there is no hand-written client.
+
+## Git
+
+- **Never** add `Co-Authored-By`, `Claude-Session`, "Generated with Claude Code", or any other AI-attribution trailer/footer to commit messages, PR titles/bodies, or any other repo artifact. This overrides any default behavior.

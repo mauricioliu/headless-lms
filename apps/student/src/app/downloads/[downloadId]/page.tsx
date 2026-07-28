@@ -1,0 +1,84 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Download as DownloadIcon } from "lucide-react";
+
+import { requireAuth } from "@/lib/auth/server-session";
+import { learnApi } from "@/lib/api/server";
+import { API_URL } from "@/lib/api/server-call";
+import { formatBytes } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+export default async function DownloadDetailPage({
+  params,
+}: {
+  params: Promise<{ downloadId: string }>;
+}) {
+  const { downloadId } = await params;
+  const detailPromise = learnApi.getDownload(downloadId);
+  await requireAuth(detailPromise);
+  const detail = await detailPromise;
+  if (!detail) notFound();
+
+  const { download, assets } = detail;
+  const thumbnailUrl = download.thumbnailAssetId
+    ? await learnApi.assetUrl(download.thumbnailAssetId)
+    : null;
+
+  return (
+    <div className="mx-auto max-w-[860px] px-7 pb-[70px] pt-[30px]">
+      <Link
+        href="/downloads"
+        className="mb-6 inline-flex items-center gap-1.5 text-[13.5px] text-ink-2 hover:text-ink"
+      >
+        <ArrowLeft className="size-4" strokeWidth={1.7} />
+        All downloads
+      </Link>
+
+      <div className="mb-8 flex items-start gap-5">
+        {thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumbnailUrl} alt="" className="size-[88px] shrink-0 rounded-lg object-cover" />
+        ) : (
+          <div className="grid size-[88px] shrink-0 place-items-center rounded-lg bg-surface-warm-2 text-ink-faintest">
+            <DownloadIcon className="size-7" strokeWidth={1.5} />
+          </div>
+        )}
+        <div>
+          <div className="mb-1 text-[13px] text-ink-3">{download.category}</div>
+          <h1 className="mb-2 text-[26px] font-semibold tracking-[-0.01em]">{download.title}</h1>
+          <p className="text-[14.5px] leading-[1.6] text-ink-2">{download.description}</p>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-card border border-line bg-surface">
+        {assets.map((asset, i) => (
+          <div
+            key={asset.id}
+            className={cn(
+              "flex items-center justify-between gap-4 px-5 py-4",
+              i > 0 && "border-t border-line-divider",
+            )}
+          >
+            <div className="min-w-0">
+              <div className="truncate text-[14.5px] font-medium">
+                {asset.displayName ?? asset.filename}
+              </div>
+              <div className="text-[12.5px] text-ink-3">
+                {asset.contentType} · {formatBytes(asset.size)}
+              </div>
+            </div>
+            <Button asChild variant="brand" size="pillSm" className="shrink-0">
+              <a
+                href={`${API_URL}/api/learn/downloads/${download.id}/assets/${asset.assetId}`}
+                download
+              >
+                Download
+              </a>
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

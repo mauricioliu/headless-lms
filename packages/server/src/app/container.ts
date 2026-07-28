@@ -111,6 +111,9 @@ export interface Config {
   outbox?: OutboxConfig;
   /** Log level for the process-wide logger (HTTP + domain + relay). Default "info". */
   logging?: LoggingConfig;
+  /** Presigned URL lifetime for entitled download delivery, seconds. Mirrors
+   *  ServerConfig.deliveryExpirySeconds — createContainer threads it through. */
+  deliveryExpirySeconds: number;
 }
 
 /** Tuning for the transactional-outbox relay. Every field is optional; the
@@ -334,6 +337,8 @@ export async function buildContainer(
       new DrizzleLearnRepository(db, reportingLogger),
       content,
       progress,
+      assets,
+      config.deliveryExpirySeconds,
       reportingLogger,
     ),
   };

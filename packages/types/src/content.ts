@@ -162,7 +162,6 @@ export interface ReorderDownloadAssetsInput {
   assetIds: string[];
 }
 
-// --- Domain events (published on the shared EventBus) -----------------------
 
 export interface CourseCreated extends DomainEvent {
   type: "course.created";

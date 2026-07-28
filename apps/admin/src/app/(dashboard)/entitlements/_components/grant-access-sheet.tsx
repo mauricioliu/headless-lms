@@ -12,7 +12,9 @@ import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -23,12 +25,12 @@ const FORM_ID = "grant-access-form";
 
 /** Static lookup option sources fetched by the Server Component and passed in. */
 export type LiteStudent = { id: string; name: string; email: string };
-export type LiteCourse = { id: string; title: string };
+export type LiteContent = { id: string; title: string; type: "course" | "download" };
 
 const schema = z
   .object({
     studentId: z.string().min(1, "Select a student"),
-    courseId: z.string().min(1, "Select a course"),
+    contentId: z.string().min(1, "Select a course or download"),
     expiryMode: z.enum(["never", "date"]),
     expiresAt: z.string().optional(),
   })
@@ -43,12 +45,12 @@ export function GrantAccessSheet({
   open,
   onOpenChange,
   students,
-  courses,
+  content,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   students: LiteStudent[];
-  courses: LiteCourse[];
+  content: LiteContent[];
 }) {
   const [pending, startTransition] = React.useTransition();
 
@@ -60,20 +62,23 @@ export function GrantAccessSheet({
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { studentId: "", courseId: "", expiryMode: "never", expiresAt: "" },
+    defaultValues: { studentId: "", contentId: "", expiryMode: "never", expiresAt: "" },
   });
 
   // Reset to a clean slate every time the sheet opens.
   React.useEffect(() => {
-    if (open) reset({ studentId: "", courseId: "", expiryMode: "never", expiresAt: "" });
+    if (open) reset({ studentId: "", contentId: "", expiryMode: "never", expiresAt: "" });
   }, [open, reset]);
 
   const expiryMode = useWatch({ control, name: "expiryMode" });
 
+  const courses = content.filter((c) => c.type === "course");
+  const downloads = content.filter((c) => c.type === "download");
+
   const onSubmit = handleSubmit((values) => {
     const input = {
       orgUserId: values.studentId,
-      contentId: values.courseId,
+      contentId: values.contentId,
       expiresAt:
         values.expiryMode === "never" || !values.expiresAt
           ? null
@@ -95,7 +100,7 @@ export function GrantAccessSheet({
       open={open}
       onOpenChange={onOpenChange}
       title="Grant access"
-      description="Grant a student access to a course manually. They'll get immediate access."
+      description="Grant a student access to a course or download manually. They'll get immediate access."
       formId={FORM_ID}
       submitLabel="Grant access"
       pending={pending}
@@ -124,19 +129,30 @@ export function GrantAccessSheet({
 
         <Controller
           control={control}
-          name="courseId"
+          name="contentId"
           render={({ field }) => (
-            <Field id="courseId" label="Course" required error={errors.courseId?.message}>
+            <Field id="contentId" label="Content" required error={errors.contentId?.message}>
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="courseId" aria-invalid={!!errors.courseId}>
-                  <SelectValue placeholder="Select a course" />
+                <SelectTrigger id="contentId" aria-invalid={!!errors.contentId}>
+                  <SelectValue placeholder="Select a course or download" />
                 </SelectTrigger>
                 <SelectContent>
-                  {courses.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.title}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    <SelectLabel>Courses</SelectLabel>
+                    {courses.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.title}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Downloads</SelectLabel>
+                    {downloads.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.title}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </Field>

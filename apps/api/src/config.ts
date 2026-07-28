@@ -65,6 +65,10 @@ function loadContainerConfig(): ContainerConfig {
   const trustedOrigins = [...new Set([...clientOrigins, apiOrigin])];
   const adminAppUrl = process.env.ADMIN_APP_URL ?? clientOrigins[0] ?? "http://localhost:8001";
   return {
+    // Mirrors ServerConfig.deliveryExpirySeconds below — loadServerConfig
+    // overrides this with the same value; kept here only so this object
+    // satisfies Config on its own.
+    deliveryExpirySeconds: Number(process.env.DELIVERY_URL_EXPIRY ?? 300),
     databaseUrl: process.env.DATABASE_URL ?? "",
     authBaseURL: apiOrigin,
     authSecret: process.env.BETTER_AUTH_SECRET ?? "",
@@ -100,6 +104,9 @@ export function loadServerConfig(): ServerConfig {
     // can never drift from what better-auth is configured with.
     publicUrl: container.authBaseURL,
     clientOrigins: parseClientOrigins(),
+    // Separate from STORAGE_DOWNLOAD_EXPIRY: raising the general storage
+    // default must never silently extend entitled/paywalled link lifetimes.
+    deliveryExpirySeconds: Number(process.env.DELIVERY_URL_EXPIRY ?? 300),
     container,
   };
 }

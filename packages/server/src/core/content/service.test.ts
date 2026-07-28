@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { NotFoundError } from '../shared/errors.js';
 import { ContentServiceImpl } from './service.js';
 import type { ContentRepository, CourseRepository, ContentUnitOfWork } from './ports.js';
-import type { Course, Module } from './model.js';
+import type { Course, Download, DownloadAsset, Module } from './model.js';
 import type { NewDomainEvent, OutboxAppender } from '../shared/ports.js';
 
 function makeCourse(over: Partial<Course> = {}): Course {
@@ -31,6 +31,16 @@ function makeRepo(): ContentRepository {
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    listDownloads: vi.fn(),
+    getDownload: vi.fn(),
+    createDownload: vi.fn(),
+    updateDownload: vi.fn(),
+    deleteDownload: vi.fn(),
+    listDownloadAssets: vi.fn(),
+    addDownloadAsset: vi.fn(),
+    removeDownloadAsset: vi.fn(),
+    renameDownloadAsset: vi.fn(),
+    reorderDownloadAssets: vi.fn(),
   };
 }
 
@@ -268,5 +278,168 @@ describe('logging', () => {
       'course deleted',
     ]);
     expect(entries[0]?.meta).toMatchObject({ orgId: 'org-1', courseId: course.id });
+  });
+});
+
+function makeDownload(over: Partial<Download> = {}): Download {
+  return {
+    id: 'd1',
+    title: 'Workbook',
+    slug: 'workbook',
+    description: '',
+    status: 'draft',
+    category: '',
+    thumbnailAssetId: null,
+    assetCount: 0,
+    totalSize: 0,
+    entitledCount: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    ...over,
+  };
+}
+
+describe('downloads', () => {
+  it('creates a download with a slugified title and appends download.created', async () => {
+    const repo = makeRepo();
+    const download = makeDownload({ title: 'My Great Workbook', slug: 'my-great-workbook' });
+    vi.mocked(repo.createDownload).mockResolvedValue(download);
+    const { uow, appended } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    const result = await svc.createDownload('o1', { title: 'My Great Workbook' });
+
+    expect(repo.createDownload).toHaveBeenCalledWith(
+      'o1',
+      { title: 'My Great Workbook' },
+      'my-great-workbook',
+    );
+    expect(result).toEqual(download);
+    expect(appended).toEqual([{ type: 'download.created', orgId: 'o1', download }]);
+  });
+
+  it('throws NotFoundError when updating a download that does not exist', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.updateDownload).mockResolvedValue(null);
+    const { uow } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    await expect(svc.updateDownload('o1', 'missing', { title: 'x' })).rejects.toThrow(NotFoundError);
+  });
+
+  it('appends download.deleted carrying the pre-delete snapshot', async () => {
+    const repo = makeRepo();
+    const download = makeDownload();
+    vi.mocked(repo.getDownload).mockResolvedValue(download);
+    vi.mocked(repo.deleteDownload).mockResolvedValue(true);
+    const { uow, appended } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    await svc.removeDownload('o1', 'd1');
+
+    expect(appended).toEqual([{ type: 'download.deleted', orgId: 'o1', download }]);
+  });
+
+  it('throws NotFoundError when deleting a download that does not exist', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.getDownload).mockResolvedValue(null);
+    const { uow } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    await expect(svc.removeDownload('o1', 'missing')).rejects.toThrow(NotFoundError);
+    expect(repo.deleteDownload).not.toHaveBeenCalled();
+  });
+});
+
+function makeDownloadAsset(over: Partial<DownloadAsset> = {}): DownloadAsset {
+  return {
+    id: 'da1',
+    assetId: 'a1',
+    seq: 0,
+    displayName: null,
+    filename: 'workbook.pdf',
+    contentType: 'application/pdf',
+    size: 1024,
+    ...over,
+  };
+}
+
+describe('download assets', () => {
+  it('rejects a reorder whose ids are not exactly the current set', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.listDownloadAssets).mockResolvedValue([
+      makeDownloadAsset({ id: 'da1', assetId: 'a1', seq: 0 }),
+      makeDownloadAsset({ id: 'da2', assetId: 'a2', seq: 1 }),
+    ]);
+    const { uow } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    // Drops a2 — a stale client must not be able to silently unlink it.
+    await expect(svc.reorderDownloadAssets('o1', 'd1', ['a1'])).rejects.toThrow(
+      /does not match/i,
+    );
+    expect(repo.reorderDownloadAssets).not.toHaveBeenCalled();
+  });
+
+  it('rejects a reorder containing an id not in the download', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.listDownloadAssets).mockResolvedValue([
+      makeDownloadAsset({ id: 'da1', assetId: 'a1', seq: 0 }),
+    ]);
+    const { uow } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    await expect(svc.reorderDownloadAssets('o1', 'd1', ['a1', 'a9'])).rejects.toThrow(
+      /does not match/i,
+    );
+    expect(repo.reorderDownloadAssets).not.toHaveBeenCalled();
+  });
+
+  it('rejects a reorder where a duplicate id masks an omitted one', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.listDownloadAssets).mockResolvedValue([
+      makeDownloadAsset({ id: 'da1', assetId: 'a1', seq: 0 }),
+      makeDownloadAsset({ id: 'da2', assetId: 'a2', seq: 1 }),
+    ]);
+    const { uow } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    await expect(svc.reorderDownloadAssets('o1', 'd1', ['a1', 'a1'])).rejects.toThrow(
+      /does not match/i,
+    );
+    expect(repo.reorderDownloadAssets).not.toHaveBeenCalled();
+  });
+
+  it('accepts a reorder that is a permutation of the current set', async () => {
+    const repo = makeRepo();
+    const reordered = [
+      makeDownloadAsset({ id: 'da2', assetId: 'a2', seq: 0 }),
+      makeDownloadAsset({ id: 'da1', assetId: 'a1', seq: 1 }),
+    ];
+    vi.mocked(repo.listDownloadAssets).mockResolvedValue([
+      makeDownloadAsset({ id: 'da1', assetId: 'a1', seq: 0 }),
+      makeDownloadAsset({ id: 'da2', assetId: 'a2', seq: 1 }),
+    ]);
+    vi.mocked(repo.reorderDownloadAssets).mockResolvedValue(reordered);
+    const { uow } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    const result = await svc.reorderDownloadAssets('o1', 'd1', ['a2', 'a1']);
+
+    expect(repo.reorderDownloadAssets).toHaveBeenCalledWith('o1', 'd1', ['a2', 'a1']);
+    expect(result).toEqual(reordered);
+  });
+
+  it('adds an asset and returns the ordered list', async () => {
+    const repo = makeRepo();
+    const list = [makeDownloadAsset()];
+    vi.mocked(repo.addDownloadAsset).mockResolvedValue(list);
+    const { uow } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    const result = await svc.addDownloadAsset('o1', 'd1', { assetId: 'a1' });
+
+    expect(repo.addDownloadAsset).toHaveBeenCalledWith('o1', 'd1', { assetId: 'a1' });
+    expect(result).toEqual(list);
   });
 });

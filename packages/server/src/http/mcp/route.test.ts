@@ -22,6 +22,7 @@ const containerConfig: Config = {
   credentialStoreKey: '',
   studentPortalUrl: 'http://localhost:8002',
   adminAppUrl: 'http://localhost:8001',
+  deliveryExpirySeconds: 300,
 };
 
 const serverConfig: ServerConfig = {
@@ -29,6 +30,7 @@ const serverConfig: ServerConfig = {
   host: '0.0.0.0',
   publicUrl: containerConfig.authBaseURL,
   clientOrigins: ['http://localhost:8001', 'http://localhost:8002'],
+  deliveryExpirySeconds: 300,
   container: containerConfig,
 };
 

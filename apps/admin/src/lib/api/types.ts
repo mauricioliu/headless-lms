@@ -13,6 +13,7 @@ import type {
   GetCourseResponse,
   GetDiscussionSettingsResponse,
   GetModerationQueueResponse,
+  GetDownloadResponse,
   GetOverviewResponse,
   GetStudentResponse,
   ListAssetsResponse,
@@ -23,6 +24,8 @@ import type {
   ListConnectionsResponse,
   ListCoursesResponse,
   ListCourseCommentStatesResponse,
+  ListDownloadAssetsResponse,
+  ListDownloadsResponse,
   ListEntitlementsResponse,
   ListMembersResponse,
   ListModulesResponse,
@@ -38,6 +41,10 @@ export type Course = GetCourseResponse;
 export type CourseStatus = Course["status"];
 /** Course-wide delivery settings, stored server-side and always complete. */
 export type CourseSettings = Course["settings"];
+
+export type Download = GetDownloadResponse;
+export type DownloadStatus = Download["status"];
+export type DownloadAsset = ListDownloadAssetsResponse[number];
 
 export type Module = ListModulesResponse[number];
 
@@ -123,6 +130,7 @@ export type DownloadTicket = RequestAssetDownloadResponse;
 
 // Page envelopes (shape: { rows, total, page, pageSize }).
 export type CoursesPage = ListCoursesResponse;
+export type DownloadsPage = ListDownloadsResponse;
 export type StudentsPage = ListStudentsResponse;
 export type EntitlementsPage = ListEntitlementsResponse;
 export type MembersPage = ListMembersResponse;

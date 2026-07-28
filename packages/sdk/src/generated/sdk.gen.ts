@@ -9,6 +9,9 @@ import type {
   ActivateInviteData,
   ActivateInviteErrors,
   ActivateInviteResponses,
+  AddDownloadAssetData,
+  AddDownloadAssetErrors,
+  AddDownloadAssetResponses,
   ConfigureConnectionData,
   ConfigureConnectionErrors,
   ConfigureConnectionResponses,
@@ -24,6 +27,8 @@ import type {
   CreateAutomationResponses,
   CreateCourseData,
   CreateCourseResponses,
+  CreateDownloadData,
+  CreateDownloadResponses,
   CreateInviteData,
   CreateInviteErrors,
   CreateInviteResponses,
@@ -45,6 +50,9 @@ import type {
   DeleteCourseData,
   DeleteCourseErrors,
   DeleteCourseResponses,
+  DeleteDownloadData,
+  DeleteDownloadErrors,
+  DeleteDownloadResponses,
   DeleteMcpData,
   DeleteMcpResponses,
   DeleteModuleData,
@@ -55,9 +63,6 @@ import type {
   DisconnectIntegrationData,
   DisconnectIntegrationErrors,
   DisconnectIntegrationResponses,
-  DismissCommentReportsData,
-  DismissCommentReportsErrors,
-  DismissCommentReportsResponses,
   EditComment2Data,
   EditComment2Errors,
   EditComment2Responses,
@@ -76,14 +81,20 @@ import type {
   GetCourseData,
   GetCourseErrors,
   GetCourseResponses,
-  GetDiscussionSettingsData,
-  GetDiscussionSettingsResponses,
+  GetDownloadData,
+  GetDownloadErrors,
+  GetDownloadResponses,
   GetLearnCourseData,
   GetLearnCourseErrors,
   GetLearnCourseProgressData,
   GetLearnCourseProgressErrors,
   GetLearnCourseProgressResponses,
   GetLearnCourseResponses,
+  GetLearnDownloadAssetData,
+  GetLearnDownloadAssetErrors,
+  GetLearnDownloadData,
+  GetLearnDownloadErrors,
+  GetLearnDownloadResponses,
   GetLearnOrgData,
   GetLearnOrgResponses,
   GetMcpData,
@@ -97,9 +108,6 @@ import type {
   GetStudentResponses,
   GrantEntitlementData,
   GrantEntitlementResponses,
-  ListActivityComments2Data,
-  ListActivityComments2Errors,
-  ListActivityComments2Responses,
   ListActivityCommentsData,
   ListActivityCommentsErrors,
   ListActivityCommentsResponses,
@@ -123,14 +131,19 @@ import type {
   ListConnectionsData,
   ListConnectionsErrors,
   ListConnectionsResponses,
-  ListCourseCommentStatesData,
-  ListCourseCommentStatesResponses,
   ListCoursesData,
   ListCoursesResponses,
+  ListDownloadAssetsData,
+  ListDownloadAssetsErrors,
+  ListDownloadAssetsResponses,
+  ListDownloadsData,
+  ListDownloadsResponses,
   ListEntitlementsData,
   ListEntitlementsResponses,
   ListLearnCoursesData,
   ListLearnCoursesResponses,
+  ListLearnDownloadsData,
+  ListLearnDownloadsResponses,
   ListLearnModulesData,
   ListLearnModulesErrors,
   ListLearnModulesResponses,
@@ -143,9 +156,6 @@ import type {
   ModerateRemoveCommentData,
   ModerateRemoveCommentErrors,
   ModerateRemoveCommentResponses,
-  PostComment2Data,
-  PostComment2Errors,
-  PostComment2Responses,
   PostCommentData,
   PostCommentErrors,
   PostCommentResponses,
@@ -157,14 +167,23 @@ import type {
   ReconnectIntegrationData,
   ReconnectIntegrationErrors,
   ReconnectIntegrationResponses,
+  RemoveDownloadAssetData,
+  RemoveDownloadAssetErrors,
+  RemoveDownloadAssetResponses,
   RemoveMemberData,
   RemoveMemberErrors,
   RemoveMemberResponses,
   RemoveOwnCommentData,
   RemoveOwnCommentErrors,
   RemoveOwnCommentResponses,
+  RenameDownloadAssetData,
+  RenameDownloadAssetErrors,
+  RenameDownloadAssetResponses,
   ReorderActivitiesData,
   ReorderActivitiesResponses,
+  ReorderDownloadAssetsData,
+  ReorderDownloadAssetsErrors,
+  ReorderDownloadAssetsResponses,
   ReorderModulesData,
   ReorderModulesResponses,
   ReportCommentData,
@@ -185,12 +204,6 @@ import type {
   RevokeConnectedAppData,
   RevokeConnectedAppErrors,
   RevokeConnectedAppResponses,
-  SetActivityCommentsStateData,
-  SetActivityCommentsStateErrors,
-  SetActivityCommentsStateResponses,
-  SetDiscussionSettingsData,
-  SetDiscussionSettingsErrors,
-  SetDiscussionSettingsResponses,
   SetEntitlementStatusData,
   SetEntitlementStatusErrors,
   SetEntitlementStatusResponses,
@@ -205,6 +218,9 @@ import type {
   UpdateCourseData,
   UpdateCourseErrors,
   UpdateCourseResponses,
+  UpdateDownloadData,
+  UpdateDownloadErrors,
+  UpdateDownloadResponses,
   UpdateMemberRoleData,
   UpdateMemberRoleErrors,
   UpdateMemberRoleResponses,
@@ -579,6 +595,167 @@ export class Courses {
   }
 }
 
+export class Downloads {
+  /**
+   * List downloads
+   */
+  public static listDownloads<ThrowOnError extends boolean = false>(
+    options?: Options<ListDownloadsData, ThrowOnError>,
+  ): RequestResult<ListDownloadsResponses, unknown, ThrowOnError> {
+    return (options?.client ?? client).get<ListDownloadsResponses, unknown, ThrowOnError>({
+      url: "/api/downloads",
+      ...options,
+    });
+  }
+
+  /**
+   * Create a download
+   */
+  public static createDownload<ThrowOnError extends boolean = false>(
+    options: Options<CreateDownloadData, ThrowOnError>,
+  ): RequestResult<CreateDownloadResponses, unknown, ThrowOnError> {
+    return (options.client ?? client).post<CreateDownloadResponses, unknown, ThrowOnError>({
+      url: "/api/downloads",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
+   * Delete a download
+   */
+  public static deleteDownload<ThrowOnError extends boolean = false>(
+    options: Options<DeleteDownloadData, ThrowOnError>,
+  ): RequestResult<DeleteDownloadResponses, DeleteDownloadErrors, ThrowOnError> {
+    return (options.client ?? client).delete<
+      DeleteDownloadResponses,
+      DeleteDownloadErrors,
+      ThrowOnError
+    >({ url: "/api/downloads/{downloadId}", ...options });
+  }
+
+  /**
+   * Get a download by id
+   */
+  public static getDownload<ThrowOnError extends boolean = false>(
+    options: Options<GetDownloadData, ThrowOnError>,
+  ): RequestResult<GetDownloadResponses, GetDownloadErrors, ThrowOnError> {
+    return (options.client ?? client).get<GetDownloadResponses, GetDownloadErrors, ThrowOnError>({
+      url: "/api/downloads/{downloadId}",
+      ...options,
+    });
+  }
+
+  /**
+   * Update a download
+   */
+  public static updateDownload<ThrowOnError extends boolean = false>(
+    options: Options<UpdateDownloadData, ThrowOnError>,
+  ): RequestResult<UpdateDownloadResponses, UpdateDownloadErrors, ThrowOnError> {
+    return (options.client ?? client).patch<
+      UpdateDownloadResponses,
+      UpdateDownloadErrors,
+      ThrowOnError
+    >({
+      url: "/api/downloads/{downloadId}",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
+   * List a download's assets in order
+   */
+  public static listDownloadAssets<ThrowOnError extends boolean = false>(
+    options: Options<ListDownloadAssetsData, ThrowOnError>,
+  ): RequestResult<ListDownloadAssetsResponses, ListDownloadAssetsErrors, ThrowOnError> {
+    return (options.client ?? client).get<
+      ListDownloadAssetsResponses,
+      ListDownloadAssetsErrors,
+      ThrowOnError
+    >({ url: "/api/downloads/{downloadId}/assets", ...options });
+  }
+
+  /**
+   * Link a media-library asset to a download
+   */
+  public static addDownloadAsset<ThrowOnError extends boolean = false>(
+    options: Options<AddDownloadAssetData, ThrowOnError>,
+  ): RequestResult<AddDownloadAssetResponses, AddDownloadAssetErrors, ThrowOnError> {
+    return (options.client ?? client).post<
+      AddDownloadAssetResponses,
+      AddDownloadAssetErrors,
+      ThrowOnError
+    >({
+      url: "/api/downloads/{downloadId}/assets",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
+   * Reorder a download's assets (send the complete set)
+   */
+  public static reorderDownloadAssets<ThrowOnError extends boolean = false>(
+    options: Options<ReorderDownloadAssetsData, ThrowOnError>,
+  ): RequestResult<ReorderDownloadAssetsResponses, ReorderDownloadAssetsErrors, ThrowOnError> {
+    return (options.client ?? client).put<
+      ReorderDownloadAssetsResponses,
+      ReorderDownloadAssetsErrors,
+      ThrowOnError
+    >({
+      url: "/api/downloads/{downloadId}/assets/order",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
+   * Unlink an asset from a download (the asset itself survives)
+   */
+  public static removeDownloadAsset<ThrowOnError extends boolean = false>(
+    options: Options<RemoveDownloadAssetData, ThrowOnError>,
+  ): RequestResult<RemoveDownloadAssetResponses, RemoveDownloadAssetErrors, ThrowOnError> {
+    return (options.client ?? client).delete<
+      RemoveDownloadAssetResponses,
+      RemoveDownloadAssetErrors,
+      ThrowOnError
+    >({ url: "/api/downloads/{downloadId}/assets/{assetId}", ...options });
+  }
+
+  /**
+   * Set an asset's display name within a download
+   */
+  public static renameDownloadAsset<ThrowOnError extends boolean = false>(
+    options: Options<RenameDownloadAssetData, ThrowOnError>,
+  ): RequestResult<RenameDownloadAssetResponses, RenameDownloadAssetErrors, ThrowOnError> {
+    return (options.client ?? client).patch<
+      RenameDownloadAssetResponses,
+      RenameDownloadAssetErrors,
+      ThrowOnError
+    >({
+      url: "/api/downloads/{downloadId}/assets/{assetId}",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+}
+
 export class Learn {
   /**
    * List the student's enrolled courses
@@ -685,6 +862,43 @@ export class Learn {
       GetLearnCourseProgressErrors,
       ThrowOnError
     >({ url: "/api/learn/courses/{courseId}/progress", ...options });
+  }
+
+  /**
+   * Downloads the student is actively entitled to
+   */
+  public static listLearnDownloads<ThrowOnError extends boolean = false>(
+    options?: Options<ListLearnDownloadsData, ThrowOnError>,
+  ): RequestResult<ListLearnDownloadsResponses, unknown, ThrowOnError> {
+    return (options?.client ?? client).get<ListLearnDownloadsResponses, unknown, ThrowOnError>({
+      url: "/api/learn/downloads",
+      ...options,
+    });
+  }
+
+  /**
+   * One entitled download and its ordered assets
+   */
+  public static getLearnDownload<ThrowOnError extends boolean = false>(
+    options: Options<GetLearnDownloadData, ThrowOnError>,
+  ): RequestResult<GetLearnDownloadResponses, GetLearnDownloadErrors, ThrowOnError> {
+    return (options.client ?? client).get<
+      GetLearnDownloadResponses,
+      GetLearnDownloadErrors,
+      ThrowOnError
+    >({ url: "/api/learn/downloads/{downloadId}", ...options });
+  }
+
+  /**
+   * Redirect to a short-lived signed URL for an entitled asset
+   */
+  public static getLearnDownloadAsset<ThrowOnError extends boolean = false>(
+    options: Options<GetLearnDownloadAssetData, ThrowOnError>,
+  ): RequestResult<unknown, GetLearnDownloadAssetErrors, ThrowOnError> {
+    return (options.client ?? client).get<unknown, GetLearnDownloadAssetErrors, ThrowOnError>({
+      url: "/api/learn/downloads/{downloadId}/assets/{assetId}",
+      ...options,
+    });
   }
 
   /**
@@ -800,7 +1014,7 @@ export class Discussion {
     options: Options<GetModerationQueueData, ThrowOnError>,
   ): RequestResult<GetModerationQueueResponses, unknown, ThrowOnError> {
     return (options.client ?? client).get<GetModerationQueueResponses, unknown, ThrowOnError>({
-      url: "/api/discussion/queue",
+      url: "/api/queue",
       ...options,
     });
   }
@@ -815,7 +1029,7 @@ export class Discussion {
       ModerateRemoveCommentResponses,
       ModerateRemoveCommentErrors,
       ThrowOnError
-    >({ url: "/api/discussion/comments/{commentId}", ...options });
+    >({ url: "/api/comments/{commentId}", ...options });
   }
 
   /**
@@ -829,124 +1043,12 @@ export class Discussion {
       EditComment2Errors,
       ThrowOnError
     >({
-      url: "/api/discussion/comments/{commentId}",
+      url: "/api/comments/{commentId}",
       ...options,
       headers: {
         "Content-Type": "application/json",
         ...options.headers,
       },
-    });
-  }
-
-  /**
-   * Dismiss every open report on a comment
-   */
-  public static dismissCommentReports<ThrowOnError extends boolean = false>(
-    options: Options<DismissCommentReportsData, ThrowOnError>,
-  ): RequestResult<DismissCommentReportsResponses, DismissCommentReportsErrors, ThrowOnError> {
-    return (options.client ?? client).delete<
-      DismissCommentReportsResponses,
-      DismissCommentReportsErrors,
-      ThrowOnError
-    >({ url: "/api/discussion/comments/{commentId}/reports", ...options });
-  }
-
-  /**
-   * Read an activity's comments as staff
-   */
-  public static listActivityComments<ThrowOnError extends boolean = false>(
-    options: Options<ListActivityComments2Data, ThrowOnError>,
-  ): RequestResult<ListActivityComments2Responses, ListActivityComments2Errors, ThrowOnError> {
-    return (options.client ?? client).get<
-      ListActivityComments2Responses,
-      ListActivityComments2Errors,
-      ThrowOnError
-    >({ url: "/api/discussion/activities/{activityId}/comments", ...options });
-  }
-
-  /**
-   * Override or clear an activity's comments state
-   */
-  public static setActivityCommentsState<ThrowOnError extends boolean = false>(
-    options: Options<SetActivityCommentsStateData, ThrowOnError>,
-  ): RequestResult<
-    SetActivityCommentsStateResponses,
-    SetActivityCommentsStateErrors,
-    ThrowOnError
-  > {
-    return (options.client ?? client).patch<
-      SetActivityCommentsStateResponses,
-      SetActivityCommentsStateErrors,
-      ThrowOnError
-    >({
-      url: "/api/discussion/activities/{activityId}/comments",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
-  }
-
-  /**
-   * Post a comment or reply on an activity as staff
-   */
-  public static postComment<ThrowOnError extends boolean = false>(
-    options: Options<PostComment2Data, ThrowOnError>,
-  ): RequestResult<PostComment2Responses, PostComment2Errors, ThrowOnError> {
-    return (options.client ?? client).post<PostComment2Responses, PostComment2Errors, ThrowOnError>(
-      {
-        url: "/api/discussion/activities/{activityId}/comments",
-        ...options,
-        headers: {
-          "Content-Type": "application/json",
-          ...options.headers,
-        },
-      },
-    );
-  }
-
-  /**
-   * Read a course's discussion settings
-   */
-  public static getDiscussionSettings<ThrowOnError extends boolean = false>(
-    options: Options<GetDiscussionSettingsData, ThrowOnError>,
-  ): RequestResult<GetDiscussionSettingsResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).get<GetDiscussionSettingsResponses, unknown, ThrowOnError>({
-      url: "/api/discussion/courses/{courseId}/settings",
-      ...options,
-    });
-  }
-
-  /**
-   * Update a course's discussion settings
-   */
-  public static setDiscussionSettings<ThrowOnError extends boolean = false>(
-    options: Options<SetDiscussionSettingsData, ThrowOnError>,
-  ): RequestResult<SetDiscussionSettingsResponses, SetDiscussionSettingsErrors, ThrowOnError> {
-    return (options.client ?? client).patch<
-      SetDiscussionSettingsResponses,
-      SetDiscussionSettingsErrors,
-      ThrowOnError
-    >({
-      url: "/api/discussion/courses/{courseId}/settings",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
-  }
-
-  /**
-   * Read every per-activity comments-state override in a course
-   */
-  public static listCourseCommentStates<ThrowOnError extends boolean = false>(
-    options: Options<ListCourseCommentStatesData, ThrowOnError>,
-  ): RequestResult<ListCourseCommentStatesResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).get<ListCourseCommentStatesResponses, unknown, ThrowOnError>({
-      url: "/api/discussion/courses/{courseId}/comment-states",
-      ...options,
     });
   }
 }
