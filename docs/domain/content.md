@@ -1,8 +1,8 @@
 # Content — Domain Spec
 
-Owns the org's authored content: the things a learner consumes. The domain is responsible for **all content types**. Today there is one — **course** — but the domain is the home for every content type that follows (podcast, newsletter, download, and others), each with its own structure.
+Owns the org's authored content: the things a learner consumes. The domain is responsible for **all content types**. Today there are two — **course** and **download** — but the domain is the home for every content type that follows (podcast, newsletter, and others), each with its own structure.
 
-What unites content types is not structure but how they behave at the edges: every type is authored and published here, gated by entitlements, progressed through by progress, and backed by assets. A course is the first and currently only type — not the shape of the domain. Structure is each type's own concern; the domain is defined by being the owner of all content and by the shared boundaries and capabilities its types have, not by any one tree.
+What unites content types is not structure but how they behave at the edges: every type is authored and published here, gated by entitlements, progressed through by progress, and backed by assets. Course and download already share no structure — a course a tree of modules and activities, a download a flat, ordered set of asset references — yet both sit in the same domain, so neither is its shape. Structure is each type's own concern; the domain is defined by being the owner of all content and by the shared boundaries and capabilities its types have, not by any one tree.
 
 ## Content types
 
