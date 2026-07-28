@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { Course } from "./content.js";
 import { Module } from "./activities.js";
+import { Download, DownloadAsset } from "./downloads.js";
 
 /** Courses the authenticated student is actively enrolled in (published only). */
 export const LearnCourses = z.array(Course);
@@ -15,6 +16,17 @@ export type LearnModules = z.infer<typeof LearnModules>;
 
 export const LearnCourseIdParam = z.object({ courseId: z.string() });
 export type LearnCourseIdParam = z.infer<typeof LearnCourseIdParam>;
+
+/** Downloads the authenticated student is actively entitled to (published only). */
+export const LearnDownloads = z.array(Download);
+export type LearnDownloads = z.infer<typeof LearnDownloads>;
+
+/** One entitled download plus its ordered assets. */
+export const LearnDownload = z.object({
+  download: Download,
+  assets: z.array(DownloadAsset),
+});
+export type LearnDownload = z.infer<typeof LearnDownload>;
 
 /** The portal org's public identity — the student surface themes against it. */
 export const LearnOrg = z.object({
