@@ -733,14 +733,13 @@ export type EditCommentResponses = {
 export type EditCommentResponse = EditCommentResponses[keyof EditCommentResponses];
 
 export type UnreactToCommentData = {
-  body: {
-    emoji: string;
-  };
+  body?: never;
   path: {
     commentId: string;
+    emoji: string;
   };
   query?: never;
-  url: "/api/learn/comments/{commentId}/reactions";
+  url: "/api/learn/comments/{commentId}/reactions/{emoji}";
 };
 
 export type UnreactToCommentErrors = {
@@ -770,14 +769,13 @@ export type UnreactToCommentResponses = {
 };
 
 export type ReactToCommentData = {
-  body: {
-    emoji: string;
-  };
+  body?: never;
   path: {
     commentId: string;
+    emoji: string;
   };
   query?: never;
-  url: "/api/learn/comments/{commentId}/reactions";
+  url: "/api/learn/comments/{commentId}/reactions/{emoji}";
 };
 
 export type ReactToCommentErrors = {
@@ -905,53 +903,6 @@ export type GetModerationQueueResponses = {
 export type GetModerationQueueResponse =
   GetModerationQueueResponses[keyof GetModerationQueueResponses];
 
-export type ApproveCommentData = {
-  body?: never;
-  path: {
-    commentId: string;
-  };
-  query?: never;
-  url: "/api/discussion/comments/{commentId}/approve";
-};
-
-export type ApproveCommentErrors = {
-  /**
-   * Default Response
-   */
-  403: {
-    error: string;
-    message?: string;
-  };
-  /**
-   * Default Response
-   */
-  404: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type ApproveCommentError = ApproveCommentErrors[keyof ApproveCommentErrors];
-
-export type ApproveCommentResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    id: string;
-    activityId: string;
-    parentId: string | null;
-    orgUserId: string;
-    body: string;
-    status: "pending" | "published" | "removed";
-    removedBy: string | null;
-    createdAt: string;
-    updatedAt: string;
-  };
-};
-
-export type ApproveCommentResponse = ApproveCommentResponses[keyof ApproveCommentResponses];
-
 export type ModerateRemoveCommentData = {
   body?: never;
   path: {
@@ -1003,7 +954,8 @@ export type ModerateRemoveCommentResponse =
 
 export type EditComment2Data = {
   body: {
-    body: string;
+    body?: string;
+    status?: "published";
   };
   path: {
     commentId: string;
@@ -1037,68 +989,6 @@ export type EditComment2Responses = {
    */
   200: {
     id: string;
-    parentId: string | null;
-    author: {
-      id: string;
-      name: string;
-      image: string | null;
-      role: "owner" | "admin" | "instructor" | "student";
-    };
-    isOwn: boolean;
-    body: string | null;
-    status: "pending" | "published" | "removed";
-    removedBy: {
-      id: string;
-      name: string;
-      image: string | null;
-      role: "owner" | "admin" | "instructor" | "student";
-    } | null;
-    reactions: Array<{
-      emoji: string;
-      count: number;
-      reacted: boolean;
-    }>;
-    createdAt: string;
-    updatedAt: string;
-  };
-};
-
-export type EditComment2Response = EditComment2Responses[keyof EditComment2Responses];
-
-export type RestoreCommentData = {
-  body?: never;
-  path: {
-    commentId: string;
-  };
-  query?: never;
-  url: "/api/discussion/comments/{commentId}/restore";
-};
-
-export type RestoreCommentErrors = {
-  /**
-   * Default Response
-   */
-  403: {
-    error: string;
-    message?: string;
-  };
-  /**
-   * Default Response
-   */
-  404: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type RestoreCommentError = RestoreCommentErrors[keyof RestoreCommentErrors];
-
-export type RestoreCommentResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    id: string;
     activityId: string;
     parentId: string | null;
     orgUserId: string;
@@ -1110,18 +1000,18 @@ export type RestoreCommentResponses = {
   };
 };
 
-export type RestoreCommentResponse = RestoreCommentResponses[keyof RestoreCommentResponses];
+export type EditComment2Response = EditComment2Responses[keyof EditComment2Responses];
 
-export type ResolveCommentReportsData = {
+export type DismissCommentReportsData = {
   body?: never;
   path: {
     commentId: string;
   };
   query?: never;
-  url: "/api/discussion/comments/{commentId}/resolve-reports";
+  url: "/api/discussion/comments/{commentId}/reports";
 };
 
-export type ResolveCommentReportsErrors = {
+export type DismissCommentReportsErrors = {
   /**
    * Default Response
    */
@@ -1138,10 +1028,10 @@ export type ResolveCommentReportsErrors = {
   };
 };
 
-export type ResolveCommentReportsError =
-  ResolveCommentReportsErrors[keyof ResolveCommentReportsErrors];
+export type DismissCommentReportsError =
+  DismissCommentReportsErrors[keyof DismissCommentReportsErrors];
 
-export type ResolveCommentReportsResponses = {
+export type DismissCommentReportsResponses = {
   /**
    * Default Response
    */

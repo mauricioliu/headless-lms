@@ -71,6 +71,20 @@ export const EditComment = z.object({
 });
 export type EditComment = z.infer<typeof EditComment>;
 
+/** A staff PATCH is either a body edit or a status write — never both, never
+ *  neither. Deliberately not a `z.union`: `@hey-api/openapi-ts` has mishandled
+ *  union schemas on this branch before, so this is an object with both fields
+ *  optional plus a refinement instead. */
+export const PatchComment = z
+  .object({
+    body: z.string().min(1).max(10_000).optional(),
+    status: z.literal('published').optional(),
+  })
+  .refine((v) => (v.body === undefined) !== (v.status === undefined), {
+    message: 'provide exactly one of body or status',
+  });
+export type PatchComment = z.infer<typeof PatchComment>;
+
 export const ReactToComment = z.object({
   emoji: z.string().min(1).max(16),
 });
@@ -180,6 +194,9 @@ export type DiscussionActivityParam = z.infer<typeof DiscussionActivityParam>;
 
 export const CommentIdParam = z.object({ commentId: z.string() });
 export type CommentIdParam = z.infer<typeof CommentIdParam>;
+
+export const CommentReactionParam = z.object({ commentId: z.string(), emoji: z.string() });
+export type CommentReactionParam = z.infer<typeof CommentReactionParam>;
 
 export const DiscussionCourseParam = z.object({ courseId: z.string() });
 export type DiscussionCourseParam = z.infer<typeof DiscussionCourseParam>;

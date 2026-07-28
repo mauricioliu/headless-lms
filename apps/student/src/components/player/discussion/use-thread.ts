@@ -124,9 +124,9 @@ export function useThread(activityId: string): UseThread {
         async () => {
           ensureClientSdk();
           if (on) {
-            await Learn.reactToComment({ path: { commentId: id }, body: { emoji } });
+            await Learn.reactToComment({ path: { commentId: id, emoji } });
           } else {
-            await Learn.unreactToComment({ path: { commentId: id }, body: { emoji } });
+            await Learn.unreactToComment({ path: { commentId: id, emoji } });
           }
         },
       ),

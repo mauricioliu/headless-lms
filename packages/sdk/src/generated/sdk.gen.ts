@@ -9,9 +9,6 @@ import type {
   ActivateInviteData,
   ActivateInviteErrors,
   ActivateInviteResponses,
-  ApproveCommentData,
-  ApproveCommentErrors,
-  ApproveCommentResponses,
   ConfigureConnectionData,
   ConfigureConnectionErrors,
   ConfigureConnectionResponses,
@@ -58,6 +55,9 @@ import type {
   DisconnectIntegrationData,
   DisconnectIntegrationErrors,
   DisconnectIntegrationResponses,
+  DismissCommentReportsData,
+  DismissCommentReportsErrors,
+  DismissCommentReportsResponses,
   EditComment2Data,
   EditComment2Errors,
   EditComment2Responses,
@@ -182,12 +182,6 @@ import type {
   RequestUploadData,
   RequestUploadErrors,
   RequestUploadResponses,
-  ResolveCommentReportsData,
-  ResolveCommentReportsErrors,
-  ResolveCommentReportsResponses,
-  RestoreCommentData,
-  RestoreCommentErrors,
-  RestoreCommentResponses,
   RevokeConnectedAppData,
   RevokeConnectedAppErrors,
   RevokeConnectedAppResponses,
@@ -761,14 +755,7 @@ export class Learn {
       UnreactToCommentResponses,
       UnreactToCommentErrors,
       ThrowOnError
-    >({
-      url: "/api/learn/comments/{commentId}/reactions",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
+    >({ url: "/api/learn/comments/{commentId}/reactions/{emoji}", ...options });
   }
 
   /**
@@ -781,14 +768,7 @@ export class Learn {
       ReactToCommentResponses,
       ReactToCommentErrors,
       ThrowOnError
-    >({
-      url: "/api/learn/comments/{commentId}/reactions",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
+    >({ url: "/api/learn/comments/{commentId}/reactions/{emoji}", ...options });
   }
 
   /**
@@ -826,19 +806,6 @@ export class Discussion {
   }
 
   /**
-   * Publish a comment awaiting review
-   */
-  public static approveComment<ThrowOnError extends boolean = false>(
-    options: Options<ApproveCommentData, ThrowOnError>,
-  ): RequestResult<ApproveCommentResponses, ApproveCommentErrors, ThrowOnError> {
-    return (options.client ?? client).post<
-      ApproveCommentResponses,
-      ApproveCommentErrors,
-      ThrowOnError
-    >({ url: "/api/discussion/comments/{commentId}/approve", ...options });
-  }
-
-  /**
    * Remove a comment as a moderator
    */
   public static moderateRemoveComment<ThrowOnError extends boolean = false>(
@@ -852,7 +819,7 @@ export class Discussion {
   }
 
   /**
-   * Revise your own comment as staff
+   * Revise your own comment, or publish it as a moderator
    */
   public static editComment<ThrowOnError extends boolean = false>(
     options: Options<EditComment2Data, ThrowOnError>,
@@ -872,29 +839,16 @@ export class Discussion {
   }
 
   /**
-   * Restore a removed comment
-   */
-  public static restoreComment<ThrowOnError extends boolean = false>(
-    options: Options<RestoreCommentData, ThrowOnError>,
-  ): RequestResult<RestoreCommentResponses, RestoreCommentErrors, ThrowOnError> {
-    return (options.client ?? client).post<
-      RestoreCommentResponses,
-      RestoreCommentErrors,
-      ThrowOnError
-    >({ url: "/api/discussion/comments/{commentId}/restore", ...options });
-  }
-
-  /**
    * Dismiss every open report on a comment
    */
-  public static resolveCommentReports<ThrowOnError extends boolean = false>(
-    options: Options<ResolveCommentReportsData, ThrowOnError>,
-  ): RequestResult<ResolveCommentReportsResponses, ResolveCommentReportsErrors, ThrowOnError> {
-    return (options.client ?? client).post<
-      ResolveCommentReportsResponses,
-      ResolveCommentReportsErrors,
+  public static dismissCommentReports<ThrowOnError extends boolean = false>(
+    options: Options<DismissCommentReportsData, ThrowOnError>,
+  ): RequestResult<DismissCommentReportsResponses, DismissCommentReportsErrors, ThrowOnError> {
+    return (options.client ?? client).delete<
+      DismissCommentReportsResponses,
+      DismissCommentReportsErrors,
       ThrowOnError
-    >({ url: "/api/discussion/comments/{commentId}/resolve-reports", ...options });
+    >({ url: "/api/discussion/comments/{commentId}/reports", ...options });
   }
 
   /**

@@ -9,6 +9,7 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
   Comment,
   CommentIdParam,
+  CommentReactionParam,
   CommentReport,
   DiscussionActivityParam,
   DiscussionCourseParam,
@@ -17,8 +18,8 @@ import {
   ErrorBody,
   ModerationQueue,
   ModerationQueueQuery,
+  PatchComment,
   PostComment,
-  ReactToComment,
   ReportComment,
   SetDiscussionSettings,
   SetThreadState,
@@ -171,42 +172,40 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
 
   r.route({
     method: 'PUT',
-    url: '/api/learn/comments/:commentId/reactions',
+    url: '/api/learn/comments/:commentId/reactions/:emoji',
     preHandler: app.requireSession,
     schema: {
       operationId: 'reactToComment',
       tags: ['Learn'],
       summary: 'Add a reaction to a comment',
-      params: CommentIdParam,
-      body: ReactToComment,
+      params: CommentReactionParam,
       response: { 204: z.void(), 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req, reply) => {
       const scope = await resolveStudentScope(container, req);
       await gateComment(container, scope.orgId, scope.orgUserId, req.params.commentId);
       const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
-      await discussion.react(scope.orgId, req.params.commentId, actor, req.body.emoji);
+      await discussion.react(scope.orgId, req.params.commentId, actor, req.params.emoji);
       return reply.code(204).send();
     },
   });
 
   r.route({
     method: 'DELETE',
-    url: '/api/learn/comments/:commentId/reactions',
+    url: '/api/learn/comments/:commentId/reactions/:emoji',
     preHandler: app.requireSession,
     schema: {
       operationId: 'unreactToComment',
       tags: ['Learn'],
       summary: 'Remove your reaction from a comment',
-      params: CommentIdParam,
-      body: ReactToComment,
+      params: CommentReactionParam,
       response: { 204: z.void(), 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req, reply) => {
       const scope = await resolveStudentScope(container, req);
       await gateComment(container, scope.orgId, scope.orgUserId, req.params.commentId);
       const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
-      await discussion.unreact(scope.orgId, req.params.commentId, actor, req.body.emoji);
+      await discussion.unreact(scope.orgId, req.params.commentId, actor, req.params.emoji);
       return reply.code(204).send();
     },
   });
@@ -255,24 +254,6 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   });
 
   r.route({
-    method: 'POST',
-    url: '/api/discussion/comments/:commentId/approve',
-    preHandler: app.requireSession,
-    schema: {
-      operationId: 'approveComment',
-      tags: ['Discussion'],
-      summary: 'Publish a comment awaiting review',
-      params: CommentIdParam,
-      response: { 200: Comment, 403: ErrorBody, 404: ErrorBody },
-    },
-    handler: async (req) => {
-      const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
-      return discussion.approve(scope.orgId, req.params.commentId, actor);
-    },
-  });
-
-  r.route({
     method: 'DELETE',
     url: '/api/discussion/comments/:commentId',
     preHandler: app.requireSession,
@@ -291,29 +272,11 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   });
 
   r.route({
-    method: 'POST',
-    url: '/api/discussion/comments/:commentId/restore',
+    method: 'DELETE',
+    url: '/api/discussion/comments/:commentId/reports',
     preHandler: app.requireSession,
     schema: {
-      operationId: 'restoreComment',
-      tags: ['Discussion'],
-      summary: 'Restore a removed comment',
-      params: CommentIdParam,
-      response: { 200: Comment, 403: ErrorBody, 404: ErrorBody },
-    },
-    handler: async (req) => {
-      const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
-      return discussion.restore(scope.orgId, req.params.commentId, actor);
-    },
-  });
-
-  r.route({
-    method: 'POST',
-    url: '/api/discussion/comments/:commentId/resolve-reports',
-    preHandler: app.requireSession,
-    schema: {
-      operationId: 'resolveCommentReports',
+      operationId: 'dismissCommentReports',
       tags: ['Discussion'],
       summary: 'Dismiss every open report on a comment',
       params: CommentIdParam,
@@ -377,15 +340,27 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     schema: {
       operationId: 'editComment',
       tags: ['Discussion'],
-      summary: 'Revise your own comment as staff',
+      summary: 'Revise your own comment, or publish it as a moderator',
       params: CommentIdParam,
-      body: EditComment,
-      response: { 200: ThreadComment, 403: ErrorBody, 404: ErrorBody },
+      body: PatchComment,
+      response: { 200: Comment, 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
       const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
-      return discussion.edit(scope.orgId, req.params.commentId, actor, req.body.body);
+      if (req.body.body !== undefined) {
+        // edit() renders a ThreadComment (author, reactions, isOwn) for the
+        // learner surface. publish() only ever returns the raw Comment, so
+        // the two branches of this route share that shape — re-read the row
+        // rather than serve the rendered one.
+        await discussion.edit(scope.orgId, req.params.commentId, actor, req.body.body);
+        const comment = await discussion.findCommentForGate(scope.orgId, req.params.commentId);
+        if (!comment) {
+          throw new NotFoundError('Comment', req.params.commentId);
+        }
+        return comment;
+      }
+      return discussion.publish(scope.orgId, req.params.commentId, actor);
     },
   });
 

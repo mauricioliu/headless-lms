@@ -717,6 +717,46 @@ describe('edit, remove, restore, approve', () => {
   });
 });
 
+describe('publish', () => {
+  async function publishedComment() {
+    const ctx = makeService();
+    await enabled(ctx.service);
+    const comment = await ctx.service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'original',
+    });
+    return { ...ctx, comment };
+  }
+
+  it('dispatches to approve for a pending comment and emits comment.published', async () => {
+    const { service, appended } = makeService();
+    await enabled(service, { requireReview: true });
+    const pending = await service.post('o1', learner, {
+      activityId: 'a1', parentId: null, body: 'q',
+    });
+    const result = await service.publish('o1', pending.id, staff);
+    expect(result.status).toBe('published');
+    expect(appended.at(-1)?.type).toBe('comment.published');
+  });
+
+  it('dispatches to restore for a removed comment', async () => {
+    const { service, comment } = await publishedComment();
+    await service.remove('o1', comment.id, staff);
+    const result = await service.publish('o1', comment.id, staff);
+    expect(result.status).toBe('published');
+    expect(result.removedBy).toBeNull();
+  });
+
+  it('refuses a comment that is already published', async () => {
+    const { service, comment } = await publishedComment();
+    await expect(service.publish('o1', comment.id, staff)).rejects.toThrow(ForbiddenError);
+  });
+
+  it('refuses a learner, regardless of the comment state', async () => {
+    const { service, comment } = await publishedComment();
+    await expect(service.publish('o1', comment.id, learner)).rejects.toThrow(ForbiddenError);
+  });
+});
+
 describe('reactions', () => {
   async function withComment(patch = {}) {
     const ctx = makeService();

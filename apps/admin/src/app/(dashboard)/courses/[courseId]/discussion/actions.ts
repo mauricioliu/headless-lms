@@ -30,7 +30,13 @@ export async function setDiscussionSettingsAction(
 
 export async function approveCommentAction(commentId: string): Promise<void> {
   ensureConfigured();
-  unwrap(await Discussion.approveComment({ path: { commentId }, ...(await authHeaders()) }));
+  unwrap(
+    await Discussion.editComment({
+      path: { commentId },
+      body: { status: "published" },
+      ...(await authHeaders()),
+    }),
+  );
   revalidateDiscussion();
 }
 
@@ -40,20 +46,26 @@ export async function moderateRemoveCommentAction(commentId: string): Promise<vo
   unwrap(await Discussion.moderateRemoveComment({ path: { commentId }, ...headers }));
   // Removing a reported comment settles its reports too, so a handled comment
   // leaves both tabs rather than lingering in the reported one.
-  expectOk(await Discussion.resolveCommentReports({ path: { commentId }, ...headers }));
+  expectOk(await Discussion.dismissCommentReports({ path: { commentId }, ...headers }));
   revalidateDiscussion();
 }
 
 export async function restoreCommentAction(commentId: string): Promise<void> {
   ensureConfigured();
-  unwrap(await Discussion.restoreComment({ path: { commentId }, ...(await authHeaders()) }));
+  unwrap(
+    await Discussion.editComment({
+      path: { commentId },
+      body: { status: "published" },
+      ...(await authHeaders()),
+    }),
+  );
   revalidateDiscussion();
 }
 
 export async function resolveCommentReportsAction(commentId: string): Promise<void> {
   ensureConfigured();
   expectOk(
-    await Discussion.resolveCommentReports({ path: { commentId }, ...(await authHeaders()) }),
+    await Discussion.dismissCommentReports({ path: { commentId }, ...(await authHeaders()) }),
   );
   revalidateDiscussion();
 }

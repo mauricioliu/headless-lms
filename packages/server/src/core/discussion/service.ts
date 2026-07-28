@@ -425,6 +425,24 @@ export class DiscussionServiceImpl implements DiscussionService {
     });
   }
 
+  /** Loads the comment and dispatches to whichever transition applies — the
+   *  caller must not decide that itself. `approve` and `restore` still enforce
+   *  their own staff check; the check here covers the third path, where a
+   *  comment is already published and neither of them would run. */
+  async publish(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
+    if (!this.isStaff(actor)) {
+      throw new ForbiddenError('only a moderator may publish a comment');
+    }
+    const comment = await this.load(orgId, commentId);
+    if (comment.status === 'pending') {
+      return this.approve(orgId, commentId, actor);
+    }
+    if (comment.status === 'removed') {
+      return this.restore(orgId, commentId, actor);
+    }
+    throw new ForbiddenError('comment is already published');
+  }
+
   async report(
     orgId: string,
     commentId: string,

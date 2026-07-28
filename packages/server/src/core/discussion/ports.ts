@@ -96,6 +96,8 @@ export interface DiscussionService {
   restore(orgId: string, commentId: string, actor: Actor): Promise<Comment>;
   /** Staff only. Publishes a pending comment. */
   approve(orgId: string, commentId: string, actor: Actor): Promise<Comment>;
+  /** Make a comment published, whichever state it is in. Staff only. */
+  publish(orgId: string, commentId: string, actor: Actor): Promise<Comment>;
 
   /** The thread as this reader may see it. */
   listThread(orgId: string, activityId: string, actor: Actor): Promise<ThreadView>;
