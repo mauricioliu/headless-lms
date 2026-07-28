@@ -76,8 +76,9 @@ The HTTP API is **schema-first**, and the frontend SDK is **generated off the Op
 - `openapi.json` and `src/generated/` are **committed**. Regenerate (`pnpm gen:sdk`) whenever the contract or routes change; CI/review should treat a stale diff as an error.
 - `gen:openapi` boots the real app, so the **database must be up** (it reads env via `--env-file`). No port is bound.
 - **Not ts-rest:** ts-rest 3.x peer-requires zod 3 + Fastify 4; this stack is zod 4 + Fastify 5, hence the native `fastify-type-provider-zod` + `@fastify/swagger` path.
-- **Resource tags:** `Courses` (the content context's course type; activities folded in as a sub-resource), `Organizations` (member management included), `Students`, `Entitlements`, `Dashboard`, `Assets`, `ConnectedApps`, `Integrations`, `Automations` (identity/progress route files are stubs, not yet registered). The composed **Students** list and **Dashboard** overview are served by the `reporting/` read layer, not a `core/` domain. These mirror the `apps/admin` dashboard surface.
+- **Resource tags:** `Courses` (the content context's course type; activities folded in as a sub-resource), `Downloads`, `Organizations` (member management included), `Students`, `Entitlements`, `Dashboard`, `Assets`, `ConnectedApps`, `Integrations`, `Automations` (identity/progress route files are stubs, not yet registered). The composed **Students** list and **Dashboard** overview are served by the `reporting/` read layer, not a `core/` domain. These mirror the `apps/admin` dashboard surface.
 - All eight contexts are backed by **Drizzle repositories** (`adapters/db/repositories/*`) against real Postgres schema (`adapters/db/schema/*`). The core/port/route/SDK layers map onto them directly.
+- `ContentType` (`@headless-lms/types`) has two members, `course` and `download`; the `content_items` registry table is widened per content type accordingly (`content_items_type_check` allows both), with `downloads` and `download_assets` tables sharing that registry alongside `courses`.
 
 ## Git
 

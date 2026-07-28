@@ -11,12 +11,12 @@ The domain owns all content types. Each defines its own structure and rules.
 **Today:**
 
 - **Course** — modules grouping an ordered list of activities, with sequencing, gating (drip, unlock-on-completion), and completion toward 100%.
+- **Download** — an ordered set of files; access and retrieval, no progression.
 
 **Future types the domain will hold** (illustrative, not built):
 
 - **Podcast** — a flat list of episodes; open, position tracked, with external distribution (RSS, directories).
 - **Newsletter** — a flat list of dated issues; read/unread.
-- **Download** — a set of files; access and retrieval, no progression.
 
 Types are not forced into a common structure — a course is a tree of modules and activities, a newsletter a flat list — and the domain accommodates each on its own terms as it is added.
 
@@ -52,7 +52,7 @@ Structure is per-type; the entities below are a type's own. The course type, as 
 
 ### Other types
 
-Each other type defines its own entities — a podcast its episodes (and feed), a newsletter its issues, a download its files. They share the domain's boundaries and capabilities, not the course's structure.
+Each other type defines its own entities. A download owns an ordered set of asset references and nothing else — no drip, no unlock, no completion, no progression. A podcast has its episodes (and feed), a newsletter its issues. They share the domain's boundaries and capabilities, not the course's structure.
 
 ## Activity settings and assets
 
@@ -80,4 +80,4 @@ A type's structure changes over time — adding, removing, or reordering parts. 
 
 ## Build state
 
-The course type is built and **persisted**. Other types follow as they are implemented.
+The course and download types are built and **persisted**. Other types follow as they are implemented.
