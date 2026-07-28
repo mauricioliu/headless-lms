@@ -424,10 +424,10 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
 
   r.route({
     method: 'GET',
-    url: '/api/discussion/courses/:courseId/thread-states',
+    url: '/api/discussion/courses/:courseId/threads',
     preHandler: app.requireSession,
     schema: {
-      operationId: 'getThreadStates',
+      operationId: 'listCourseThreads',
       tags: ['Discussion'],
       summary: "Read every per-activity thread-state override in a course",
       params: DiscussionCourseParam,
@@ -441,11 +441,11 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   });
 
   r.route({
-    method: 'PUT',
-    url: '/api/discussion/activities/:activityId/thread-state',
+    method: 'PATCH',
+    url: '/api/discussion/activities/:activityId/thread',
     preHandler: app.requireSession,
     schema: {
-      operationId: 'setActivityThreadState',
+      operationId: 'setThreadState',
       tags: ['Discussion'],
       summary: "Override or clear an activity's thread state",
       params: DiscussionActivityParam,

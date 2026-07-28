@@ -59,13 +59,13 @@ export async function resolveCommentReportsAction(commentId: string): Promise<vo
 }
 
 /** null clears the override so the course setting applies again. */
-export async function setActivityThreadStateAction(
+export async function setThreadStateAction(
   activityId: string,
   state: ThreadState | null,
 ): Promise<void> {
   ensureConfigured();
   expectOk(
-    await Discussion.setActivityThreadState({
+    await Discussion.setThreadState({
       path: { activityId },
       body: { state },
       ...(await authHeaders()),

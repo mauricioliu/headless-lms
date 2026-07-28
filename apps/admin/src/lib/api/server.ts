@@ -166,7 +166,7 @@ export const serverApi = {
   async threadStates(courseId: string): Promise<ThreadStates> {
     ensureConfigured();
     const { states } = unwrap(
-      await Discussion.getThreadStates({ path: { courseId }, ...(await authHeaders()) }),
+      await Discussion.listCourseThreads({ path: { courseId }, ...(await authHeaders()) }),
     );
     return states;
   },

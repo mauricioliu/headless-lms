@@ -101,8 +101,6 @@ import type {
   GetStudentData,
   GetStudentErrors,
   GetStudentResponses,
-  GetThreadStatesData,
-  GetThreadStatesResponses,
   GrantEntitlementData,
   GrantEntitlementResponses,
   ListAssetsData,
@@ -127,6 +125,8 @@ import type {
   ListConnectionsResponses,
   ListCoursesData,
   ListCoursesResponses,
+  ListCourseThreadsData,
+  ListCourseThreadsResponses,
   ListEntitlementsData,
   ListEntitlementsResponses,
   ListLearnCoursesData,
@@ -191,15 +191,15 @@ import type {
   RevokeConnectedAppData,
   RevokeConnectedAppErrors,
   RevokeConnectedAppResponses,
-  SetActivityThreadStateData,
-  SetActivityThreadStateErrors,
-  SetActivityThreadStateResponses,
   SetDiscussionSettingsData,
   SetDiscussionSettingsErrors,
   SetDiscussionSettingsResponses,
   SetEntitlementStatusData,
   SetEntitlementStatusErrors,
   SetEntitlementStatusResponses,
+  SetThreadStateData,
+  SetThreadStateErrors,
+  SetThreadStateResponses,
   UnreactToCommentData,
   UnreactToCommentErrors,
   UnreactToCommentResponses,
@@ -911,6 +911,26 @@ export class Discussion {
   }
 
   /**
+   * Override or clear an activity's thread state
+   */
+  public static setThreadState<ThrowOnError extends boolean = false>(
+    options: Options<SetThreadStateData, ThrowOnError>,
+  ): RequestResult<SetThreadStateResponses, SetThreadStateErrors, ThrowOnError> {
+    return (options.client ?? client).patch<
+      SetThreadStateResponses,
+      SetThreadStateErrors,
+      ThrowOnError
+    >({
+      url: "/api/discussion/activities/{activityId}/thread",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
    * Post a comment or reply on an activity as staff
    */
   public static postStaffComment<ThrowOnError extends boolean = false>(
@@ -965,32 +985,12 @@ export class Discussion {
   /**
    * Read every per-activity thread-state override in a course
    */
-  public static getThreadStates<ThrowOnError extends boolean = false>(
-    options: Options<GetThreadStatesData, ThrowOnError>,
-  ): RequestResult<GetThreadStatesResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).get<GetThreadStatesResponses, unknown, ThrowOnError>({
-      url: "/api/discussion/courses/{courseId}/thread-states",
+  public static listCourseThreads<ThrowOnError extends boolean = false>(
+    options: Options<ListCourseThreadsData, ThrowOnError>,
+  ): RequestResult<ListCourseThreadsResponses, unknown, ThrowOnError> {
+    return (options.client ?? client).get<ListCourseThreadsResponses, unknown, ThrowOnError>({
+      url: "/api/discussion/courses/{courseId}/threads",
       ...options,
-    });
-  }
-
-  /**
-   * Override or clear an activity's thread state
-   */
-  public static setActivityThreadState<ThrowOnError extends boolean = false>(
-    options: Options<SetActivityThreadStateData, ThrowOnError>,
-  ): RequestResult<SetActivityThreadStateResponses, SetActivityThreadStateErrors, ThrowOnError> {
-    return (options.client ?? client).put<
-      SetActivityThreadStateResponses,
-      SetActivityThreadStateErrors,
-      ThrowOnError
-    >({
-      url: "/api/discussion/activities/{activityId}/thread-state",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
     });
   }
 }

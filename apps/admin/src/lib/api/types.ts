@@ -15,7 +15,6 @@ import type {
   GetModerationQueueResponse,
   GetOverviewResponse,
   GetStudentResponse,
-  GetThreadStatesResponse,
   ListAssetsResponse,
   ListAutomationActionsResponse,
   ListAutomationTriggersResponse,
@@ -23,6 +22,7 @@ import type {
   ListConnectedAppsResponse,
   ListConnectionsResponse,
   ListCoursesResponse,
+  ListCourseThreadsResponse,
   ListEntitlementsResponse,
   ListMembersResponse,
   ListModulesResponse,
@@ -125,7 +125,7 @@ export type ModerationQueue = GetModerationQueueResponse;
 export type QueueEntry = ModerationQueue["entries"][number];
 export type QueueReport = QueueEntry["reports"][number];
 export type DiscussionSettings = GetDiscussionSettingsResponse;
-export type ThreadStates = GetThreadStatesResponse["states"];
+export type ThreadStates = ListCourseThreadsResponse["states"];
 export type ThreadState = ThreadStates[string];
 // `SetDiscussionSettingsData["body"]` is already required (not optional), so
 // no `NonNullable<>` is needed here.

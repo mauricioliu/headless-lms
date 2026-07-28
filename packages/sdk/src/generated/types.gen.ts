@@ -1214,6 +1214,36 @@ export type GetStaffActivityThreadResponses = {
 export type GetStaffActivityThreadResponse =
   GetStaffActivityThreadResponses[keyof GetStaffActivityThreadResponses];
 
+export type SetThreadStateData = {
+  body: {
+    state: "visible" | "hidden" | "locked" | null;
+  };
+  path: {
+    activityId: string;
+  };
+  query?: never;
+  url: "/api/discussion/activities/{activityId}/thread";
+};
+
+export type SetThreadStateErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type SetThreadStateError = SetThreadStateErrors[keyof SetThreadStateErrors];
+
+export type SetThreadStateResponses = {
+  /**
+   * Default Response
+   */
+  204: unknown;
+};
+
 export type PostStaffCommentData = {
   body: {
     body: string;
@@ -1349,16 +1379,16 @@ export type SetDiscussionSettingsResponses = {
 export type SetDiscussionSettingsResponse =
   SetDiscussionSettingsResponses[keyof SetDiscussionSettingsResponses];
 
-export type GetThreadStatesData = {
+export type ListCourseThreadsData = {
   body?: never;
   path: {
     courseId: string;
   };
   query?: never;
-  url: "/api/discussion/courses/{courseId}/thread-states";
+  url: "/api/discussion/courses/{courseId}/threads";
 };
 
-export type GetThreadStatesResponses = {
+export type ListCourseThreadsResponses = {
   /**
    * Default Response
    */
@@ -1369,38 +1399,8 @@ export type GetThreadStatesResponses = {
   };
 };
 
-export type GetThreadStatesResponse = GetThreadStatesResponses[keyof GetThreadStatesResponses];
-
-export type SetActivityThreadStateData = {
-  body: {
-    state: "visible" | "hidden" | "locked" | null;
-  };
-  path: {
-    activityId: string;
-  };
-  query?: never;
-  url: "/api/discussion/activities/{activityId}/thread-state";
-};
-
-export type SetActivityThreadStateErrors = {
-  /**
-   * Default Response
-   */
-  404: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type SetActivityThreadStateError =
-  SetActivityThreadStateErrors[keyof SetActivityThreadStateErrors];
-
-export type SetActivityThreadStateResponses = {
-  /**
-   * Default Response
-   */
-  204: unknown;
-};
+export type ListCourseThreadsResponse =
+  ListCourseThreadsResponses[keyof ListCourseThreadsResponses];
 
 export type ListModulesData = {
   body?: never;

@@ -20,7 +20,7 @@ import type {
 } from "@/lib/api/types";
 
 import { saveActivityAction } from "../actions";
-import { setActivityThreadStateAction } from "../discussion/actions";
+import { setThreadStateAction } from "../discussion/actions";
 
 const THREAD_OPTIONS: { value: ThreadState | null; label: string }[] = [
   { value: null, label: "Course default" },
@@ -132,7 +132,7 @@ export function ItemFormSheet({
           : saved.find((m) => m.id === moduleId)?.activities?.at(-1)?.id;
         if (activityId) {
           try {
-            await setActivityThreadStateAction(activityId, thread);
+            await setThreadStateAction(activityId, thread);
           } catch (err) {
             toast.warning("Activity saved, but the discussion setting did not apply", {
               description: (err as Error).message,
