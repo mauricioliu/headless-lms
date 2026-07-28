@@ -21,10 +21,10 @@ export default async function EntitlementsPage({
   const dataPromise = Promise.all([
     serverApi.listEntitlements(params),
     serverApi.studentsLite(),
-    serverApi.coursesLite(),
+    serverApi.contentLite(),
   ]);
   await requireManager(dataPromise);
-  const [{ rows, total }, students, courses] = await dataPromise;
+  const [{ rows, total }, students, content] = await dataPromise;
 
   return (
     <EntitlementsTable
@@ -32,7 +32,7 @@ export default async function EntitlementsPage({
       total={total}
       params={params}
       students={students}
-      courses={courses}
+      content={content}
     />
   );
 }

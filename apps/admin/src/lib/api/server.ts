@@ -81,12 +81,25 @@ export const serverApi = {
       await Courses.listModules({ path: { courseId }, ...(await authHeaders()) }),
     );
   },
-  async coursesLite(): Promise<{ id: string; title: string }[]> {
+  // Both content types offered by the entitlements grant pickers, tagged with
+  // their type so the UI can group course vs. download options.
+  async contentLite(): Promise<{ id: string; title: string; type: "course" | "download" }[]> {
     ensureConfigured();
-    const page = unwrap(
-      await Courses.listCourses({ query: { pageSize: 100, sort: "title" }, ...(await authHeaders()) }),
-    );
-    return page.rows.map((c) => ({ id: c.id, title: c.title }));
+    const [coursesPage, downloadsPage] = await Promise.all([
+      Courses.listCourses({ query: { pageSize: 100, sort: "title" }, ...(await authHeaders()) }),
+      Downloads.listDownloads({ query: { pageSize: 100, sort: "title" }, ...(await authHeaders()) }),
+    ]);
+    const courses = unwrap(coursesPage).rows.map((c) => ({
+      id: c.id,
+      title: c.title,
+      type: "course" as const,
+    }));
+    const downloads = unwrap(downloadsPage).rows.map((d) => ({
+      id: d.id,
+      title: d.title,
+      type: "download" as const,
+    }));
+    return [...courses, ...downloads].sort((a, b) => a.title.localeCompare(b.title));
   },
 
   // downloads

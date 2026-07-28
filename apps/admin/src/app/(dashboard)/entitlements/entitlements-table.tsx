@@ -15,7 +15,7 @@ import { isManager } from "@/lib/roles";
 import type { Entitlement, ListParams } from "@/lib/api/types";
 
 import { entitlementColumns } from "./entitlements-columns";
-import { GrantAccessSheet, type LiteCourse, type LiteStudent } from "./_components/grant-access-sheet";
+import { GrantAccessSheet, type LiteContent, type LiteStudent } from "./_components/grant-access-sheet";
 import { setEntitlementStatusAction } from "./actions";
 
 /** Deep-equal on the small, JSON-safe `ListParams` shape (both sides built by
@@ -30,13 +30,13 @@ function EntitlementsTableInner({
   total,
   params,
   students,
-  courses,
+  content,
 }: {
   rows: Entitlement[];
   total: number;
   params: ListParams;
   students: LiteStudent[];
-  courses: LiteCourse[];
+  content: LiteContent[];
 }) {
   const router = useRouter();
   const user = useCurrentUser();
@@ -152,7 +152,7 @@ function EntitlementsTableInner({
         open={grantOpen}
         onOpenChange={setGrantOpen}
         students={students}
-        courses={courses}
+        content={content}
       />
 
       <ConfirmDialog
@@ -178,7 +178,7 @@ export function EntitlementsTable(props: {
   total: number;
   params: ListParams;
   students: LiteStudent[];
-  courses: LiteCourse[];
+  content: LiteContent[];
 }) {
   // `useDataTable` reads `useSearchParams()`, which requires a Suspense boundary.
   return (

@@ -14,7 +14,7 @@ import { can } from "@/lib/roles";
 import type { Download } from "@/lib/api/types";
 import { formatBytes, formatNumber, relativeTime } from "@/lib/format";
 
-import { deleteDownloadAction, setDownloadPublishedAction } from "../../actions";
+import { deleteDownloadAndRedirectAction, setDownloadPublishedAction } from "../../actions";
 import { DownloadTabsNav } from "./download-tabs-nav";
 
 // Download header (title, status, stats), the publish/delete actions, and the
@@ -43,9 +43,9 @@ export function DownloadHeader({ download }: { download: Download }) {
   function onDelete() {
     startTransition(async () => {
       try {
-        await deleteDownloadAction(download.id);
-        toast.success("Download deleted");
-        router.push("/downloads");
+        // Redirects from inside the action — the client never re-renders this
+        // (now-deleted) route, so there's no client-side push here.
+        await deleteDownloadAndRedirectAction(download.id);
       } catch (e) {
         toast.error("Couldn't delete download", { description: (e as Error).message });
         setConfirmingDelete(false);

@@ -22,10 +22,10 @@ export default async function StudentDetailPage({
   const dataPromise = Promise.all([
     serverApi.getStudent(studentId),
     serverApi.studentEntitlements(studentId),
-    serverApi.coursesLite(),
+    serverApi.contentLite(),
   ]);
   await requireManager(dataPromise);
-  const [student, entitlements, courses] = await dataPromise;
+  const [student, entitlements, content] = await dataPromise;
 
-  return <StudentDetailView student={student} entitlements={entitlements} courses={courses} />;
+  return <StudentDetailView student={student} entitlements={entitlements} content={content} />;
 }

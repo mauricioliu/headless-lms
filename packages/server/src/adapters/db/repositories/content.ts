@@ -36,6 +36,8 @@ import { assets } from '../schema/assets.js';
 import { genId } from '../../../core/shared/id.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
+import { NotFoundError, ConflictError } from '../../../core/shared/errors.js';
+import { isUniqueViolation } from './pg-errors.js';
 
 // Derived counts as correlated subqueries against the current `courses` row.
 // NOTE: Drizzle does NOT table-qualify a Column interpolated into a raw `sql`
@@ -513,23 +515,43 @@ export class DrizzleContentRepository implements ContentRepository {
     return rows.map(toDownloadAsset);
   }
 
+  /** Assert the download exists in the org; throw otherwise. */
+  private async assertDownload(orgId: string, downloadId: string): Promise<void> {
+    const [row] = await this.db
+      .select({ id: downloads.id })
+      .from(downloads)
+      .where(and(eq(downloads.orgId, orgId), eq(downloads.id, downloadId)))
+      .limit(1);
+    if (!row) {
+      throw new NotFoundError('Download', downloadId);
+    }
+  }
+
   async addDownloadAsset(
     orgId: string,
     downloadId: string,
     input: AddDownloadAssetInput,
   ): Promise<DownloadAsset[]> {
+    await this.assertDownload(orgId, downloadId);
     const [maxRow] = await this.db
       .select({ maxSeq: sql<number | null>`max(${downloadAssets.seq})` })
       .from(downloadAssets)
       .where(and(eq(downloadAssets.orgId, orgId), eq(downloadAssets.downloadId, downloadId)));
     const nextSeq = (maxRow?.maxSeq ?? -1) + 1;
-    await this.db.insert(downloadAssets).values({
-      orgId,
-      downloadId,
-      assetId: input.assetId,
-      seq: nextSeq,
-      displayName: input.displayName ?? null,
-    });
+    try {
+      await this.db.insert(downloadAssets).values({
+        orgId,
+        downloadId,
+        assetId: input.assetId,
+        seq: nextSeq,
+        displayName: input.displayName ?? null,
+      });
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictError('This asset is already linked to the download');
+      }
+      throw err;
+    }
     return this.listDownloadAssets(orgId, downloadId);
   }
 
@@ -538,6 +560,7 @@ export class DrizzleContentRepository implements ContentRepository {
     downloadId: string,
     assetId: string,
   ): Promise<DownloadAsset[]> {
+    await this.assertDownload(orgId, downloadId);
     await this.db
       .delete(downloadAssets)
       .where(
@@ -556,6 +579,7 @@ export class DrizzleContentRepository implements ContentRepository {
     assetId: string,
     displayName: string | null,
   ): Promise<DownloadAsset[]> {
+    await this.assertDownload(orgId, downloadId);
     await this.db
       .update(downloadAssets)
       .set({ displayName })
@@ -574,6 +598,7 @@ export class DrizzleContentRepository implements ContentRepository {
     downloadId: string,
     assetIds: string[],
   ): Promise<DownloadAsset[]> {
+    await this.assertDownload(orgId, downloadId);
     // The service has already verified this is exactly the current set.
     for (const [seq, assetId] of assetIds.entries()) {
       await this.db

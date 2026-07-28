@@ -11,5 +11,23 @@ export type {
   Download,
   DownloadAsset,
 } from './model.js';
-export type { CreateCourseInput, ListCoursesQuery, Page, UpdateCourseInput } from './types.js';
-export type { CourseCreated, CourseUpdated, CourseDeleted, ContentEvent } from './events.js';
+export type {
+  CreateCourseInput,
+  ListCoursesQuery,
+  Page,
+  UpdateCourseInput,
+  CreateDownloadInput,
+  ListDownloadsQuery,
+  UpdateDownloadInput,
+  AddDownloadAssetInput,
+  ReorderDownloadAssetsInput,
+} from './types.js';
+export type {
+  CourseCreated,
+  CourseUpdated,
+  CourseDeleted,
+  DownloadCreated,
+  DownloadUpdated,
+  DownloadDeleted,
+  ContentEvent,
+} from './events.js';

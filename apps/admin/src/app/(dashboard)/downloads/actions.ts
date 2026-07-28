@@ -3,6 +3,7 @@
 // Server actions for download mutations.
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { Downloads } from "@headless-lms/sdk";
 
 import { ensureConfigured, authHeaders, unwrap, expectOk } from "@/lib/api/server-call";
@@ -88,6 +89,20 @@ export async function deleteDownloadAction(downloadId: string): Promise<void> {
   ensureConfigured();
   expectOk(await Downloads.deleteDownload({ path: { downloadId }, ...(await authHeaders()) }));
   revalidateDownload();
+}
+
+/**
+ * Delete then redirect from inside the action — for the download's own page.
+ * A client-side `router.push` after a revalidating action races the current
+ * route's re-render, which re-fetches the now-deleted download and throws
+ * into the error boundary. `redirect()` short-circuits that re-render
+ * entirely, so the client never re-renders the dead route.
+ */
+export async function deleteDownloadAndRedirectAction(downloadId: string): Promise<void> {
+  ensureConfigured();
+  expectOk(await Downloads.deleteDownload({ path: { downloadId }, ...(await authHeaders()) }));
+  revalidatePath("/downloads");
+  redirect("/downloads");
 }
 
 export async function addDownloadAssetAction(
