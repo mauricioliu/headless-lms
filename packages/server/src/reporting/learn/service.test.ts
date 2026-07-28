@@ -100,6 +100,7 @@ function fakeContentService(over: Partial<ContentService> = {}): ContentService 
     get: async () => null,
     create: rejectMutation,
     update: rejectMutation,
+    patchSettings: rejectMutation,
     remove: rejectMutation,
     listForCourse: async () => [],
     getActivity: async () => null,

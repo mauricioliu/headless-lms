@@ -1,6 +1,7 @@
 import type {
   Activity,
   Course,
+  CourseSettings,
   Download,
   DownloadAsset,
   Module,
@@ -24,6 +25,12 @@ export interface ContentService {
   create(orgId: string, input: CreateCourseInput): Promise<Course>;
   /** @throws NotFoundError when no course with this id exists in the org. */
   update(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course>;
+  /** @throws NotFoundError when no course with this id exists in the org. */
+  patchSettings(
+    orgId: string,
+    id: string,
+    value: Partial<CourseSettings>,
+  ): Promise<CourseSettings>;
   /** @throws NotFoundError when no course with this id exists in the org. */
   remove(orgId: string, id: string): Promise<void>;
 

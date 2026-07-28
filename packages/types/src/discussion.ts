@@ -6,8 +6,8 @@
 // replies survive — only its body stops being served.
 //
 // A comment records NO course. Which course an activity sits in is content's
-// fact and changes when a course is restructured, so it is resolved when
-// scoping settings or a queue.
+// fact and changes when a course is restructured, so it is resolved whenever a
+// read scopes or filters by course.
 
 import type { DomainEvent } from "./shared.js";
 import type { OrgUserProfile, Role } from "./organizations.js";
@@ -40,8 +40,8 @@ export interface Comment {
  * standing is never stored on a comment.
  *
  * Deliberately omits `email`. Learners read each other's comments, and the
- * list must not be a directory of the cohort's addresses. The moderation
- * queue, which does need it, carries `authorEmail` on its own entry type.
+ * list must not be a directory of the cohort's addresses. The staff-facing
+ * comment list, which does need it, carries `authorEmail` on its own row type.
  */
 export interface CommentAuthor extends Omit<OrgUserProfile, "email"> {
   role: Role;
@@ -67,20 +67,14 @@ export interface CommentReport {
   readonly createdAt: string;
 }
 
-export interface DiscussionSettings {
-  readonly orgId: string;
-  readonly courseId: string;
+/** A course's discussion settings, stored as the value of its `discussion`
+ *  settings row rather than in a table of its own. */
+export interface CommentSettings {
   enabled: boolean;
   /** false = replies are not accepted; comments are a flat list. */
   threaded: boolean;
   requireReview: boolean;
   reactions: boolean;
-}
-
-export interface ActivityCommentsState {
-  readonly orgId: string;
-  readonly activityId: string;
-  state: CommentsState;
 }
 
 /** The course settings with an activity's override applied. What the service
@@ -121,6 +115,64 @@ export interface CommentView {
   updatedAt: string;
 }
 
+/** An unresolved report as the staff list serves it — who flagged it and why.
+ *  Resolved reports are history and never appear here. */
+export interface CommentReportSummary {
+  reporter: CommentAuthor;
+  reason: string;
+  createdAt: string;
+}
+
+/**
+ * One row of the staff-facing comment list: the comment plus everything a
+ * moderation decision needs without a second request — who wrote it, where it
+ * sits, and what has been flagged against it.
+ *
+ * Flat rather than a nested comment, matching the other list rows in this
+ * codebase. `body` is served whatever the status: staff have to read a removed
+ * comment to judge whether removing it was right.
+ */
+export interface CommentListItem {
+  id: string;
+  /** null = a root comment. */
+  parentId: string | null;
+  activityId: string;
+  activityTitle: string;
+  /** Resolved from content at read time, never stored on the comment. */
+  courseId: string;
+  body: string;
+  status: CommentStatus;
+  author: CommentAuthor;
+  /** Present only on this staff-scoped row — identifying a spam account is
+   *  part of the decision. Never on a CommentView. */
+  authorEmail: string;
+  /** The `org_users.id` that removed it; null unless removed. */
+  removedBy: string | null;
+  reports: CommentReportSummary[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Filters for the staff-facing comment list. Every field narrows; omitting
+ *  all of them lists the org's comments newest first. */
+export interface ListCommentsQuery {
+  page: number;
+  pageSize: number;
+  /** Substring match on the comment body. */
+  search?: string | undefined;
+  /** Sort field, optionally `-` prefixed for descending (e.g. `-createdAt`). */
+  sort?: string | undefined;
+  status?: CommentStatus | undefined;
+  /** true = only comments carrying at least one unresolved report; false =
+   *  only comments carrying none. Omitted leaves reports out of the filter. */
+  reported?: boolean | undefined;
+  /** Resolved through the activity's module, since a comment stores no course. */
+  courseId?: string | undefined;
+  activityId?: string | undefined;
+  /** Scope to one author's `org_users.id`. */
+  orgUserId?: string | undefined;
+}
+
 export interface CommentCreated extends DomainEvent {
   type: "comment.created";
   comment: Comment;
@@ -143,8 +195,4 @@ export interface CommentRemoved extends DomainEvent {
   removedBy: string;
 }
 
-export type DiscussionEvent =
-  | CommentCreated
-  | CommentPublished
-  | CommentReported
-  | CommentRemoved;
+export type DiscussionEvent = CommentCreated | CommentPublished | CommentReported | CommentRemoved;

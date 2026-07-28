@@ -3,4 +3,8 @@ export type {
   PostCommentInput,
   CommentsConfig,
   CommentView,
+  CommentReportSummary,
+  CommentListItem,
+  ListCommentsQuery,
+  Page,
 } from '@headless-lms/types';

@@ -12,7 +12,7 @@ import type {
   GetAutomationResponse,
   GetCourseResponse,
   GetDiscussionSettingsResponse,
-  GetModerationQueueResponse,
+  ListCommentsResponse,
   GetDownloadResponse,
   GetOverviewResponse,
   GetStudentResponse,
@@ -138,9 +138,10 @@ export type AssetsPage = ListAssetsResponse;
 
 // --- discussion --------------------------------------------------------------
 
-export type ModerationQueue = GetModerationQueueResponse;
-export type QueueEntry = ModerationQueue["entries"][number];
-export type QueueReport = QueueEntry["reports"][number];
+export type CommentsPage = ListCommentsResponse;
+export type CommentListItem = CommentsPage["rows"][number];
+export type CommentReportSummary = CommentListItem["reports"][number];
+export type CommentStatus = CommentListItem["status"];
 export type DiscussionSettings = GetDiscussionSettingsResponse;
 export type CommentStates = ListCourseCommentStatesResponse["states"];
 export type CommentsState = CommentStates[string];

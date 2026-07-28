@@ -183,21 +183,25 @@ export async function setCoursePublishedAction(
   return course;
 }
 
-/** Course settings tab. Partial patch — omitted keys keep their stored value. */
+/**
+ * Course settings tab. Settings live in their own store behind
+ * `PATCH /courses/:id/settings` — a partial patch, so omitted keys keep their
+ * stored value. Returns the complete settings the server stored.
+ */
 export async function updateCourseSettingsAction(
   courseId: string,
   settings: Partial<CourseSettings>,
-): Promise<Course> {
+): Promise<CourseSettings> {
   ensureConfigured();
-  const course = unwrap(
-    await Courses.updateCourse({
+  const updated = unwrap(
+    await Courses.updateCourseSettings({
       path: { id: courseId },
-      body: { settings },
+      body: settings,
       ...(await authHeaders()),
     }),
   );
   revalidateBuilder();
-  return course;
+  return updated;
 }
 
 /** Edit course details (title / category / description) from the builder sheet. */

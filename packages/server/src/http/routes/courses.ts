@@ -6,10 +6,12 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
   Course,
   CourseIdParam,
+  CourseSettings,
   CoursesPage,
   CoursesQuery,
   CreateCourse,
   ErrorBody,
+  PatchCourseSettings,
   UpdateCourse,
 } from '@headless-lms/api-contract';
 import { z } from 'zod';
@@ -92,6 +94,24 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
     handler: async (req) => {
       const scope = await resolveScope(container, req);
       return courses.update(scope.orgId, req.params.id, req.body);
+    },
+  });
+
+  r.route({
+    method: 'PATCH',
+    url: '/api/courses/:id/settings',
+    preHandler: app.requireSession,
+    schema: {
+      operationId: 'updateCourseSettings',
+      tags: ['Courses'],
+      summary: 'Update a course settings',
+      params: CourseIdParam,
+      body: PatchCourseSettings,
+      response: { 200: CourseSettings, 404: ErrorBody },
+    },
+    handler: async (req) => {
+      const scope = await resolveScope(container, req);
+      return courses.patchSettings(scope.orgId, req.params.id, req.body);
     },
   });
 

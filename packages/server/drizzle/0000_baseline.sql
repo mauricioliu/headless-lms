@@ -251,13 +251,6 @@ CREATE TABLE "settings" (
 	CONSTRAINT "settings_org_id_namespace_scope_id_pk" PRIMARY KEY("org_id","namespace","scope_id")
 );
 --> statement-breakpoint
-CREATE TABLE "activity_comment_states" (
-	"org_id" text NOT NULL,
-	"activity_id" text NOT NULL,
-	"state" text NOT NULL,
-	CONSTRAINT "activity_comment_states_org_id_activity_id_pk" PRIMARY KEY("org_id","activity_id")
-);
---> statement-breakpoint
 CREATE TABLE "comment_reactions" (
 	"org_id" text NOT NULL,
 	"comment_id" text NOT NULL,
@@ -292,16 +285,6 @@ CREATE TABLE "comments" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "comments_org_id_id_pk" PRIMARY KEY("org_id","id"),
 	CONSTRAINT "comments_removed_by_check" CHECK (("comments"."status" = 'removed') = ("comments"."removed_by" is not null))
-);
---> statement-breakpoint
-CREATE TABLE "discussion_settings" (
-	"org_id" text NOT NULL,
-	"course_id" text NOT NULL,
-	"enabled" boolean DEFAULT false NOT NULL,
-	"threaded" boolean DEFAULT true NOT NULL,
-	"require_review" boolean DEFAULT false NOT NULL,
-	"reactions" boolean DEFAULT true NOT NULL,
-	CONSTRAINT "discussion_settings_org_id_course_id_pk" PRIMARY KEY("org_id","course_id")
 );
 --> statement-breakpoint
 CREATE TABLE "account" (
@@ -497,8 +480,6 @@ ALTER TABLE "connections" ADD CONSTRAINT "connections_org_id_credential_ref_cred
 ALTER TABLE "automation_runs" ADD CONSTRAINT "automation_runs_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "automations" ADD CONSTRAINT "automations_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "settings" ADD CONSTRAINT "settings_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "activity_comment_states" ADD CONSTRAINT "activity_comment_states_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "activity_comment_states" ADD CONSTRAINT "activity_comment_states_org_id_activity_id_activities_org_id_id_fk" FOREIGN KEY ("org_id","activity_id") REFERENCES "public"."activities"("org_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "comment_reactions" ADD CONSTRAINT "comment_reactions_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "comment_reactions" ADD CONSTRAINT "comment_reactions_org_id_comment_id_comments_org_id_id_fk" FOREIGN KEY ("org_id","comment_id") REFERENCES "public"."comments"("org_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "comment_reactions" ADD CONSTRAINT "comment_reactions_org_id_org_user_id_org_users_org_id_id_fk" FOREIGN KEY ("org_id","org_user_id") REFERENCES "public"."org_users"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -510,8 +491,6 @@ ALTER TABLE "comments" ADD CONSTRAINT "comments_org_id_activity_id_activities_or
 ALTER TABLE "comments" ADD CONSTRAINT "comments_org_id_org_user_id_org_users_org_id_id_fk" FOREIGN KEY ("org_id","org_user_id") REFERENCES "public"."org_users"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "comments" ADD CONSTRAINT "comments_org_id_removed_by_org_users_org_id_id_fk" FOREIGN KEY ("org_id","removed_by") REFERENCES "public"."org_users"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "comments" ADD CONSTRAINT "comments_org_id_parent_id_comments_org_id_id_fk" FOREIGN KEY ("org_id","parent_id") REFERENCES "public"."comments"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "discussion_settings" ADD CONSTRAINT "discussion_settings_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "discussion_settings" ADD CONSTRAINT "discussion_settings_org_id_course_id_courses_org_id_id_fk" FOREIGN KEY ("org_id","course_id") REFERENCES "public"."courses"("org_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invitation" ADD CONSTRAINT "invitation_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invitation" ADD CONSTRAINT "invitation_inviter_id_user_id_fk" FOREIGN KEY ("inviter_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -545,4 +524,39 @@ CREATE INDEX "oauth_consent_client_id_idx" ON "oauth_consent" USING btree ("clie
 CREATE INDEX "oauth_consent_user_id_idx" ON "oauth_consent" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "oauth_refresh_token_client_id_idx" ON "oauth_refresh_token" USING btree ("client_id");--> statement-breakpoint
 CREATE INDEX "oauth_refresh_token_session_id_idx" ON "oauth_refresh_token" USING btree ("session_id");--> statement-breakpoint
-CREATE INDEX "oauth_refresh_token_user_id_idx" ON "oauth_refresh_token" USING btree ("user_id");
+CREATE INDEX "oauth_refresh_token_user_id_idx" ON "oauth_refresh_token" USING btree ("user_id");--> statement-breakpoint
+-- Recursive jsonb merge. `||` only merges top-level keys, so patching
+-- {"ui":{"theme":"light"}} over {"ui":{"theme":"dark","density":"compact"}}
+-- drops `density`. This walks nested objects instead: objects merge key by
+-- key, everything else (scalars, arrays, json null) is replaced by the patch.
+CREATE OR REPLACE FUNCTION jsonb_deep_merge(base jsonb, patch jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+DECLARE
+  merged jsonb;
+  key text;
+BEGIN
+  IF base IS NULL THEN
+    RETURN patch;
+  END IF;
+  IF patch IS NULL THEN
+    RETURN base;
+  END IF;
+  IF jsonb_typeof(base) <> 'object' OR jsonb_typeof(patch) <> 'object' THEN
+    RETURN patch;
+  END IF;
+
+  merged := base;
+  FOR key IN SELECT jsonb_object_keys(patch) LOOP
+    IF jsonb_typeof(base -> key) = 'object' AND jsonb_typeof(patch -> key) = 'object' THEN
+      merged := jsonb_set(merged, ARRAY[key], jsonb_deep_merge(base -> key, patch -> key), true);
+    ELSE
+      merged := jsonb_set(merged, ARRAY[key], patch -> key, true);
+    END IF;
+  END LOOP;
+
+  RETURN merged;
+END;
+$$;

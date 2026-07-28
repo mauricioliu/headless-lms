@@ -268,6 +268,9 @@ export async function buildContainer(
     mailer,
     { studentPortalUrl: config.studentPortalUrl, adminAppUrl: config.adminAppUrl },
   );
+  const settings = new SettingsService(
+    new DrizzleSettingsRepository(db, logger.child({ name: 'settings' })),
+  );
   // Content: reads on the root db; course writes + outbox append in one tx.
   const contentUow = new DrizzleUnitOfWork(db, (tx) => ({
     content: new DrizzleContentRepository(tx, contentLogger),
@@ -277,6 +280,7 @@ export async function buildContainer(
     new DrizzleContentRepository(db, contentLogger),
     new DrizzleContentStructureRepository(db, contentLogger),
     contentUow,
+    settings,
     contentLogger,
   );
   // Entitlements: reads on the root db; writes + outbox append in one tx.
@@ -302,14 +306,17 @@ export async function buildContainer(
     () => new Date().toISOString(),
     progressLogger,
   );
-  // Discussion: comment writes + outbox append in one tx.
+  // Discussion: comment writes + outbox append in one tx; entitlements answers
+  // whether a learner may reach the activity a comment hangs off.
   const discussionUow = new DrizzleUnitOfWork(db, (tx) => ({
     discussion: new DrizzleDiscussionRepository(tx, discussionLogger),
     outbox: new DrizzleOutboxAppender(tx, outboxLogger),
   }));
   const discussion = new DiscussionServiceImpl(
     new DrizzleDiscussionRepository(db, discussionLogger),
+    entitlements,
     discussionUow,
+    settings,
     () => new Date().toISOString(),
     discussionLogger,
   );
@@ -318,10 +325,6 @@ export async function buildContainer(
     new DrizzleAssetsRepository(db, assetsLogger),
     () => new Date().toISOString(),
     assetsLogger,
-  );
-
-  const settings = new SettingsService(
-    new DrizzleSettingsRepository(db, logger.child({ name: 'settings' })),
   );
 
   const reporting = {

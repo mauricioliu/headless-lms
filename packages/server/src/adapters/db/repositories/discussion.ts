@@ -4,7 +4,7 @@
 //   - the author's profile and current role, via the shared display join
 //   - the course an activity sits in, via its module
 // Both change independently of a comment, so a stored copy would go stale.
-import { and, eq, inArray, isNull, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, isNull, sql, type SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type {
   AuthorRecord,
@@ -15,16 +15,9 @@ import type {
   Comment,
   CommentReaction,
   CommentReport,
-  DiscussionSettings,
-  CommentsState,
 } from '../../../core/discussion/model.js';
-import {
-  activityCommentStates,
-  commentReactions,
-  commentReports,
-  comments,
-  discussionSettings,
-} from '../schema/discussion.js';
+import type { ListCommentsQuery, Page } from '../../../core/discussion/types.js';
+import { commentReactions, commentReports, comments } from '../schema/discussion.js';
 import { activities, courses, modules } from '../schema/content.js';
 import { orgUsers } from '../schema/organizations.js';
 import { users } from '../schema/identity.js';
@@ -38,6 +31,15 @@ type CommentRow = typeof comments.$inferSelect;
 /** The title lives in the activity's opaque settings blob; the moderation card
  *  needs it to say "Lesson 3" rather than an id. */
 const activityTitleExpr = sql<string>`coalesce(${activities.settings} ->> 'title', '')`;
+
+/** Sortable columns of the staff comment list, by the client-facing field name.
+ *  `activityTitle` sorts on the same expression the row is served from. */
+const sortColumns = {
+  createdAt: comments.createdAt,
+  updatedAt: comments.updatedAt,
+  status: comments.status,
+  activityTitle: activityTitleExpr,
+} as const;
 
 function toComment(row: CommentRow): Comment {
   return {
@@ -227,105 +229,6 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
       );
   }
 
-  async courseExists(orgId: string, courseId: string): Promise<boolean> {
-    const [row] = await this.db
-      .select({ id: courses.id })
-      .from(courses)
-      .where(and(eq(courses.orgId, orgId), eq(courses.id, courseId)))
-      .limit(1);
-    return row !== undefined;
-  }
-
-  async findSettings(orgId: string, courseId: string): Promise<DiscussionSettings | null> {
-    const [row] = await this.db
-      .select()
-      .from(discussionSettings)
-      .where(and(eq(discussionSettings.orgId, orgId), eq(discussionSettings.courseId, courseId)))
-      .limit(1);
-    return row ?? null;
-  }
-
-  async upsertSettings(orgId: string, settings: DiscussionSettings): Promise<DiscussionSettings> {
-    const [row] = await this.db
-      .insert(discussionSettings)
-      .values({
-        orgId,
-        courseId: settings.courseId,
-        enabled: settings.enabled,
-        threaded: settings.threaded,
-        requireReview: settings.requireReview,
-        reactions: settings.reactions,
-      })
-      .onConflictDoUpdate({
-        target: [discussionSettings.orgId, discussionSettings.courseId],
-        set: {
-          enabled: settings.enabled,
-          threaded: settings.threaded,
-          requireReview: settings.requireReview,
-          reactions: settings.reactions,
-        },
-      })
-      .returning();
-    return row!;
-  }
-
-  async findCommentsState(orgId: string, activityId: string): Promise<CommentsState | null> {
-    const [row] = await this.db
-      .select()
-      .from(activityCommentStates)
-      .where(
-        and(
-          eq(activityCommentStates.orgId, orgId),
-          eq(activityCommentStates.activityId, activityId),
-        ),
-      )
-      .limit(1);
-    return row?.state ?? null;
-  }
-
-  async listCommentStatesByCourse(
-    orgId: string,
-    courseId: string,
-  ): Promise<Record<string, CommentsState>> {
-    const rows = await this.db
-      .select({ activityId: activityCommentStates.activityId, state: activityCommentStates.state })
-      .from(activityCommentStates)
-      .innerJoin(
-        activities,
-        and(
-          eq(activities.orgId, activityCommentStates.orgId),
-          eq(activities.id, activityCommentStates.activityId),
-        ),
-      )
-      .innerJoin(
-        modules,
-        and(eq(modules.orgId, activities.orgId), eq(modules.id, activities.moduleId)),
-      )
-      .where(and(eq(activityCommentStates.orgId, orgId), eq(modules.courseId, courseId)));
-    return Object.fromEntries(rows.map((r) => [r.activityId, r.state]));
-  }
-
-  async upsertCommentsState(orgId: string, activityId: string, state: CommentsState): Promise<void> {
-    await this.db
-      .insert(activityCommentStates)
-      .values({ orgId, activityId, state })
-      .onConflictDoUpdate({
-        target: [activityCommentStates.orgId, activityCommentStates.activityId],
-        set: { state },
-      });
-  }
-
-  async clearCommentsState(orgId: string, activityId: string): Promise<void> {
-    await this.db
-      .delete(activityCommentStates)
-      .where(
-        and(
-          eq(activityCommentStates.orgId, orgId),
-          eq(activityCommentStates.activityId, activityId),
-        ),
-      );
-  }
-
   async courseOfActivity(orgId: string, activityId: string): Promise<string | null> {
     const [row] = await this.db
       .select({ courseId: modules.courseId })
@@ -339,15 +242,11 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
     return row?.courseId ?? null;
   }
 
-  /** The queue's one join: comments to their activity to its module, which is
-   *  where the course lives. Scoping and the card's activity title come from
-   *  the same pass. `filters` always carries the org scope; the course filter
-   *  is appended only when the caller narrows to one course. */
-  private async withContext(filters: SQL[], courseId?: string): Promise<CommentWithContext[]> {
-    if (courseId) {
-      filters.push(eq(modules.courseId, courseId));
-    }
-    const rows = await this.db
+  /** The list's one join: comments to their activity to its module, which is
+   *  where the course lives. The course filter and the row's activity title
+   *  both come out of that same pass, so neither costs an extra query. */
+  private listRows(where: SQL | undefined) {
+    return this.db
       .select({
         comment: comments,
         courseId: modules.courseId,
@@ -362,39 +261,85 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
         modules,
         and(eq(modules.orgId, activities.orgId), eq(modules.id, activities.moduleId)),
       )
-      .where(and(...filters))
-      .orderBy(comments.createdAt);
-    return rows.map((r) => ({
-      comment: toComment(r.comment),
-      courseId: r.courseId,
-      activityTitle: r.activityTitle,
-    }));
+      .where(where);
   }
 
-  listByStatusWithContext(
-    orgId: string,
-    status: Comment['status'],
-    courseId?: string,
-  ): Promise<CommentWithContext[]> {
-    return this.withContext(
-      [eq(comments.orgId, orgId), eq(comments.status, status)],
-      courseId,
-    );
+  /** The same join and filters, counted. Separate from `listRows` because the
+   *  total must ignore limit/offset. */
+  private listTotal(where: SQL | undefined) {
+    return this.db
+      .select({ total: sql<number>`cast(count(*) as int)` })
+      .from(comments)
+      .innerJoin(
+        activities,
+        and(eq(activities.orgId, comments.orgId), eq(activities.id, comments.activityId)),
+      )
+      .innerJoin(
+        modules,
+        and(eq(modules.orgId, activities.orgId), eq(modules.id, activities.moduleId)),
+      )
+      .where(where);
   }
 
-  listReportedWithContext(orgId: string, courseId?: string): Promise<CommentWithContext[]> {
-    return this.withContext(
-      [
-        eq(comments.orgId, orgId),
-        sql`exists (
-          select 1 from ${commentReports} r
-          where r.org_id = ${comments.orgId}
-            and r.comment_id = ${comments.id}
-            and r.resolved_at is null
-        )`,
-      ],
-      courseId,
-    );
+  async listComments(orgId: string, query: ListCommentsQuery): Promise<Page<CommentWithContext>> {
+    const conditions: SQL[] = [eq(comments.orgId, orgId)];
+    if (query.status) {
+      conditions.push(eq(comments.status, query.status));
+    }
+    if (query.courseId) {
+      conditions.push(eq(modules.courseId, query.courseId));
+    }
+    if (query.activityId) {
+      conditions.push(eq(comments.activityId, query.activityId));
+    }
+    if (query.orgUserId) {
+      conditions.push(eq(comments.orgUserId, query.orgUserId));
+    }
+    if (query.reported !== undefined) {
+      // Correlated EXISTS rather than a join to comment_reports: a comment with
+      // three open reports must stay one row.
+      const hasOpenReport = sql`exists (
+        select 1 from ${commentReports} r
+        where r.org_id = ${comments.orgId}
+          and r.comment_id = ${comments.id}
+          and r.resolved_at is null
+      )`;
+      conditions.push(query.reported ? hasOpenReport : sql`not ${hasOpenReport}`);
+    }
+    if (query.search) {
+      conditions.push(ilike(comments.body, `%${query.search}%`));
+    }
+    const where = and(...conditions);
+
+    // Sort: `-field` for descending; default to newest first, which is the
+    // order a moderator works in.
+    let orderBy: SQL;
+    if (query.sort) {
+      const isDesc = query.sort.startsWith('-');
+      const field = (isDesc ? query.sort.slice(1) : query.sort) as keyof typeof sortColumns;
+      const col = sortColumns[field] ?? comments.createdAt;
+      orderBy = isDesc ? desc(col) : asc(col);
+    } else {
+      orderBy = desc(comments.createdAt);
+    }
+
+    const rows = await this.listRows(where)
+      .orderBy(orderBy)
+      .limit(query.pageSize)
+      .offset((query.page - 1) * query.pageSize);
+
+    const [{ total } = { total: 0 }] = await this.listTotal(where);
+
+    return {
+      rows: rows.map((r) => ({
+        comment: toComment(r.comment),
+        courseId: r.courseId,
+        activityTitle: r.activityTitle,
+      })),
+      total,
+      page: query.page,
+      pageSize: query.pageSize,
+    };
   }
 
   async authorsOf(orgId: string, orgUserIds: string[]): Promise<Record<string, AuthorRecord>> {

@@ -13,6 +13,10 @@ export const CourseSettings = z.object({
 });
 export type CourseSettings = z.infer<typeof CourseSettings>;
 
+/** Settings patch body — omitted keys keep their stored value. */
+export const PatchCourseSettings = CourseSettings.partial();
+export type PatchCourseSettings = z.infer<typeof PatchCourseSettings>;
+
 export const Course = z.object({
   id: z.string(),
   title: z.string(),

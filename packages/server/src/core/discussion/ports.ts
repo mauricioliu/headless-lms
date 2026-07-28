@@ -8,38 +8,20 @@ import type {
   CommentAuthor,
   CommentReaction,
   CommentReport,
-  DiscussionSettings,
-  CommentsState,
 } from './model.js';
-import type { PostCommentInput, CommentsConfig, CommentView } from './types.js';
+import type {
+  PostCommentInput,
+  CommentsConfig,
+  CommentView,
+  CommentListItem,
+  ListCommentsQuery,
+  Page,
+} from './types.js';
 
 /** Everything a reader needs to render one activity's comments. */
 export interface ActivityComments {
   config: CommentsConfig;
   comments: CommentView[];
-}
-
-/** One entry in a moderator's work queue. Carries what the decision needs:
- *  who wrote it, where it sits, and — for a reported comment — who flagged it
- *  and why. A bare count is not something a moderator can act on. */
-export interface QueueEntry {
-  comment: Comment;
-  author: CommentAuthor;
-  /** Present only here. The queue is staff-scoped, and identifying a spam
-   *  account is the decision being asked for. Never on a CommentView. */
-  authorEmail: string;
-  /** Resolved from content at read time, never stored. */
-  courseId: string;
-  activityTitle: string;
-  reports: { reporter: CommentAuthor; reason: string; createdAt: string }[];
-}
-
-export interface QueueQuery {
-  /** Scope to one course; omitted = the whole org. Resolved through the
-   *  activity's module, since a comment stores no course. */
-  courseId?: string;
-  /** "pending" = awaiting review; "reported" = carrying unresolved reports. */
-  kind: 'pending' | 'reported';
 }
 
 /**
@@ -56,7 +38,7 @@ export interface Actor {
 }
 
 /** A profile row as the repository loads it. `email` is stripped before
- *  comments are served and kept only for the moderation queue. */
+ *  comments are served and kept only for the staff comment list. */
 export interface AuthorRecord extends CommentAuthor {
   email: string;
 }
@@ -69,18 +51,7 @@ export interface CommentWithContext {
 }
 
 export interface DiscussionService {
-  /** The course's settings, or DEFAULT_SETTINGS when none are stored. */
-  getSettings(orgId: string, courseId: string): Promise<DiscussionSettings>;
-  setSettings(
-    orgId: string,
-    courseId: string,
-    patch: Partial<Omit<DiscussionSettings, 'orgId' | 'courseId'>>,
-  ): Promise<DiscussionSettings>;
-  /** null clears the override so the course setting applies again. */
-  setCommentsState(orgId: string, activityId: string, state: CommentsState | null): Promise<void>;
-  /** Every explicit override in a course, keyed by activity id. Activities with
-   *  no override are absent — they inherit. */
-  listCommentStates(orgId: string, courseId: string): Promise<Record<string, CommentsState>>;
+
   /** Course settings with the activity's override applied. Resolves the course
    *  from the activity. */
   resolveConfig(orgId: string, activityId: string): Promise<CommentsConfig>;
@@ -100,21 +71,37 @@ export interface DiscussionService {
   publish(orgId: string, commentId: string, actor: Actor): Promise<Comment>;
 
   /** The activity's comments as this reader may see them. */
-  listComments(orgId: string, activityId: string, actor: Actor): Promise<ActivityComments>;
+  activityComments(orgId: string, activityId: string, actor: Actor): Promise<ActivityComments>;
+
+  /**
+   * The org's comments, filtered. Staff-scoped: rows carry the author's email
+   * and a removed comment's body, neither of which a learner may see, so the
+   * edge admits only staff.
+   *
+   * No rule is applied beyond the filters — this is the moderator's view of
+   * what exists, not a rendering of what someone is allowed to read.
+   */
+  listComments(orgId: string, query: ListCommentsQuery): Promise<Page<CommentListItem>>;
 
   react(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void>;
   unreact(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void>;
 
   /** Accepted even on locked comments — a locked activity can still hold
    *  something a moderator needs to see. */
-  report(orgId: string, commentId: string, actor: Actor, reason: string): Promise<CommentReport>;
+  reportComment(orgId: string, commentId: string, actor: Actor, reason: string): Promise<CommentReport>;
   /** Staff only. Resolves every open report on the comment at once. */
   resolveReports(orgId: string, commentId: string, actor: Actor): Promise<void>;
 
-  queue(orgId: string, query: QueueQuery): Promise<QueueEntry[]>;
+  /** Plain read of one comment — no rules applied. */
+  getComment(orgId: string, commentId: string): Promise<Comment | null>;
+}
 
-  /** Read-only lookup for the HTTP entitlement gate — no rules applied. */
-  findCommentForGate(orgId: string, commentId: string): Promise<Comment | null>;
+/** What discussion needs to know about a learner's standing in a course.
+ *  Entitlements owns the answer; discussion only asks, so that "serves nothing
+ *  for content a person cannot open" is a rule of this domain rather than
+ *  something each caller remembers to apply. */
+export interface CourseAccessReader {
+  hasCourseAccess(orgId: string, orgUserId: string, courseId: string): Promise<boolean>;
 }
 
 export interface DiscussionRepository {
@@ -130,12 +117,7 @@ export interface DiscussionRepository {
 
   listReactions(orgId: string, commentIds: string[]): Promise<CommentReaction[]>;
   insertReaction(orgId: string, reaction: CommentReaction): Promise<void>;
-  deleteReaction(
-    orgId: string,
-    commentId: string,
-    orgUserId: string,
-    emoji: string,
-  ): Promise<void>;
+  deleteReaction(orgId: string, commentId: string, orgUserId: string, emoji: string): Promise<void>;
 
   /** Returns null when this person has already reported this comment. */
   insertReport(orgId: string, report: CommentReport): Promise<CommentReport | null>;
@@ -144,32 +126,13 @@ export interface DiscussionRepository {
   /** Resolves every open report on one comment. */
   resolveReportsFor(orgId: string, commentId: string, resolvedAt: string): Promise<void>;
 
-  /** Whether the course exists in this org, for the settings write's existence
-   *  check — a bogus or cross-org id must 404, not fall through to the FK. */
-  courseExists(orgId: string, courseId: string): Promise<boolean>;
-  findSettings(orgId: string, courseId: string): Promise<DiscussionSettings | null>;
-  upsertSettings(orgId: string, settings: DiscussionSettings): Promise<DiscussionSettings>;
-  findCommentsState(orgId: string, activityId: string): Promise<CommentsState | null>;
-  /** Overrides for every activity in the course, keyed by activity id. */
-  listCommentStatesByCourse(
-    orgId: string,
-    courseId: string,
-  ): Promise<Record<string, CommentsState>>;
-  upsertCommentsState(orgId: string, activityId: string, state: CommentsState): Promise<void>;
-  clearCommentsState(orgId: string, activityId: string): Promise<void>;
-
   /** The course an activity sits in, via its module. null when the activity
    *  does not exist. Content's fact, resolved here rather than copied. */
   courseOfActivity(orgId: string, activityId: string): Promise<string | null>;
-  /** Comments in `status`, with their course and activity title resolved.
-   *  Scoped to a course when given. */
-  listByStatusWithContext(
-    orgId: string,
-    status: Comment['status'],
-    courseId?: string,
-  ): Promise<CommentWithContext[]>;
-  /** Comments carrying at least one unresolved report, same resolution. */
-  listReportedWithContext(orgId: string, courseId?: string): Promise<CommentWithContext[]>;
+  /** One page of the org's comments matching the filters, each with its course
+   *  and activity title resolved. Authors and reports are hydrated by the
+   *  service against the page it gets back, not joined per row here. */
+  listComments(orgId: string, query: ListCommentsQuery): Promise<Page<CommentWithContext>>;
 
   /** Profiles and current roles of the given participations, keyed by
    *  org_users.id. One join covers the author badge, the moderation card and

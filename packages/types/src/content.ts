@@ -15,11 +15,24 @@ export type ContentType = "course" | "download";
 
 export type CourseStatus = "draft" | "published";
 
-/** Course-wide delivery settings. Stored as a jsonb blob, always read back
- *  complete — missing keys fall back to their defaults. */
 export interface CourseSettings {
   /** Students may download a text transcript for every video in the course. */
   transcriptDownloads: boolean;
+  comments?: {
+    /** Comments show on this course's lessons. */
+    enabled: boolean;
+    /** false = replies are not accepted; comments are a flat list. */
+    threaded: boolean;
+    /** Learner comments are held until a moderator approves them. */
+    requireReview: boolean;
+    /** Learners may react to a comment. */
+    reactions: boolean;
+  };
+}
+export interface ActivitySettings {
+  comments?: {
+    enabled: boolean;
+  };
 }
 
 export interface Course {
@@ -44,7 +57,6 @@ export interface Activity {
   readonly id: string;
   moduleId: string;
   seq: number;
-  /** Opaque per-activity blob (title, type, body, completion rule, …). Not modelled. */
   settings: unknown;
   /** Media-library assets backing this activity (activity_assets), ordered. */
   assetIds: string[];
@@ -161,7 +173,6 @@ export interface AddDownloadAssetInput {
 export interface ReorderDownloadAssetsInput {
   assetIds: string[];
 }
-
 
 export interface CourseCreated extends DomainEvent {
   type: "course.created";

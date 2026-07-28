@@ -247,6 +247,42 @@ export type UpdateCourseResponses = {
 
 export type UpdateCourseResponse = UpdateCourseResponses[keyof UpdateCourseResponses];
 
+export type UpdateCourseSettingsData = {
+  body: {
+    transcriptDownloads?: boolean;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/courses/{id}/settings";
+};
+
+export type UpdateCourseSettingsErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type UpdateCourseSettingsError =
+  UpdateCourseSettingsErrors[keyof UpdateCourseSettingsErrors];
+
+export type UpdateCourseSettingsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    transcriptDownloads: boolean;
+  };
+};
+
+export type UpdateCourseSettingsResponse =
+  UpdateCourseSettingsResponses[keyof UpdateCourseSettingsResponses];
+
 export type ListDownloadsData = {
   body?: never;
   path?: never;
@@ -652,6 +688,26 @@ export type RenameDownloadAssetResponses = {
 export type RenameDownloadAssetResponse =
   RenameDownloadAssetResponses[keyof RenameDownloadAssetResponses];
 
+export type GetLearnOrgData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/learn/org";
+};
+
+export type GetLearnOrgResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+};
+
+export type GetLearnOrgResponse = GetLearnOrgResponses[keyof GetLearnOrgResponses];
+
 export type ListLearnCoursesData = {
   body?: never;
   path?: never;
@@ -683,26 +739,6 @@ export type ListLearnCoursesResponses = {
 };
 
 export type ListLearnCoursesResponse = ListLearnCoursesResponses[keyof ListLearnCoursesResponses];
-
-export type GetLearnOrgData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/api/learn/org";
-};
-
-export type GetLearnOrgResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-};
-
-export type GetLearnOrgResponse = GetLearnOrgResponses[keyof GetLearnOrgResponses];
 
 export type GetLearnCourseData = {
   body?: never;
@@ -792,60 +828,6 @@ export type ListLearnModulesResponses = {
 
 export type ListLearnModulesResponse = ListLearnModulesResponses[keyof ListLearnModulesResponses];
 
-export type RequestLearnAssetDownloadData = {
-  body: {
-    filename?: string;
-  };
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: "/api/learn/assets/{id}/download-url";
-};
-
-export type RequestLearnAssetDownloadErrors = {
-  /**
-   * Default Response
-   */
-  401: {
-    error: string;
-    message?: string;
-  };
-  /**
-   * Default Response
-   */
-  404: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type RequestLearnAssetDownloadError =
-  RequestLearnAssetDownloadErrors[keyof RequestLearnAssetDownloadErrors];
-
-export type RequestLearnAssetDownloadResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    url: string;
-    asset: {
-      id: string;
-      key: string;
-      kind: "video" | "download" | "content";
-      filename: string;
-      contentType: string;
-      size: number;
-      status: "pending" | "ready";
-      uploadedBy: string;
-      createdAt: string;
-    };
-  };
-};
-
-export type RequestLearnAssetDownloadResponse =
-  RequestLearnAssetDownloadResponses[keyof RequestLearnAssetDownloadResponses];
-
 export type ReportProgressData = {
   body: {
     activity: string;
@@ -923,113 +905,6 @@ export type GetLearnCourseProgressResponses = {
 
 export type GetLearnCourseProgressResponse =
   GetLearnCourseProgressResponses[keyof GetLearnCourseProgressResponses];
-
-export type ListLearnDownloadsData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/api/learn/downloads";
-};
-
-export type ListLearnDownloadsResponses = {
-  /**
-   * Default Response
-   */
-  200: Array<{
-    id: string;
-    title: string;
-    slug: string;
-    description: string;
-    status: "draft" | "published";
-    category: string;
-    thumbnailAssetId: string | null;
-    assetCount: number;
-    totalSize: number;
-    entitledCount: number;
-    updatedAt: string;
-    createdAt: string;
-  }>;
-};
-
-export type ListLearnDownloadsResponse =
-  ListLearnDownloadsResponses[keyof ListLearnDownloadsResponses];
-
-export type GetLearnDownloadData = {
-  body?: never;
-  path: {
-    downloadId: string;
-  };
-  query?: never;
-  url: "/api/learn/downloads/{downloadId}";
-};
-
-export type GetLearnDownloadErrors = {
-  /**
-   * Default Response
-   */
-  404: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type GetLearnDownloadError = GetLearnDownloadErrors[keyof GetLearnDownloadErrors];
-
-export type GetLearnDownloadResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    download: {
-      id: string;
-      title: string;
-      slug: string;
-      description: string;
-      status: "draft" | "published";
-      category: string;
-      thumbnailAssetId: string | null;
-      assetCount: number;
-      totalSize: number;
-      entitledCount: number;
-      updatedAt: string;
-      createdAt: string;
-    };
-    assets: Array<{
-      id: string;
-      assetId: string;
-      seq: number;
-      displayName: string | null;
-      filename: string;
-      contentType: string;
-      size: number;
-    }>;
-  };
-};
-
-export type GetLearnDownloadResponse = GetLearnDownloadResponses[keyof GetLearnDownloadResponses];
-
-export type GetLearnDownloadAssetData = {
-  body?: never;
-  path: {
-    downloadId: string;
-    assetId: string;
-  };
-  query?: never;
-  url: "/api/learn/downloads/{downloadId}/assets/{assetId}";
-};
-
-export type GetLearnDownloadAssetErrors = {
-  /**
-   * Default Response
-   */
-  404: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type GetLearnDownloadAssetError =
-  GetLearnDownloadAssetErrors[keyof GetLearnDownloadAssetErrors];
 
 export type ListActivityCommentsData = {
   body?: never;
@@ -1391,33 +1266,197 @@ export type ReportCommentResponses = {
 
 export type ReportCommentResponse = ReportCommentResponses[keyof ReportCommentResponses];
 
-export type GetModerationQueueData = {
-  body?: never;
-  path?: never;
-  query: {
-    kind: "pending" | "reported";
-    courseId?: string;
+export type RequestLearnAssetDownloadData = {
+  body: {
+    filename?: string;
   };
-  url: "/api/queue";
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/learn/assets/{id}/download-url";
 };
 
-export type GetModerationQueueResponses = {
+export type RequestLearnAssetDownloadErrors = {
+  /**
+   * Default Response
+   */
+  401: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type RequestLearnAssetDownloadError =
+  RequestLearnAssetDownloadErrors[keyof RequestLearnAssetDownloadErrors];
+
+export type RequestLearnAssetDownloadResponses = {
   /**
    * Default Response
    */
   200: {
-    entries: Array<{
-      comment: {
-        id: string;
-        activityId: string;
-        parentId: string | null;
-        orgUserId: string;
-        body: string;
-        status: "pending" | "published" | "removed";
-        removedBy: string | null;
-        createdAt: string;
-        updatedAt: string;
-      };
+    url: string;
+    asset: {
+      id: string;
+      key: string;
+      kind: "video" | "download" | "content";
+      filename: string;
+      contentType: string;
+      size: number;
+      status: "pending" | "ready";
+      uploadedBy: string;
+      createdAt: string;
+    };
+  };
+};
+
+export type RequestLearnAssetDownloadResponse =
+  RequestLearnAssetDownloadResponses[keyof RequestLearnAssetDownloadResponses];
+
+export type ListLearnDownloadsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/learn/downloads";
+};
+
+export type ListLearnDownloadsResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    description: string;
+    status: "draft" | "published";
+    category: string;
+    thumbnailAssetId: string | null;
+    assetCount: number;
+    totalSize: number;
+    entitledCount: number;
+    updatedAt: string;
+    createdAt: string;
+  }>;
+};
+
+export type ListLearnDownloadsResponse =
+  ListLearnDownloadsResponses[keyof ListLearnDownloadsResponses];
+
+export type GetLearnDownloadData = {
+  body?: never;
+  path: {
+    downloadId: string;
+  };
+  query?: never;
+  url: "/api/learn/downloads/{downloadId}";
+};
+
+export type GetLearnDownloadErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type GetLearnDownloadError = GetLearnDownloadErrors[keyof GetLearnDownloadErrors];
+
+export type GetLearnDownloadResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    download: {
+      id: string;
+      title: string;
+      slug: string;
+      description: string;
+      status: "draft" | "published";
+      category: string;
+      thumbnailAssetId: string | null;
+      assetCount: number;
+      totalSize: number;
+      entitledCount: number;
+      updatedAt: string;
+      createdAt: string;
+    };
+    assets: Array<{
+      id: string;
+      assetId: string;
+      seq: number;
+      displayName: string | null;
+      filename: string;
+      contentType: string;
+      size: number;
+    }>;
+  };
+};
+
+export type GetLearnDownloadResponse = GetLearnDownloadResponses[keyof GetLearnDownloadResponses];
+
+export type GetLearnDownloadAssetData = {
+  body?: never;
+  path: {
+    downloadId: string;
+    assetId: string;
+  };
+  query?: never;
+  url: "/api/learn/downloads/{downloadId}/assets/{assetId}";
+};
+
+export type GetLearnDownloadAssetErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type GetLearnDownloadAssetError =
+  GetLearnDownloadAssetErrors[keyof GetLearnDownloadAssetErrors];
+
+export type ListCommentsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    sort?: string;
+    status?: "pending" | "published" | "removed";
+    reported?: string;
+    courseId?: string;
+    activityId?: string;
+    orgUserId?: string;
+  };
+  url: "/api/comments";
+};
+
+export type ListCommentsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    rows: Array<{
+      id: string;
+      parentId: string | null;
+      activityId: string;
+      activityTitle: string;
+      courseId: string;
+      body: string;
+      status: "pending" | "published" | "removed";
       author: {
         id: string;
         name: string;
@@ -1425,8 +1464,7 @@ export type GetModerationQueueResponses = {
         role: "owner" | "admin" | "instructor" | "student";
       };
       authorEmail: string;
-      courseId: string;
-      activityTitle: string;
+      removedBy: string | null;
       reports: Array<{
         reporter: {
           id: string;
@@ -1437,12 +1475,16 @@ export type GetModerationQueueResponses = {
         reason: string;
         createdAt: string;
       }>;
+      createdAt: string;
+      updatedAt: string;
     }>;
+    total: number;
+    page: number;
+    pageSize: number;
   };
 };
 
-export type GetModerationQueueResponse =
-  GetModerationQueueResponses[keyof GetModerationQueueResponses];
+export type ListCommentsResponse = ListCommentsResponses[keyof ListCommentsResponses];
 
 export type ModerateRemoveCommentData = {
   body?: never;

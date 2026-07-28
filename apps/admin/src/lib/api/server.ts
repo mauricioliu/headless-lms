@@ -52,7 +52,7 @@ import type {
   Module,
   OverviewStats,
   Paginated,
-  QueueEntry,
+  CommentListItem,
   Student,
   CommentStates,
 } from "./types";
@@ -182,25 +182,32 @@ export const serverApi = {
     return page.rows;
   },
 
-  // discussion (course-scoped settings + moderation queue)
+  // discussion (course-scoped settings + the comment list)
   async discussionSettings(courseId: string): Promise<DiscussionSettings> {
     ensureConfigured();
     return unwrap(
       await Discussion.getDiscussionSettings({ path: { courseId }, ...(await authHeaders()) }),
     );
   },
-  async moderationQueue(
+  /** The staff comment list, scoped to one course. `status` and `reported` are
+   *  the two facets the Comments tab exposes; `reported` goes over the wire as
+   *  a string because query values always do. */
+  async listComments(
     courseId: string,
-    kind: "pending" | "reported",
-  ): Promise<QueueEntry[]> {
+    params: ListParams,
+  ): Promise<Paginated<CommentListItem>> {
     ensureConfigured();
-    const { entries } = unwrap(
-      await Discussion.getModerationQueue({
-        query: { kind, courseId },
+    const { reported, ...query } = toQuery(params, ["status", "reported"]);
+    return unwrap(
+      await Discussion.listComments({
+        query: {
+          ...query,
+          courseId,
+          ...(reported === undefined ? {} : { reported: String(reported) }),
+        },
         ...(await authHeaders()),
       }),
     );
-    return entries;
   },
   async commentStates(courseId: string): Promise<CommentStates> {
     ensureConfigured();

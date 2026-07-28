@@ -1,25 +1,28 @@
-// Comments tab: the moderation queue for one course. The queue is already
-// course-scoped by the API, so this tab is the whole moderation surface — there
-// is no global inbox. Comment settings live on the Settings tab.
+// Comments tab: the course's comments, filtered. The API scopes by course, so
+// this tab is the whole moderation surface — there is no global inbox. Comment
+// settings live on the Settings tab.
 import { requireAuth } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
+import { parseListParams } from "@/lib/table/parse-list-params";
 
-import { QueueList, type QueueKind } from "./_components/queue-list";
+import { CommentList } from "./_components/comment-list";
 
 export default async function CourseCommentsTab({
   params,
   searchParams,
 }: {
   params: Promise<{ courseId: string }>;
-  searchParams: Promise<{ kind?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { courseId } = await params;
-  const { kind: rawKind } = await searchParams;
-  const kind: QueueKind = rawKind === "reported" ? "reported" : "pending";
+  const listParams = parseListParams(await searchParams, {
+    pageSize: 20,
+    initialSort: [{ id: "createdAt", desc: true }],
+  });
 
-  const queuePromise = serverApi.moderationQueue(courseId, kind);
-  await requireAuth(queuePromise);
-  const entries = await queuePromise;
+  const pagePromise = serverApi.listComments(courseId, listParams);
+  await requireAuth(pagePromise);
+  const { rows, total } = await pagePromise;
 
-  return <QueueList kind={kind} entries={entries} />;
+  return <CommentList rows={rows} total={total} params={listParams} />;
 }

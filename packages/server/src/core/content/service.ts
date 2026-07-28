@@ -1,12 +1,7 @@
-// content context — service implementation (inbound port).
-//
-// Course mutations run inside the context's UnitOfWork: the domain write and
-// the outbox append commit in ONE transaction (transactional outbox). This
-// service never publishes — the outbox relay republishes committed events to
-// the EventBus at-least-once.
 import type {
   Activity,
   Course,
+  CourseSettings,
   Download,
   DownloadAsset,
   Module,
@@ -29,6 +24,7 @@ import type {
   UpdateDownloadInput,
 } from './types.js';
 import type { Logger } from '../shared/ports.js';
+import { SettingsNamespace, type SettingsService } from '../shared/settings.js';
 import { NotFoundError, ConflictError } from '../shared/errors.js';
 import { noopLogger } from '../shared/logger.js';
 
@@ -45,6 +41,7 @@ export class ContentServiceImpl implements ContentService {
     private readonly repo: ContentRepository,
     private readonly structureRepo: CourseRepository,
     private readonly uow: ContentUnitOfWork,
+    private readonly settings: SettingsService,
     private readonly logger: Logger = noopLogger,
   ) {}
 
@@ -52,8 +49,24 @@ export class ContentServiceImpl implements ContentService {
     return this.repo.list(orgId, query);
   }
 
-  get(orgId: string, id: string): Promise<Course | null> {
-    return this.repo.findById(orgId, id);
+  async get(orgId: string, id: string): Promise<Course | null> {
+    const course = await this.repo.findById(orgId, id);
+    if (!course) {
+      return null;
+    }
+    const settings = await this.settings.get<Partial<CourseSettings>>(
+      orgId,
+      SettingsNamespace.content,
+      id,
+    );
+
+    return {
+      ...course,
+      settings: {
+        ...course.settings,
+        ...settings,
+      },
+    };
   }
 
   async create(orgId: string, input: CreateCourseInput): Promise<Course> {
@@ -77,6 +90,25 @@ export class ContentServiceImpl implements ContentService {
     });
     this.logger.info('course updated', { orgId, courseId: id });
     return course;
+  }
+
+  async patchSettings(
+    orgId: string,
+    id: string,
+    value: Partial<CourseSettings>,
+  ): Promise<CourseSettings> {
+    const course = await this.repo.findById(orgId, id);
+    if (!course) {
+      throw new NotFoundError('Course', id);
+    }
+    const merged = await this.settings.patch<Partial<CourseSettings>>(
+      orgId,
+      SettingsNamespace.content,
+      id,
+      value,
+    );
+    this.logger.info('course settings patched', { orgId, courseId: id });
+    return { ...course.settings, ...merged };
   }
 
   async remove(orgId: string, id: string): Promise<void> {
@@ -199,11 +231,7 @@ export class ContentServiceImpl implements ContentService {
     return download;
   }
 
-  async updateDownload(
-    orgId: string,
-    id: string,
-    patch: UpdateDownloadInput,
-  ): Promise<Download> {
+  async updateDownload(orgId: string, id: string, patch: UpdateDownloadInput): Promise<Download> {
     const download = await this.uow.run(async ({ content, outbox }) => {
       const updated = await content.updateDownload(orgId, id, patch);
       if (!updated) {

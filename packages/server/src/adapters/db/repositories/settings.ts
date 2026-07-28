@@ -41,15 +41,16 @@ export class DrizzleSettingsRepository implements SettingsRepository {
     scopeId: string,
     patch: SettingsValue,
   ): Promise<SettingsRecord> {
-    // Shallow jsonb merge, so a partial patch cannot clobber sibling keys — and
-    // so two domains writing different namespaces never contend.
+    // Recursive jsonb merge (see the jsonb_deep_merge migration): a partial
+    // patch cannot clobber sibling keys at any depth, only the leaves it names.
+    // One statement, so concurrent patches never read-modify-write over each other.
     const [row] = await this.db
       .insert(settings)
       .values({ orgId, namespace, scopeId, value: patch })
       .onConflictDoUpdate({
         target: [settings.orgId, settings.namespace, settings.scopeId],
         set: {
-          value: sql`${settings.value} || ${JSON.stringify(patch)}::jsonb`,
+          value: sql`jsonb_deep_merge(${settings.value}, ${JSON.stringify(patch)}::jsonb)`,
           updatedAt: new Date(),
         },
       })

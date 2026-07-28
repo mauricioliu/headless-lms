@@ -99,8 +99,6 @@ import type {
   GetLearnOrgResponses,
   GetMcpData,
   GetMcpResponses,
-  GetModerationQueueData,
-  GetModerationQueueResponses,
   GetOverviewData,
   GetOverviewResponses,
   GetStudentData,
@@ -125,6 +123,8 @@ import type {
   ListAvailableIntegrationsData,
   ListAvailableIntegrationsErrors,
   ListAvailableIntegrationsResponses,
+  ListCommentsData,
+  ListCommentsResponses,
   ListConnectedAppsData,
   ListConnectedAppsErrors,
   ListConnectedAppsResponses,
@@ -218,6 +218,9 @@ import type {
   UpdateCourseData,
   UpdateCourseErrors,
   UpdateCourseResponses,
+  UpdateCourseSettingsData,
+  UpdateCourseSettingsErrors,
+  UpdateCourseSettingsResponses,
   UpdateDownloadData,
   UpdateDownloadErrors,
   UpdateDownloadResponses,
@@ -454,6 +457,26 @@ export class Courses {
       ThrowOnError
     >({
       url: "/api/courses/{id}",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
+   * Update a course settings
+   */
+  public static updateCourseSettings<ThrowOnError extends boolean = false>(
+    options: Options<UpdateCourseSettingsData, ThrowOnError>,
+  ): RequestResult<UpdateCourseSettingsResponses, UpdateCourseSettingsErrors, ThrowOnError> {
+    return (options.client ?? client).patch<
+      UpdateCourseSettingsResponses,
+      UpdateCourseSettingsErrors,
+      ThrowOnError
+    >({
+      url: "/api/courses/{id}/settings",
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -758,18 +781,6 @@ export class Downloads {
 
 export class Learn {
   /**
-   * List the student's enrolled courses
-   */
-  public static listLearnCourses<ThrowOnError extends boolean = false>(
-    options?: Options<ListLearnCoursesData, ThrowOnError>,
-  ): RequestResult<ListLearnCoursesResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListLearnCoursesResponses, unknown, ThrowOnError>({
-      url: "/api/learn/courses",
-      ...options,
-    });
-  }
-
-  /**
    * Get the portal org's public identity (branding)
    */
   public static getLearnOrg<ThrowOnError extends boolean = false>(
@@ -777,6 +788,18 @@ export class Learn {
   ): RequestResult<GetLearnOrgResponses, unknown, ThrowOnError> {
     return (options?.client ?? client).get<GetLearnOrgResponses, unknown, ThrowOnError>({
       url: "/api/learn/org",
+      ...options,
+    });
+  }
+
+  /**
+   * List the student's enrolled courses
+   */
+  public static listLearnCourses<ThrowOnError extends boolean = false>(
+    options?: Options<ListLearnCoursesData, ThrowOnError>,
+  ): RequestResult<ListLearnCoursesResponses, unknown, ThrowOnError> {
+    return (options?.client ?? client).get<ListLearnCoursesResponses, unknown, ThrowOnError>({
+      url: "/api/learn/courses",
       ...options,
     });
   }
@@ -805,30 +828,6 @@ export class Learn {
       ListLearnModulesErrors,
       ThrowOnError
     >({ url: "/api/learn/courses/{courseId}/modules", ...options });
-  }
-
-  /**
-   * Get a short-lived presigned URL to serve an asset to the student
-   */
-  public static requestLearnAssetDownload<ThrowOnError extends boolean = false>(
-    options: Options<RequestLearnAssetDownloadData, ThrowOnError>,
-  ): RequestResult<
-    RequestLearnAssetDownloadResponses,
-    RequestLearnAssetDownloadErrors,
-    ThrowOnError
-  > {
-    return (options.client ?? client).post<
-      RequestLearnAssetDownloadResponses,
-      RequestLearnAssetDownloadErrors,
-      ThrowOnError
-    >({
-      url: "/api/learn/assets/{id}/download-url",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
   }
 
   /**
@@ -862,43 +861,6 @@ export class Learn {
       GetLearnCourseProgressErrors,
       ThrowOnError
     >({ url: "/api/learn/courses/{courseId}/progress", ...options });
-  }
-
-  /**
-   * Downloads the student is actively entitled to
-   */
-  public static listLearnDownloads<ThrowOnError extends boolean = false>(
-    options?: Options<ListLearnDownloadsData, ThrowOnError>,
-  ): RequestResult<ListLearnDownloadsResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListLearnDownloadsResponses, unknown, ThrowOnError>({
-      url: "/api/learn/downloads",
-      ...options,
-    });
-  }
-
-  /**
-   * One entitled download and its ordered assets
-   */
-  public static getLearnDownload<ThrowOnError extends boolean = false>(
-    options: Options<GetLearnDownloadData, ThrowOnError>,
-  ): RequestResult<GetLearnDownloadResponses, GetLearnDownloadErrors, ThrowOnError> {
-    return (options.client ?? client).get<
-      GetLearnDownloadResponses,
-      GetLearnDownloadErrors,
-      ThrowOnError
-    >({ url: "/api/learn/downloads/{downloadId}", ...options });
-  }
-
-  /**
-   * Redirect to a short-lived signed URL for an entitled asset
-   */
-  public static getLearnDownloadAsset<ThrowOnError extends boolean = false>(
-    options: Options<GetLearnDownloadAssetData, ThrowOnError>,
-  ): RequestResult<unknown, GetLearnDownloadAssetErrors, ThrowOnError> {
-    return (options.client ?? client).get<unknown, GetLearnDownloadAssetErrors, ThrowOnError>({
-      url: "/api/learn/downloads/{downloadId}/assets/{assetId}",
-      ...options,
-    });
   }
 
   /**
@@ -1004,17 +966,78 @@ export class Learn {
       },
     });
   }
+
+  /**
+   * Get a short-lived presigned URL to serve an asset to the student
+   */
+  public static requestLearnAssetDownload<ThrowOnError extends boolean = false>(
+    options: Options<RequestLearnAssetDownloadData, ThrowOnError>,
+  ): RequestResult<
+    RequestLearnAssetDownloadResponses,
+    RequestLearnAssetDownloadErrors,
+    ThrowOnError
+  > {
+    return (options.client ?? client).post<
+      RequestLearnAssetDownloadResponses,
+      RequestLearnAssetDownloadErrors,
+      ThrowOnError
+    >({
+      url: "/api/learn/assets/{id}/download-url",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  }
+
+  /**
+   * Downloads the student is actively entitled to
+   */
+  public static listLearnDownloads<ThrowOnError extends boolean = false>(
+    options?: Options<ListLearnDownloadsData, ThrowOnError>,
+  ): RequestResult<ListLearnDownloadsResponses, unknown, ThrowOnError> {
+    return (options?.client ?? client).get<ListLearnDownloadsResponses, unknown, ThrowOnError>({
+      url: "/api/learn/downloads",
+      ...options,
+    });
+  }
+
+  /**
+   * One entitled download and its ordered assets
+   */
+  public static getLearnDownload<ThrowOnError extends boolean = false>(
+    options: Options<GetLearnDownloadData, ThrowOnError>,
+  ): RequestResult<GetLearnDownloadResponses, GetLearnDownloadErrors, ThrowOnError> {
+    return (options.client ?? client).get<
+      GetLearnDownloadResponses,
+      GetLearnDownloadErrors,
+      ThrowOnError
+    >({ url: "/api/learn/downloads/{downloadId}", ...options });
+  }
+
+  /**
+   * Redirect to a short-lived signed URL for an entitled asset
+   */
+  public static getLearnDownloadAsset<ThrowOnError extends boolean = false>(
+    options: Options<GetLearnDownloadAssetData, ThrowOnError>,
+  ): RequestResult<unknown, GetLearnDownloadAssetErrors, ThrowOnError> {
+    return (options.client ?? client).get<unknown, GetLearnDownloadAssetErrors, ThrowOnError>({
+      url: "/api/learn/downloads/{downloadId}/assets/{assetId}",
+      ...options,
+    });
+  }
 }
 
 export class Discussion {
   /**
-   * List comments awaiting review or carrying unresolved reports
+   * List comments, filtered by course, activity, author, status or reports
    */
-  public static getModerationQueue<ThrowOnError extends boolean = false>(
-    options: Options<GetModerationQueueData, ThrowOnError>,
-  ): RequestResult<GetModerationQueueResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).get<GetModerationQueueResponses, unknown, ThrowOnError>({
-      url: "/api/queue",
+  public static listComments<ThrowOnError extends boolean = false>(
+    options?: Options<ListCommentsData, ThrowOnError>,
+  ): RequestResult<ListCommentsResponses, unknown, ThrowOnError> {
+    return (options?.client ?? client).get<ListCommentsResponses, unknown, ThrowOnError>({
+      url: "/api/comments",
       ...options,
     });
   }

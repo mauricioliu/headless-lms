@@ -3,9 +3,9 @@
 //
 // The author is the participation's profile minus its email — learners read each
 // other's comments and the list must not be a directory of the cohort's
-// addresses. The moderation queue carries `authorEmail` separately.
+// addresses. The staff-facing comment list carries `authorEmail` separately.
 import { z } from "zod";
-import { OrgRole, OrgUserProfileSchema } from "./shared.js";
+import { ListQuery, OrgRole, OrgUserProfileSchema, paginated } from "./shared.js";
 
 export const CommentStatus = z.enum(["pending", "published", "removed"]);
 export type CommentStatus = z.infer<typeof CommentStatus>;
@@ -120,74 +120,53 @@ export const CommentReport = z.object({
 });
 export type CommentReport = z.infer<typeof CommentReport>;
 
-export const DiscussionSettings = z.object({
-  orgId: z.string(),
-  courseId: z.string(),
-  enabled: z.boolean(),
-  threaded: z.boolean(),
-  requireReview: z.boolean(),
-  reactions: z.boolean(),
-});
-export type DiscussionSettings = z.infer<typeof DiscussionSettings>;
-
-export const SetDiscussionSettings = z.object({
-  enabled: z.boolean().optional(),
-  threaded: z.boolean().optional(),
-  requireReview: z.boolean().optional(),
-  reactions: z.boolean().optional(),
-});
-export type SetDiscussionSettings = z.infer<typeof SetDiscussionSettings>;
-
-export const SetCommentsState = z.object({
-  /**
-   * null clears the override so the course setting applies again.
-   *
-   * Spelled as a literal union rather than `CommentsState.nullable()`: hey-api's
-   * openapi-ts (0.99.0) drops the `null` arm when a required property is a
-   * `{ type: "string", enum: [...], nullable: true }` schema, generating
-   * `"visible" | "hidden" | "locked"` with no `null`. A literal union instead
-   * serializes as `anyOf` of single-value enums + `nullable: true`, which the
-   * generator handles correctly — verified via `pnpm gen:sdk`.
-   */
-  state: z.union([z.literal("visible"), z.literal("hidden"), z.literal("locked"), z.null()]),
-});
-export type SetCommentsState = z.infer<typeof SetCommentsState>;
-
-/** Explicit overrides only, keyed by activity id. An activity that is absent
- *  inherits its course setting. */
-export const CommentStates = z.object({
-  states: z.record(z.string(), CommentsState),
-});
-export type CommentStates = z.infer<typeof CommentStates>;
-
-export const QueueReport = z.object({
+/** An unresolved report on a listed comment. Resolved ones are history and are
+ *  never served here. */
+export const CommentReportSummary = z.object({
   reporter: CommentAuthor,
   reason: z.string(),
   createdAt: z.string(),
 });
-export type QueueReport = z.infer<typeof QueueReport>;
+export type CommentReportSummary = z.infer<typeof CommentReportSummary>;
 
-export const QueueEntry = z.object({
-  comment: Comment,
+/** One row of the staff comment list: the comment plus the context a
+ *  moderation decision needs, so the list needs no follow-up request. */
+export const CommentListItem = z.object({
+  id: z.string(),
+  parentId: z.string().nullable(),
+  activityId: z.string(),
+  activityTitle: z.string(),
+  /** Resolved from content at read time — a comment stores no course. */
+  courseId: z.string(),
+  /** Served whatever the status: judging a removal means reading what was
+   *  removed. The learner-facing CommentView nulls this instead. */
+  body: z.string(),
+  status: CommentStatus,
   author: CommentAuthor,
   /** Staff-scoped surface only. Identifying a spam account is the decision. */
   authorEmail: z.string(),
-  courseId: z.string(),
-  activityTitle: z.string(),
-  reports: z.array(QueueReport),
+  removedBy: z.string().nullable(),
+  reports: z.array(CommentReportSummary),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
-export type QueueEntry = z.infer<typeof QueueEntry>;
+export type CommentListItem = z.infer<typeof CommentListItem>;
 
-export const ModerationQueue = z.object({
-  entries: z.array(QueueEntry),
-});
-export type ModerationQueue = z.infer<typeof ModerationQueue>;
-
-export const ModerationQueueQuery = z.object({
-  kind: z.enum(["pending", "reported"]),
+export const CommentsQuery = ListQuery.extend({
+  status: CommentStatus.optional(),
+  /** true = only comments carrying an unresolved report, false = only those
+   *  carrying none. `z.stringbool` because query values arrive as strings and
+   *  `z.coerce.boolean()` would read "false" as true. */
+  reported: z.stringbool().optional(),
   courseId: z.string().optional(),
+  activityId: z.string().optional(),
+  /** Scope to one author (org_users.id). */
+  orgUserId: z.string().optional(),
 });
-export type ModerationQueueQuery = z.infer<typeof ModerationQueueQuery>;
+export type CommentsQuery = z.infer<typeof CommentsQuery>;
+
+export const CommentsPage = paginated(CommentListItem);
+export type CommentsPage = z.infer<typeof CommentsPage>;
 
 export const DiscussionActivityParam = z.object({ activityId: z.string() });
 export type DiscussionActivityParam = z.infer<typeof DiscussionActivityParam>;

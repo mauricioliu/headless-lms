@@ -40,7 +40,7 @@ export function CourseSettingsForm({ course }: { course: Course }) {
       const updated = await updateCourseSettingsAction(course.id, values);
       toast.success("Settings saved");
       // Re-baseline against what the server stored (clears the dirty state).
-      reset({ transcriptDownloads: updated.settings.transcriptDownloads });
+      reset({ transcriptDownloads: updated.transcriptDownloads });
       router.refresh();
     } catch (err) {
       toast.error("Couldn't save settings", { description: (err as Error).message });

@@ -1,5 +1,7 @@
-// discussion tables — comments on an activity, their reactions and reports,
-// plus per-course settings and an optional per-activity comments state.
+// discussion tables — comments on an activity, their reactions and reports.
+// Configuration is not here: the course's discussion settings and an activity's
+// comments-state override are rows in the cross-cutting `settings` store under
+// the `discussion` namespace, scoped by course id and activity id.
 //
 // The author is always an org_users participation, so one column covers both
 // learners and staff. Staff-ness is NOT stored — it is read from the author's
@@ -7,11 +9,11 @@
 // only the body stops being served.
 //
 // No course_id: which course an activity sits in is content's fact and changes
-// when a course is restructured. The queue joins to modules to scope by course.
+// when a course is restructured. The staff comment list joins to modules to
+// scope by course.
 import {
   pgTable,
   text,
-  boolean,
   timestamp,
   primaryKey,
   foreignKey,
@@ -22,7 +24,7 @@ import {
 import { sql } from 'drizzle-orm';
 import { genId } from '../../../core/shared/id.js';
 import { organizations, orgUsers } from './organizations.js';
-import { activities, courses } from './content.js';
+import { activities } from './content.js';
 
 export const comments = pgTable(
   'comments',
@@ -73,8 +75,8 @@ export const comments = pgTable(
       sql`(${t.status} = 'removed') = (${t.removedBy} is not null)`,
     ),
     activityIdx: index('comments_activity_idx').on(t.orgId, t.activityId, t.status, t.createdAt),
-    // The queue filters by status org-wide, then narrows by course through the
-    // activity join — so the index leads on status, not on a stored course.
+    // The staff list filters by status org-wide, then narrows by course through
+    // the activity join — so the index leads on status, not on a stored course.
     queueIdx: index('comments_queue_idx').on(t.orgId, t.status, t.createdAt),
   }),
 );
@@ -135,43 +137,3 @@ export const commentReports = pgTable(
   }),
 );
 
-// One row per course that has been configured. Absent = DEFAULT_SETTINGS.
-export const discussionSettings = pgTable(
-  'discussion_settings',
-  {
-    orgId: text('org_id')
-      .notNull()
-      .references(() => organizations.id),
-    courseId: text('course_id').notNull(),
-    enabled: boolean('enabled').notNull().default(false),
-    threaded: boolean('threaded').notNull().default(true),
-    requireReview: boolean('require_review').notNull().default(false),
-    reactions: boolean('reactions').notNull().default(true),
-  },
-  (t) => ({
-    pk: primaryKey({ columns: [t.orgId, t.courseId] }),
-    courseFk: foreignKey({
-      columns: [t.orgId, t.courseId],
-      foreignColumns: [courses.orgId, courses.id],
-    }).onDelete('cascade'),
-  }),
-);
-
-// One row per activity that overrides its course. Absent = the course setting.
-export const activityCommentStates = pgTable(
-  'activity_comment_states',
-  {
-    orgId: text('org_id')
-      .notNull()
-      .references(() => organizations.id),
-    activityId: text('activity_id').notNull(),
-    state: text('state', { enum: ['visible', 'hidden', 'locked'] }).notNull(),
-  },
-  (t) => ({
-    pk: primaryKey({ columns: [t.orgId, t.activityId] }),
-    activityFk: foreignKey({
-      columns: [t.orgId, t.activityId],
-      foreignColumns: [activities.orgId, activities.id],
-    }).onDelete('cascade'),
-  }),
-);

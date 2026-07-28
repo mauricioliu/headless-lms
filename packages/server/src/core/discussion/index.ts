@@ -6,11 +6,10 @@ export type {
   DiscussionUnitOfWork,
   DiscussionWriteScope,
   ActivityComments,
-  QueueEntry,
-  QueueQuery,
   Actor,
   AuthorRecord,
   CommentWithContext,
+  CourseAccessReader,
 } from './ports.js';
 export type {
   Comment,
@@ -18,9 +17,15 @@ export type {
   CommentStatus,
   CommentReaction,
   CommentReport,
-  DiscussionSettings,
-  ActivityCommentsState,
+  CommentSettings,
   CommentsState,
 } from './model.js';
-export type { PostCommentInput, CommentsConfig, CommentView } from './types.js';
+export type {
+  PostCommentInput,
+  CommentsConfig,
+  CommentView,
+  CommentReportSummary,
+  CommentListItem,
+  ListCommentsQuery,
+} from './types.js';
 export type { DiscussionEvent } from './events.js';

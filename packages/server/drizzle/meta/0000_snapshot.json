@@ -1,5 +1,5 @@
 {
-  "id": "0042716b-0b18-4400-90e3-cb336902b9b3",
+  "id": "934f3eed-838c-4866-9c11-027b54f0ea43",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2164,74 +2164,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.activity_comment_states": {
-      "name": "activity_comment_states",
-      "schema": "",
-      "columns": {
-        "org_id": {
-          "name": "org_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "activity_id": {
-          "name": "activity_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "state": {
-          "name": "state",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "activity_comment_states_org_id_organizations_id_fk": {
-          "name": "activity_comment_states_org_id_organizations_id_fk",
-          "tableFrom": "activity_comment_states",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "org_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "activity_comment_states_org_id_activity_id_activities_org_id_id_fk": {
-          "name": "activity_comment_states_org_id_activity_id_activities_org_id_id_fk",
-          "tableFrom": "activity_comment_states",
-          "tableTo": "activities",
-          "columnsFrom": [
-            "org_id",
-            "activity_id"
-          ],
-          "columnsTo": [
-            "org_id",
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "activity_comment_states_org_id_activity_id_pk": {
-          "name": "activity_comment_states_org_id_activity_id_pk",
-          "columns": [
-            "org_id",
-            "activity_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.comment_reactions": {
       "name": "comment_reactions",
       "schema": "",
@@ -2699,96 +2631,6 @@
           "value": "(\"comments\".\"status\" = 'removed') = (\"comments\".\"removed_by\" is not null)"
         }
       },
-      "isRLSEnabled": false
-    },
-    "public.discussion_settings": {
-      "name": "discussion_settings",
-      "schema": "",
-      "columns": {
-        "org_id": {
-          "name": "org_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "course_id": {
-          "name": "course_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "enabled": {
-          "name": "enabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "threaded": {
-          "name": "threaded",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "require_review": {
-          "name": "require_review",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "reactions": {
-          "name": "reactions",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "discussion_settings_org_id_organizations_id_fk": {
-          "name": "discussion_settings_org_id_organizations_id_fk",
-          "tableFrom": "discussion_settings",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "org_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "discussion_settings_org_id_course_id_courses_org_id_id_fk": {
-          "name": "discussion_settings_org_id_course_id_courses_org_id_id_fk",
-          "tableFrom": "discussion_settings",
-          "tableTo": "courses",
-          "columnsFrom": [
-            "org_id",
-            "course_id"
-          ],
-          "columnsTo": [
-            "org_id",
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "discussion_settings_org_id_course_id_pk": {
-          "name": "discussion_settings_org_id_course_id_pk",
-          "columns": [
-            "org_id",
-            "course_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.account": {

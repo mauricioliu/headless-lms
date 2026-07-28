@@ -8,10 +8,16 @@ export interface SettingsRecord {
   value: unknown;
 }
 
+export enum SettingsNamespace {
+  content = "content",
+  discussion = "discussion"
+}
+
 export interface SettingsRepository {
   /** Rows for the given scopes, optionally narrowed to one namespace. */
   find(orgId: string, scopeId: string, namespace?: string): Promise<SettingsRecord[]>;
-  /** Shallow-merges the patch into the row's value, inserting when absent. */
+  /** Deep-merges the patch into the row's value, inserting when absent. Nested
+   *  objects merge key by key; arrays and scalars are replaced outright. */
   patch(
     orgId: string,
     namespace: string,

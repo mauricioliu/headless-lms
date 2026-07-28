@@ -7,7 +7,7 @@ import type { Container } from '../app/container.js';
 import type { ServerConfig } from './config.js';
 import { coursesRoutes } from './routes/courses.js';
 import { downloadsRoutes } from './routes/downloads.js';
-import { learnRoutes } from './routes/learn.js';
+import { learnRoutes } from './routes/learn/index.js';
 import { discussionRoutes } from './routes/discussion.js';
 import { activitiesRoutes } from './routes/activities.js';
 import { studentsRoutes } from './routes/students.js';
