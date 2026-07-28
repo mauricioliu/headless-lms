@@ -116,6 +116,12 @@ export class DiscussionServiceImpl implements DiscussionService {
     return { id: record.id, name: record.name, image: record.image, role: record.role };
   }
 
+  /** Any participation that is not a learner moderates. The role arrives from
+   *  the edge already resolved; core never looks one up to authorise. */
+  private isStaff(actor: Actor): boolean {
+    return actor.role !== 'student';
+  }
+
   /** Render one comment with no reaction context. Used by post and edit, where
    *  the caller has just written the row and needs it back in the same shape
    *  the thread serves. */
@@ -172,7 +178,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     // Review holds learners only; staff publish immediately. The role is read
     // once at the edge and applied here, never stored on the row.
     const status: Comment['status'] =
-      config.requireReview && !actor.isStaff ? 'pending' : 'published';
+      config.requireReview && !this.isStaff(actor) ? 'pending' : 'published';
     const at = this.now();
     const comment: Comment = {
       id: genId('comment'),
@@ -206,7 +212,7 @@ export class DiscussionServiceImpl implements DiscussionService {
       if (c.status === 'published' || c.status === 'removed') {
         return true;
       }
-      return actor.isStaff || c.orgUserId === actor.orgUserId;
+      return this.isStaff(actor) || c.orgUserId === actor.orgUserId;
     });
     // Replies nest one level, so a reply has nothing hanging off it — a removed
     // reply is simply dropped rather than held open as a placeholder.
@@ -311,7 +317,7 @@ export class DiscussionServiceImpl implements DiscussionService {
 
   async remove(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
     const comment = await this.load(orgId, commentId);
-    if (comment.orgUserId !== actor.orgUserId && !actor.isStaff) {
+    if (comment.orgUserId !== actor.orgUserId && !this.isStaff(actor)) {
       throw new ForbiddenError('only the author or a moderator may remove a comment');
     }
     if (comment.status === 'removed') {
@@ -337,7 +343,7 @@ export class DiscussionServiceImpl implements DiscussionService {
   }
 
   async restore(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
-    if (!actor.isStaff) {
+    if (!this.isStaff(actor)) {
       throw new ForbiddenError('only a moderator may restore a comment');
     }
     const comment = await this.load(orgId, commentId);
@@ -396,7 +402,7 @@ export class DiscussionServiceImpl implements DiscussionService {
   }
 
   async approve(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
-    if (!actor.isStaff) {
+    if (!this.isStaff(actor)) {
       throw new ForbiddenError('only a moderator may approve a comment');
     }
     const comment = await this.load(orgId, commentId);
@@ -461,7 +467,7 @@ export class DiscussionServiceImpl implements DiscussionService {
   }
 
   async resolveReports(orgId: string, commentId: string, actor: Actor): Promise<void> {
-    if (!actor.isStaff) {
+    if (!this.isStaff(actor)) {
       throw new ForbiddenError('only a moderator may resolve a report');
     }
     await this.load(orgId, commentId);

@@ -302,8 +302,8 @@ describe('settings', () => {
   });
 });
 
-const learner: Actor = { orgUserId: 'orm_learner', isStaff: false };
-const staff: Actor = { orgUserId: 'orm_staff', isStaff: true };
+const learner: Actor = { orgUserId: 'orm_learner', role: 'student' };
+const staff: Actor = { orgUserId: 'orm_staff', role: 'instructor' };
 
 async function enabled(service: DiscussionServiceImpl, patch = {}) {
   await service.setSettings('o1', 'c1', { enabled: true, ...patch });
@@ -455,7 +455,7 @@ describe('listThread', () => {
     const own = await service.listThread('o1', 'a1', learner);
     expect(own.comments.map((c) => c.id)).toContain(pending.id);
 
-    const other: Actor = { orgUserId: 'orm_other', isStaff: false };
+    const other: Actor = { orgUserId: 'orm_other', role: 'student' };
     const theirs = await service.listThread('o1', 'a1', other);
     expect(theirs.comments).toHaveLength(0);
 
@@ -538,7 +538,7 @@ describe('listThread', () => {
     });
     await service.remove('o1', root.id, staff);
 
-    const other: Actor = { orgUserId: 'orm_other', isStaff: false };
+    const other: Actor = { orgUserId: 'orm_other', role: 'student' };
     const theirs = await service.listThread('o1', 'a1', other);
     expect(theirs.comments).toHaveLength(0);
 
@@ -573,7 +573,7 @@ describe('listThread', () => {
     const view = await service.listThread('o1', 'a1', learner);
     expect(view.comments[0]?.reactions).toEqual([{ emoji: '👍', count: 2, reacted: true }]);
 
-    const other: Actor = { orgUserId: 'orm_other', isStaff: false };
+    const other: Actor = { orgUserId: 'orm_other', role: 'student' };
     const theirs = await service.listThread('o1', 'a1', other);
     expect(theirs.comments[0]?.reactions).toEqual([{ emoji: '👍', count: 2, reacted: false }]);
   });
@@ -637,7 +637,7 @@ describe('edit, remove, restore, approve', () => {
 
   it('refuses removal by an unrelated learner', async () => {
     const { service, comment } = await published();
-    const other: Actor = { orgUserId: 'orm_other', isStaff: false };
+    const other: Actor = { orgUserId: 'orm_other', role: 'student' };
     await expect(service.remove('o1', comment.id, other)).rejects.toThrow(ForbiddenError);
   });
 
@@ -842,7 +842,7 @@ describe('reports and queue', () => {
       });
       return { ...ctx, comment: c };
     })();
-    const other: Actor = { orgUserId: 'orm_other', isStaff: false };
+    const other: Actor = { orgUserId: 'orm_other', role: 'student' };
     await service.report('o1', comment.id, staff, 'spam');
     await service.report('o1', comment.id, other, 'rude');
 
@@ -869,7 +869,7 @@ describe('reports and queue', () => {
 
   it('resolves every open report on a comment, not just one', async () => {
     const { service, comment, reports } = await withComment();
-    const other: Actor = { orgUserId: 'orm_other', isStaff: false };
+    const other: Actor = { orgUserId: 'orm_other', role: 'student' };
     await service.report('o1', comment.id, staff, 'a');
     await service.report('o1', comment.id, other, 'b');
 

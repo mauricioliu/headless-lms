@@ -1,6 +1,7 @@
 // discussion context — ports.
 // Inbound: the use cases the service implements.
 // Outbound: the persistence contract the repository fulfils.
+import type { Role } from '@headless-lms/types';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 import type {
   Comment,
@@ -42,16 +43,16 @@ export interface QueueQuery {
 }
 
 /**
- * Who is acting, and whether they hold staff standing in this org.
+ * Who is acting, and the role they hold in this org right now.
  *
- * `isStaff` is resolved at the HTTP edge from the session's active-org role and
- * handed in — read fresh on every request, never stored on a comment. Core does
- * not look a role up to make an authorisation decision; it reads roles back only
+ * The role is resolved at the HTTP edge from the session's active-org
+ * participation and handed in — read fresh on every request, never stored on a
+ * comment. Core does not look a role up to authorise; it reads roles back only
  * to render an author, which is presentation.
  */
 export interface Actor {
   orgUserId: string;
-  isStaff: boolean;
+  role: Role;
 }
 
 /** A profile row as the repository loads it. `email` is stripped before a

@@ -99,7 +99,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     handler: async (req) => {
       const scope = await resolveStudentScope(container, req);
       await gate(container, scope.orgId, scope.orgUserId, req.params.activityId);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: false };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
       return discussion.listThread(scope.orgId, req.params.activityId, actor);
     },
   });
@@ -119,7 +119,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     handler: async (req) => {
       const scope = await resolveStudentScope(container, req);
       await gate(container, scope.orgId, scope.orgUserId, req.params.activityId);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: false };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
       return discussion.post(scope.orgId, actor, {
         activityId: req.params.activityId,
         parentId: req.body.parentId,
@@ -143,7 +143,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     handler: async (req) => {
       const scope = await resolveStudentScope(container, req);
       await gateComment(container, scope.orgId, scope.orgUserId, req.params.commentId);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: false };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
       return discussion.edit(scope.orgId, req.params.commentId, actor, req.body.body);
     },
   });
@@ -162,7 +162,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     handler: async (req) => {
       const scope = await resolveStudentScope(container, req);
       await gateComment(container, scope.orgId, scope.orgUserId, req.params.commentId);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: false };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
       return discussion.remove(scope.orgId, req.params.commentId, actor);
     },
   });
@@ -182,7 +182,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     handler: async (req, reply) => {
       const scope = await resolveStudentScope(container, req);
       await gateComment(container, scope.orgId, scope.orgUserId, req.params.commentId);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: false };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
       await discussion.react(scope.orgId, req.params.commentId, actor, req.body.emoji);
       return reply.code(204).send();
     },
@@ -203,7 +203,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     handler: async (req, reply) => {
       const scope = await resolveStudentScope(container, req);
       await gateComment(container, scope.orgId, scope.orgUserId, req.params.commentId);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: false };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
       await discussion.unreact(scope.orgId, req.params.commentId, actor, req.body.emoji);
       return reply.code(204).send();
     },
@@ -224,7 +224,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     handler: async (req) => {
       const scope = await resolveStudentScope(container, req);
       await gateComment(container, scope.orgId, scope.orgUserId, req.params.commentId);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: false };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
       return discussion.report(scope.orgId, req.params.commentId, actor, req.body.reason);
     },
   });
@@ -265,9 +265,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
-      // resolveScope rejects any session whose participation is not a staff
-      // role (scope.ts), so a handler reached here is always acting as staff.
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
       return discussion.approve(scope.orgId, req.params.commentId, actor);
     },
   });
@@ -285,7 +283,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
       return discussion.remove(scope.orgId, req.params.commentId, actor);
     },
   });
@@ -303,7 +301,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
       return discussion.restore(scope.orgId, req.params.commentId, actor);
     },
   });
@@ -321,7 +319,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     },
     handler: async (req, reply) => {
       const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
       await discussion.resolveReports(scope.orgId, req.params.commentId, actor);
       return reply.code(204).send();
     },
@@ -341,7 +339,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     handler: async (req) => {
       const scope = await resolveScope(container, req);
       await requireActivity(container, scope.orgId, req.params.activityId);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
       return discussion.listThread(scope.orgId, req.params.activityId, actor);
     },
   });
@@ -361,7 +359,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     handler: async (req) => {
       const scope = await resolveScope(container, req);
       await requireActivity(container, scope.orgId, req.params.activityId);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
       return discussion.post(scope.orgId, actor, {
         activityId: req.params.activityId,
         parentId: req.body.parentId,
@@ -384,7 +382,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
+      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
       return discussion.edit(scope.orgId, req.params.commentId, actor, req.body.body);
     },
   });
