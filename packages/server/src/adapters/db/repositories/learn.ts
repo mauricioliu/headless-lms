@@ -8,7 +8,7 @@
 import { and, eq, gt, isNull, or, sql, type SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { LearnEntitlementReader, ContentRef } from '../../../reporting/learn/index.js';
-import { entitlements, courses } from '../schema/index.js';
+import { entitlements, courses, downloads, downloadAssets } from '../schema/index.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
 
@@ -51,5 +51,58 @@ export class DrizzleLearnRepository implements LearnEntitlementReader {
       .where(and(this.baseFilters(orgId, orgUserId), eq(entitlements.contentId, courseId)))
       .limit(1);
     return row ?? null;
+  }
+
+  private downloadFilters(orgId: string, orgUserId: string): SQL {
+    return and(
+      eq(entitlements.orgId, orgId),
+      eq(entitlements.orgUserId, orgUserId),
+      eq(entitlements.status, 'active'),
+      or(isNull(entitlements.expiresAt), gt(entitlements.expiresAt, sql`now()`))!,
+      eq(downloads.status, 'published'),
+    )!;
+  }
+
+  async activeDownloadRefs(orgId: string, orgUserId: string): Promise<ContentRef[]> {
+    return this.db
+      .select({ orgId: entitlements.orgId, contentId: entitlements.contentId })
+      .from(entitlements)
+      .innerJoin(
+        downloads,
+        and(eq(downloads.orgId, entitlements.orgId), eq(downloads.id, entitlements.contentId)),
+      )
+      .where(this.downloadFilters(orgId, orgUserId));
+  }
+
+  async activeDownloadRef(
+    orgId: string,
+    orgUserId: string,
+    downloadId: string,
+  ): Promise<ContentRef | null> {
+    const [row] = await this.db
+      .select({ orgId: entitlements.orgId, contentId: entitlements.contentId })
+      .from(entitlements)
+      .innerJoin(
+        downloads,
+        and(eq(downloads.orgId, entitlements.orgId), eq(downloads.id, entitlements.contentId)),
+      )
+      .where(and(this.downloadFilters(orgId, orgUserId), eq(entitlements.contentId, downloadId)))
+      .limit(1);
+    return row ?? null;
+  }
+
+  async downloadHasAsset(orgId: string, downloadId: string, assetId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: downloadAssets.id })
+      .from(downloadAssets)
+      .where(
+        and(
+          eq(downloadAssets.orgId, orgId),
+          eq(downloadAssets.downloadId, downloadId),
+          eq(downloadAssets.assetId, assetId),
+        ),
+      )
+      .limit(1);
+    return row !== undefined;
   }
 }

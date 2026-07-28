@@ -50,6 +50,9 @@ function fakeReader(refs: ContentRef[]): LearnEntitlementReader {
     activeRefs: async (orgId) => refs.filter((r) => r.orgId === orgId),
     activeRef: async (orgId, _s, courseId) =>
       refs.find((r) => r.orgId === orgId && r.contentId === courseId) ?? null,
+    activeDownloadRefs: async () => [],
+    activeDownloadRef: async () => null,
+    downloadHasAsset: async () => false,
   };
 }
 
