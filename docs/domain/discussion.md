@@ -10,23 +10,23 @@ the author made.
 - Owns the **comment**: its author, the activity it attaches to, what it replies
   to, its body, and its moderation state.
 - Owns **reactions** to comments and **reports** of comments.
-- Owns **discussion settings** for a course, and the **thread state** of an
+- Owns **discussion settings** for a course, and the **comments state** of an
   individual activity.
 - Owns the **moderation lifecycle**: what state a comment is in and who may
   change it.
-- A thread attaches to an activity — the leaf a learner opens. There is no
-  module-level or course-level thread.
-- References the activity a thread attaches to (content), the person who wrote
-  each comment (identity), and access to the content (entitlements). Does
-  **not** own content, access, identity, or notification delivery.
+- Comments attach to an activity — the leaf a learner opens. There are no
+  module-level or course-level comments.
+- References the activity its comments attach to (content), the person who
+  wrote each comment (identity), and access to the content (entitlements).
+  Does **not** own content, access, identity, or notification delivery.
 
 ## Capabilities
 
-- **Post a comment** — attach a comment to an activity, as a new thread or as a
-  reply to an existing comment.
+- **Post a comment** — attach a comment to an activity, as a root comment or as
+  a reply to an existing comment.
 - **Edit and remove** — an author revises or removes their own comment.
-- **Read a thread** — return an activity's comments with their authors,
-  reactions and moderation state, threaded or flat according to settings.
+- **List comments** — return an activity's comments with their authors,
+  reactions and moderation state, nested or flat according to settings.
 - **React** — add or remove a reaction to a comment.
 - **Report** — flag a comment for moderator attention, with an optional reason.
 - **Moderate** — approve a comment awaiting review, remove a published one,
@@ -34,7 +34,7 @@ the author made.
 - **Work a queue** — list what awaits a moderator across a course or the org:
   comments pending review, and comments carrying unresolved reports.
 - **Configure** — set a course's discussion settings; set or clear an activity's
-  thread state.
+  comments state.
 
 ## Model
 
@@ -50,13 +50,13 @@ the author made.
 - **Discussion settings** — per course: whether discussion is enabled, whether
   replies are allowed, whether comments require review, whether reactions are
   enabled.
-- **Thread state** — an optional per-activity override of the course setting:
+- **Comments state** — an optional per-activity override of the course setting:
   `visible | hidden | locked`.
 
 ### Moderation state
 
 - **Pending** — awaiting review. Reached only where the settings require review.
-- **Published** — served in the thread.
+- **Published** — served in the activity's comments.
 - **Removed** — the body is no longer served; the comment is retained.
 
 A removed comment is retained because its replies hang off it. It is served as a
@@ -65,20 +65,20 @@ replies, and not served at all otherwise — a marker with nothing beneath it is
 noise, so whether it appears depends on what that reader is shown. It records
 who removed it — its author or a moderator — and the placeholder says which.
 
-### Thread state
+### Comments state
 
-Resolved per activity: the activity's thread state if set, the course setting
+Resolved per activity: the activity's comments state if set, the course setting
 otherwise. There is no deeper cascade.
 
-- **Visible** — the thread is served; new comments are accepted.
-- **Hidden** — the thread is not served. Existing comments are retained and
+- **Visible** — comments are served; new comments are accepted.
+- **Hidden** — comments are not served. Existing comments are retained and
   reappear if it becomes visible.
-- **Locked** — the thread is served read-only. Existing comments stay readable;
-  no comment, reply or reaction is accepted. Reports still are — an archived
-  thread can still contain something that needs a moderator.
+- **Locked** — comments are served read-only. Existing comments stay readable;
+  no comment, reply or reaction is accepted. Reports still are — a locked
+  activity can still contain something that needs a moderator.
 
-Thread state governs the thread, never a comment's moderation state. Locking
-removes nothing; hiding un-publishes nothing.
+Comments state governs visibility of the activity's comments, never a comment's
+moderation state. Locking removes nothing; hiding un-publishes nothing.
 
 ### Authors and moderators
 
@@ -86,14 +86,14 @@ A comment names the person who wrote it. Learners and staff write comments the
 same way, and the domain records which person, not what kind of person.
 
 Whether an author is staff is resolved from their current role in the org each
-time a thread is read, and is never recorded on the comment. The same role
+time comments are read, and is never recorded on the comment. The same role
 decides three things: who carries an instructor badge, who bypasses review, and
 who may moderate. Any staff participation — owner, admin or instructor —
 moderates; there is no narrower moderator role.
 
 An author has full control of their own comments: read, revise, remove, with no
 time limit and regardless of replies. Edits are neither versioned nor evented.
-A locked thread still lets an author withdraw their own comment; it refuses a
+A locked activity still lets an author withdraw their own comment; it refuses a
 revision.
 
 ### Review
@@ -129,18 +129,18 @@ is read rather than copied onto every comment.
 
 ## Boundaries
 
-1. **discussion → content** — discussion references the activity a thread
-   attaches to; content owns it and knows nothing of discussion. Which course
+1. **discussion → content** — discussion references the activity its comments
+   attach to; content owns it and knows nothing of discussion. Which course
    an activity sits in is content's fact — discussion resolves it when scoping
    settings or a queue and never stores a copy. Removing an activity removes
-   its comments, reactions, reports and thread state.
+   its comments, reactions, reports and comments state.
 2. **discussion → identity** — discussion references the person's participation
    in the org on every comment, reaction and report, and reads their role from
    it. Identity owns the participation and the role; discussion stores neither.
-3. **discussion → entitlements** — a thread is gated by access to the content it
-   attaches to. Entitlements resolves access; discussion serves and accepts
-   nothing for content a person cannot open. Entitlements decides access;
-   discussion decides moderation.
+3. **discussion → entitlements** — an activity's comments are gated by access to
+   the content it attaches to. Entitlements resolves access; discussion serves
+   and accepts nothing for content a person cannot open. Entitlements decides
+   access; discussion decides moderation.
 4. **discussion → automations** — discussion emits events; automations decides
    what follows. Notification fan-out and auto-removal of a heavily reported
    comment are configured automations, not behaviour of this domain.
@@ -154,32 +154,33 @@ is read rather than copied onto every comment.
   it, so an author's removal and a moderator's are distinguishable.
 
 Each names the comment, its author, and the activity it attaches to. Reactions,
-edits and thread state changes are not evented.
+edits and comments state changes are not evented.
 
-## How a thread accrues
+## How comments accrue
 
 A worked example for context. Discussion is enabled on a course with review off.
 
 A student opens a video and asks a question. Access is resolved first — they
 hold an active grant — and the comment is created published; `comment.created`
 is emitted. The instructor replies, and because their role in the org is staff,
-their reply carries an instructor badge whenever the thread is read. Another
+their reply carries an instructor badge whenever the comments are read. Another
 student reacts to it; reacting the same way again changes nothing.
 
 A third student posts something abusive and two replies land beneath it. Two
 students report it. The comment stays published — reports do not change state —
 and appears in the course's queue with two unresolved reports. A moderator
-removes it and resolves both. Because it has replies, the thread serves a
-placeholder in its position naming a moderator as remover, and the replies below
-it read in order. A student elsewhere removes their own comment; it has no
-replies, so it is not served at all.
+removes it and resolves both. Because it has replies, a placeholder is served in
+its position naming a moderator as remover, and the replies below it read in
+order. A student elsewhere removes their own comment; it has no replies, so it
+is not served at all.
 
-Review is then turned on for the course. The existing thread is unchanged. The
-next learner's question is created pending: they see it marked as awaiting
+Review is then turned on for the course. The existing comments are unchanged.
+The next learner's question is created pending: they see it marked as awaiting
 review, nobody else does, and nobody can reply to it. The instructor's next
 comment is created published. A moderator approves the question from the course
 queue and `comment.published` is emitted. The same learner's next question is
 pending again.
 
-When the cohort closes, the introduction lesson's thread is set to hidden and
-the rest are locked. The locked threads stay readable and accept nothing new.
+When the cohort closes, the introduction lesson's comments are set to hidden
+and the rest are locked. The locked activities stay readable and accept nothing
+new.
