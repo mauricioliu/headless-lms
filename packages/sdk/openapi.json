@@ -198,6 +198,10 @@
                           "category": {
                             "type": "string"
                           },
+                          "thumbnailAssetId": {
+                            "nullable": true,
+                            "type": "string"
+                          },
                           "moduleCount": {
                             "type": "integer",
                             "minimum": -9007199254740991,
@@ -227,6 +231,7 @@
                           "description",
                           "status",
                           "category",
+                          "thumbnailAssetId",
                           "moduleCount",
                           "activityCount",
                           "enrolledCount",
@@ -328,6 +333,10 @@
                     "category": {
                       "type": "string"
                     },
+                    "thumbnailAssetId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
                     "moduleCount": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -357,6 +366,7 @@
                     "description",
                     "status",
                     "category",
+                    "thumbnailAssetId",
                     "moduleCount",
                     "activityCount",
                     "enrolledCount",
@@ -418,6 +428,10 @@
                     "category": {
                       "type": "string"
                     },
+                    "thumbnailAssetId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
                     "moduleCount": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -447,6 +461,7 @@
                     "description",
                     "status",
                     "category",
+                    "thumbnailAssetId",
                     "moduleCount",
                     "activityCount",
                     "enrolledCount",
@@ -513,6 +528,10 @@
                       "draft",
                       "published"
                     ]
+                  },
+                  "thumbnailAssetId": {
+                    "nullable": true,
+                    "type": "string"
                   }
                 }
               }
@@ -559,6 +578,10 @@
                     "category": {
                       "type": "string"
                     },
+                    "thumbnailAssetId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
                     "moduleCount": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -588,6 +611,7 @@
                     "description",
                     "status",
                     "category",
+                    "thumbnailAssetId",
                     "moduleCount",
                     "activityCount",
                     "enrolledCount",
@@ -712,6 +736,10 @@
                       "category": {
                         "type": "string"
                       },
+                      "thumbnailAssetId": {
+                        "nullable": true,
+                        "type": "string"
+                      },
                       "moduleCount": {
                         "type": "integer",
                         "minimum": -9007199254740991,
@@ -741,6 +769,7 @@
                       "description",
                       "status",
                       "category",
+                      "thumbnailAssetId",
                       "moduleCount",
                       "activityCount",
                       "enrolledCount",
@@ -841,6 +870,10 @@
                     "category": {
                       "type": "string"
                     },
+                    "thumbnailAssetId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
                     "moduleCount": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -870,6 +903,7 @@
                     "description",
                     "status",
                     "category",
+                    "thumbnailAssetId",
                     "moduleCount",
                     "activityCount",
                     "enrolledCount",
@@ -9080,317 +9114,6 @@
             }
           },
           "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/settings/{scopeId}": {
-      "get": {
-        "operationId": "getScopeSettings",
-        "summary": "Resolved settings for a scope, across every namespace",
-        "tags": [
-          "Settings"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "path",
-            "name": "scopeId",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "scopeId": {
-                      "type": "string"
-                    },
-                    "namespaces": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "object",
-                        "properties": {
-                          "stored": {
-                            "type": "object",
-                            "additionalProperties": {}
-                          },
-                          "effective": {
-                            "type": "object",
-                            "additionalProperties": {}
-                          }
-                        },
-                        "required": [
-                          "stored",
-                          "effective"
-                        ],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": [
-                    "scopeId",
-                    "namespaces"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/settings/{scopeId}/{namespace}": {
-      "get": {
-        "operationId": "getNamespaceSettings",
-        "summary": "Resolved settings for one domain's namespace at a scope",
-        "tags": [
-          "Settings"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "path",
-            "name": "scopeId",
-            "required": true
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "path",
-            "name": "namespace",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "stored": {
-                      "type": "object",
-                      "additionalProperties": {}
-                    },
-                    "effective": {
-                      "type": "object",
-                      "additionalProperties": {}
-                    }
-                  },
-                  "required": [
-                    "stored",
-                    "effective"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "operationId": "patchNamespaceSettings",
-        "summary": "Merge values into one domain's namespace at a scope",
-        "tags": [
-          "Settings"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": {}
-              }
-            }
-          }
-        },
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "path",
-            "name": "scopeId",
-            "required": true
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "path",
-            "name": "namespace",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "stored": {
-                      "type": "object",
-                      "additionalProperties": {}
-                    },
-                    "effective": {
-                      "type": "object",
-                      "additionalProperties": {}
-                    }
-                  },
-                  "required": [
-                    "stored",
-                    "effective"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "401": {
             "description": "Default Response",
             "content": {
               "application/json": {

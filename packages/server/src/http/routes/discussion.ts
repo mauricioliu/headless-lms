@@ -234,7 +234,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
 
   r.route({
     method: 'GET',
-    url: '/api/discussion/queue',
+    url: '/api/queue',
     preHandler: app.requireSession,
     schema: {
       operationId: 'getModerationQueue',
@@ -255,7 +255,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
 
   r.route({
     method: 'DELETE',
-    url: '/api/discussion/comments/:commentId',
+    url: '/api/comments/:commentId',
     preHandler: app.requireSession,
     schema: {
       operationId: 'moderateRemoveComment',
@@ -272,70 +272,8 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   });
 
   r.route({
-    method: 'DELETE',
-    url: '/api/discussion/comments/:commentId/reports',
-    preHandler: app.requireSession,
-    schema: {
-      operationId: 'dismissCommentReports',
-      tags: ['Discussion'],
-      summary: 'Dismiss every open report on a comment',
-      params: CommentIdParam,
-      response: { 204: z.void(), 403: ErrorBody, 404: ErrorBody },
-    },
-    handler: async (req, reply) => {
-      const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
-      await discussion.resolveReports(scope.orgId, req.params.commentId, actor);
-      return reply.code(204).send();
-    },
-  });
-
-  r.route({
-    method: 'GET',
-    url: '/api/discussion/activities/:activityId/comments',
-    preHandler: app.requireSession,
-    schema: {
-      operationId: 'listActivityComments',
-      tags: ['Discussion'],
-      summary: "Read an activity's comments as staff",
-      params: DiscussionActivityParam,
-      response: { 200: ActivityComments, 404: ErrorBody },
-    },
-    handler: async (req) => {
-      const scope = await resolveScope(container, req);
-      await requireActivity(container, scope.orgId, req.params.activityId);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
-      return discussion.listComments(scope.orgId, req.params.activityId, actor);
-    },
-  });
-
-  r.route({
-    method: 'POST',
-    url: '/api/discussion/activities/:activityId/comments',
-    preHandler: app.requireSession,
-    schema: {
-      operationId: 'postComment',
-      tags: ['Discussion'],
-      summary: 'Post a comment or reply on an activity as staff',
-      params: DiscussionActivityParam,
-      body: PostComment,
-      response: { 200: CommentView, 403: ErrorBody, 404: ErrorBody },
-    },
-    handler: async (req) => {
-      const scope = await resolveScope(container, req);
-      await requireActivity(container, scope.orgId, req.params.activityId);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
-      return discussion.post(scope.orgId, actor, {
-        activityId: req.params.activityId,
-        parentId: req.body.parentId,
-        body: req.body.body,
-      });
-    },
-  });
-
-  r.route({
     method: 'PATCH',
-    url: '/api/discussion/comments/:commentId',
+    url: '/api/comments/:commentId',
     preHandler: app.requireSession,
     schema: {
       operationId: 'editComment',
@@ -364,75 +302,4 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     },
   });
 
-  r.route({
-    method: 'GET',
-    url: '/api/discussion/courses/:courseId/settings',
-    preHandler: app.requireSession,
-    schema: {
-      operationId: 'getDiscussionSettings',
-      tags: ['Discussion'],
-      summary: "Read a course's discussion settings",
-      params: DiscussionCourseParam,
-      response: { 200: DiscussionSettings },
-    },
-    handler: async (req) => {
-      const scope = await resolveScope(container, req);
-      return discussion.getSettings(scope.orgId, req.params.courseId);
-    },
-  });
-
-  r.route({
-    method: 'PATCH',
-    url: '/api/discussion/courses/:courseId/settings',
-    preHandler: app.requireSession,
-    schema: {
-      operationId: 'setDiscussionSettings',
-      tags: ['Discussion'],
-      summary: "Update a course's discussion settings",
-      params: DiscussionCourseParam,
-      body: SetDiscussionSettings,
-      response: { 200: DiscussionSettings, 404: ErrorBody },
-    },
-    handler: async (req) => {
-      const scope = await resolveScope(container, req);
-      return discussion.setSettings(scope.orgId, req.params.courseId, req.body);
-    },
-  });
-
-  r.route({
-    method: 'GET',
-    url: '/api/discussion/courses/:courseId/comment-states',
-    preHandler: app.requireSession,
-    schema: {
-      operationId: 'listCourseCommentStates',
-      tags: ['Discussion'],
-      summary: "Read every per-activity comments-state override in a course",
-      params: DiscussionCourseParam,
-      response: { 200: CommentStates },
-    },
-    handler: async (req) => {
-      const scope = await resolveScope(container, req);
-      const states = await discussion.listCommentStates(scope.orgId, req.params.courseId);
-      return { states };
-    },
-  });
-
-  r.route({
-    method: 'PATCH',
-    url: '/api/discussion/activities/:activityId/comments',
-    preHandler: app.requireSession,
-    schema: {
-      operationId: 'setActivityCommentsState',
-      tags: ['Discussion'],
-      summary: "Override or clear an activity's comments state",
-      params: DiscussionActivityParam,
-      body: SetCommentsState,
-      response: { 204: z.void(), 404: ErrorBody },
-    },
-    handler: async (req, reply) => {
-      const scope = await resolveScope(container, req);
-      await discussion.setCommentsState(scope.orgId, req.params.activityId, req.body.state);
-      return reply.code(204).send();
-    },
-  });
 }

@@ -14,6 +14,7 @@ export const Course = z.object({
   description: z.string(),
   status: CourseStatus,
   category: z.string(),
+  thumbnailAssetId: z.string().nullable(),
   moduleCount: z.number().int(),
   activityCount: z.number().int(),
   enrolledCount: z.number().int(),
@@ -31,6 +32,8 @@ export type CreateCourse = z.infer<typeof CreateCourse>;
 
 export const UpdateCourse = CreateCourse.partial().extend({
   status: CourseStatus.optional(),
+  /** null clears the cover. */
+  thumbnailAssetId: z.string().nullable().optional(),
 });
 export type UpdateCourse = z.infer<typeof UpdateCourse>;
 

@@ -66,6 +66,8 @@ export const courses = pgTable(
       .notNull()
       .default('draft'),
     category: text('category').notNull().default(''),
+    // Media-library asset rendered as the course's cover. Null = no cover.
+    thumbnailAssetId: text('thumbnail_asset_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
@@ -79,6 +81,13 @@ export const courses = pgTable(
       columns: [t.orgId, t.id, t.type],
       foreignColumns: [contentItems.orgId, contentItems.id, contentItems.type],
     }).onDelete('cascade'),
+    // Restrictive, like `activity_assets.assetFk` — the asset is owned by the
+    // assets domain and must be unlinked before it can be deleted. MATCH SIMPLE
+    // means the constraint is skipped entirely while the thumbnail is null.
+    thumbnailAssetFk: foreignKey({
+      columns: [t.orgId, t.thumbnailAssetId],
+      foreignColumns: [assets.orgId, assets.id],
+    }),
   }),
 );
 

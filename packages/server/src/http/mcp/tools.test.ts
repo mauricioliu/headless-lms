@@ -24,6 +24,7 @@ const COURSE: Course = {
   description: 'Learn TypeScript',
   status: 'published',
   category: 'Engineering',
+  thumbnailAssetId: null,
   moduleCount: 3,
   activityCount: 12,
   enrolledCount: 5,

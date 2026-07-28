@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import type { Course } from "@/lib/api/types";
 
-import { updateCourseDetailsAction } from "../actions";
+import { updateCourseDetailsAction } from "../../actions";
 
 // Kept in sync with the create/edit list sheet (`course-form-sheet`).
 const CATEGORIES = [
@@ -42,9 +42,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-// Details tab form: edits course metadata inline (title, category, description).
-// Replaces the former edit-details sheet.
-export function CourseDetailsForm({ course }: { course: Course }) {
+/** Settings → Basics: the course's title, category, and description. */
+export function BasicsForm({ course }: { course: Course }) {
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
   const {
@@ -84,41 +83,37 @@ export function CourseDetailsForm({ course }: { course: Course }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onValid)} className="flex max-w-2xl flex-col gap-6">
-      <div className="flex flex-col gap-5">
-        <Field id="title" label="Title" required error={errors.title?.message}>
-          <Input id="title" {...register("title")} />
-        </Field>
-        <Field id="category" label="Category" required error={errors.category?.message}>
-          <Select
-            value={category || undefined}
-            onValueChange={(v) =>
-              setValue("category", v, { shouldValidate: true, shouldDirty: true })
-            }
-          >
-            <SelectTrigger id="category" aria-invalid={Boolean(errors.category)}>
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-        <Field
-          id="description"
-          label="Description"
-          hint="A short summary shown on the course card."
-          error={errors.description?.message}
+    <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-5">
+      <Field id="title" label="Title" required error={errors.title?.message}>
+        <Input id="title" {...register("title")} />
+      </Field>
+      <Field id="category" label="Category" required error={errors.category?.message}>
+        <Select
+          value={category || undefined}
+          onValueChange={(v) => setValue("category", v, { shouldValidate: true, shouldDirty: true })}
         >
-          <Textarea id="description" rows={5} {...register("description")} />
-        </Field>
-      </div>
+          <SelectTrigger id="category" aria-invalid={Boolean(errors.category)}>
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
+          <SelectContent>
+            {CATEGORIES.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field
+        id="description"
+        label="Description"
+        hint="A short summary shown on the course card."
+        error={errors.description?.message}
+      >
+        <Textarea id="description" rows={5} {...register("description")} />
+      </Field>
 
-      <div className="flex items-center justify-end gap-2 border-t border-line pt-5">
+      <div className="flex justify-end">
         <Button type="submit" variant="primary" disabled={isPending || !isDirty}>
           {isPending ? "Saving…" : "Save changes"}
         </Button>

@@ -1,31 +1,16 @@
 "use server";
 
-// Server actions for the course's discussion settings and moderation queue.
+// Server actions for the course's moderation queue. The comment settings action
+// lives with the Settings tab (`../settings/actions`).
 
 import { revalidatePath } from "next/cache";
 import { Discussion } from "@headless-lms/sdk";
 
 import { ensureConfigured, authHeaders, unwrap, expectOk } from "@/lib/api/server-call";
-import type { DiscussionSettings, SetDiscussionSettings, CommentsState } from "@/lib/api/types";
+import type { CommentsState } from "@/lib/api/types";
 
 function revalidateDiscussion(): void {
   revalidatePath("/courses/[courseId]/discussion", "page");
-}
-
-export async function setDiscussionSettingsAction(
-  courseId: string,
-  patch: SetDiscussionSettings,
-): Promise<DiscussionSettings> {
-  ensureConfigured();
-  const settings = unwrap(
-    await Discussion.setDiscussionSettings({
-      path: { courseId },
-      body: patch,
-      ...(await authHeaders()),
-    }),
-  );
-  revalidateDiscussion();
-  return settings;
 }
 
 export async function approveCommentAction(commentId: string): Promise<void> {

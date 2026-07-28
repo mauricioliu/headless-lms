@@ -7,5 +7,5 @@ export default async function CourseIndex({
   params: Promise<{ courseId: string }>;
 }) {
   const { courseId } = await params;
-  redirect(`/courses/${courseId}/details`);
+  redirect(`/courses/${courseId}/content`);
 }

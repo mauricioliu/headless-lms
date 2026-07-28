@@ -18,11 +18,11 @@ import { cn } from "@/lib/utils";
 // (underlined active tab) but backed by real navigation, so tabs are
 // deep-linkable and each server-renders its own data.
 const TABS: { segment: string; label: string; icon: LucideIcon }[] = [
-  { segment: "details", label: "Details", icon: Settings2 },
   { segment: "content", label: "Content", icon: Layers },
   { segment: "analytics", label: "Analytics", icon: BarChart3 },
   { segment: "access", label: "Access", icon: KeyRound },
-  { segment: "discussion", label: "Discussion", icon: MessagesSquare },
+  { segment: "discussion", label: "Comments", icon: MessagesSquare },
+  { segment: "settings", label: "Settings", icon: Settings2 },
 ];
 
 export function CourseTabsNav({ courseId }: { courseId: string }) {

@@ -53,6 +53,7 @@ const selection = {
   description: courses.description,
   status: courses.status,
   category: courses.category,
+  thumbnailAssetId: courses.thumbnailAssetId,
   moduleCount: moduleCountExpr,
   activityCount: activityCountExpr,
   enrolledCount: enrolledCountExpr,
@@ -67,6 +68,7 @@ type CourseRow = {
   description: string;
   status: string;
   category: string;
+  thumbnailAssetId: string | null;
   moduleCount: number;
   activityCount: number;
   enrolledCount: number;
@@ -82,6 +84,7 @@ function toCourse(row: CourseRow): Course {
     description: row.description,
     status: row.status as CourseStatus,
     category: row.category,
+    thumbnailAssetId: row.thumbnailAssetId,
     moduleCount: Number(row.moduleCount),
     activityCount: Number(row.activityCount),
     enrolledCount: Number(row.enrolledCount),
@@ -210,6 +213,10 @@ export class DrizzleContentRepository implements ContentRepository {
     }
     if (patch.status !== undefined) {
       set.status = patch.status;
+    }
+    // null is meaningful here — it clears the cover — so only `undefined` skips.
+    if (patch.thumbnailAssetId !== undefined) {
+      set.thumbnailAssetId = patch.thumbnailAssetId;
     }
 
     const [updated] = await this.db

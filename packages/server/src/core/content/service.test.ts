@@ -13,6 +13,7 @@ function makeCourse(over: Partial<Course> = {}): Course {
     description: '',
     status: 'draft',
     category: '',
+    thumbnailAssetId: null,
     moduleCount: 0,
     activityCount: 0,
     enrolledCount: 0,

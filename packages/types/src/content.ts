@@ -22,6 +22,8 @@ export interface Course {
   description: string;
   status: CourseStatus;
   category: string;
+  /** Media-library asset rendered as the course's cover. */
+  thumbnailAssetId: string | null;
   moduleCount: number;
   activityCount: number;
   enrolledCount: number;
@@ -75,6 +77,8 @@ export interface UpdateCourseInput {
   description?: string | undefined;
   category?: string | undefined;
   status?: CourseStatus | undefined;
+  /** null clears the cover. */
+  thumbnailAssetId?: string | null | undefined;
 }
 
 export type DownloadStatus = "draft" | "published";

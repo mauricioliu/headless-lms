@@ -64,6 +64,7 @@ export type ListCoursesResponses = {
       description: string;
       status: "draft" | "published";
       category: string;
+      thumbnailAssetId: string | null;
       moduleCount: number;
       activityCount: number;
       enrolledCount: number;
@@ -100,6 +101,7 @@ export type CreateCourseResponses = {
     description: string;
     status: "draft" | "published";
     category: string;
+    thumbnailAssetId: string | null;
     moduleCount: number;
     activityCount: number;
     enrolledCount: number;
@@ -170,6 +172,7 @@ export type GetCourseResponses = {
     description: string;
     status: "draft" | "published";
     category: string;
+    thumbnailAssetId: string | null;
     moduleCount: number;
     activityCount: number;
     enrolledCount: number;
@@ -186,6 +189,7 @@ export type UpdateCourseData = {
     description?: string;
     category?: string;
     status?: "draft" | "published";
+    thumbnailAssetId?: string | null;
   };
   path: {
     id: string;
@@ -217,6 +221,7 @@ export type UpdateCourseResponses = {
     description: string;
     status: "draft" | "published";
     category: string;
+    thumbnailAssetId: string | null;
     moduleCount: number;
     activityCount: number;
     enrolledCount: number;
@@ -245,6 +250,7 @@ export type ListLearnCoursesResponses = {
     description: string;
     status: "draft" | "published";
     category: string;
+    thumbnailAssetId: string | null;
     moduleCount: number;
     activityCount: number;
     enrolledCount: number;
@@ -307,6 +313,7 @@ export type GetLearnCourseResponses = {
     description: string;
     status: "draft" | "published";
     category: string;
+    thumbnailAssetId: string | null;
     moduleCount: number;
     activityCount: number;
     enrolledCount: number;
@@ -3178,151 +3185,6 @@ export type ReconnectIntegrationResponses = {
 
 export type ReconnectIntegrationResponse =
   ReconnectIntegrationResponses[keyof ReconnectIntegrationResponses];
-
-export type GetScopeSettingsData = {
-  body?: never;
-  path: {
-    scopeId: string;
-  };
-  query?: never;
-  url: "/api/settings/{scopeId}";
-};
-
-export type GetScopeSettingsErrors = {
-  /**
-   * Default Response
-   */
-  400: {
-    error: string;
-    message?: string;
-  };
-  /**
-   * Default Response
-   */
-  401: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type GetScopeSettingsError = GetScopeSettingsErrors[keyof GetScopeSettingsErrors];
-
-export type GetScopeSettingsResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    scopeId: string;
-    namespaces: {
-      [key: string]: {
-        stored: {
-          [key: string]: unknown;
-        };
-        effective: {
-          [key: string]: unknown;
-        };
-      };
-    };
-  };
-};
-
-export type GetScopeSettingsResponse = GetScopeSettingsResponses[keyof GetScopeSettingsResponses];
-
-export type GetNamespaceSettingsData = {
-  body?: never;
-  path: {
-    scopeId: string;
-    namespace: string;
-  };
-  query?: never;
-  url: "/api/settings/{scopeId}/{namespace}";
-};
-
-export type GetNamespaceSettingsErrors = {
-  /**
-   * Default Response
-   */
-  400: {
-    error: string;
-    message?: string;
-  };
-  /**
-   * Default Response
-   */
-  401: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type GetNamespaceSettingsError =
-  GetNamespaceSettingsErrors[keyof GetNamespaceSettingsErrors];
-
-export type GetNamespaceSettingsResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    stored: {
-      [key: string]: unknown;
-    };
-    effective: {
-      [key: string]: unknown;
-    };
-  };
-};
-
-export type GetNamespaceSettingsResponse =
-  GetNamespaceSettingsResponses[keyof GetNamespaceSettingsResponses];
-
-export type PatchNamespaceSettingsData = {
-  body: {
-    [key: string]: unknown;
-  };
-  path: {
-    scopeId: string;
-    namespace: string;
-  };
-  query?: never;
-  url: "/api/settings/{scopeId}/{namespace}";
-};
-
-export type PatchNamespaceSettingsErrors = {
-  /**
-   * Default Response
-   */
-  400: {
-    error: string;
-    message?: string;
-  };
-  /**
-   * Default Response
-   */
-  401: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type PatchNamespaceSettingsError =
-  PatchNamespaceSettingsErrors[keyof PatchNamespaceSettingsErrors];
-
-export type PatchNamespaceSettingsResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    stored: {
-      [key: string]: unknown;
-    };
-    effective: {
-      [key: string]: unknown;
-    };
-  };
-};
-
-export type PatchNamespaceSettingsResponse =
-  PatchNamespaceSettingsResponses[keyof PatchNamespaceSettingsResponses];
 
 export type DeleteMcpData = {
   body?: never;
