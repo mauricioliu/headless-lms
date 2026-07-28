@@ -65,6 +65,20 @@ async function gateComment(
   await gate(container, orgId, orgUserId, comment.activityId);
 }
 
+/** Staff are not enrolled, so no entitlement check applies — but the activity
+ *  must still exist in this org, or a bogus id would fall through to the
+ *  service and surface as a 500 rather than a 404. */
+async function requireActivity(
+  container: Container,
+  orgId: string,
+  activityId: string,
+): Promise<void> {
+  const activity = await container.content.getActivity(orgId, activityId);
+  if (!activity) {
+    throw new NotFoundError('Activity', activityId);
+  }
+}
+
 export async function discussionRoutes(app: FastifyInstance, container: Container): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
   const discussion = container.discussion;
@@ -310,6 +324,68 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
       const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
       await discussion.resolveReports(scope.orgId, req.params.commentId, actor);
       return reply.code(204).send();
+    },
+  });
+
+  r.route({
+    method: 'GET',
+    url: '/api/discussion/activities/:activityId/thread',
+    preHandler: app.requireSession,
+    schema: {
+      operationId: 'getStaffActivityThread',
+      tags: ['Discussion'],
+      summary: "Read an activity's comment thread as staff",
+      params: DiscussionActivityParam,
+      response: { 200: ThreadView, 404: ErrorBody },
+    },
+    handler: async (req) => {
+      const scope = await resolveScope(container, req);
+      await requireActivity(container, scope.orgId, req.params.activityId);
+      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
+      return discussion.listThread(scope.orgId, req.params.activityId, actor);
+    },
+  });
+
+  r.route({
+    method: 'POST',
+    url: '/api/discussion/activities/:activityId/comments',
+    preHandler: app.requireSession,
+    schema: {
+      operationId: 'postStaffComment',
+      tags: ['Discussion'],
+      summary: 'Post a comment or reply on an activity as staff',
+      params: DiscussionActivityParam,
+      body: PostComment,
+      response: { 200: ThreadComment, 403: ErrorBody, 404: ErrorBody },
+    },
+    handler: async (req) => {
+      const scope = await resolveScope(container, req);
+      await requireActivity(container, scope.orgId, req.params.activityId);
+      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
+      return discussion.post(scope.orgId, actor, {
+        activityId: req.params.activityId,
+        parentId: req.body.parentId,
+        body: req.body.body,
+      });
+    },
+  });
+
+  r.route({
+    method: 'PATCH',
+    url: '/api/discussion/comments/:commentId',
+    preHandler: app.requireSession,
+    schema: {
+      operationId: 'editStaffComment',
+      tags: ['Discussion'],
+      summary: 'Revise your own comment as staff',
+      params: CommentIdParam,
+      body: EditComment,
+      response: { 200: ThreadComment, 403: ErrorBody, 404: ErrorBody },
+    },
+    handler: async (req) => {
+      const scope = await resolveScope(container, req);
+      const actor: Actor = { orgUserId: scope.orgUserId, isStaff: true };
+      return discussion.edit(scope.orgId, req.params.commentId, actor, req.body.body);
     },
   });
 
