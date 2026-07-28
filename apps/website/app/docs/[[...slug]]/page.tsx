@@ -15,7 +15,7 @@ type Props = {
 export default async function Page(props: Props) {
   const params = await props.params
   const page = source.getPage(params.slug)
-  if (!page) notFound()
+  if (!page) {notFound()}
 
   const MDX = page.data.body
 
@@ -44,7 +44,7 @@ export async function generateStaticParams() {
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
   const page = source.getPage(params.slug)
-  if (!page) notFound()
+  if (!page) {notFound()}
 
   return {
     title: page.data.title,

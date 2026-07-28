@@ -20,7 +20,7 @@ const dateFormat = new Intl.DateTimeFormat('en-US', {
 export default async function BlogPostPage(props: Props) {
   const params = await props.params
   const post = blog.getPage([params.slug])
-  if (!post) notFound()
+  if (!post) {notFound()}
 
   const MDX = post.data.body
 
@@ -87,7 +87,7 @@ export function generateStaticParams() {
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
   const post = blog.getPage([params.slug])
-  if (!post) notFound()
+  if (!post) {notFound()}
 
   return {
     title: post.data.title,
