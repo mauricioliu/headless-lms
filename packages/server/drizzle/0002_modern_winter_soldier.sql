@@ -1,1 +1,0 @@
-ALTER TABLE "courses" ADD COLUMN "settings" jsonb DEFAULT '{}'::jsonb NOT NULL;

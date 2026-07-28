@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1785237108824,
+      "when": 1785241663378,
       "tag": "0000_baseline",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1785240139224,
-      "tag": "0001_cool_maria_hill",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1785241410180,
-      "tag": "0002_modern_winter_soldier",
       "breakpoints": true
     }
   ]
