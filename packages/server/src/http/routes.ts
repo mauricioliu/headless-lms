@@ -6,6 +6,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Container } from '../app/container.js';
 import type { ServerConfig } from './config.js';
 import { coursesRoutes } from './routes/courses.js';
+import { downloadsRoutes } from './routes/downloads.js';
 import { learnRoutes } from './routes/learn.js';
 import { activitiesRoutes } from './routes/activities.js';
 import { studentsRoutes } from './routes/students.js';
@@ -40,6 +41,7 @@ export function registerRoutes(
   app.register(async (instance) => {
     instance.addHook('onRequest', instance.requireSession);
     await coursesRoutes(instance, container);
+    await downloadsRoutes(instance, container);
     await learnRoutes(instance, container);
     await activitiesRoutes(instance, container);
     await studentsRoutes(instance, container);
