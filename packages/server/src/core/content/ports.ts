@@ -1,5 +1,13 @@
-import type { Activity, Course, Module, SaveActivityInput } from './model.js';
-import type { CreateCourseInput, ListCoursesQuery, Page, UpdateCourseInput } from './types.js';
+import type { Activity, Course, Download, Module, SaveActivityInput } from './model.js';
+import type {
+  CreateCourseInput,
+  CreateDownloadInput,
+  ListCoursesQuery,
+  ListDownloadsQuery,
+  Page,
+  UpdateCourseInput,
+  UpdateDownloadInput,
+} from './types.js';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 
 export interface ContentService {
@@ -37,6 +45,14 @@ export interface ContentService {
     moduleId: string,
     activityId: string,
   ): Promise<Module[]>;
+
+  listDownloads(orgId: string, query: ListDownloadsQuery): Promise<Page<Download>>;
+  getDownload(orgId: string, id: string): Promise<Download | null>;
+  createDownload(orgId: string, input: CreateDownloadInput): Promise<Download>;
+  /** @throws NotFoundError when no download with this id exists in the org. */
+  updateDownload(orgId: string, id: string, patch: UpdateDownloadInput): Promise<Download>;
+  /** @throws NotFoundError when no download with this id exists in the org. */
+  removeDownload(orgId: string, id: string): Promise<void>;
 }
 
 // TODO
@@ -47,6 +63,12 @@ export interface ContentRepository {
   create(orgId: string, input: CreateCourseInput, slug: string): Promise<Course>;
   update(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course | null>;
   delete(orgId: string, id: string): Promise<boolean>;
+
+  listDownloads(orgId: string, query: ListDownloadsQuery): Promise<Page<Download>>;
+  getDownload(orgId: string, id: string): Promise<Download | null>;
+  createDownload(orgId: string, input: CreateDownloadInput, slug: string): Promise<Download>;
+  updateDownload(orgId: string, id: string, patch: UpdateDownloadInput): Promise<Download | null>;
+  deleteDownload(orgId: string, id: string): Promise<boolean>;
 }
 
 export interface ContentTxScope {

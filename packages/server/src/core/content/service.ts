@@ -4,14 +4,22 @@
 // the outbox append commit in ONE transaction (transactional outbox). This
 // service never publishes — the outbox relay republishes committed events to
 // the EventBus at-least-once.
-import type { Activity, Course, Module, SaveActivityInput } from './model.js';
+import type { Activity, Course, Download, Module, SaveActivityInput } from './model.js';
 import type {
   ContentService,
   ContentRepository,
   CourseRepository,
   ContentUnitOfWork,
 } from './ports.js';
-import type { CreateCourseInput, ListCoursesQuery, Page, UpdateCourseInput } from './types.js';
+import type {
+  CreateCourseInput,
+  CreateDownloadInput,
+  ListCoursesQuery,
+  ListDownloadsQuery,
+  Page,
+  UpdateCourseInput,
+  UpdateDownloadInput,
+} from './types.js';
 import type { Logger } from '../shared/ports.js';
 import { NotFoundError } from '../shared/errors.js';
 import { noopLogger } from '../shared/logger.js';
@@ -161,5 +169,58 @@ export class ContentServiceImpl implements ContentService {
     const modules = await this.structureRepo.deleteActivity(orgId, courseId, moduleId, activityId);
     this.logger.info('activity deleted', { orgId, courseId, moduleId, activityId });
     return modules;
+  }
+
+  // --- downloads ------------------------------------------------------------
+
+  listDownloads(orgId: string, query: ListDownloadsQuery): Promise<Page<Download>> {
+    return this.repo.listDownloads(orgId, query);
+  }
+
+  getDownload(orgId: string, id: string): Promise<Download | null> {
+    return this.repo.getDownload(orgId, id);
+  }
+
+  async createDownload(orgId: string, input: CreateDownloadInput): Promise<Download> {
+    const download = await this.uow.run(async ({ content, outbox }) => {
+      const created = await content.createDownload(orgId, input, slugify(input.title));
+      await outbox.append([{ type: 'download.created', orgId, download: created }]);
+      return created;
+    });
+    this.logger.info('download created', { orgId, downloadId: download.id });
+    return download;
+  }
+
+  async updateDownload(
+    orgId: string,
+    id: string,
+    patch: UpdateDownloadInput,
+  ): Promise<Download> {
+    const download = await this.uow.run(async ({ content, outbox }) => {
+      const updated = await content.updateDownload(orgId, id, patch);
+      if (!updated) {
+        throw new NotFoundError('Download', id);
+      }
+      await outbox.append([{ type: 'download.updated', orgId, download: updated }]);
+      return updated;
+    });
+    this.logger.info('download updated', { orgId, downloadId: id });
+    return download;
+  }
+
+  async removeDownload(orgId: string, id: string): Promise<void> {
+    await this.uow.run(async ({ content, outbox }) => {
+      // Snapshot before the delete — the event carries the last known state.
+      const download = await content.getDownload(orgId, id);
+      if (!download) {
+        throw new NotFoundError('Download', id);
+      }
+      const ok = await content.deleteDownload(orgId, id);
+      if (!ok) {
+        throw new NotFoundError('Download', id);
+      }
+      await outbox.append([{ type: 'download.deleted', orgId, download }]);
+    });
+    this.logger.info('download deleted', { orgId, downloadId: id });
   }
 }

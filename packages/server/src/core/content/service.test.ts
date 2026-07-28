@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { NotFoundError } from '../shared/errors.js';
 import { ContentServiceImpl } from './service.js';
 import type { ContentRepository, CourseRepository, ContentUnitOfWork } from './ports.js';
-import type { Course, Module } from './model.js';
+import type { Course, Download, Module } from './model.js';
 import type { NewDomainEvent, OutboxAppender } from '../shared/ports.js';
 
 function makeCourse(over: Partial<Course> = {}): Course {
@@ -29,6 +29,11 @@ function makeRepo(): ContentRepository {
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    listDownloads: vi.fn(),
+    getDownload: vi.fn(),
+    createDownload: vi.fn(),
+    updateDownload: vi.fn(),
+    deleteDownload: vi.fn(),
   };
 }
 
@@ -252,5 +257,75 @@ describe('logging', () => {
       'course deleted',
     ]);
     expect(entries[0]?.meta).toMatchObject({ orgId: 'org-1', courseId: course.id });
+  });
+});
+
+function makeDownload(over: Partial<Download> = {}): Download {
+  return {
+    id: 'd1',
+    title: 'Workbook',
+    slug: 'workbook',
+    description: '',
+    status: 'draft',
+    category: '',
+    thumbnailAssetId: null,
+    assetCount: 0,
+    totalSize: 0,
+    entitledCount: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    ...over,
+  };
+}
+
+describe('downloads', () => {
+  it('creates a download with a slugified title and appends download.created', async () => {
+    const repo = makeRepo();
+    const download = makeDownload({ title: 'My Great Workbook', slug: 'my-great-workbook' });
+    vi.mocked(repo.createDownload).mockResolvedValue(download);
+    const { uow, appended } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    const result = await svc.createDownload('o1', { title: 'My Great Workbook' });
+
+    expect(repo.createDownload).toHaveBeenCalledWith(
+      'o1',
+      { title: 'My Great Workbook' },
+      'my-great-workbook',
+    );
+    expect(result).toEqual(download);
+    expect(appended).toEqual([{ type: 'download.created', orgId: 'o1', download }]);
+  });
+
+  it('throws NotFoundError when updating a download that does not exist', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.updateDownload).mockResolvedValue(null);
+    const { uow } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    await expect(svc.updateDownload('o1', 'missing', { title: 'x' })).rejects.toThrow(NotFoundError);
+  });
+
+  it('appends download.deleted carrying the pre-delete snapshot', async () => {
+    const repo = makeRepo();
+    const download = makeDownload();
+    vi.mocked(repo.getDownload).mockResolvedValue(download);
+    vi.mocked(repo.deleteDownload).mockResolvedValue(true);
+    const { uow, appended } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    await svc.removeDownload('o1', 'd1');
+
+    expect(appended).toEqual([{ type: 'download.deleted', orgId: 'o1', download }]);
+  });
+
+  it('throws NotFoundError when deleting a download that does not exist', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.getDownload).mockResolvedValue(null);
+    const { uow } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    await expect(svc.removeDownload('o1', 'missing')).rejects.toThrow(NotFoundError);
+    expect(repo.deleteDownload).not.toHaveBeenCalled();
   });
 });

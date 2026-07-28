@@ -6,12 +6,15 @@
 import { eq, and, sql, count, asc, desc, ilike, or, type SQL, type AnyColumn } from 'drizzle-orm';
 import type { DbExecutor } from '../index.js';
 import type { ContentRepository } from '../../../core/content/ports.js';
-import type { Course, CourseStatus } from '../../../core/content/model.js';
+import type { Course, CourseStatus, Download } from '../../../core/content/model.js';
 import type {
   CreateCourseInput,
+  CreateDownloadInput,
   ListCoursesQuery,
+  ListDownloadsQuery,
   Page,
   UpdateCourseInput,
+  UpdateDownloadInput,
 } from '../../../core/content/types.js';
 import { contentItems, courses, modules, activities } from '../schema/content.js';
 import { entitlements } from '../schema/entitlements.js';
@@ -234,5 +237,42 @@ export class DrizzleContentRepository implements ContentRepository {
       )
       .returning({ id: contentItems.id });
     return deleted.length > 0;
+  }
+
+  // --- downloads --------------------------------------------------------
+  // Not yet persisted — Task 6 implements these against the `downloads` /
+  // `download_assets` tables. Stubs keep the port satisfied in the meantime.
+
+  private failDownloads(op: string): never {
+    this.logger.error(`download ${op} failed: not implemented`);
+    throw new Error('not implemented');
+  }
+
+  async listDownloads(_orgId: string, _query: ListDownloadsQuery): Promise<Page<Download>> {
+    this.failDownloads('list');
+  }
+
+  async getDownload(_orgId: string, _id: string): Promise<Download | null> {
+    this.failDownloads('get');
+  }
+
+  async createDownload(
+    _orgId: string,
+    _input: CreateDownloadInput,
+    _slug: string,
+  ): Promise<Download> {
+    this.failDownloads('create');
+  }
+
+  async updateDownload(
+    _orgId: string,
+    _id: string,
+    _patch: UpdateDownloadInput,
+  ): Promise<Download | null> {
+    this.failDownloads('update');
+  }
+
+  async deleteDownload(_orgId: string, _id: string): Promise<boolean> {
+    this.failDownloads('delete');
   }
 }
