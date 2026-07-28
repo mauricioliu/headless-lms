@@ -22,37 +22,12 @@ Single test: `pnpm vitest run path/to/file.test.ts` or `pnpm vitest run -t "test
 Per-workspace: `pnpm --filter @headless-lms/server <script>`.
 
 ## Architecture
+Read [this](docs/architecture.md)
 
-Hexagonal. The backend is `packages/server/src/`, layered; `apps/api` is a thin installation (env → `ServerConfig` → `createContainer` → `buildServer` → listen) that owns only its config, entry point, and plugins folder.
-
-- `core/<context>/` — framework-free, runtime-free, **persistence-free** domain. Eight bounded contexts, all built and Drizzle-persisted: `identity`, `organizations`, `content`, `entitlements`, `progress`, `assets`, `integrations`, `automations` (+ `shared/` for cross-cutting ports). Third-party integration implementations live in the **installation's** plugins dir (`apps/api/src/plugins/` here — one folder per integration, **directory name = integration id**), each default-exporting a module satisfying the `Integration` contract from `@headless-lms/types` (a plugin folder may be a thin re-export of a workspace package — slack → `plugins/slack`). Composition scans that directory at startup (`loadIntegrations`, via the `pluginsDir` option) — adding an integration is adding a folder; nothing else to register.
-- `reporting/` — a cross-context read layer **outside `core/`** (sibling of `core/`, `http/`, `app/`), for **reporting and analytics only**: computed views such as progress and completeness. Composes domain public services into views (`reporting/students/`, `reporting/dashboard/`, `reporting/learn/`); owns no data, no rules, and performs no writes. It is the only place allowed to read multiple contexts. **It is never an authorization source** — access decisions belong to the context that owns them (`entitlements` for course access, `organizations` for roles), and a `null` from a reporting read must never be used to infer permission. (`reporting/learn` currently also serves operational reads — `listCourses`, `getCourse`, `listModules` — for the student portal; that doesn't fit the layer's purpose and is a known inconsistency to resolve separately, flagged here so the pattern isn't copied.)
-- `adapters/` — outbound infra that is structural to the server: `db`, `auth`, `events`, `logging`, plus fail-loudly stubs for `email`/`storage`. Drizzle schema and repositories live here, **not** in core:
-  - `adapters/db/schema/<context>.ts` — centralized table definitions, re-exported from `schema/index.ts` (the single source `drizzle.config.ts` points at).
-  - `adapters/db/repositories/<context>.ts` — `Drizzle*Repository` classes implementing the core outbound ports.
-  - Vendor implementations of the deployment ports (`EmailSender`, `ObjectStorage` — declared in `@headless-lms/types`) live in top-level `adapters/*` workspace packages, never in the server. The installation constructs them from its own env and passes them via `createContainer(config, { adapters: { email, storage } })`; an absent slot falls back to a stub that fails loudly on use.
-- `app/` — `container.ts` wires adapters into services; also `migrate.ts`, the operational function the server exports and `@headless-lms/cli` wraps as `headless-lms migrate`.
-- Inbound entry point: `http/` — Fastify server, session-guarded back-office routes, and the MCP endpoint (`http/mcp/`, authenticated via OAuth bearer tokens, not the session cookie).
-
-Each context has the same file contract: `service.ts`, `model.ts`, `types.ts`, `events.ts`, `ports.ts`, `index.ts`, `service.test.ts`. The outbound port interface (e.g. `ContentRepository`) lives in the context's `ports.ts`; its Drizzle implementation lives in `adapters/db/repositories/`.
-
-**Type ownership:** domain entities, DTOs, and domain events are declared once in `@headless-lms/types` (one file per context); a context's `model.ts`/`types.ts`/`events.ts` re-export them — never re-declare. Runtime domain code (error classes, the roles matrix) stays in core. Integration packages depend only on `@headless-lms/types` (+ `@headless-lms/utils` for the zod helpers), never on the server.
-
-### Multi-tenancy
-
-`organizations` is the tenant root. Org-scoped tables use a composite `(org_id, id)` PK with `org_id` → `organizations.id`. **better-auth's organization plugin is the source of truth** for org/member/invitation (tables in `adapters/auth/schema.ts`); the auth adapter's `organizationHooks` mirror them into the `organizations` core context. The adapter resolves auth user ids → domain person ids before calling core (via `IdentityService`), so core never imports the auth schema.
-
-**One person, many participations.** `users` is the global person — one row per human, `external_id` → better-auth `user.id`, provisioned for *every* account by the auth adapter's `user.create.after` hook. `org_users` is the org-scoped participation: `(org_id, id)` PK, `user_id` → `users.id`, plus `role` (`owner | admin | instructor | student`), `email`, `first_name`, `last_name`. Unique per `(org_id, email)` and `(org_id, user_id)`. Staff and learners are the same row shape — only `role` differs — so **every actor-shaped FK targets `(org_id, org_user_id)`**: entitlements, progress records. There is no `students` table.
-
-Two consequences to keep in mind when adding code:
-- **Staff surfaces must filter by role.** Learners share the table, so a query over `org_users` that forgets `role != 'student'` (or `= 'student'`) leaks one population into the other. The `Member` types are typed with `StaffRole = Exclude<Role, 'student'>` so the compiler catches most of it.
-- **`user_id` is nullable, `external_id` is nullable.** A NULL `user_id` is a roster entry an admin created before the person had an account — invitations create no rows, so this is the only way a participation exists without a person. A NULL `external_id` means no better-auth member record, which is every learner.
-
-Which participation applies is chosen by the session's **active org**, so one person can be `owner` in one org and `instructor` in another (`resolveScope`, `http/scope.ts`). At login the auth adapter stamps `activeOrganizationId` only when the person participates in exactly one org; with several, better-auth's active-org selection owns the choice. When adding org-scoped tables, mirror this composite-key shape.
 
 ### Import boundaries (enforced by ESLint — `.eslintrc.cjs`)
 
-- The eight contexts are `identity`, `organizations`, `content`, `entitlements`, `progress`, `assets`, `integrations`, `automations`.
+- The contexts are listed in ./docs/domains.
 - A context imports another context **only** through its `index.ts` (no deep imports). `core/shared/ports` is the exception (cross-cutting, allowed).
 - `core/` may not import `adapters/`, `http/`, `app/`, `reporting/`, frameworks (`fastify`, `pg`), or `drizzle-orm`.
 - `reporting/` may import any `core/<ctx>/index.ts`; it may not import `adapters/`, `http/`, or a context's internals. `core/` may not import `reporting/`.

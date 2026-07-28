@@ -2,35 +2,29 @@
 import { createDb } from '../adapters/db/index.js';
 import { DrizzleUnitOfWork } from '../adapters/db/unit-of-work.js';
 import { InMemoryEventBus } from '../adapters/events/index.js';
-import {
-  PollingOutboxRelay,
-  type PollingOutboxRelayConfig,
-} from '../adapters/events/outbox-relay.js';
+import { PollingOutboxRelay, type PollingOutboxRelayConfig, } from '../adapters/events/outbox-relay.js';
 import { InlineAutomationEngine } from '../adapters/workflows/index.js';
 import { DrizzleOutboxAppender, DrizzleOutboxStore } from '../adapters/db/repositories/outbox.js';
 import { EmailAdapter, StubTemplateRenderer } from '../adapters/email/index.js';
 import {
   createRootLogger,
-  requestLogContext,
   type LogLevel,
   type PinoInstance,
+  requestLogContext,
   type RequestLogContext,
 } from '../adapters/logging/index.js';
 import { StorageAdapter } from '../adapters/storage/index.js';
-import { createAuth, type Auth } from '../adapters/auth/index.js';
+import { type Auth, createAuth } from '../adapters/auth/index.js';
 import { createOrgAdmin } from '../adapters/auth/org-admin.js';
 import { stampSessionActiveOrg } from '../adapters/auth/session-stamp.js';
-import {
-  createConnectedAppsRepo,
-  type ConnectedAppsRepo,
-} from '../adapters/auth/connected-apps.js';
+import { type ConnectedAppsRepo, createConnectedAppsRepo, } from '../adapters/auth/connected-apps.js';
 
 import { ContentServiceImpl } from '../core/content/index.js';
 import { EntitlementsServiceImpl } from '../core/entitlements/index.js';
 import { ProgressServiceImpl } from '../core/progress/index.js';
 import { DiscussionServiceImpl } from '../core/discussion/index.js';
 import { IdentityServiceImpl } from '../core/identity/index.js';
-import { OrganizationServiceImpl, type OrgAdmin } from '../core/organizations/index.js';
+import { type OrgAdmin, OrganizationServiceImpl } from '../core/organizations/index.js';
 import { AssetsServiceImpl } from '../core/assets/index.js';
 import { IntegrationsServiceImpl } from '../core/integrations/index.js';
 import { AutomationsServiceImpl } from '../core/automations/index.js';
@@ -40,8 +34,7 @@ import { StudentsReportServiceImpl } from '../reporting/students/index.js';
 import { DashboardReportServiceImpl } from '../reporting/dashboard/index.js';
 import { LearnReportServiceImpl } from '../reporting/learn/index.js';
 import { Mailer } from '../core/shared/mailer.js';
-import { SettingsService, type ScopeChainResolver } from '../core/shared/settings.js';
-import { ID_PREFIXES } from '../core/shared/id.js';
+import { SettingsService } from '../core/shared/settings.js';
 
 import { DrizzleEntitlementsRepository } from '../adapters/db/repositories/entitlements.js';
 import { DrizzleProgressRepository } from '../adapters/db/repositories/progress.js';
@@ -59,8 +52,8 @@ import { DrizzleCredentialStore } from '../adapters/db/repositories/credentials.
 import { DrizzleSettingsRepository } from '../adapters/db/repositories/settings.js';
 import { DrizzleConnectionsRepository } from '../adapters/db/repositories/integrations.js';
 import {
-  DrizzleAutomationsRepository,
   DrizzleAutomationRunsRepository,
+  DrizzleAutomationsRepository,
 } from '../adapters/db/repositories/automations.js';
 import type {
   CredentialStore,
@@ -324,25 +317,8 @@ export async function buildContainer(
     assetsLogger,
   );
 
-  // Settings: generic store + the scope chain it cannot work out for itself.
-  // Hierarchy is the owning domain's knowledge, so composition supplies the
-  // expansion; settings never learns what a course or an activity is.
-  const resolveScopeChain: ScopeChainResolver = async (orgId, scopeId) => {
-    if (scopeId.startsWith(`${ID_PREFIXES.activity}_`)) {
-      const activity = await content.getActivity(orgId, scopeId);
-      if (!activity) {
-        return [orgId, scopeId];
-      }
-      const module = await content.getModule(orgId, activity.moduleId);
-      return module ? [orgId, module.courseId, scopeId] : [orgId, scopeId];
-    }
-    // The org id addresses org-wide defaults; anything else is its own scope
-    // sitting directly under the org.
-    return scopeId === orgId ? [orgId] : [orgId, scopeId];
-  };
   const settings = new SettingsService(
     new DrizzleSettingsRepository(db, logger.child({ name: 'settings' })),
-    resolveScopeChain,
   );
 
   const reporting = {

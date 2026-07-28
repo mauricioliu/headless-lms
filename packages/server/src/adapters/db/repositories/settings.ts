@@ -1,14 +1,13 @@
-// settings — Drizzle repository (implements the core outbound port).
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type {
   SettingsRecord,
   SettingsRepository,
-  SettingsValue,
 } from '../../../core/shared/settings.js';
 import { settings } from '../schema/settings.js';
-import type { Logger } from '../../../core/shared/ports.js';
+import type { Logger } from '@headless-lms/types';
 import { noopLogger } from '../../../core/shared/logger.js';
+import type { SettingsValue } from '@headless-lms/api-contract';
 
 type Row = typeof settings.$inferSelect;
 
@@ -26,20 +25,13 @@ export class DrizzleSettingsRepository implements SettingsRepository {
     private readonly logger: Logger = noopLogger,
   ) {}
 
-  async find(orgId: string, scopeIds: string[], namespace?: string): Promise<SettingsRecord[]> {
-    if (scopeIds.length === 0) {
-      return [];
-    }
+  async find(orgId: string, scopeId: string, namespace?: string): Promise<SettingsRecord[]> {
+    const baseConditions = [eq(settings.orgId, orgId), eq(settings.scopeId, scopeId)];
     const where = namespace
-      ? and(
-          eq(settings.orgId, orgId),
-          eq(settings.namespace, namespace),
-          inArray(settings.scopeId, scopeIds),
-        )
-      : and(eq(settings.orgId, orgId), inArray(settings.scopeId, scopeIds));
+      ? and(...baseConditions, eq(settings.namespace, namespace))
+      : and(...baseConditions);
 
     const rows = await this.db.select().from(settings).where(where);
-    this.logger.debug('settings.find', { orgId, namespace, scopeIds, found: rows.length });
     return rows.map(toRecord);
   }
 

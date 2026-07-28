@@ -17,7 +17,6 @@ import { dashboardRoutes } from './routes/dashboard.js';
 import { assetsRoutes } from './routes/assets.js';
 import { connectedAppsRoutes } from './routes/connected-apps.js';
 import { integrationsRoutes } from './routes/integrations.js';
-import { settingsRoutes } from './routes/settings.js';
 import { mcpRoutes } from './mcp/route.js';
 
 export function registerRoutes(
@@ -53,7 +52,6 @@ export function registerRoutes(
     await assetsRoutes(instance, container);
     await connectedAppsRoutes(instance, container);
     await integrationsRoutes(instance, container);
-    await settingsRoutes(instance, container);
   });
 
   // MCP endpoint authenticates via OAuth bearer tokens (withMcpAuth), NOT the

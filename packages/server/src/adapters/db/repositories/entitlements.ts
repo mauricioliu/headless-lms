@@ -1,9 +1,3 @@
-// entitlements — Drizzle repository (implements the core outbound port). Org-scoped.
-// Rows are denormalized at read time by joining the participant (first/last name + email),
-// content_items (type) and the concrete content tables (title) — nothing beyond the
-// content id is stored on the grant. The "expired" status is DERIVED in SQL from
-// expires_at so no cron is needed to flip rows; the derived value is used both in
-// the returned payload and for status filtering/sorting.
 import { and, asc, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import type { DbExecutor } from '../index.js';
 import type { EntitlementsRepository } from '../../../core/entitlements/ports.js';
@@ -14,11 +8,11 @@ import type {
   EntitlementsQuery,
   GrantEntitlementInput,
   Page,
-} from '../../../core/entitlements/model.js';
+} from '@headless-lms/types';
 import { entitlements } from '../schema/index.js';
-import { orgUsers } from '../schema/organizations.js';
+import { orgUsers } from '../schema/index.js';
 import { contentItems, courses } from '../schema/content.js';
-import type { Logger } from '../../../core/shared/ports.js';
+import type { Logger } from '@headless-lms/types';
 import { noopLogger } from '../../../core/shared/logger.js';
 
 // CASE expression: revoked beats everything; otherwise an elapsed expiry reads as

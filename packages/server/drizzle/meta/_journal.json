@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1785235378080,
+      "when": 1785237108824,
       "tag": "0000_baseline",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1785153808484,
-      "tag": "0001_worthless_cerebro",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1785234800171,
-      "tag": "0002_daily_frog_thor",
       "breakpoints": true
     }
   ]
