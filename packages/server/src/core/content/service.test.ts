@@ -376,6 +376,22 @@ describe('download assets', () => {
     await expect(svc.reorderDownloadAssets('o1', 'd1', ['a1', 'a9'])).rejects.toThrow(
       /does not match/i,
     );
+    expect(repo.reorderDownloadAssets).not.toHaveBeenCalled();
+  });
+
+  it('rejects a reorder where a duplicate id masks an omitted one', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.listDownloadAssets).mockResolvedValue([
+      makeDownloadAsset({ id: 'da1', assetId: 'a1', seq: 0 }),
+      makeDownloadAsset({ id: 'da2', assetId: 'a2', seq: 1 }),
+    ]);
+    const { uow } = fakeUow(repo);
+    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow);
+
+    await expect(svc.reorderDownloadAssets('o1', 'd1', ['a1', 'a1'])).rejects.toThrow(
+      /does not match/i,
+    );
+    expect(repo.reorderDownloadAssets).not.toHaveBeenCalled();
   });
 
   it('accepts a reorder that is a permutation of the current set', async () => {

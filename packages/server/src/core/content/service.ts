@@ -278,8 +278,12 @@ export class ContentServiceImpl implements ContentService {
   ): Promise<DownloadAsset[]> {
     const current = await this.repo.listDownloadAssets(orgId, downloadId);
     const currentIds = new Set(current.map((a) => a.assetId));
-    const sameSize = currentIds.size === assetIds.length;
-    if (!sameSize || !assetIds.every((id) => currentIds.has(id))) {
+    const requestedIds = new Set(assetIds);
+    if (
+      requestedIds.size !== assetIds.length ||
+      requestedIds.size !== currentIds.size ||
+      !assetIds.every((id) => currentIds.has(id))
+    ) {
       throw new ConflictError("Ordered asset ids does not match the download's current assets");
     }
     const assets = await this.repo.reorderDownloadAssets(orgId, downloadId, assetIds);
