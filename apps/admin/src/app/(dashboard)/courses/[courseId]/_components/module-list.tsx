@@ -20,7 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, GripVertical, Plus, Sparkles, X } from "lucide-react";
+import { Check, GripVertical, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -244,8 +244,8 @@ function SortableModule({
 
         {canEdit ? (
           <div className="flex items-center gap-2 px-1 pt-2">
-            <Button size="sm" variant="ghost" onClick={() => setNewItemOpen(true)}>
-              <Sparkles className="size-4" />
+            <Button size="sm" variant="secondary" onClick={() => setNewItemOpen(true)}>
+              <Plus className="size-4" />
               Add activity
             </Button>
           </div>
