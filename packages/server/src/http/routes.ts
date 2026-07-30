@@ -37,6 +37,11 @@ export function registerRoutes(
 
 
   app.register(async (instance) => {
+    instance.addHook('onRequest', instance.requireSession);
+    await organizationsRoutes(instance, container);
+  });
+
+  app.register(async (instance) => {
     instance.addHook('onRequest', instance.requireOrgSession);
     await coursesRoutes(instance, container);
     await downloadsRoutes(instance, container);
@@ -46,7 +51,6 @@ export function registerRoutes(
     await studentsRoutes(instance, container);
     await entitlementsRoutes(instance, container);
     await automationsRoutes(instance, container);
-    await organizationsRoutes(instance, container);
     await dashboardRoutes(instance, container);
     await assetsRoutes(instance, container);
     await connectedAppsRoutes(instance, container);

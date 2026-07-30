@@ -47,6 +47,9 @@ import type {
   DeleteAutomationData,
   DeleteAutomationErrors,
   DeleteAutomationResponses,
+  DeleteCommentData,
+  DeleteCommentErrors,
+  DeleteCommentResponses,
   DeleteCourseData,
   DeleteCourseErrors,
   DeleteCourseResponses,
@@ -70,6 +73,9 @@ import type {
   EditCommentErrors,
   EditCommentResponses,
   GetAssetData,
+  GetAssetDownloadUrlData,
+  GetAssetDownloadUrlErrors,
+  GetAssetDownloadUrlResponses,
   GetAssetErrors,
   GetAssetResponses,
   GetAutomationData,
@@ -173,9 +179,6 @@ import type {
   RemoveMemberData,
   RemoveMemberErrors,
   RemoveMemberResponses,
-  RemoveOwnCommentData,
-  RemoveOwnCommentErrors,
-  RemoveOwnCommentResponses,
   RenameDownloadAssetData,
   RenameDownloadAssetErrors,
   RenameDownloadAssetResponses,
@@ -195,9 +198,6 @@ import type {
   RequestAssetDownloadData,
   RequestAssetDownloadErrors,
   RequestAssetDownloadResponses,
-  RequestLearnAssetDownloadData,
-  RequestLearnAssetDownloadErrors,
-  RequestLearnAssetDownloadResponses,
   RequestUploadData,
   RequestUploadErrors,
   RequestUploadResponses,
@@ -1043,14 +1043,14 @@ export class Learn {
   }
 
   /**
-   * Remove your own comment
+   * Delete a comment
    */
-  public static removeOwnComment<ThrowOnError extends boolean = false>(
-    options: Options<RemoveOwnCommentData, ThrowOnError>,
-  ): RequestResult<RemoveOwnCommentResponses, RemoveOwnCommentErrors, ThrowOnError, "data"> {
+  public static deleteComment<ThrowOnError extends boolean = false>(
+    options: Options<DeleteCommentData, ThrowOnError>,
+  ): RequestResult<DeleteCommentResponses, DeleteCommentErrors, ThrowOnError, "data"> {
     return (options.client ?? client).delete<
-      RemoveOwnCommentResponses,
-      RemoveOwnCommentErrors,
+      DeleteCommentResponses,
+      DeleteCommentErrors,
       ThrowOnError,
       "data"
     >({
@@ -1143,22 +1143,17 @@ export class Learn {
   /**
    * Get a short-lived presigned URL to serve an asset to the student
    */
-  public static requestLearnAssetDownload<ThrowOnError extends boolean = false>(
-    options: Options<RequestLearnAssetDownloadData, ThrowOnError>,
-  ): RequestResult<
-    RequestLearnAssetDownloadResponses,
-    RequestLearnAssetDownloadErrors,
-    ThrowOnError,
-    "data"
-  > {
+  public static getAssetDownloadUrl<ThrowOnError extends boolean = false>(
+    options: Options<GetAssetDownloadUrlData, ThrowOnError>,
+  ): RequestResult<GetAssetDownloadUrlResponses, GetAssetDownloadUrlErrors, ThrowOnError, "data"> {
     return (options.client ?? client).post<
-      RequestLearnAssetDownloadResponses,
-      RequestLearnAssetDownloadErrors,
+      GetAssetDownloadUrlResponses,
+      GetAssetDownloadUrlErrors,
       ThrowOnError,
       "data"
     >({
       responseStyle: "data",
-      url: "/api/learn/assets/{id}/download-url",
+      url: "/api/learn/assets/{id}/url",
       ...options,
       headers: {
         "Content-Type": "application/json",

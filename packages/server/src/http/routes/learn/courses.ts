@@ -9,7 +9,7 @@ import {
 } from '@headless-lms/api-contract';
 import { NotFoundError } from '../../../core/shared/errors.js';
 import type { Container } from '../../../app/container.js';
-import { resolveStudentScope } from '../../student-scope.js';
+import { UnauthorizedError } from '../../plugins/auth.js';
 
 export async function learnCoursesRoutes(
   app: FastifyInstance,
@@ -29,8 +29,11 @@ export async function learnCoursesRoutes(
       response: { 200: LearnCourses },
     },
     handler: async (req) => {
-      const scope = await resolveStudentScope(container, req);
-      return learn.listCourses(scope.orgId, scope.orgUserId);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      return learn.listCourses(req.orgId, orgUser.id);
     },
   });
 
@@ -46,8 +49,11 @@ export async function learnCoursesRoutes(
       response: { 200: Course, 404: ErrorBody },
     },
     handler: async (req) => {
-      const scope = await resolveStudentScope(container, req);
-      const course = await learn.getCourse(scope.orgId, scope.orgUserId, req.params.courseId);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      const course = await learn.getCourse(req.orgId, orgUser.id, req.params.courseId);
       if (!course) {
         throw new NotFoundError('Course', req.params.courseId);
       }
@@ -67,8 +73,11 @@ export async function learnCoursesRoutes(
       response: { 200: LearnModules, 404: ErrorBody },
     },
     handler: async (req) => {
-      const scope = await resolveStudentScope(container, req);
-      const modules = await learn.listModules(scope.orgId, scope.orgUserId, req.params.courseId);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      const modules = await learn.listModules(req.orgId, orgUser.id, req.params.courseId);
       if (!modules) {
         throw new NotFoundError('Course', req.params.courseId);
       }

@@ -255,8 +255,8 @@ function SignUpForm({
       await createOrganizationAction({ name: values.organizationName, slug });
     } catch {
       // The account exists and the session is live, so /login is no longer a
-      // valid place to stand — the dashboard's no-organization gate picks up
-      // org creation from here.
+      // valid place to stand — the dashboard's no-organization gate redirects to
+      // /onboarding, which picks up org creation from here.
     }
     onDone();
   }

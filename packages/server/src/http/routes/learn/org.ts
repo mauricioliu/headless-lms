@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { LearnOrg } from '@headless-lms/api-contract';
 import type { Container } from '../../../app/container.js';
-import { resolveStudentScope } from '../../student-scope.js';
+import { UnauthorizedError } from '../../plugins/auth.js';
 
 export async function learnOrgRoutes(app: FastifyInstance, container: Container): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -18,9 +18,12 @@ export async function learnOrgRoutes(app: FastifyInstance, container: Container)
       response: { 200: LearnOrg },
     },
     handler: async (req) => {
-      // The session's student + org (from `activeOrganizationId`) — surface the
-      // org's display identity for the portal brand.
-      const { org } = await resolveStudentScope(container, req);
+      // The session's org (from `activeOrganizationId`) — surface its display
+      // identity for the portal brand.
+      const org = await container.organizations.getById(req.orgId);
+      if (!org) {
+        throw new UnauthorizedError('session organization not found');
+      }
       return { id: org.id, name: org.name, slug: org.slug };
     },
   });

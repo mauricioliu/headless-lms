@@ -3,3 +3,16 @@ packages:
   - "packages/*"
   - "plugins/*"
   - "adapters/*"
+
+# `@hookform/resolvers` declares no `zod` dependency at all — only
+# `react-hook-form` — so pnpm links no zod into its isolated store entry and the
+# `zod/v3` + `zod/v4/core` type imports in `zod/dist/index.d.ts` resolve by
+# node_modules walk-up to the hoisted zod 3.25.76 that `shadcn` drags in via
+# `@modelcontextprotocol/sdk`. That backport's `zod/v4/core` reports
+# `version.minor: 0` while the apps use real zod 4.4.3 (`minor: 4`), so every
+# `zodResolver(schema)` call failed to match an overload. Declaring the peer
+# makes pnpm link the consuming workspace's own zod instead.
+packageExtensions:
+  "@hookform/resolvers":
+    peerDependencies:
+      zod: "*"

@@ -1,7 +1,7 @@
 // Everything better-auth touches on the HTTP surface:
 //   - the /api/auth/* catch-all bridged to better-auth's Web handler
 //   - the RFC 8414 OAuth discovery endpoints MCP clients need at the root
-//   - the `requireOrgSession` decorator that back-office routes guard with
+//   - the `requireSession` / `requireOrgSession` decorators routes guard with
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { fromNodeHeaders } from 'better-auth/node';
 import { oauthProviderAuthServerMetadata } from '@better-auth/oauth-provider';
@@ -62,15 +62,40 @@ export function registerAuth(app: FastifyInstance, container: Container): void {
     await reply.send(protectedResource);
   });
 
-  // Requires a valid session with active org set
+
+
+  // Session only, no active org required. For the routes a caller reaches
+  // *before* they have an org: creating their first organization, and accepting
+  // an invitation (which is what stamps the active org onto the session).
+  app.decorate('requireSession', async (request: FastifyRequest) => {
+    const sessionData = await auth.api.getSession({
+      headers: fromNodeHeaders(request.headers),
+    });
+    if (!sessionData) {
+      throw new UnauthorizedError();
+    }
+    request.authUser = sessionData.user;
+    // Left unset when the session carries no active org — that is the whole
+    // point of this guard, and `orgId` is documented as absent in that case.
+    if (sessionData.session.activeOrganizationId) {
+      request.orgId = sessionData.session.activeOrganizationId;
+    }
+  });
+
+  // Requires a valid session with an active org set — every org-scoped route.
   app.decorate('requireOrgSession', async (request: FastifyRequest) => {
     const sessionData = await auth.api.getSession({
       headers: fromNodeHeaders(request.headers),
     });
-    if (!sessionData || !sessionData.session.activeOrganizationId) {
+    if (!sessionData) {
       throw new UnauthorizedError();
     }
     request.authUser = sessionData.user;
-    request.orgId = sessionData.session.activeOrganizationId ?? null;
+    if (sessionData.session.activeOrganizationId) {
+      request.orgId = sessionData.session.activeOrganizationId;
+    }
+    if (!request.orgId) {
+      throw new UnauthorizedError('no active organization on the session');
+    }
   });
 }

@@ -12,6 +12,10 @@ export interface ServerConfig {
   publicUrl: string;
   /** Browser app origins allowed by CORS. */
   clientOrigins: string[];
+  /** Emit Fastify's per-request "incoming request"/"request completed" lines.
+   *  Unset → on. Turn off for a quiet dev console; app-level logs are
+   *  unaffected either way. */
+  requestLogging?: boolean;
   /** Presigned URL lifetime for entitled download delivery, seconds. Separate
    *  from the storage adapter's general download expiry so raising that one
    *  can't silently extend paywalled link lifetimes. */

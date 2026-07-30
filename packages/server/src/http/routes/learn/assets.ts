@@ -7,7 +7,7 @@ import {
   RequestDownload,
 } from '@headless-lms/api-contract';
 import { NotFoundError } from '../../../core/shared/errors.js';
-import type { Container } from '../../../app/container.js';
+import type { Container } from '@headless-lms/server';
 
 export async function learnAssetsRoutes(app: FastifyInstance, container: Container): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();

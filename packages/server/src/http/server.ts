@@ -17,6 +17,9 @@ export async function buildServer(
   // generic (a concrete pino type would ripple through every plugin signature).
   const app = Fastify({
     loggerInstance: container.loggerInstance as FastifyBaseLogger,
+    // Fastify's own request/response pair per call — noisy in a dev console,
+    // useful as an access log in production. Our own logs are unaffected.
+    disableRequestLogging: config.requestLogging === false,
   });
 
   // Enter the request-scoped log context: every line logged inside this

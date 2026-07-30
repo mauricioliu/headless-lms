@@ -22,7 +22,7 @@ import type { Course } from "@/lib/api/types";
 
 import { updateCourseDetailsAction } from "../../actions";
 
-// Kept in sync with the create/edit list sheet (`course-form-sheet`).
+// Kept in sync with the create/edit list dialog (`course-form-dialog`).
 const CATEGORIES = [
   "Design",
   "Engineering",

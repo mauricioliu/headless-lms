@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type {
   SettingsRecord,
@@ -17,6 +17,28 @@ function toRecord(row: Row): SettingsRecord {
     scopeId: row.scopeId,
     value: (row.value ?? {}) as SettingsValue,
   };
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Recursive merge of a partial patch into a stored value: a patch cannot
+ * clobber sibling keys at any depth, only the leaves it names. Arrays and
+ * scalars are replaced outright — merging arrays element-wise has no meaning
+ * for settings, and null is a value a caller may legitimately store.
+ * Exported for tests.
+ */
+export function deepMerge(base: unknown, patch: unknown): unknown {
+  if (!isPlainObject(base) || !isPlainObject(patch)) {
+    return patch;
+  }
+  const merged: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(patch)) {
+    merged[key] = key in base ? deepMerge(base[key], value) : value;
+  }
+  return merged;
 }
 
 export class DrizzleSettingsRepository implements SettingsRepository {
@@ -41,20 +63,43 @@ export class DrizzleSettingsRepository implements SettingsRepository {
     scopeId: string,
     patch: SettingsValue,
   ): Promise<SettingsRecord> {
-    // Recursive jsonb merge (see the jsonb_deep_merge migration): a partial
-    // patch cannot clobber sibling keys at any depth, only the leaves it names.
-    // One statement, so concurrent patches never read-modify-write over each other.
-    const [row] = await this.db
-      .insert(settings)
-      .values({ orgId, namespace, scopeId, value: patch })
-      .onConflictDoUpdate({
-        target: [settings.orgId, settings.namespace, settings.scopeId],
-        set: {
-          value: sql`jsonb_deep_merge(${settings.value}, ${JSON.stringify(patch)}::jsonb)`,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
+    const key = and(
+      eq(settings.orgId, orgId),
+      eq(settings.namespace, namespace),
+      eq(settings.scopeId, scopeId),
+    );
+
+    // The merge happens in JS, so the read and the write must be one atomic
+    // unit or concurrent patches would clobber each other's sibling keys:
+    // SELECT ... FOR UPDATE holds the row for the rest of the transaction.
+    const row = await this.db.transaction(async (tx) => {
+      let [existing] = await tx.select().from(settings).where(key).for('update');
+
+      if (!existing) {
+        const [inserted] = await tx
+          .insert(settings)
+          .values({ orgId, namespace, scopeId, value: patch })
+          .onConflictDoNothing()
+          .returning();
+        if (inserted) {
+          return inserted;
+        }
+        // Lost the race: a concurrent transaction inserted the row and has
+        // committed by the time onConflictDoNothing returned. Take the lock
+        // and merge onto what it wrote.
+        [existing] = await tx.select().from(settings).where(key).for('update');
+        if (!existing) {
+          throw new Error('settings patch: row vanished mid-transaction');
+        }
+      }
+
+      const [updated] = await tx
+        .update(settings)
+        .set({ value: deepMerge(existing.value, patch) as SettingsValue, updatedAt: new Date() })
+        .where(key)
+        .returning();
+      return updated;
+    });
 
     if (!row) {
       throw new Error('settings patch returned no row');

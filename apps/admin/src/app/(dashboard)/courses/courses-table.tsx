@@ -14,7 +14,7 @@ import { can } from "@/lib/roles";
 import type { Course, ListParams } from "@/lib/api/types";
 
 import { coursesColumns } from "./courses-columns";
-import { CourseFormSheet } from "./_components/course-form-sheet";
+import { CourseFormDialog } from "./_components/course-form-dialog";
 import { setCoursePublishedAction, deleteCourseAction } from "./actions";
 
 /** The eight fixed course categories, shared with the create/edit form sheet. */
@@ -63,8 +63,8 @@ function CoursesTableInner({
 
   const [isPending, startTransition] = React.useTransition();
 
-  // Sheet state: undefined course = create, a course = edit.
-  const [sheetOpen, setSheetOpen] = React.useState(false);
+  // Dialog state: undefined course = create, a course = edit.
+  const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Course | undefined>(undefined);
 
   // Delete confirmation target.
@@ -74,12 +74,12 @@ function CoursesTableInner({
 
   const openCreate = React.useCallback(() => {
     setEditing(undefined);
-    setSheetOpen(true);
+    setDialogOpen(true);
   }, []);
 
   const openEdit = React.useCallback((course: Course) => {
     setEditing(course);
-    setSheetOpen(true);
+    setDialogOpen(true);
   }, []);
 
   const goToBuilder = React.useCallback(
@@ -186,7 +186,7 @@ function CoursesTableInner({
       />
 
       {/* Opened only via gated triggers (create button / Edit menu item). */}
-      <CourseFormSheet open={sheetOpen} onOpenChange={setSheetOpen} course={editing} />
+      <CourseFormDialog open={dialogOpen} onOpenChange={setDialogOpen} course={editing} />
 
       <ConfirmDialog
         open={toDelete !== null}

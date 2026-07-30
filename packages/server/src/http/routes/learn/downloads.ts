@@ -10,7 +10,7 @@ import {
 } from '@headless-lms/api-contract';
 import { NotFoundError } from '../../../core/shared/errors.js';
 import type { Container } from '../../../app/container.js';
-import { resolveStudentScope } from '../../student-scope.js';
+import { UnauthorizedError } from '../../plugins/auth.js';
 
 export async function learnDownloadsRoutes(
   app: FastifyInstance,
@@ -30,8 +30,11 @@ export async function learnDownloadsRoutes(
       response: { 200: LearnDownloads },
     },
     handler: async (req) => {
-      const scope = await resolveStudentScope(container, req);
-      return learn.listDownloads(scope.orgId, scope.orgUserId);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      return learn.listDownloads(req.orgId, orgUser.id);
     },
   });
 
@@ -47,8 +50,11 @@ export async function learnDownloadsRoutes(
       response: { 200: LearnDownload, 404: ErrorBody },
     },
     handler: async (req) => {
-      const scope = await resolveStudentScope(container, req);
-      const result = await learn.getDownload(scope.orgId, scope.orgUserId, req.params.downloadId);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      const result = await learn.getDownload(req.orgId, orgUser.id, req.params.downloadId);
       if (!result) {
         throw new NotFoundError('Download', req.params.downloadId);
       }
@@ -71,10 +77,13 @@ export async function learnDownloadsRoutes(
       response: { 302: z.void(), 404: ErrorBody },
     },
     handler: async (req, reply) => {
-      const scope = await resolveStudentScope(container, req);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
       const signed = await learn.downloadAssetUrl(
-        scope.orgId,
-        scope.orgUserId,
+        req.orgId,
+        orgUser.id,
         req.params.downloadId,
         req.params.assetId,
       );

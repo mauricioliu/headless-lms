@@ -84,7 +84,9 @@ export async function organizationsRoutes(
   r.route({
     method: 'POST',
     url: '/api/organizations',
-    preHandler: app.requireOrgSession,
+    // Session only: a first-time signup has no active org yet, so requiring one
+    // here would 401 the very call that produces it.
+    preHandler: app.requireSession,
     schema: {
       operationId: 'createOrganization',
       tags,

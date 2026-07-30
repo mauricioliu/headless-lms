@@ -873,6 +873,7 @@ export type ListLearnModulesResponses = {
     activities: Array<{
       id: string;
       moduleId: string;
+      courseId: string;
       seq: number;
       settings: unknown;
       assetIds: Array<string>;
@@ -1091,7 +1092,7 @@ export type PostCommentResponses = {
 
 export type PostCommentResponse = PostCommentResponses[keyof PostCommentResponses];
 
-export type RemoveOwnCommentData = {
+export type DeleteCommentData = {
   body?: never;
   path: {
     commentId: string;
@@ -1100,7 +1101,7 @@ export type RemoveOwnCommentData = {
   url: "/api/learn/comments/{commentId}";
 };
 
-export type RemoveOwnCommentErrors = {
+export type DeleteCommentErrors = {
   /**
    * Default Response
    */
@@ -1117,9 +1118,9 @@ export type RemoveOwnCommentErrors = {
   };
 };
 
-export type RemoveOwnCommentError = RemoveOwnCommentErrors[keyof RemoveOwnCommentErrors];
+export type DeleteCommentError = DeleteCommentErrors[keyof DeleteCommentErrors];
 
-export type RemoveOwnCommentResponses = {
+export type DeleteCommentResponses = {
   /**
    * Default Response
    */
@@ -1136,7 +1137,7 @@ export type RemoveOwnCommentResponses = {
   };
 };
 
-export type RemoveOwnCommentResponse = RemoveOwnCommentResponses[keyof RemoveOwnCommentResponses];
+export type DeleteCommentResponse = DeleteCommentResponses[keyof DeleteCommentResponses];
 
 export type EditCommentData = {
   body: {
@@ -1320,7 +1321,7 @@ export type ReportCommentResponses = {
 
 export type ReportCommentResponse = ReportCommentResponses[keyof ReportCommentResponses];
 
-export type RequestLearnAssetDownloadData = {
+export type GetAssetDownloadUrlData = {
   body: {
     filename?: string;
   };
@@ -1328,10 +1329,10 @@ export type RequestLearnAssetDownloadData = {
     id: string;
   };
   query?: never;
-  url: "/api/learn/assets/{id}/download-url";
+  url: "/api/learn/assets/{id}/url";
 };
 
-export type RequestLearnAssetDownloadErrors = {
+export type GetAssetDownloadUrlErrors = {
   /**
    * Default Response
    */
@@ -1348,10 +1349,9 @@ export type RequestLearnAssetDownloadErrors = {
   };
 };
 
-export type RequestLearnAssetDownloadError =
-  RequestLearnAssetDownloadErrors[keyof RequestLearnAssetDownloadErrors];
+export type GetAssetDownloadUrlError = GetAssetDownloadUrlErrors[keyof GetAssetDownloadUrlErrors];
 
-export type RequestLearnAssetDownloadResponses = {
+export type GetAssetDownloadUrlResponses = {
   /**
    * Default Response
    */
@@ -1371,8 +1371,8 @@ export type RequestLearnAssetDownloadResponses = {
   };
 };
 
-export type RequestLearnAssetDownloadResponse =
-  RequestLearnAssetDownloadResponses[keyof RequestLearnAssetDownloadResponses];
+export type GetAssetDownloadUrlResponse =
+  GetAssetDownloadUrlResponses[keyof GetAssetDownloadUrlResponses];
 
 export type ListLearnDownloadsData = {
   body?: never;
@@ -1660,6 +1660,7 @@ export type ListModulesResponses = {
     activities: Array<{
       id: string;
       moduleId: string;
+      courseId: string;
       seq: number;
       settings: unknown;
       assetIds: Array<string>;
@@ -1692,6 +1693,7 @@ export type CreateModuleResponses = {
     activities: Array<{
       id: string;
       moduleId: string;
+      courseId: string;
       seq: number;
       settings: unknown;
       assetIds: Array<string>;
@@ -1724,6 +1726,7 @@ export type ReorderModulesResponses = {
     activities: Array<{
       id: string;
       moduleId: string;
+      courseId: string;
       seq: number;
       settings: unknown;
       assetIds: Array<string>;
@@ -1755,6 +1758,7 @@ export type DeleteModuleResponses = {
     activities: Array<{
       id: string;
       moduleId: string;
+      courseId: string;
       seq: number;
       settings: unknown;
       assetIds: Array<string>;
@@ -1788,6 +1792,7 @@ export type UpdateModuleResponses = {
     activities: Array<{
       id: string;
       moduleId: string;
+      courseId: string;
       seq: number;
       settings: unknown;
       assetIds: Array<string>;
@@ -1821,6 +1826,7 @@ export type ReorderActivitiesResponses = {
     activities: Array<{
       id: string;
       moduleId: string;
+      courseId: string;
       seq: number;
       settings: unknown;
       assetIds: Array<string>;
@@ -1856,6 +1862,7 @@ export type CreateActivityResponses = {
     activities: Array<{
       id: string;
       moduleId: string;
+      courseId: string;
       seq: number;
       settings: unknown;
       assetIds: Array<string>;
@@ -1888,6 +1895,7 @@ export type DeleteActivityResponses = {
     activities: Array<{
       id: string;
       moduleId: string;
+      courseId: string;
       seq: number;
       settings: unknown;
       assetIds: Array<string>;
@@ -1923,6 +1931,7 @@ export type UpdateActivityResponses = {
     activities: Array<{
       id: string;
       moduleId: string;
+      courseId: string;
       seq: number;
       settings: unknown;
       assetIds: Array<string>;

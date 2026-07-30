@@ -9,7 +9,7 @@ import {
 } from '@headless-lms/api-contract';
 import { NotFoundError } from '../../../core/shared/errors.js';
 import type { Container } from '../../../app/container.js';
-import { resolveStudentScope } from '../../student-scope.js';
+import { UnauthorizedError } from '../../plugins/auth.js';
 
 export async function learnProgressRoutes(
   app: FastifyInstance,
@@ -30,19 +30,22 @@ export async function learnProgressRoutes(
       response: { 200: ProgressStatus, 404: ErrorBody },
     },
     handler: async (req) => {
-      const scope = await resolveStudentScope(container, req);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
       // The activity carries its course, then the same enrollment gate as every
       // Learn read.
-      const activity = await container.content.getActivity(scope.orgId, req.body.activity);
+      const activity = await container.content.getActivity(req.orgId, req.body.activity);
       if (!activity) {
         throw new NotFoundError('Activity', req.body.activity);
       }
-      const course = await learn.getCourse(scope.orgId, scope.orgUserId, activity.courseId);
+      const course = await learn.getCourse(req.orgId, orgUser.id, activity.courseId);
       if (!course) {
         throw new NotFoundError('Activity', req.body.activity);
       }
-      const record = await container.progress.report(scope.orgId, {
-        orgUserId: scope.orgUserId,
+      const record = await container.progress.report(req.orgId, {
+        orgUserId: orgUser.id,
         activityId: req.body.activity,
         reports: req.body.reports,
       });
@@ -62,8 +65,11 @@ export async function learnProgressRoutes(
       response: { 200: CourseProgress, 404: ErrorBody },
     },
     handler: async (req) => {
-      const scope = await resolveStudentScope(container, req);
-      const view = await learn.courseProgress(scope.orgId, scope.orgUserId, req.params.courseId);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      const view = await learn.courseProgress(req.orgId, orgUser.id, req.params.courseId);
       if (!view) {
         throw new NotFoundError('Course', req.params.courseId);
       }

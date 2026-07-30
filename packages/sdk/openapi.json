@@ -2535,6 +2535,9 @@
                             "moduleId": {
                               "type": "string"
                             },
+                            "courseId": {
+                              "type": "string"
+                            },
                             "seq": {
                               "type": "integer",
                               "minimum": -9007199254740991,
@@ -2551,6 +2554,7 @@
                           "required": [
                             "id",
                             "moduleId",
+                            "courseId",
                             "seq",
                             "settings",
                             "assetIds"
@@ -2945,10 +2949,12 @@
                             }
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -3160,10 +3166,12 @@
                       }
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -3386,10 +3394,12 @@
                       }
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -3456,8 +3466,8 @@
         }
       },
       "delete": {
-        "operationId": "removeOwnComment",
-        "summary": "Remove your own comment",
+        "operationId": "deleteComment",
+        "summary": "Delete a comment",
         "tags": [
           "Learn"
         ],
@@ -3508,10 +3518,12 @@
                       "type": "string"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -3796,7 +3808,8 @@
                       "type": "string"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -3859,9 +3872,9 @@
         }
       }
     },
-    "/api/learn/assets/{id}/download-url": {
+    "/api/learn/assets/{id}/url": {
       "post": {
-        "operationId": "requestLearnAssetDownload",
+        "operationId": "getAssetDownloadUrl",
         "summary": "Get a short-lived presigned URL to serve an asset to the student",
         "tags": [
           "Learn"
@@ -4662,10 +4675,12 @@
                       "type": "string"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -4806,10 +4821,12 @@
                       "type": "string"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -4927,6 +4944,9 @@
                             "moduleId": {
                               "type": "string"
                             },
+                            "courseId": {
+                              "type": "string"
+                            },
                             "seq": {
                               "type": "integer",
                               "minimum": -9007199254740991,
@@ -4943,6 +4963,7 @@
                           "required": [
                             "id",
                             "moduleId",
+                            "courseId",
                             "seq",
                             "settings",
                             "assetIds"
@@ -5036,6 +5057,9 @@
                             "moduleId": {
                               "type": "string"
                             },
+                            "courseId": {
+                              "type": "string"
+                            },
                             "seq": {
                               "type": "integer",
                               "minimum": -9007199254740991,
@@ -5052,6 +5076,7 @@
                           "required": [
                             "id",
                             "moduleId",
+                            "courseId",
                             "seq",
                             "settings",
                             "assetIds"
@@ -5149,6 +5174,9 @@
                             "moduleId": {
                               "type": "string"
                             },
+                            "courseId": {
+                              "type": "string"
+                            },
                             "seq": {
                               "type": "integer",
                               "minimum": -9007199254740991,
@@ -5165,6 +5193,7 @@
                           "required": [
                             "id",
                             "moduleId",
+                            "courseId",
                             "seq",
                             "settings",
                             "assetIds"
@@ -5268,6 +5297,9 @@
                             "moduleId": {
                               "type": "string"
                             },
+                            "courseId": {
+                              "type": "string"
+                            },
                             "seq": {
                               "type": "integer",
                               "minimum": -9007199254740991,
@@ -5284,6 +5316,7 @@
                           "required": [
                             "id",
                             "moduleId",
+                            "courseId",
                             "seq",
                             "settings",
                             "assetIds"
@@ -5366,6 +5399,9 @@
                             "moduleId": {
                               "type": "string"
                             },
+                            "courseId": {
+                              "type": "string"
+                            },
                             "seq": {
                               "type": "integer",
                               "minimum": -9007199254740991,
@@ -5382,6 +5418,7 @@
                           "required": [
                             "id",
                             "moduleId",
+                            "courseId",
                             "seq",
                             "settings",
                             "assetIds"
@@ -5487,6 +5524,9 @@
                             "moduleId": {
                               "type": "string"
                             },
+                            "courseId": {
+                              "type": "string"
+                            },
                             "seq": {
                               "type": "integer",
                               "minimum": -9007199254740991,
@@ -5503,6 +5543,7 @@
                           "required": [
                             "id",
                             "moduleId",
+                            "courseId",
                             "seq",
                             "settings",
                             "assetIds"
@@ -5606,6 +5647,9 @@
                             "moduleId": {
                               "type": "string"
                             },
+                            "courseId": {
+                              "type": "string"
+                            },
                             "seq": {
                               "type": "integer",
                               "minimum": -9007199254740991,
@@ -5622,6 +5666,7 @@
                           "required": [
                             "id",
                             "moduleId",
+                            "courseId",
                             "seq",
                             "settings",
                             "assetIds"
@@ -5733,6 +5778,9 @@
                             "moduleId": {
                               "type": "string"
                             },
+                            "courseId": {
+                              "type": "string"
+                            },
                             "seq": {
                               "type": "integer",
                               "minimum": -9007199254740991,
@@ -5749,6 +5797,7 @@
                           "required": [
                             "id",
                             "moduleId",
+                            "courseId",
                             "seq",
                             "settings",
                             "assetIds"
@@ -5839,6 +5888,9 @@
                             "moduleId": {
                               "type": "string"
                             },
+                            "courseId": {
+                              "type": "string"
+                            },
                             "seq": {
                               "type": "integer",
                               "minimum": -9007199254740991,
@@ -5855,6 +5907,7 @@
                           "required": [
                             "id",
                             "moduleId",
+                            "courseId",
                             "seq",
                             "settings",
                             "assetIds"

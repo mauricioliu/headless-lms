@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { FormSheet } from "@/components/forms/form-sheet";
+import { FormDialog } from "@/components/forms/form-dialog";
 import { Field } from "@/components/forms/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,7 +42,7 @@ type FormValues = z.infer<typeof schema>;
 
 const FORM_ID = "course-form";
 
-export function CourseFormSheet({
+export function CourseFormDialog({
   open,
   onOpenChange,
   course,
@@ -71,9 +71,9 @@ export function CourseFormSheet({
     },
   });
 
-  // Re-seed the form whenever the sheet opens (for the active course or a blank
+  // Re-seed the form whenever the dialog opens (for the active course or a blank
   // create). Key on the stable `course?.id`, NOT the whole `course` object — a
-  // list revalidation while the sheet is open streams a new `course` reference
+  // list revalidation while the dialog is open streams a new `course` reference
   // with identical data, and depending on it would wipe in-progress edits.
   React.useEffect(() => {
     if (!open) return;
@@ -108,7 +108,7 @@ export function CourseFormSheet({
   });
 
   return (
-    <FormSheet
+    <FormDialog
       open={open}
       onOpenChange={onOpenChange}
       title={isEdit ? "Edit course" : "New course"}
@@ -121,11 +121,12 @@ export function CourseFormSheet({
       submitLabel={isEdit ? "Save" : "Create course"}
       pending={pending}
     >
-      <form id={FORM_ID} onSubmit={onSubmit} className="flex flex-col gap-5">
+      <form id={FORM_ID} onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
         <Field id="title" label="Title" required error={errors.title?.message}>
           <Input
             id="title"
             placeholder="e.g. Foundations of Product Design"
+            autoFocus
             aria-invalid={Boolean(errors.title)}
             {...register("title")}
           />
@@ -166,6 +167,6 @@ export function CourseFormSheet({
           />
         </Field>
       </form>
-    </FormSheet>
+    </FormDialog>
   );
 }

@@ -104,6 +104,11 @@ export function loadServerConfig(): ServerConfig {
     // can never drift from what better-auth is configured with.
     publicUrl: container.authBaseURL,
     clientOrigins: parseClientOrigins(),
+    // Fastify's per-request access log: on in production, off elsewhere so the
+    // dev console stays readable. REQUEST_LOGGING=true/false overrides either way.
+    requestLogging: process.env.REQUEST_LOGGING
+      ? process.env.REQUEST_LOGGING !== "false"
+      : process.env.NODE_ENV === "production",
     // Separate from STORAGE_DOWNLOAD_EXPIRY: raising the general storage
     // default must never silently extend entitled/paywalled link lifetimes.
     deliveryExpirySeconds: Number(process.env.DELIVERY_URL_EXPIRY ?? 300),

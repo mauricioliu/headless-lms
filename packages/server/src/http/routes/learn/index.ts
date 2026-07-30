@@ -1,7 +1,8 @@
 // HTTP routes for the student-facing Learn surface. Session-guarded like every
-// back-office route, but scoped by the student's enrollments via
-// `resolveStudentScope` — never by org. One file per resource; everything under
-// `/api/learn` lives in this directory and nowhere else.
+// back-office route, but scoped by the session's `org_users` participation —
+// the reads gate on the person's enrollments, not on staff role. One file per
+// resource; everything under `/api/learn` lives in this directory and nowhere
+// else.
 import type { FastifyInstance } from 'fastify';
 import type { Container } from '../../../app/container.js';
 import { learnAssetsRoutes } from './assets.js';
