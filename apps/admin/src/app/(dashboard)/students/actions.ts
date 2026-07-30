@@ -9,33 +9,36 @@ import { authHeaders } from "@/lib/api/server-call";
 import type { Student } from "@/lib/api/types";
 
 export interface CreateStudentInput {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   sendInvite: boolean;
 }
 
 export async function createStudentAction(input: CreateStudentInput): Promise<Student> {
-  const { sendInvite, ...body } = input;
-  const student = await Students.createStudent({ body, ...(await authHeaders()) });
+  const { sendInvite, email, name } = input;
+  const student = await Students.createStudent(
+    {
+      email,
+      firstName: name,
+      lastName: "-",
+    },
+    await authHeaders(),
+  );
   if (sendInvite) {
-    await Organizations.createInvite({
-      body: { email: student.email, role: "student" },
-      ...(await authHeaders()),
-    });
+    await Organizations.createInvite(
+      { email: student.email, role: "student" },
+      await authHeaders(),
+    );
   }
   revalidatePath("/students");
   return student;
 }
 
 export async function deleteStudentAction(id: string): Promise<void> {
-  await Students.deleteStudent({ path: { id }, ...(await authHeaders()) });
+  await Students.deleteStudent({ id }, await authHeaders());
   revalidatePath("/students");
 }
 
 export async function resendStudentInviteAction(email: string): Promise<void> {
-  await Organizations.createInvite({
-    body: { email, role: "student" },
-    ...(await authHeaders()),
-  });
+  await Organizations.createInvite({ email, role: "student" }, await authHeaders());
 }

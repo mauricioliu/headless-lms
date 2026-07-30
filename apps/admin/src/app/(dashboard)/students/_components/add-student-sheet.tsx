@@ -18,15 +18,14 @@ import { createStudentAction } from "../actions";
 const FORM_ID = "add-student-form";
 
 const schema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  name: z.string().min(1, "First name is required"),
   email: z.email("Enter a valid email"),
   sendInvite: z.boolean(),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-const DEFAULTS: FormValues = { firstName: "", lastName: "", email: "", sendInvite: true };
+const DEFAULTS: FormValues = { name: "", email: "", sendInvite: true };
 
 export function AddStudentSheet({
   open,
@@ -80,11 +79,8 @@ export function AddStudentSheet({
     >
       <form id={FORM_ID} onSubmit={onSubmit} className="flex flex-col gap-5">
         <div className="grid grid-cols-2 gap-4">
-          <Field id="firstName" label="First name" required error={errors.firstName?.message}>
-            <Input id="firstName" aria-invalid={!!errors.firstName} {...register("firstName")} />
-          </Field>
-          <Field id="lastName" label="Last name" required error={errors.lastName?.message}>
-            <Input id="lastName" aria-invalid={!!errors.lastName} {...register("lastName")} />
+          <Field id="name" label="First name" required error={errors.name?.message}>
+            <Input id="name" aria-invalid={!!errors.name} {...register("name")} />
           </Field>
         </div>
         <Field id="email" label="Email" required error={errors.email?.message}>

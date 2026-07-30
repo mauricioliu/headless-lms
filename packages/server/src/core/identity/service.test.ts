@@ -16,6 +16,9 @@ function fakeRepo() {
     async findUserByExternalId(externalId: string) {
       return users.find((r) => r.externalId === externalId) ?? null;
     },
+    async findUserByEmail(email: string) {
+      return users.find((r) => r.email.toLowerCase() === email.toLowerCase()) ?? null;
+    },
   };
   return { repo, rows: users };
 }
@@ -55,6 +58,16 @@ describe('IdentityService.getUserByExternalId', () => {
     await svc.registerUser({ externalId: 'auth-1', email: 'a@b.c', displayName: 'Ada' });
     expect(await svc.getUserByExternalId('auth-1')).toMatchObject({ email: 'a@b.c' });
     expect(await svc.getUserByExternalId('auth-nope')).toBeNull();
+  });
+});
+
+describe('IdentityService.getUserByEmail', () => {
+  it('finds the person behind an address regardless of case, or null', async () => {
+    const { repo } = fakeRepo();
+    const svc = new IdentityServiceImpl(repo);
+    await svc.createUser({ externalId: 'auth-1', email: 'ada@example.com', displayName: 'Ada' });
+    expect(await svc.getUserByEmail('Ada@Example.com')).toMatchObject({ externalId: 'auth-1' });
+    expect(await svc.getUserByEmail('nobody@example.com')).toBeNull();
   });
 });
 

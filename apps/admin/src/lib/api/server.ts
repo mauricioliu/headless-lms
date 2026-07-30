@@ -64,26 +64,20 @@ export const serverApi = {
 
   // courses
   async listCourses(params: ListParams): Promise<Paginated<Course>> {
-    return await Courses.listCourses({
-      query: toQuery(params, ["status", "category"]),
-      ...(await authHeaders()),
-    });
+    return await Courses.listCourses(toQuery(params, ["status", "category"]), await authHeaders());
   },
   async getCourse(id: string): Promise<Course> {
-    return await Courses.getCourse({ path: { id }, ...(await authHeaders()) });
+    return await Courses.getCourse({ id }, await authHeaders());
   },
   async listModules(courseId: string): Promise<Module[]> {
-    return await Courses.listModules({ path: { courseId }, ...(await authHeaders()) });
+    return await Courses.listModules({ courseId }, await authHeaders());
   },
   // Both content types offered by the entitlements grant pickers, tagged with
   // their type so the UI can group course vs. download options.
   async contentLite(): Promise<{ id: string; title: string; type: "course" | "download" }[]> {
     const [coursesPage, downloadsPage] = await Promise.all([
-      Courses.listCourses({ query: { pageSize: 100, sort: "title" }, ...(await authHeaders()) }),
-      Downloads.listDownloads({
-        query: { pageSize: 100, sort: "title" },
-        ...(await authHeaders()),
-      }),
+      Courses.listCourses({ pageSize: 100, sort: "title" }, await authHeaders()),
+      Downloads.listDownloads({ pageSize: 100, sort: "title" }, await authHeaders()),
     ]);
     const courses = coursesPage.rows.map((c) => ({
       id: c.id,
@@ -100,52 +94,52 @@ export const serverApi = {
 
   // downloads
   async listDownloads(params: ListParams): Promise<Paginated<Download>> {
-    return await Downloads.listDownloads({
-      query: toQuery(params, ["status", "category"]),
-      ...(await authHeaders()),
-    });
+    return await Downloads.listDownloads(
+      toQuery(params, ["status", "category"]),
+      await authHeaders(),
+    );
   },
   async getDownload(downloadId: string): Promise<Download> {
-    return await Downloads.getDownload({ path: { downloadId }, ...(await authHeaders()) });
+    return await Downloads.getDownload({ downloadId }, await authHeaders());
   },
   async listDownloadAssets(downloadId: string): Promise<DownloadAsset[]> {
-    return await Downloads.listDownloadAssets({ path: { downloadId }, ...(await authHeaders()) });
+    return await Downloads.listDownloadAssets({ downloadId }, await authHeaders());
   },
 
   // students
   async listStudents(params: ListParams): Promise<Paginated<Student>> {
-    return await Students.listStudents({ query: toQuery(params, []), ...(await authHeaders()) });
+    return await Students.listStudents(toQuery(params, []), await authHeaders());
   },
   async getStudent(id: string): Promise<Student> {
-    return await Students.getStudent({ path: { id }, ...(await authHeaders()) });
+    return await Students.getStudent({ id }, await authHeaders());
   },
   async studentEntitlements(orgUserId: string): Promise<Entitlement[]> {
-    const page = await Entitlements.listEntitlements({
-      query: { orgUserId, pageSize: 100 },
-      ...(await authHeaders()),
-    });
+    const page = await Entitlements.listEntitlements(
+      { orgUserId, pageSize: 100 },
+      await authHeaders(),
+    );
     return page.rows;
   },
   async studentsLite(search?: string): Promise<{ id: string; name: string; email: string }[]> {
-    const page = await Students.listStudents({
-      query: { pageSize: 100, search: search || undefined, sort: "name" },
-      ...(await authHeaders()),
-    });
+    const page = await Students.listStudents(
+      { pageSize: 100, search: search || undefined, sort: "name" },
+      await authHeaders(),
+    );
     return page.rows.map((s) => ({ id: s.id, name: s.name, email: s.email }));
   },
 
   // entitlements
   async listEntitlements(params: ListParams): Promise<Paginated<Entitlement>> {
-    return await Entitlements.listEntitlements({
-      query: toQuery(params, ["status", "source"]),
-      ...(await authHeaders()),
-    });
+    return await Entitlements.listEntitlements(
+      toQuery(params, ["status", "source"]),
+      await authHeaders(),
+    );
   },
   async contentEntitlements(contentId: string): Promise<Entitlement[]> {
-    const page = await Entitlements.listEntitlements({
-      query: { contentId, pageSize: 100 },
-      ...(await authHeaders()),
-    });
+    const page = await Entitlements.listEntitlements(
+      { contentId, pageSize: 100 },
+      await authHeaders(),
+    );
     return page.rows;
   },
 
@@ -155,35 +149,25 @@ export const serverApi = {
    *  a string because query values always do. */
   async listComments(courseId: string, params: ListParams): Promise<Paginated<CommentListItem>> {
     const { reported, ...query } = toQuery(params, ["status", "reported"]);
-    return await Discussion.listComments({
-      query: {
+    return await Discussion.listComments(
+      {
         ...query,
         courseId,
         ...(reported === undefined ? {} : { reported: String(reported) }),
       },
-      ...(await authHeaders()),
-    });
-  },
-  async commentStates(courseId: string): Promise<CommentStates> {
-    const { states } = await Discussion.listCourseCommentStates({
-      path: { courseId },
-      ...(await authHeaders()),
-    });
-    return states;
+      await authHeaders(),
+    );
   },
 
   // members
   async listMembers(params: ListParams): Promise<Paginated<Member>> {
-    return await Organizations.listMembers({
-      query: toQuery(params, ["role", "status"]),
-      ...(await authHeaders()),
-    });
+    return await Organizations.listMembers(
+      toQuery(params, ["role", "status"]),
+      await authHeaders(),
+    );
   },
   async instructorsLite(): Promise<{ id: string; name: string }[]> {
-    const page = await Organizations.listMembers({
-      query: { pageSize: 100 },
-      ...(await authHeaders()),
-    });
+    const page = await Organizations.listMembers({ pageSize: 100 }, await authHeaders());
     return page.rows
       .filter((m) => m.role === "owner" || m.role === "admin" || m.role === "instructor")
       .map((m) => ({ id: m.id, name: m.name }));
@@ -191,7 +175,7 @@ export const serverApi = {
 
   // media library (assets) — list only; presigned URL/upload stay client-side
   async listAssets(params: ListParams): Promise<Paginated<Asset>> {
-    return await Assets.listAssets({ query: toQuery(params, ["kind"]), ...(await authHeaders()) });
+    return await Assets.listAssets(toQuery(params, ["kind"]), await authHeaders());
   },
 
   // connected apps
@@ -212,7 +196,7 @@ export const serverApi = {
     return await Automations.listAutomations(await authHeaders());
   },
   async getAutomation(id: string): Promise<Automation> {
-    return await Automations.getAutomation({ path: { id }, ...(await authHeaders()) });
+    return await Automations.getAutomation({ id }, await authHeaders());
   },
   async automationActions(): Promise<AvailableAction[]> {
     return await Automations.listAutomationActions(await authHeaders());

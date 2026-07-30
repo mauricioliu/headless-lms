@@ -13,11 +13,10 @@ export async function setCourseThumbnailAction(
   courseId: string,
   thumbnailAssetId: string | null,
 ): Promise<Course> {
-  const course = await Courses.updateCourse({
-    path: { id: courseId },
-    body: { thumbnailAssetId },
-    ...(await authHeaders()),
-  });
+  const course = await Courses.updateCourse(
+    { id: courseId, thumbnailAssetId },
+    await authHeaders(),
+  );
   revalidatePath("/courses/[courseId]/settings", "page");
   // The cover is on the course card too.
   revalidatePath("/courses");
@@ -30,11 +29,10 @@ export async function setCommentsSettingsAction(
   courseId: string,
   comments: CommentSettings,
 ): Promise<CourseSettings> {
-  const settings = await Courses.updateCourseSettings({
-    path: { id: courseId },
-    body: { comments },
-    ...(await authHeaders()),
-  });
+  const settings = await Courses.updateCourseSettings(
+    { id: courseId, comments },
+    await authHeaders(),
+  );
   revalidatePath("/courses/[courseId]/settings", "page");
   // Turning comments off (or requiring review) changes what the moderation
   // queue holds, so the Comments tab is stale too.

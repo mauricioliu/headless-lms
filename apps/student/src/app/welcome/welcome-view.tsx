@@ -15,7 +15,9 @@ type Stage = "activating" | "create" | "signin" | "invalid";
 /** Stages the token in the API's activation cookie (the signup gate reads it). */
 async function activateInvite(
   token: string,
-): Promise<{ status: "accepted" | "auth-required" } | { error: string }> {
+): Promise<
+  { status: "accepted" | "auth-required"; accountExists: boolean } | { error: string }
+> {
   const res = await fetch(`${API_URL}/api/organizations/invites/activate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -26,7 +28,7 @@ async function activateInvite(
     const body = (await res.json().catch(() => null)) as { error?: string } | null;
     return { error: body?.error ?? "This invitation link is invalid or has expired." };
   }
-  return (await res.json()) as { status: "accepted" | "auth-required" };
+  return (await res.json()) as { status: "accepted" | "auth-required"; accountExists: boolean };
 }
 
 /** Claims the invite for the fresh session, then refreshes the cookie cache. */
@@ -76,7 +78,9 @@ export function WelcomeView() {
           router.replace("/");
           return;
         }
-        setStage("create");
+        // An email that already has an account can only sign in — signing up
+        // again is refused by the auth provider.
+        setStage(result.accountExists ? "signin" : "create");
       })
       .catch(() => {
         setError("This invitation link is invalid or has expired.");

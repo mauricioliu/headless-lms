@@ -148,7 +148,7 @@ export function CoursePlayer({
   const refreshUrl = React.useCallback(async (assetId: string): Promise<string | null> => {
     ensureClientSdk();
     try {
-      const ticket = await Learn.requestLearnAssetDownload({ path: { id: assetId }, body: {} });
+      const ticket = await Learn.getAssetDownloadUrl({ id: assetId });
       return ticket.url;
     } catch {
       return null;

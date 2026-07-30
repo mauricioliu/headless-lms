@@ -28,9 +28,7 @@ export interface ProgressReporter {
 export function progressReporter(target: ProgressTargetRef): ProgressReporter {
   const send = async (items: ProgressReportItem[]): Promise<ProgressStatusValue | null> => {
     try {
-      const result = await Learn.reportProgress({
-        body: { activity: target.activity, reports: items },
-      });
+      const result = await Learn.reportProgress({ activity: target.activity, reports: items });
       return result.status;
     } catch {
       return null;

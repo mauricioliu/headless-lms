@@ -14,7 +14,7 @@ export async function connectIntegrationAction(input: {
   secrets: Record<string, unknown>;
   config?: Record<string, unknown>;
 }): Promise<void> {
-  await Integrations.connectIntegration({ body: input, ...(await authHeaders()) });
+  await Integrations.connectIntegration(input, await authHeaders());
   revalidatePath(PATH);
 }
 
@@ -22,11 +22,7 @@ export async function configureConnectionAction(
   id: string,
   input: { config?: Record<string, unknown>; active?: boolean },
 ): Promise<void> {
-  await Integrations.configureConnection({
-    path: { id },
-    body: input,
-    ...(await authHeaders()),
-  });
+  await Integrations.configureConnection({ id, ...input }, await authHeaders());
   revalidatePath(PATH);
 }
 
@@ -34,15 +30,11 @@ export async function reconnectIntegrationAction(
   id: string,
   secrets: Record<string, unknown>,
 ): Promise<void> {
-  await Integrations.reconnectIntegration({
-    path: { id },
-    body: { secrets },
-    ...(await authHeaders()),
-  });
+  await Integrations.reconnectIntegration({ id, secrets }, await authHeaders());
   revalidatePath(PATH);
 }
 
 export async function disconnectIntegrationAction(id: string): Promise<void> {
-  await Integrations.disconnectIntegration({ path: { id }, ...(await authHeaders()) });
+  await Integrations.disconnectIntegration({ id }, await authHeaders());
   revalidatePath(PATH);
 }

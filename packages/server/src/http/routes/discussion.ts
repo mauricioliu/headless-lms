@@ -31,8 +31,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
       response: { 200: CommentsPage },
     },
     handler: async (req) => {
-
-      return discussion.listComments(scope.orgId, req.query);
+      return discussion.listComments(req.orgId, req.query);
     },
   });
 
@@ -48,9 +47,8 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
       response: { 200: Comment, 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req) => {
-      const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
-      return discussion.remove(scope.orgId, req.params.commentId, actor);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      return discussion.remove(req.orgId, req.params.commentId, orgUser!);
     },
   });
 
@@ -84,5 +82,4 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
       return discussion.publish(scope.orgId, req.params.commentId, actor);
     },
   });
-
 }

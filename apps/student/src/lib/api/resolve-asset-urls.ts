@@ -66,11 +66,7 @@ export async function resolveAssetUrls(config: unknown): Promise<unknown> {
   await Promise.all(
     [...ids].map(async (id) => {
       try {
-        const ticket = await Learn.requestLearnAssetDownload({
-          path: { id },
-          body: {},
-          ...headers,
-        });
+        const ticket = await Learn.getAssetDownloadUrl({ id }, headers);
         urls.set(id, ticket.url);
       } catch (e) {
         // A 401 redirects by throwing, so let Next's control-flow errors pass.

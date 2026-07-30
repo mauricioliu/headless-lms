@@ -19,7 +19,7 @@ export async function createOrganizationAction(input: {
   name: string;
   slug: string;
 }): Promise<Organization> {
-  const org = await Organizations.createOrganization({ body: input, ...(await authHeaders()) });
+  const org = await Organizations.createOrganization(input, { ...(await authHeaders()) });
   // The active-org selection now lives on the session server-side; bust the
   // layout so the next resolve renders the dashboard for the new org.
   revalidatePath("/", "layout");

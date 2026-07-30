@@ -41,7 +41,7 @@ export function useComments(activityId: string): UseComments {
     ensureClientSdk();
     dispatch({ kind: "loading" });
     let cancelled = false;
-    void Learn.listActivityComments({ path: { activityId } })
+    void Learn.listActivityComments({ activityId })
       .then((view) => {
         if (cancelled || current.current !== activityId) return;
         dispatch({ kind: "loaded", view });
@@ -75,10 +75,7 @@ export function useComments(activityId: string): UseComments {
     async (body: string, parentId: string | null) => {
       ensureClientSdk();
       try {
-        const comment = await Learn.postComment({
-          path: { activityId },
-          body: { body, parentId },
-        });
+        const comment = await Learn.postComment({ activityId, body, parentId });
         dispatch({ kind: "inserted", comment });
       } catch (err: unknown) {
         dispatch({ kind: "failed", message: message(err) });
@@ -91,7 +88,7 @@ export function useComments(activityId: string): UseComments {
   const edit = React.useCallback(async (id: string, body: string) => {
     ensureClientSdk();
     try {
-      const comment = await Learn.editComment({ path: { commentId: id }, body: { body } });
+      const comment = await Learn.editComment({ commentId: id, body });
       dispatch({ kind: "replaced", id, comment });
     } catch (err: unknown) {
       dispatch({ kind: "failed", message: message(err) });
@@ -105,7 +102,7 @@ export function useComments(activityId: string): UseComments {
         () => dispatch({ kind: "removed", id, by }),
         async () => {
           ensureClientSdk();
-          await Learn.removeOwnComment({ path: { commentId: id } });
+          await Learn.deleteComment({ commentId: id });
         },
       ),
     [optimistic],
@@ -118,9 +115,9 @@ export function useComments(activityId: string): UseComments {
         async () => {
           ensureClientSdk();
           if (on) {
-            await Learn.reactToComment({ path: { commentId: id, emoji } });
+            await Learn.reactToComment({ commentId: id, emoji });
           } else {
-            await Learn.unreactToComment({ path: { commentId: id, emoji } });
+            await Learn.unreactToComment({ commentId: id, emoji });
           }
         },
       ),
@@ -133,7 +130,7 @@ export function useComments(activityId: string): UseComments {
   const report = React.useCallback(async (id: string, reason: string) => {
     ensureClientSdk();
     try {
-      await Learn.reportComment({ path: { commentId: id }, body: { reason } });
+      await Learn.reportComment({ commentId: id, reason });
     } catch (err: unknown) {
       dispatch({ kind: "failed", message: message(err) });
       throw err;

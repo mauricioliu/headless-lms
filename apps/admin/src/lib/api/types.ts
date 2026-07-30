@@ -22,7 +22,6 @@ import type {
   ListConnectedAppsResponse,
   ListConnectionsResponse,
   ListCoursesResponse,
-  ListCourseCommentStatesResponse,
   ListDownloadAssetsResponse,
   ListDownloadsResponse,
   ListEntitlementsResponse,

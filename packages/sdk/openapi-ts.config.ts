@@ -12,10 +12,15 @@ export default defineConfig({
   plugins: [
     "@hey-api/client-fetch",
     "@hey-api/typescript",
-    // `responseStyle: "data"` makes methods resolve to the response body itself
-    // rather than a `{ data, error, response }` envelope. Paired with the
-    // client's `throwOnError`, failures throw instead of being returned, so
-    // call sites never unwrap.
-    { name: "@hey-api/sdk", operations: { strategy: "byTags" }, responseStyle: "data" },
+    {
+      name: "@hey-api/sdk",
+      paramsStructure: "flat",
+      auth: true,
+      validator: false,
+      operations: {
+        strategy: "byTags",
+      },
+      responseStyle: "data",
+    },
   ],
 });

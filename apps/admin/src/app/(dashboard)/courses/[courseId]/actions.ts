@@ -32,21 +32,13 @@ export async function reorderModulesAction(
   courseId: string,
   orderedIds: string[],
 ): Promise<Module[]> {
-  const modules = await Courses.reorderModules({
-    path: { courseId },
-    body: { orderedIds },
-    ...(await authHeaders()),
-  });
+  const modules = await Courses.reorderModules({ courseId, orderedIds }, await authHeaders());
   revalidateBuilder();
   return modules;
 }
 
 export async function createModuleAction(courseId: string, title: string): Promise<Module[]> {
-  const modules = await Courses.createModule({
-    path: { courseId },
-    body: { title },
-    ...(await authHeaders()),
-  });
+  const modules = await Courses.createModule({ courseId, title }, await authHeaders());
   revalidateBuilder();
   return modules;
 }
@@ -56,20 +48,13 @@ export async function updateModuleAction(
   moduleId: string,
   title: string,
 ): Promise<Module[]> {
-  const modules = await Courses.updateModule({
-    path: { courseId, moduleId },
-    body: { title },
-    ...(await authHeaders()),
-  });
+  const modules = await Courses.updateModule({ courseId, moduleId, title }, await authHeaders());
   revalidateBuilder();
   return modules;
 }
 
 export async function deleteModuleAction(courseId: string, moduleId: string): Promise<Module[]> {
-  const modules = await Courses.deleteModule({
-    path: { courseId, moduleId },
-    ...(await authHeaders()),
-  });
+  const modules = await Courses.deleteModule({ courseId, moduleId }, await authHeaders());
   revalidateBuilder();
   return modules;
 }
@@ -81,11 +66,10 @@ export async function reorderActivitiesAction(
   moduleId: string,
   orderedIds: string[],
 ): Promise<Module[]> {
-  const modules = await Courses.reorderActivities({
-    path: { courseId, moduleId },
-    body: { orderedIds },
-    ...(await authHeaders()),
-  });
+  const modules = await Courses.reorderActivities(
+    { courseId, moduleId, orderedIds },
+    await authHeaders(),
+  );
   revalidateBuilder();
   return modules;
 }
@@ -98,16 +82,11 @@ export async function saveActivityAction(
   // Activities are uniform: the body is just the opaque settings + assets.
   const body = { settings: activity.settings, assetIds: activity.assetIds };
   const modules = activity.id
-    ? await Courses.updateActivity({
-        path: { courseId, moduleId, activityId: activity.id },
-        body,
-        ...(await authHeaders()),
-      })
-    : await Courses.createActivity({
-        path: { courseId, moduleId },
-        body,
-        ...(await authHeaders()),
-      });
+    ? await Courses.updateActivity(
+        { courseId, moduleId, activityId: activity.id, ...body },
+        await authHeaders(),
+      )
+    : await Courses.createActivity({ courseId, moduleId, ...body }, await authHeaders());
   revalidateBuilder();
   return modules;
 }
@@ -124,7 +103,7 @@ export async function saveActivityContentAction(
   activityId: string,
   content: ActivityContent,
 ): Promise<void> {
-  const modules = await Courses.listModules({ path: { courseId }, ...(await authHeaders()) });
+  const modules = await Courses.listModules({ courseId }, await authHeaders());
   const activity = modules
     .find((m) => m.id === moduleId)
     ?.activities.find((a) => a.id === activityId);
@@ -134,11 +113,10 @@ export async function saveActivityContentAction(
     ...((activity.settings ?? {}) as ActivitySettings),
     content,
   };
-  await Courses.updateActivity({
-    path: { courseId, moduleId, activityId },
-    body: { settings, assetIds: activity.assetIds },
-    ...(await authHeaders()),
-  });
+  await Courses.updateActivity(
+    { courseId, moduleId, activityId, settings, assetIds: activity.assetIds },
+    await authHeaders(),
+  );
   revalidateBuilder();
 }
 
@@ -147,10 +125,10 @@ export async function deleteActivityAction(
   moduleId: string,
   activityId: string,
 ): Promise<Module[]> {
-  const modules = await Courses.deleteActivity({
-    path: { courseId, moduleId, activityId },
-    ...(await authHeaders()),
-  });
+  const modules = await Courses.deleteActivity(
+    { courseId, moduleId, activityId },
+    await authHeaders(),
+  );
   revalidateBuilder();
   return modules;
 }
@@ -162,11 +140,7 @@ export async function setCoursePublishedAction(
   courseId: string,
   status: Course["status"],
 ): Promise<Course> {
-  const course = await Courses.updateCourse({
-    path: { id: courseId },
-    body: { status },
-    ...(await authHeaders()),
-  });
+  const course = await Courses.updateCourse({ id: courseId, status }, await authHeaders());
   revalidateBuilder();
   return course;
 }
@@ -180,11 +154,10 @@ export async function updateCourseSettingsAction(
   courseId: string,
   settings: Partial<CourseSettings>,
 ): Promise<CourseSettings> {
-  const updated = await Courses.updateCourseSettings({
-    path: { id: courseId },
-    body: settings,
-    ...(await authHeaders()),
-  });
+  const updated = await Courses.updateCourseSettings(
+    { id: courseId, ...settings },
+    await authHeaders(),
+  );
   revalidateBuilder();
   return updated;
 }
@@ -194,15 +167,15 @@ export async function updateCourseDetailsAction(
   courseId: string,
   patch: { title: string; category: string; description: string },
 ): Promise<Course> {
-  const course = await Courses.updateCourse({
-    path: { id: courseId },
-    body: {
+  const course = await Courses.updateCourse(
+    {
+      id: courseId,
       title: patch.title,
       category: patch.category,
       description: patch.description,
     },
-    ...(await authHeaders()),
-  });
+    await authHeaders(),
+  );
   revalidateBuilder();
   return course;
 }

@@ -62,8 +62,6 @@ export function registerAuth(app: FastifyInstance, container: Container): void {
     await reply.send(protectedResource);
   });
 
-
-
   // Session only, no active org required. For the routes a caller reaches
   // *before* they have an org: creating their first organization, and accepting
   // an invitation (which is what stamps the active org onto the session).
@@ -75,8 +73,6 @@ export function registerAuth(app: FastifyInstance, container: Container): void {
       throw new UnauthorizedError();
     }
     request.authUser = sessionData.user;
-    // Left unset when the session carries no active org — that is the whole
-    // point of this guard, and `orgId` is documented as absent in that case.
     if (sessionData.session.activeOrganizationId) {
       request.orgId = sessionData.session.activeOrganizationId;
     }
@@ -90,12 +86,10 @@ export function registerAuth(app: FastifyInstance, container: Container): void {
     if (!sessionData) {
       throw new UnauthorizedError();
     }
-    request.authUser = sessionData.user;
-    if (sessionData.session.activeOrganizationId) {
-      request.orgId = sessionData.session.activeOrganizationId;
-    }
-    if (!request.orgId) {
+    if (!sessionData.session.activeOrganizationId) {
       throw new UnauthorizedError('no active organization on the session');
     }
+    request.authUser = sessionData.user;
+    request.orgId = sessionData.session.activeOrganizationId;
   });
 }

@@ -37,7 +37,7 @@ export function registerRoutes(
 
 
   app.register(async (instance) => {
-    instance.addHook('onRequest', instance.requireSession);
+    // instance.addHook('onRequest', instance.requireSession);
     await organizationsRoutes(instance, container);
   });
 

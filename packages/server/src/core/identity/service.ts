@@ -19,4 +19,8 @@ export class IdentityServiceImpl implements IdentityService {
   async getUserByExternalId(externalId: string): Promise<User | null> {
     return this.repo.findUserByExternalId(externalId);
   }
+
+  async getUserByEmail(email: string): Promise<User | null> {
+    return this.repo.findUserByEmail(email);
+  }
 }

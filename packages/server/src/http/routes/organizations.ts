@@ -233,7 +233,7 @@ export async function organizationsRoutes(
   r.route({
     method: 'POST',
     url: '/api/organizations/invites/accept',
-    preHandler: app.requireOrgSession,
+    preHandler: app.requireSession,
     schema: {
       operationId: 'acceptInvite',
       tags,
@@ -277,11 +277,16 @@ export async function organizationsPublicRoutes(
           .code(400)
           .send({ error: 'This invitation link is invalid or has expired.' });
       }
+      // Whether this invitee already holds an account decides which form the
+      // landing page opens on. Sending them to sign-up when the account exists
+      // is a dead end — the auth provider rejects the duplicate email.
+      const accountExists = (await container.identity.getUserByEmail(invitation.email)) !== null;
       if (await acceptForSession(container, req, req.body.token)) {
         return reply.send({
           status: 'accepted' as const,
           email: invitation.email,
           role: invitation.role,
+          accountExists,
         });
       }
       setInviteCookie(reply, req.body.token, opts.secureCookies);
@@ -289,6 +294,7 @@ export async function organizationsPublicRoutes(
         status: 'auth-required' as const,
         email: invitation.email,
         role: invitation.role,
+        accountExists,
       });
     },
   });

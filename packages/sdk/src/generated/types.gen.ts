@@ -33,10 +33,263 @@ export type ActivateInviteResponses = {
     status: "accepted" | "auth-required";
     email: string;
     role: "admin" | "instructor" | "student";
+    accountExists: boolean;
   };
 };
 
 export type ActivateInviteResponse = ActivateInviteResponses[keyof ActivateInviteResponses];
+
+export type UpdateOrganizationData = {
+  body: {
+    name: string;
+    slug: string;
+  };
+  path?: never;
+  query?: never;
+  url: "/api/organizations";
+};
+
+export type UpdateOrganizationErrors = {
+  /**
+   * Default Response
+   */
+  409: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type UpdateOrganizationError = UpdateOrganizationErrors[keyof UpdateOrganizationErrors];
+
+export type UpdateOrganizationResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    name: string;
+    slug: string;
+    createdAt: string;
+  };
+};
+
+export type UpdateOrganizationResponse =
+  UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
+
+export type CreateOrganizationData = {
+  body: {
+    name: string;
+    slug: string;
+  };
+  path?: never;
+  query?: never;
+  url: "/api/organizations";
+};
+
+export type CreateOrganizationResponses = {
+  /**
+   * Default Response
+   */
+  201: {
+    id: string;
+    name: string;
+    slug: string;
+    createdAt: string;
+  };
+};
+
+export type CreateOrganizationResponse =
+  CreateOrganizationResponses[keyof CreateOrganizationResponses];
+
+export type ListMembersData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    sort?: string;
+    role?: "owner" | "admin" | "instructor";
+    status?: "active" | "invited";
+  };
+  url: "/api/organizations/members";
+};
+
+export type ListMembersResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    rows: Array<{
+      id: string;
+      name: string;
+      email: string;
+      image: string | null;
+      role: "owner" | "admin" | "instructor";
+      status: "active" | "invited";
+      joinedAt: string | null;
+      invitedAt: string | null;
+    }>;
+    total: number;
+    page: number;
+    pageSize: number;
+  };
+};
+
+export type ListMembersResponse = ListMembersResponses[keyof ListMembersResponses];
+
+export type UpdateMemberRoleData = {
+  body: {
+    role: "owner" | "admin" | "instructor";
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/organizations/members/{id}/role";
+};
+
+export type UpdateMemberRoleErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  409: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type UpdateMemberRoleError = UpdateMemberRoleErrors[keyof UpdateMemberRoleErrors];
+
+export type UpdateMemberRoleResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+    role: "owner" | "admin" | "instructor";
+    status: "active" | "invited";
+    joinedAt: string | null;
+    invitedAt: string | null;
+  };
+};
+
+export type UpdateMemberRoleResponse = UpdateMemberRoleResponses[keyof UpdateMemberRoleResponses];
+
+export type RemoveMemberData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/organizations/members/{id}";
+};
+
+export type RemoveMemberErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  409: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type RemoveMemberError = RemoveMemberErrors[keyof RemoveMemberErrors];
+
+export type RemoveMemberResponses = {
+  /**
+   * Default Response
+   */
+  204: unknown;
+};
+
+export type CreateInviteData = {
+  body: {
+    email: string;
+    role: "admin" | "instructor" | "student";
+  };
+  path?: never;
+  query?: never;
+  url: "/api/organizations/invites";
+};
+
+export type CreateInviteErrors = {
+  /**
+   * Default Response
+   */
+  409: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type CreateInviteError = CreateInviteErrors[keyof CreateInviteErrors];
+
+export type CreateInviteResponses = {
+  /**
+   * Default Response
+   */
+  201: {
+    id: string;
+    email: string;
+    role: "admin" | "instructor" | "student";
+    status: string;
+    expiresAt: string | null;
+    createdAt: string;
+  };
+};
+
+export type CreateInviteResponse = CreateInviteResponses[keyof CreateInviteResponses];
+
+export type AcceptInviteData = {
+  body: {
+    token: string;
+  };
+  path?: never;
+  query?: never;
+  url: "/api/organizations/invites/accept";
+};
+
+export type AcceptInviteErrors = {
+  /**
+   * Default Response
+   */
+  400: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type AcceptInviteError = AcceptInviteErrors[keyof AcceptInviteErrors];
+
+export type AcceptInviteResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    status: "accepted";
+  };
+};
+
+export type AcceptInviteResponse = AcceptInviteResponses[keyof AcceptInviteResponses];
 
 export type ListCoursesData = {
   body?: never;
@@ -2498,258 +2751,6 @@ export type ListAutomationRunsResponses = {
 
 export type ListAutomationRunsResponse =
   ListAutomationRunsResponses[keyof ListAutomationRunsResponses];
-
-export type UpdateOrganizationData = {
-  body: {
-    name: string;
-    slug: string;
-  };
-  path?: never;
-  query?: never;
-  url: "/api/organizations";
-};
-
-export type UpdateOrganizationErrors = {
-  /**
-   * Default Response
-   */
-  409: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type UpdateOrganizationError = UpdateOrganizationErrors[keyof UpdateOrganizationErrors];
-
-export type UpdateOrganizationResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    id: string;
-    name: string;
-    slug: string;
-    createdAt: string;
-  };
-};
-
-export type UpdateOrganizationResponse =
-  UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
-
-export type CreateOrganizationData = {
-  body: {
-    name: string;
-    slug: string;
-  };
-  path?: never;
-  query?: never;
-  url: "/api/organizations";
-};
-
-export type CreateOrganizationResponses = {
-  /**
-   * Default Response
-   */
-  201: {
-    id: string;
-    name: string;
-    slug: string;
-    createdAt: string;
-  };
-};
-
-export type CreateOrganizationResponse =
-  CreateOrganizationResponses[keyof CreateOrganizationResponses];
-
-export type ListMembersData = {
-  body?: never;
-  path?: never;
-  query?: {
-    page?: number;
-    pageSize?: number;
-    search?: string;
-    sort?: string;
-    role?: "owner" | "admin" | "instructor";
-    status?: "active" | "invited";
-  };
-  url: "/api/organizations/members";
-};
-
-export type ListMembersResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    rows: Array<{
-      id: string;
-      name: string;
-      email: string;
-      image: string | null;
-      role: "owner" | "admin" | "instructor";
-      status: "active" | "invited";
-      joinedAt: string | null;
-      invitedAt: string | null;
-    }>;
-    total: number;
-    page: number;
-    pageSize: number;
-  };
-};
-
-export type ListMembersResponse = ListMembersResponses[keyof ListMembersResponses];
-
-export type UpdateMemberRoleData = {
-  body: {
-    role: "owner" | "admin" | "instructor";
-  };
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: "/api/organizations/members/{id}/role";
-};
-
-export type UpdateMemberRoleErrors = {
-  /**
-   * Default Response
-   */
-  404: {
-    error: string;
-    message?: string;
-  };
-  /**
-   * Default Response
-   */
-  409: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type UpdateMemberRoleError = UpdateMemberRoleErrors[keyof UpdateMemberRoleErrors];
-
-export type UpdateMemberRoleResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    id: string;
-    name: string;
-    email: string;
-    image: string | null;
-    role: "owner" | "admin" | "instructor";
-    status: "active" | "invited";
-    joinedAt: string | null;
-    invitedAt: string | null;
-  };
-};
-
-export type UpdateMemberRoleResponse = UpdateMemberRoleResponses[keyof UpdateMemberRoleResponses];
-
-export type RemoveMemberData = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: "/api/organizations/members/{id}";
-};
-
-export type RemoveMemberErrors = {
-  /**
-   * Default Response
-   */
-  404: {
-    error: string;
-    message?: string;
-  };
-  /**
-   * Default Response
-   */
-  409: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type RemoveMemberError = RemoveMemberErrors[keyof RemoveMemberErrors];
-
-export type RemoveMemberResponses = {
-  /**
-   * Default Response
-   */
-  204: unknown;
-};
-
-export type CreateInviteData = {
-  body: {
-    email: string;
-    role: "admin" | "instructor" | "student";
-  };
-  path?: never;
-  query?: never;
-  url: "/api/organizations/invites";
-};
-
-export type CreateInviteErrors = {
-  /**
-   * Default Response
-   */
-  409: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type CreateInviteError = CreateInviteErrors[keyof CreateInviteErrors];
-
-export type CreateInviteResponses = {
-  /**
-   * Default Response
-   */
-  201: {
-    id: string;
-    email: string;
-    role: "admin" | "instructor" | "student";
-    status: string;
-    expiresAt: string | null;
-    createdAt: string;
-  };
-};
-
-export type CreateInviteResponse = CreateInviteResponses[keyof CreateInviteResponses];
-
-export type AcceptInviteData = {
-  body: {
-    token: string;
-  };
-  path?: never;
-  query?: never;
-  url: "/api/organizations/invites/accept";
-};
-
-export type AcceptInviteErrors = {
-  /**
-   * Default Response
-   */
-  400: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type AcceptInviteError = AcceptInviteErrors[keyof AcceptInviteErrors];
-
-export type AcceptInviteResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    status: "accepted";
-  };
-};
-
-export type AcceptInviteResponse = AcceptInviteResponses[keyof AcceptInviteResponses];
 
 export type GetOverviewData = {
   body?: never;

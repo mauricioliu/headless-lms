@@ -12,7 +12,7 @@ export async function updateOrganizationAction(input: {
   name: string;
   slug: string;
 }): Promise<Organization> {
-  const org = await Organizations.updateOrganization({ body: input, ...(await authHeaders()) });
+  const org = await Organizations.updateOrganization(input, await authHeaders());
   // The org name/slug show up in the app shell (logo, title) and this form, so
   // bust the whole layout tree, not just this page.
   revalidatePath("/", "layout");

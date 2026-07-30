@@ -30,11 +30,16 @@ import { configureSdk, Courses } from "@headless-lms/sdk";
 // Once at app startup. credentials default to "include" (carries the session cookie).
 configureSdk({ baseUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000" });
 
+// Path, query and body params are passed flat as the first argument; per-call
+// request options (headers, client, …) are the optional second argument.
 const { data, error } = await Courses.listCourses({
-  query: { page: 1, pageSize: 20, status: "published", sort: "-enrolledCount" },
+  page: 1,
+  pageSize: 20,
+  status: "published",
+  sort: "-enrolledCount",
 });
 
-const course = await Courses.getCourse({ path: { id: "crs_001" } });
+const course = await Courses.getCourse({ id: "crs_001" });
 ```
 
 Methods are grouped into a class per OpenAPI resource tag (`Courses`, …). Each

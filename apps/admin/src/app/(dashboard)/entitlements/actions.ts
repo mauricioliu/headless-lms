@@ -15,10 +15,7 @@ export interface GrantEntitlementInput {
 }
 
 export async function grantEntitlementAction(input: GrantEntitlementInput): Promise<Entitlement> {
-  const entitlement = await Entitlements.grantEntitlement({
-    body: input,
-    ...(await authHeaders()),
-  });
+  const entitlement = await Entitlements.grantEntitlement(input, await authHeaders());
   revalidatePath("/entitlements");
   revalidatePath(`/students/${input.orgUserId}`);
   return entitlement;
@@ -34,11 +31,7 @@ export async function setEntitlementStatusAction(
   action: "revoke" | "reinstate",
 ): Promise<Entitlement> {
   const status: Entitlement["status"] = action === "revoke" ? "revoked" : "active";
-  const entitlement = await Entitlements.setEntitlementStatus({
-    path: { id },
-    body: { status },
-    ...(await authHeaders()),
-  });
+  const entitlement = await Entitlements.setEntitlementStatus({ id, status }, await authHeaders());
   revalidatePath("/entitlements");
   return entitlement;
 }

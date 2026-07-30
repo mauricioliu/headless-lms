@@ -47,11 +47,11 @@ export const learnApi = {
   },
   async getCourse(courseId: string): Promise<Course | null> {
     const headers = await authHeaders();
-    return orNullOn404(() => Learn.getLearnCourse({ path: { courseId }, ...headers }));
+    return orNullOn404(() => Learn.getLearnCourse({ courseId }, headers));
   },
   async listModules(courseId: string): Promise<Module[] | null> {
     const headers = await authHeaders();
-    return orNullOn404(() => Learn.listLearnModules({ path: { courseId }, ...headers }));
+    return orNullOn404(() => Learn.listLearnModules({ courseId }, headers));
   },
   /** Progress is decoration on an otherwise-renderable page, so any failure
    *  (other than the 401 redirect) degrades to "no progress" rather than
@@ -61,21 +61,19 @@ export const learnApi = {
     positions: Record<string, unknown>;
   } | null> {
     const headers = await authHeaders();
-    return orNull(() => Learn.getLearnCourseProgress({ path: { courseId }, ...headers }));
+    return orNull(() => Learn.getLearnCourseProgress({ courseId }, headers));
   },
   async listDownloads(): Promise<Download[]> {
     return await Learn.listLearnDownloads(await authHeaders());
   },
   async getDownload(downloadId: string): Promise<DownloadDetail | null> {
     const headers = await authHeaders();
-    return orNullOn404(() => Learn.getLearnDownload({ path: { downloadId }, ...headers }));
+    return orNullOn404(() => Learn.getLearnDownload({ downloadId }, headers));
   },
   /** Sign a fresh short-lived URL for an org asset (e.g. a download thumbnail). */
   async assetUrl(assetId: string): Promise<string | null> {
     const headers = await authHeaders();
-    const ticket = await orNull(() =>
-      Learn.requestLearnAssetDownload({ path: { id: assetId }, body: {}, ...headers }),
-    );
+    const ticket = await orNull(() => Learn.getAssetDownloadUrl({ id: assetId }, headers));
     return ticket?.url ?? null;
   },
 };

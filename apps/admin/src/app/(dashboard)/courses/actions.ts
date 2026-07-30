@@ -21,10 +21,10 @@ export interface CourseInput {
 }
 
 export async function createCourseAction(input: CourseInput): Promise<Course> {
-  const course = await Courses.createCourse({
-    body: { title: input.title, description: input.description, category: input.category },
-    ...(await authHeaders()),
-  });
+  const course = await Courses.createCourse(
+    { title: input.title, description: input.description, category: input.category },
+    await authHeaders(),
+  );
   revalidateCourse();
   return course;
 }
@@ -33,16 +33,16 @@ export async function updateCourseAction(
   id: string,
   patch: CourseInput & { status?: Course["status"] },
 ): Promise<Course> {
-  const course = await Courses.updateCourse({
-    path: { id },
-    body: {
+  const course = await Courses.updateCourse(
+    {
+      id,
       title: patch.title,
       description: patch.description,
       category: patch.category,
       status: patch.status,
     },
-    ...(await authHeaders()),
-  });
+    await authHeaders(),
+  );
   revalidateCourse();
   return course;
 }
@@ -52,11 +52,11 @@ export async function setCoursePublishedAction(
   id: string,
   status: Course["status"],
 ): Promise<void> {
-  await Courses.updateCourse({ path: { id }, body: { status }, ...(await authHeaders()) });
+  await Courses.updateCourse({ id, status }, await authHeaders());
   revalidateCourse();
 }
 
 export async function deleteCourseAction(id: string): Promise<void> {
-  await Courses.deleteCourse({ path: { id }, ...(await authHeaders()) });
+  await Courses.deleteCourse({ id }, await authHeaders());
   revalidateCourse();
 }

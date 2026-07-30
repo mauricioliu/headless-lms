@@ -2,7 +2,7 @@
 //
 // The person only. A person's participation in an organization lives in the
 // organizations context (`org_users`), not here.
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { IdentityRepository } from '../../../core/identity/ports.js';
 import type { User } from '../../../core/identity/model.js';
@@ -38,6 +38,17 @@ export class DrizzleIdentityRepository implements IdentityRepository {
       .select()
       .from(users)
       .where(eq(users.externalId, externalId))
+      .limit(1);
+    return row ?? null;
+  }
+
+  // Case-insensitive: the address comes from whatever an admin typed into an
+  // invite, the row from whatever the auth provider stored.
+  async findUserByEmail(email: string): Promise<User | null> {
+    const [row] = await this.db
+      .select()
+      .from(users)
+      .where(sql`lower(${users.email}) = lower(${email})`)
       .limit(1);
     return row ?? null;
   }

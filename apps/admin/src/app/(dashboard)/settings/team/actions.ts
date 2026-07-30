@@ -12,17 +12,17 @@ export async function inviteMemberAction(input: {
   email: string;
   role: Exclude<Role, "owner">;
 }): Promise<void> {
-  await Organizations.createInvite({ body: input, ...(await authHeaders()) });
+  await Organizations.createInvite(input, await authHeaders());
   revalidatePath("/settings/team");
 }
 
 /** Change a member's role — targeted write for the inline role control + optimism. */
 export async function updateMemberRoleAction(id: string, role: Role): Promise<void> {
-  await Organizations.updateMemberRole({ path: { id }, body: { role }, ...(await authHeaders()) });
+  await Organizations.updateMemberRole({ id, role }, await authHeaders());
   revalidatePath("/settings/team");
 }
 
 export async function removeMemberAction(id: string): Promise<void> {
-  await Organizations.removeMember({ path: { id }, ...(await authHeaders()) });
+  await Organizations.removeMember({ id }, await authHeaders());
   revalidatePath("/settings/team");
 }
