@@ -9,8 +9,8 @@ export interface SettingsRecord {
 }
 
 export enum SettingsNamespace {
-  content = "content",
-  discussion = "discussion"
+  content = 'content',
+  discussion = 'discussion',
 }
 
 export interface SettingsRepository {
@@ -18,32 +18,23 @@ export interface SettingsRepository {
   find(orgId: string, scopeId: string, namespace?: string): Promise<SettingsRecord[]>;
   /** Deep-merges the patch into the row's value, inserting when absent. Nested
    *  objects merge key by key; arrays and scalars are replaced outright. */
-  patch(
-    orgId: string,
-    namespace: string,
-    scopeId: string,
-    value: unknown,
-  ): Promise<SettingsRecord>;
+  patch(orgId: string, namespace: string, scopeId: string, value: unknown): Promise<SettingsRecord>;
 }
 
-
-
 export class SettingsService {
-  constructor(
-    private readonly repo: SettingsRepository,
-  ) {}
+  constructor(private readonly repo: SettingsRepository) {}
 
-  async get<T>(orgId: string, namespace: string, scopeId: string): Promise<T> {
-    const rows = await this.repo.find(orgId, scopeId, namespace);
-    return rows[0]?.value as T;
-  }
-
-  async patch<T>(
+  async get<T>(
     orgId: string,
     namespace: string,
     scopeId: string,
-    value: unknown,
-  ): Promise<T> {
+    defaultIfNull?: T,
+  ): Promise<T | undefined> {
+    const rows = await this.repo.find(orgId, scopeId, namespace);
+    return (rows[0]?.value as T) ?? defaultIfNull;
+  }
+
+  async patch<T>(orgId: string, namespace: string, scopeId: string, value: unknown): Promise<T> {
     const row = await this.repo.patch(orgId, namespace, scopeId, value);
     return row.value as T;
   }

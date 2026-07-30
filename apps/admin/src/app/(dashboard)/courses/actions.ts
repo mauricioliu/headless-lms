@@ -5,7 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { Courses } from "@headless-lms/sdk";
 
-import { ensureConfigured, authHeaders, unwrap, expectOk } from "@/lib/api/server-call";
+import { authHeaders } from "@/lib/api/server-call";
 import type { Course } from "@/lib/api/types";
 
 /** Course-level writes surface on both the list and that course's builder page. */
@@ -21,13 +21,10 @@ export interface CourseInput {
 }
 
 export async function createCourseAction(input: CourseInput): Promise<Course> {
-  ensureConfigured();
-  const course = unwrap(
-    await Courses.createCourse({
-      body: { title: input.title, description: input.description, category: input.category },
-      ...(await authHeaders()),
-    }),
-  );
+  const course = await Courses.createCourse({
+    body: { title: input.title, description: input.description, category: input.category },
+    ...(await authHeaders()),
+  });
   revalidateCourse();
   return course;
 }
@@ -36,19 +33,16 @@ export async function updateCourseAction(
   id: string,
   patch: CourseInput & { status?: Course["status"] },
 ): Promise<Course> {
-  ensureConfigured();
-  const course = unwrap(
-    await Courses.updateCourse({
-      path: { id },
-      body: {
-        title: patch.title,
-        description: patch.description,
-        category: patch.category,
-        status: patch.status,
-      },
-      ...(await authHeaders()),
-    }),
-  );
+  const course = await Courses.updateCourse({
+    path: { id },
+    body: {
+      title: patch.title,
+      description: patch.description,
+      category: patch.category,
+      status: patch.status,
+    },
+    ...(await authHeaders()),
+  });
   revalidateCourse();
   return course;
 }
@@ -58,13 +52,11 @@ export async function setCoursePublishedAction(
   id: string,
   status: Course["status"],
 ): Promise<void> {
-  ensureConfigured();
-  unwrap(await Courses.updateCourse({ path: { id }, body: { status }, ...(await authHeaders()) }));
+  await Courses.updateCourse({ path: { id }, body: { status }, ...(await authHeaders()) });
   revalidateCourse();
 }
 
 export async function deleteCourseAction(id: string): Promise<void> {
-  ensureConfigured();
-  expectOk(await Courses.deleteCourse({ path: { id }, ...(await authHeaders()) }));
+  await Courses.deleteCourse({ path: { id }, ...(await authHeaders()) });
   revalidateCourse();
 }

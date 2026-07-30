@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 
-import { requireAuth } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
 import { resolveAssetUrls } from "@/lib/api/resolve-asset-urls";
 import type { ActivitySettings } from "@/lib/api/types";
@@ -21,9 +20,7 @@ export default async function ActivityEditorPage({
 }) {
   const { courseId, activityId } = await params;
 
-  const modulesPromise = serverApi.listModules(courseId);
-  await requireAuth(modulesPromise);
-  const modules = await modulesPromise;
+  const modules = await serverApi.listModules(courseId);
 
   const parent = modules.find((m) => m.activities.some((a) => a.id === activityId));
   const activity = parent?.activities.find((a) => a.id === activityId);
@@ -53,9 +50,8 @@ export default async function ActivityEditorPage({
       >
         {foreignFormat ? (
           <p className="rounded-md border border-line bg-surface-2 px-3 py-2 text-xs text-ink-3">
-            This activity has content saved as <code>{formatContentType(stored!)}</code>, which
-            the installed editor ({formatContentType(meta)}) can&apos;t open. Saving will replace
-            it.
+            This activity has content saved as <code>{formatContentType(stored!)}</code>, which the
+            installed editor ({formatContentType(meta)}) can&apos;t open. Saving will replace it.
           </p>
         ) : null}
 

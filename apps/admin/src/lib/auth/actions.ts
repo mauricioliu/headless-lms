@@ -12,16 +12,14 @@
 import { revalidatePath } from "next/cache";
 import { Organizations } from "@headless-lms/sdk";
 
-import { ensureConfigured, authHeaders, unwrap } from "@/lib/api/server-call";
+import { authHeaders } from "@/lib/api/server-call";
 import type { Organization } from "@/lib/api/types";
-
 
 export async function createOrganizationAction(input: {
   name: string;
   slug: string;
 }): Promise<Organization> {
-  ensureConfigured();
-  const org = unwrap(await Organizations.createOrganization({ body: input, ...(await authHeaders()) }));
+  const org = await Organizations.createOrganization({ body: input, ...(await authHeaders()) });
   // The active-org selection now lives on the session server-side; bust the
   // layout so the next resolve renders the dashboard for the new org.
   revalidatePath("/", "layout");

@@ -7,8 +7,8 @@ import { StudentDetailView } from "./student-detail-view";
  * Student detail — pure-RSC (option 2). The Server Component validates the
  * session/role, fetches the student and their entitlements from the API via the
  * SDK (cookie-forwarded), and hands them to the client view as PROPS. No
- * react-query, no HydrationBoundary. A missing student surfaces as a 404 from
- * the API `unwrap`, so we let it propagate.
+ * react-query, no HydrationBoundary. A missing student surfaces as a 404 thrown
+ * by the SDK, so we let it propagate.
  */
 export default async function StudentDetailPage({
   params,

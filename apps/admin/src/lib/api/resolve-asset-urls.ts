@@ -11,10 +11,10 @@ import "server-only";
  * time-limited and org-scoped, and nothing durable is ever handed out.
  */
 
+import { unstable_rethrow } from "next/navigation";
 import { Assets } from "@headless-lms/sdk";
 
-import { authHeaders, ensureConfigured } from "./server-call";
-import { unwrap } from "./shared";
+import { authHeaders } from "./server-call";
 
 interface AssetNode {
   assetId: string;
@@ -59,18 +59,17 @@ export async function resolveAssetUrls(config: unknown): Promise<unknown> {
   collectAssetIds(config, ids);
   if (ids.size === 0) return config;
 
-  ensureConfigured();
   const headers = await authHeaders();
 
   const urls = new Map<string, string>();
   await Promise.all(
     [...ids].map(async (id) => {
       try {
-        const ticket = unwrap(
-          await Assets.requestAssetDownload({ path: { id }, body: {}, ...headers }),
-        );
+        const ticket = await Assets.requestAssetDownload({ path: { id }, body: {}, ...headers });
         urls.set(id, ticket.url);
-      } catch {
+      } catch (e) {
+        // A 401 redirects by throwing, so let Next's control-flow errors pass.
+        unstable_rethrow(e);
         // Asset deleted or inaccessible — leave the stored (dead) URL alone.
       }
     }),

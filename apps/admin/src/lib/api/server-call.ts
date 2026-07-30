@@ -2,9 +2,9 @@ import "server-only";
 
 /**
  * Shared plumbing for server-side SDK calls (RSC reads in `server.ts` and every
- * route's Server Actions). Centralizes the API base URL, the one-time SDK
- * `configureSdk`, and the per-call cookie-forward header bag so the boilerplate
- * lives in one place and can't drift between files.
+ * route's Server Actions). Configures the SDK base URL on import and exposes the
+ * per-call cookie-forward header bag, so the boilerplate lives in one place and
+ * can't drift between files.
  *
  * The SDK `client` is a module-level singleton shared across all concurrent
  * requests, so the cookie is threaded per-call via the `headers` option — never
@@ -15,45 +15,51 @@ import { cookies } from "next/headers";
 import { configureSdk } from "@headless-lms/sdk";
 import { redirect } from "next/navigation";
 
+import { API_URL } from "./api-url";
+import { requireSession } from "../auth/server-session";
 import { ApiError } from "./http";
-import { unwrap as baseUnwrap, expectOk as baseExpectOk, type SdkResult } from "./shared";
 
-export const API_URL =
-  process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+export { API_URL };
 
-let configured = false;
-export function ensureConfigured(): void {
-  if (configured) return;
-  // baseUrl only — the cookie is passed per-call, never on the shared client.
-  configureSdk({ baseUrl: API_URL });
-  configured = true;
-}
-
-/** Per-call header bag forwarding the incoming request's session cookie. */
-export async function authHeaders(): Promise<{ headers: { cookie: string } }> {
-  return { headers: { cookie: (await cookies()).toString() } };
-}
+// baseUrl and error mapping only — the cookie is passed per-call, never on the
+// shared client.
+//
+// The client throws on failure, so no call site unwraps a result envelope. What
+// it throws by default is the raw parsed response body; `onError` turns that
+// into an `ApiError` carrying the status.
+//
+// A 401 means the session expired or was never there. That's a routing concern,
+// not an application error, so it bounces to /login rather than reaching an
+// error boundary or a toast — `redirect` throws, which leaves the SDK's error
+// path the same way a returned error would. 403 (authenticated but forbidden)
+// still throws: the caller is logged in, just not allowed, so it belongs in an
+// error message.
+configureSdk({
+  baseUrl: API_URL,
+  onError: (error, response) => {
+    if (response?.status === 401) redirect("/login");
+    // The SDK hands back the parsed response body, which for this API is
+    // `{ error, message? }` — prefer that over the bare status so the toast
+    // says what actually went wrong.
+    const body = error as { message?: string; error?: string } | undefined;
+    const status = response?.status ?? 500;
+    const message =
+      body?.message ?? body?.error ?? response?.statusText ?? `Request failed (${status})`;
+    return new ApiError(status, message);
+  },
+});
 
 /**
- * Action-side unwrap: like `shared.unwrap`, but a 401 (expired/absent session
- * during a mutation) redirects to `/login` instead of surfacing a generic error
- * toast. 403 (authenticated but forbidden) still throws — the caller is logged
- * in, just not allowed, so it belongs in an error message, not a login bounce.
+ * Per-call header bag forwarding the incoming request's session cookie — and
+ * the single place server-side auth is enforced.
+ *
+ * Every RSC read and Server Action reaches the API through here, so gating on
+ * `requireSession()` here means an unauthenticated request can't produce a data
+ * call at all, without any route having to remember to ask. `requireSession`
+ * is request-cached, so this costs one resolution per request no matter how
+ * many calls a page makes.
  */
-export function unwrap<T>(result: SdkResult<T>): T {
-  try {
-    return baseUnwrap(result);
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 401) redirect("/login");
-    throw e;
-  }
-}
-
-export function expectOk(result: SdkResult<unknown>): void {
-  try {
-    baseExpectOk(result);
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 401) redirect("/login");
-    throw e;
-  }
+export async function authHeaders(): Promise<{ headers: { cookie: string } }> {
+  await requireSession();
+  return { headers: { cookie: (await cookies()).toString() } };
 }

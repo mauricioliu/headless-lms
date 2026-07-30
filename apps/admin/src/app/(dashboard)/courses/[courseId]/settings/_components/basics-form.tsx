@@ -77,7 +77,7 @@ export function BasicsForm({ course }: { course: Course }) {
         toast.success("Changes saved");
         router.refresh();
       } catch (err) {
-        toast.error("Couldn't save changes", { description: (err as Error).message });
+        toast.error("Couldn't Save", { description: (err as Error).message });
       }
     });
   }
@@ -90,7 +90,9 @@ export function BasicsForm({ course }: { course: Course }) {
       <Field id="category" label="Category" required error={errors.category?.message}>
         <Select
           value={category || undefined}
-          onValueChange={(v) => setValue("category", v, { shouldValidate: true, shouldDirty: true })}
+          onValueChange={(v) =>
+            setValue("category", v, { shouldValidate: true, shouldDirty: true })
+          }
         >
           <SelectTrigger id="category" aria-invalid={Boolean(errors.category)}>
             <SelectValue placeholder="Select a category" />
@@ -115,7 +117,7 @@ export function BasicsForm({ course }: { course: Course }) {
 
       <div className="flex justify-end">
         <Button type="submit" variant="primary" disabled={isPending || !isDirty}>
-          {isPending ? "Saving…" : "Save changes"}
+          {isPending ? "Saving…" : "Save"}
         </Button>
       </div>
     </form>

@@ -1,8 +1,10 @@
 // Content resource schemas (courses). The single source of truth for the Course
 // payload: the Fastify routes validate requests/responses against these, the
 // OpenAPI spec is built from them, and the frontend SDK is generated off that spec.
+import type { CourseSettings as DomainCourseSettings } from "@headless-lms/types";
 import { z } from "zod";
-import { ListQuery, paginated } from "./shared.js";
+import { CommentSettings } from "./discussion.js";
+import { ListQuery, type Matches, paginated } from "./shared.js";
 
 export const CourseStatus = z.enum(["draft", "published"]);
 export type CourseStatus = z.infer<typeof CourseStatus>;
@@ -10,8 +12,11 @@ export type CourseStatus = z.infer<typeof CourseStatus>;
 /** Course-wide delivery settings. Always returned complete; patched partially. */
 export const CourseSettings = z.object({
   transcriptDownloads: z.boolean(),
+  comments: CommentSettings.optional(),
 });
 export type CourseSettings = z.infer<typeof CourseSettings>;
+type _CourseSettingsMatchesDomain = Matches<DomainCourseSettings, CourseSettings> &
+  Matches<CourseSettings, DomainCourseSettings>;
 
 /** Settings patch body — omitted keys keep their stored value. */
 export const PatchCourseSettings = CourseSettings.partial();

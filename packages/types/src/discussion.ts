@@ -68,22 +68,22 @@ export interface CommentReport {
 }
 
 /** A course's discussion settings, stored as the value of its `discussion`
- *  settings row rather than in a table of its own. */
+ *  settings row rather than in a table of its own. Also carried on the course
+ *  payload as `settings.comments`. */
 export interface CommentSettings {
+  /** Comments show on this course's lessons. */
   enabled: boolean;
   /** false = replies are not accepted; comments are a flat list. */
   threaded: boolean;
+  /** Learner comments are held until a moderator approves them. */
   requireReview: boolean;
+  /** Learners may react to a comment. */
   reactions: boolean;
 }
 
 /** The course settings with an activity's override applied. What the service
  *  actually decides against. */
-export interface CommentsConfig {
-  enabled: boolean;
-  threaded: boolean;
-  requireReview: boolean;
-  reactions: boolean;
+export interface CommentsConfig extends CommentSettings {
   state: CommentsState;
 }
 

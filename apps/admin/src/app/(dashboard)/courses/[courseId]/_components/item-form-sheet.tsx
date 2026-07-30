@@ -165,7 +165,7 @@ export function ItemFormSheet({
           : "Add content to this module. You can reorder it afterwards."
       }
       formId={FORM_ID}
-      submitLabel={isEdit ? "Save changes" : "Add activity"}
+      submitLabel={isEdit ? "Save" : "Add activity"}
       pending={isPending}
     >
       <form id={FORM_ID} onSubmit={handleSubmit(onValid)} className="flex flex-col gap-5">
@@ -206,9 +206,7 @@ export function ItemFormSheet({
               </button>
             ))}
           </div>
-          <p className="text-xs text-ink-3">
-            Inherits the course setting unless overridden here.
-          </p>
+          <p className="text-xs text-ink-3">Inherits the course setting unless overridden here.</p>
         </div>
       </form>
     </FormSheet>

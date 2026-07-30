@@ -1,4 +1,3 @@
-import { requireAuth } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
 import { AccessGrantsList } from "@/components/access-grants-list";
 
@@ -11,9 +10,7 @@ export default async function CourseAccessTab({
 }) {
   const { courseId } = await params;
 
-  const grantsPromise = serverApi.contentEntitlements(courseId);
-  await requireAuth(grantsPromise);
-  const grants = await grantsPromise;
+  const grants = await serverApi.contentEntitlements(courseId);
 
   return (
     <AccessGrantsList

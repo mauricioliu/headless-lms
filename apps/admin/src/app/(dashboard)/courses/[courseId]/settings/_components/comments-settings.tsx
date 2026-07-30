@@ -3,10 +3,10 @@
 import * as React from "react";
 import { toast } from "sonner";
 
-import type { DiscussionSettings } from "@/lib/api/types";
+import type { CommentSettings } from "@/lib/api/types";
 import { Switch } from "@/components/ui/switch";
 
-import { setDiscussionSettingsAction } from "../actions";
+import { setCommentsSettingsAction } from "../actions";
 import { SettingsRow } from "./settings-section";
 
 const FIELDS = [
@@ -20,16 +20,33 @@ const FIELDS = [
   { key: "reactions", label: "Reactions", hint: "Let learners react to a comment." },
 ] as const;
 
-export function CommentsSettings({ settings }: { settings: DiscussionSettings }) {
-  const [value, setValue] = React.useState(settings);
+/** What an unconfigured course reads as — the API stores no comments block
+ *  until one is written. */
+const OFF: CommentSettings = {
+  enabled: false,
+  threaded: false,
+  requireReview: false,
+  reactions: false,
+};
+
+export function CommentsSettings({
+  courseId,
+  settings,
+}: {
+  courseId: string;
+  settings: CommentSettings | undefined;
+}) {
+  const [value, setValue] = React.useState(settings ?? OFF);
   const [isPending, startTransition] = React.useTransition();
 
-  function update(key: (typeof FIELDS)[number]["key"], next: boolean) {
+  function update(key: (typeof FIELDS)[number]["key"], checked: boolean) {
     const previous = value;
-    setValue({ ...value, [key]: next });
+    const next = { ...value, [key]: checked };
+    setValue(next);
     startTransition(async () => {
       try {
-        await setDiscussionSettingsAction(settings.courseId, { [key]: next });
+        // The patch replaces the whole block, so send every field.
+        await setCommentsSettingsAction(courseId, next);
       } catch (err) {
         setValue(previous);
         toast.error("Could not save", { description: (err as Error).message });

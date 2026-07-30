@@ -67,6 +67,12 @@ export type ListCoursesResponses = {
       thumbnailAssetId: string | null;
       settings: {
         transcriptDownloads: boolean;
+        comments?: {
+          enabled: boolean;
+          threaded: boolean;
+          requireReview: boolean;
+          reactions: boolean;
+        };
       };
       moduleCount: number;
       activityCount: number;
@@ -107,6 +113,12 @@ export type CreateCourseResponses = {
     thumbnailAssetId: string | null;
     settings: {
       transcriptDownloads: boolean;
+      comments?: {
+        enabled: boolean;
+        threaded: boolean;
+        requireReview: boolean;
+        reactions: boolean;
+      };
     };
     moduleCount: number;
     activityCount: number;
@@ -181,6 +193,12 @@ export type GetCourseResponses = {
     thumbnailAssetId: string | null;
     settings: {
       transcriptDownloads: boolean;
+      comments?: {
+        enabled: boolean;
+        threaded: boolean;
+        requireReview: boolean;
+        reactions: boolean;
+      };
     };
     moduleCount: number;
     activityCount: number;
@@ -201,6 +219,12 @@ export type UpdateCourseData = {
     thumbnailAssetId?: string | null;
     settings?: {
       transcriptDownloads?: boolean;
+      comments?: {
+        enabled: boolean;
+        threaded: boolean;
+        requireReview: boolean;
+        reactions: boolean;
+      };
     };
   };
   path: {
@@ -236,6 +260,12 @@ export type UpdateCourseResponses = {
     thumbnailAssetId: string | null;
     settings: {
       transcriptDownloads: boolean;
+      comments?: {
+        enabled: boolean;
+        threaded: boolean;
+        requireReview: boolean;
+        reactions: boolean;
+      };
     };
     moduleCount: number;
     activityCount: number;
@@ -250,6 +280,12 @@ export type UpdateCourseResponse = UpdateCourseResponses[keyof UpdateCourseRespo
 export type UpdateCourseSettingsData = {
   body: {
     transcriptDownloads?: boolean;
+    comments?: {
+      enabled: boolean;
+      threaded: boolean;
+      requireReview: boolean;
+      reactions: boolean;
+    };
   };
   path: {
     id: string;
@@ -277,6 +313,12 @@ export type UpdateCourseSettingsResponses = {
    */
   200: {
     transcriptDownloads: boolean;
+    comments?: {
+      enabled: boolean;
+      threaded: boolean;
+      requireReview: boolean;
+      reactions: boolean;
+    };
   };
 };
 
@@ -729,6 +771,12 @@ export type ListLearnCoursesResponses = {
     thumbnailAssetId: string | null;
     settings: {
       transcriptDownloads: boolean;
+      comments?: {
+        enabled: boolean;
+        threaded: boolean;
+        requireReview: boolean;
+        reactions: boolean;
+      };
     };
     moduleCount: number;
     activityCount: number;
@@ -775,6 +823,12 @@ export type GetLearnCourseResponses = {
     thumbnailAssetId: string | null;
     settings: {
       transcriptDownloads: boolean;
+      comments?: {
+        enabled: boolean;
+        threaded: boolean;
+        requireReview: boolean;
+        reactions: boolean;
+      };
     };
     moduleCount: number;
     activityCount: number;

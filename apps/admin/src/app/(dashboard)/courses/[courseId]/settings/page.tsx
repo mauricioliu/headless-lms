@@ -1,5 +1,4 @@
 // Settings tab: every course-level setting, one section per group.
-import { requireAuth } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
 import { getAssetUrlAction } from "@/app/(dashboard)/media/actions";
 
@@ -16,17 +15,14 @@ export default async function CourseSettingsTab({
 }) {
   const { courseId } = await params;
 
-  const coursePromise = serverApi.getCourse(courseId);
-  const discussionPromise = serverApi.discussionSettings(courseId);
-  await requireAuth(coursePromise, discussionPromise);
-  const [course, discussion] = await Promise.all([coursePromise, discussionPromise]);
+  const course = await serverApi.getCourse(courseId);
 
   // The stored reference is the asset id; the URL is signed fresh per render.
   // A missing or deleted asset just renders the empty cover.
   const thumbnailUrl = course.thumbnailAssetId
     ? await getAssetUrlAction(course.thumbnailAssetId).catch(() => null)
     : null;
-
+console.log(course);
   return (
     <div className="max-w-4xl divide-y divide-line">
       <SettingsSection
@@ -40,21 +36,19 @@ export default async function CourseSettingsTab({
         title="Thumbnail"
         description="The cover image for this course. Upload a new one or link an image already in your media library."
       >
-        <ThumbnailField
-          courseId={course.id}
-          assetId={course.thumbnailAssetId}
-          url={thumbnailUrl}
-        />
+        <ThumbnailField courseId={course.id} assetId={course.thumbnailAssetId} url={thumbnailUrl} />
+      </SettingsSection>
+
+      <SettingsSection title="Comments" description="">
+        <CommentsSettings courseId={course.id} settings={course.settings.comments} />
       </SettingsSection>
 
       <SettingsSection
-        title="Comments"
-        description="How learners discuss the lessons in this course. Moderation happens on the Comments tab."
+        title="Video"
+        description="How videos behave for students taking this course."
       >
-        <CommentsSettings settings={discussion} />
+        <CourseSettingsForm course={course} />
       </SettingsSection>
-
-      <CourseSettingsForm course={course} />
     </div>
   );
 }

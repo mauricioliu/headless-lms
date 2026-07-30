@@ -9,10 +9,10 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { SettingRow, SettingsSection } from "@/components/forms/settings-section";
 import type { Course } from "@/lib/api/types";
 
 import { updateCourseSettingsAction } from "../actions";
+import { SettingsRow } from "../settings/_components/settings-section";
 
 const schema = z.object({
   transcriptDownloads: z.boolean(),
@@ -48,34 +48,32 @@ export function CourseSettingsForm({ course }: { course: Course }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onValid)} className="flex max-w-2xl flex-col gap-6" noValidate>
-      <SettingsSection
-        title="Video"
-        description="How videos behave for students taking this course."
-        footer={
-          <Button type="submit" variant="primary" disabled={isSubmitting || !isDirty}>
-            {isSubmitting ? "Saving…" : "Save changes"}
-          </Button>
-        }
-      >
-        <SettingRow
-          id="transcript-downloads"
+    <form onSubmit={handleSubmit(onValid)} noValidate>
+      <div className="divide-y divide-line">
+        <SettingsRow
+          htmlFor="transcript-downloads"
           label="Allow transcript downloads"
           hint="Students can download a text transcript for every video in this course."
-        >
-          <Controller
-            control={control}
-            name="transcriptDownloads"
-            render={({ field }) => (
-              <Switch
-                id="transcript-downloads"
-                checked={field.value}
-                onCheckedChange={field.onChange}
-              />
-            )}
-          />
-        </SettingRow>
-      </SettingsSection>
+          control={
+            <Controller
+              control={control}
+              name="transcriptDownloads"
+              render={({ field }) => (
+                <Switch
+                  id="transcript-downloads"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              )}
+            />
+          }
+        />
+      </div>
+      <div className="flex justify-end pt-4">
+        <Button type="submit" variant="primary" disabled={isSubmitting || !isDirty}>
+          {isSubmitting ? "Saving…" : "Save"}
+        </Button>
+      </div>
     </form>
   );
 }

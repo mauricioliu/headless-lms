@@ -11,7 +11,6 @@ import type {
   GetAssetResponse,
   GetAutomationResponse,
   GetCourseResponse,
-  GetDiscussionSettingsResponse,
   ListCommentsResponse,
   GetDownloadResponse,
   GetOverviewResponse,
@@ -32,7 +31,6 @@ import type {
   ListStudentsResponse,
   RequestAssetDownloadResponse,
   RequestUploadResponse,
-  SetDiscussionSettingsData,
 } from "@headless-lms/sdk";
 
 // --- entities (straight from the SDK responses) ----------------------------
@@ -142,12 +140,11 @@ export type CommentsPage = ListCommentsResponse;
 export type CommentListItem = CommentsPage["rows"][number];
 export type CommentReportSummary = CommentListItem["reports"][number];
 export type CommentStatus = CommentListItem["status"];
-export type DiscussionSettings = GetDiscussionSettingsResponse;
+/** A course's comment settings. Not a resource of its own: they ride on the
+ *  course payload, so read and write both go through course settings. */
+export type CommentSettings = NonNullable<CourseSettings["comments"]>;
 export type CommentStates = ListCourseCommentStatesResponse["states"];
 export type CommentsState = CommentStates[string];
-// `SetDiscussionSettingsData["body"]` is already required (not optional), so
-// no `NonNullable<>` is needed here.
-export type SetDiscussionSettings = SetDiscussionSettingsData["body"];
 
 // --- auth / session (not part of the resource API) -------------------------
 

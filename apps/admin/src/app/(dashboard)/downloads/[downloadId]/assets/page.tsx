@@ -1,4 +1,3 @@
-import { requireAuth } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
 
 import { DownloadAssetsPanel } from "../_components/download-assets-panel";
@@ -12,9 +11,7 @@ export default async function DownloadAssetsTab({
 }) {
   const { downloadId } = await params;
 
-  const assetsPromise = serverApi.listDownloadAssets(downloadId);
-  await requireAuth(assetsPromise);
-  const assets = await assetsPromise;
+  const assets = await serverApi.listDownloadAssets(downloadId);
 
   return <DownloadAssetsPanel downloadId={downloadId} assets={assets} />;
 }

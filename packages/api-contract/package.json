@@ -19,6 +19,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@headless-lms/types": "workspace:*",
     "tsdown": "^0.22.9",
     "typescript": "^5.7.2"
   }

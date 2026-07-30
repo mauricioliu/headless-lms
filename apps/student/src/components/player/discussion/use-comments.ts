@@ -42,10 +42,9 @@ export function useComments(activityId: string): UseComments {
     dispatch({ kind: "loading" });
     let cancelled = false;
     void Learn.listActivityComments({ path: { activityId } })
-      .then((res) => {
+      .then((view) => {
         if (cancelled || current.current !== activityId) return;
-        if (res.data) dispatch({ kind: "loaded", view: res.data });
-        else dispatch({ kind: "failed", message: "Could not load the discussion" });
+        dispatch({ kind: "loaded", view });
       })
       .catch((err: unknown) => {
         if (cancelled || current.current !== activityId) return;
@@ -57,19 +56,16 @@ export function useComments(activityId: string): UseComments {
   }, [activityId]);
 
   /** Apply locally, call the server, put the snapshot back if it refuses. */
-  const optimistic = React.useCallback(
-    async (apply: () => void, call: () => Promise<void>) => {
-      const snapshot = commentsRef.current;
-      apply();
-      try {
-        await call();
-      } catch (err: unknown) {
-        dispatch({ kind: "restored", comments: snapshot });
-        dispatch({ kind: "failed", message: message(err) });
-      }
-    },
-    [],
-  );
+  const optimistic = React.useCallback(async (apply: () => void, call: () => Promise<void>) => {
+    const snapshot = commentsRef.current;
+    apply();
+    try {
+      await call();
+    } catch (err: unknown) {
+      dispatch({ kind: "restored", comments: snapshot });
+      dispatch({ kind: "failed", message: message(err) });
+    }
+  }, []);
 
   // Not optimistic: the server decides whether a comment lands published or
   // pending, and guessing wrong would flash the wrong badge. The composer shows
@@ -79,12 +75,11 @@ export function useComments(activityId: string): UseComments {
     async (body: string, parentId: string | null) => {
       ensureClientSdk();
       try {
-        const res = await Learn.postComment({
+        const comment = await Learn.postComment({
           path: { activityId },
           body: { body, parentId },
         });
-        if (!res.data) throw new Error("Could not post your comment");
-        dispatch({ kind: "inserted", comment: res.data });
+        dispatch({ kind: "inserted", comment });
       } catch (err: unknown) {
         dispatch({ kind: "failed", message: message(err) });
         throw err;
@@ -96,9 +91,8 @@ export function useComments(activityId: string): UseComments {
   const edit = React.useCallback(async (id: string, body: string) => {
     ensureClientSdk();
     try {
-      const res = await Learn.editComment({ path: { commentId: id }, body: { body } });
-      if (!res.data) throw new Error("Could not save your change");
-      dispatch({ kind: "replaced", id, comment: res.data });
+      const comment = await Learn.editComment({ path: { commentId: id }, body: { body } });
+      dispatch({ kind: "replaced", id, comment });
     } catch (err: unknown) {
       dispatch({ kind: "failed", message: message(err) });
       throw err;

@@ -28,10 +28,10 @@ export interface ProgressReporter {
 export function progressReporter(target: ProgressTargetRef): ProgressReporter {
   const send = async (items: ProgressReportItem[]): Promise<ProgressStatusValue | null> => {
     try {
-      const res = await Learn.reportProgress({
+      const result = await Learn.reportProgress({
         body: { activity: target.activity, reports: items },
       });
-      return res.data?.status ?? null;
+      return result.status;
     } catch {
       return null;
     }

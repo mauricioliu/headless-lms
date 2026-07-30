@@ -71,7 +71,7 @@ export function GeneralView({ name, slug }: { name: string; slug: string }) {
       <div className="flex justify-end border-t border-line px-6 py-4">
         <Button type="submit" variant="primary" disabled={isSubmitting || !isDirty}>
           {isSubmitting && <Loader2 className="animate-spin" />}
-          Save changes
+          Save
         </Button>
       </div>
     </form>

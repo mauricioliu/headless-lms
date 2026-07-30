@@ -1,4 +1,3 @@
-import { requireAuth } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
 import { parseListParams } from "@/lib/table/parse-list-params";
 
@@ -16,12 +15,9 @@ export default async function CoursesPage({
     initialSort: [{ id: "updatedAt", desc: true }],
   });
 
-  // Start the data fetch immediately, await the session gate, then await the
-  // data. The fetch only needs the forwarded cookie (not the session result),
-  // so the two API round-trips run in parallel instead of sequentially.
-  const dataPromise = serverApi.listCourses(params);
-  await requireAuth(dataPromise);
-  const { rows, total } = await dataPromise;
+  // The fetch carries its own auth: `authHeaders` gates on the session before
+  // any call leaves, so the read is the gate.
+  const { rows, total } = await serverApi.listCourses(params);
 
   return <CoursesTable rows={rows} total={total} params={params} />;
 }

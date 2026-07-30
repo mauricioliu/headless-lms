@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 
-import { requireAuth } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
 import type { ActivitySettings } from "@/lib/api/types";
 
@@ -19,9 +18,7 @@ export default async function ActivityLayout({
 }) {
   const { courseId, activityId } = await params;
 
-  const modulesPromise = serverApi.listModules(courseId);
-  await requireAuth(modulesPromise);
-  const modules = await modulesPromise;
+  const modules = await serverApi.listModules(courseId);
 
   const activity = modules.flatMap((m) => m.activities).find((a) => a.id === activityId);
   if (!activity) notFound();

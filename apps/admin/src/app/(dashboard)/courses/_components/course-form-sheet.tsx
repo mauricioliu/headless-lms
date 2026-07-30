@@ -100,7 +100,7 @@ export function CourseFormSheet({
         toast.success(isEdit ? "Changes saved" : "Course created");
         onOpenChange(false);
       } catch (e) {
-        toast.error(isEdit ? "Couldn't save changes" : "Couldn't create course", {
+        toast.error(isEdit ? "Couldn't Save" : "Couldn't create course", {
           description: (e as Error).message,
         });
       }
@@ -118,7 +118,7 @@ export function CourseFormSheet({
           : "Create a draft course. You can add modules and lessons next."
       }
       formId={FORM_ID}
-      submitLabel={isEdit ? "Save changes" : "Create course"}
+      submitLabel={isEdit ? "Save" : "Create course"}
       pending={pending}
     >
       <form id={FORM_ID} onSubmit={onSubmit} className="flex flex-col gap-5">

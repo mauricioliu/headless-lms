@@ -5,7 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { Courses } from "@headless-lms/sdk";
 
-import { ensureConfigured, authHeaders, unwrap } from "@/lib/api/server-call";
+import { authHeaders } from "@/lib/api/server-call";
 import type {
   ActivityContent,
   ActivitySettings,
@@ -32,19 +32,21 @@ export async function reorderModulesAction(
   courseId: string,
   orderedIds: string[],
 ): Promise<Module[]> {
-  ensureConfigured();
-  const modules = unwrap(
-    await Courses.reorderModules({ path: { courseId }, body: { orderedIds }, ...(await authHeaders()) }),
-  );
+  const modules = await Courses.reorderModules({
+    path: { courseId },
+    body: { orderedIds },
+    ...(await authHeaders()),
+  });
   revalidateBuilder();
   return modules;
 }
 
 export async function createModuleAction(courseId: string, title: string): Promise<Module[]> {
-  ensureConfigured();
-  const modules = unwrap(
-    await Courses.createModule({ path: { courseId }, body: { title }, ...(await authHeaders()) }),
-  );
+  const modules = await Courses.createModule({
+    path: { courseId },
+    body: { title },
+    ...(await authHeaders()),
+  });
   revalidateBuilder();
   return modules;
 }
@@ -54,23 +56,20 @@ export async function updateModuleAction(
   moduleId: string,
   title: string,
 ): Promise<Module[]> {
-  ensureConfigured();
-  const modules = unwrap(
-    await Courses.updateModule({
-      path: { courseId, moduleId },
-      body: { title },
-      ...(await authHeaders()),
-    }),
-  );
+  const modules = await Courses.updateModule({
+    path: { courseId, moduleId },
+    body: { title },
+    ...(await authHeaders()),
+  });
   revalidateBuilder();
   return modules;
 }
 
 export async function deleteModuleAction(courseId: string, moduleId: string): Promise<Module[]> {
-  ensureConfigured();
-  const modules = unwrap(
-    await Courses.deleteModule({ path: { courseId, moduleId }, ...(await authHeaders()) }),
-  );
+  const modules = await Courses.deleteModule({
+    path: { courseId, moduleId },
+    ...(await authHeaders()),
+  });
   revalidateBuilder();
   return modules;
 }
@@ -82,14 +81,11 @@ export async function reorderActivitiesAction(
   moduleId: string,
   orderedIds: string[],
 ): Promise<Module[]> {
-  ensureConfigured();
-  const modules = unwrap(
-    await Courses.reorderActivities({
-      path: { courseId, moduleId },
-      body: { orderedIds },
-      ...(await authHeaders()),
-    }),
-  );
+  const modules = await Courses.reorderActivities({
+    path: { courseId, moduleId },
+    body: { orderedIds },
+    ...(await authHeaders()),
+  });
   revalidateBuilder();
   return modules;
 }
@@ -99,20 +95,19 @@ export async function saveActivityAction(
   moduleId: string,
   activity: SaveActivityInput,
 ): Promise<Module[]> {
-  ensureConfigured();
   // Activities are uniform: the body is just the opaque settings + assets.
   const body = { settings: activity.settings, assetIds: activity.assetIds };
   const modules = activity.id
-    ? unwrap(
-        await Courses.updateActivity({
-          path: { courseId, moduleId, activityId: activity.id },
-          body,
-          ...(await authHeaders()),
-        }),
-      )
-    : unwrap(
-        await Courses.createActivity({ path: { courseId, moduleId }, body, ...(await authHeaders()) }),
-      );
+    ? await Courses.updateActivity({
+        path: { courseId, moduleId, activityId: activity.id },
+        body,
+        ...(await authHeaders()),
+      })
+    : await Courses.createActivity({
+        path: { courseId, moduleId },
+        body,
+        ...(await authHeaders()),
+      });
   revalidateBuilder();
   return modules;
 }
@@ -129,10 +124,7 @@ export async function saveActivityContentAction(
   activityId: string,
   content: ActivityContent,
 ): Promise<void> {
-  ensureConfigured();
-  const modules = unwrap(
-    await Courses.listModules({ path: { courseId }, ...(await authHeaders()) }),
-  );
+  const modules = await Courses.listModules({ path: { courseId }, ...(await authHeaders()) });
   const activity = modules
     .find((m) => m.id === moduleId)
     ?.activities.find((a) => a.id === activityId);
@@ -142,13 +134,11 @@ export async function saveActivityContentAction(
     ...((activity.settings ?? {}) as ActivitySettings),
     content,
   };
-  unwrap(
-    await Courses.updateActivity({
-      path: { courseId, moduleId, activityId },
-      body: { settings, assetIds: activity.assetIds },
-      ...(await authHeaders()),
-    }),
-  );
+  await Courses.updateActivity({
+    path: { courseId, moduleId, activityId },
+    body: { settings, assetIds: activity.assetIds },
+    ...(await authHeaders()),
+  });
   revalidateBuilder();
 }
 
@@ -157,13 +147,10 @@ export async function deleteActivityAction(
   moduleId: string,
   activityId: string,
 ): Promise<Module[]> {
-  ensureConfigured();
-  const modules = unwrap(
-    await Courses.deleteActivity({
-      path: { courseId, moduleId, activityId },
-      ...(await authHeaders()),
-    }),
-  );
+  const modules = await Courses.deleteActivity({
+    path: { courseId, moduleId, activityId },
+    ...(await authHeaders()),
+  });
   revalidateBuilder();
   return modules;
 }
@@ -175,10 +162,11 @@ export async function setCoursePublishedAction(
   courseId: string,
   status: Course["status"],
 ): Promise<Course> {
-  ensureConfigured();
-  const course = unwrap(
-    await Courses.updateCourse({ path: { id: courseId }, body: { status }, ...(await authHeaders()) }),
-  );
+  const course = await Courses.updateCourse({
+    path: { id: courseId },
+    body: { status },
+    ...(await authHeaders()),
+  });
   revalidateBuilder();
   return course;
 }
@@ -192,14 +180,11 @@ export async function updateCourseSettingsAction(
   courseId: string,
   settings: Partial<CourseSettings>,
 ): Promise<CourseSettings> {
-  ensureConfigured();
-  const updated = unwrap(
-    await Courses.updateCourseSettings({
-      path: { id: courseId },
-      body: settings,
-      ...(await authHeaders()),
-    }),
-  );
+  const updated = await Courses.updateCourseSettings({
+    path: { id: courseId },
+    body: settings,
+    ...(await authHeaders()),
+  });
   revalidateBuilder();
   return updated;
 }
@@ -209,18 +194,15 @@ export async function updateCourseDetailsAction(
   courseId: string,
   patch: { title: string; category: string; description: string },
 ): Promise<Course> {
-  ensureConfigured();
-  const course = unwrap(
-    await Courses.updateCourse({
-      path: { id: courseId },
-      body: {
-        title: patch.title,
-        category: patch.category,
-        description: patch.description,
-      },
-      ...(await authHeaders()),
-    }),
-  );
+  const course = await Courses.updateCourse({
+    path: { id: courseId },
+    body: {
+      title: patch.title,
+      category: patch.category,
+      description: patch.description,
+    },
+    ...(await authHeaders()),
+  });
   revalidateBuilder();
   return course;
 }

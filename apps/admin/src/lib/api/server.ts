@@ -1,21 +1,21 @@
 import "server-only";
 
 /**
- * Server-side mirror of the browser `api` (`sdk.ts`), used by Server Components
- * to prefetch data for React-Query hydration.
+ * Server-side reads used by Server Components to prefetch data for React-Query
+ * hydration.
  *
  * The SDK `client` is a module-level singleton with a global `credentials:
  * "include"`. On the server it is shared across all concurrent requests/users,
  * so mutating it to attach a per-request cookie would leak cookies between
  * users. Instead every call threads the incoming request's cookie via the
  * per-call `headers` option — never `client.setConfig` with request state.
- * `configureSdk` only sets the (constant) baseUrl.
+ * `configureSdk` only sets the (constant) baseUrl and the error mapping.
  *
  * Only SSR-prefetched **read** methods live here. Mutations and browser-only
  * flows (`uploadAsset`, presigned `assetDownloadUrl`, `useAssetUrl`) stay
- * client-side and are never prefetched. Query serialization reuses the same
- * `toQuery`/`unwrap` as the browser client so prefetch keys match client keys
- * exactly (cache hit, no refetch on first paint).
+ * client-side and are never prefetched. Query serialization goes through the
+ * shared `toQuery` so prefetch keys match client keys exactly (cache hit, no
+ * refetch on first paint).
  */
 
 import {
@@ -32,8 +32,8 @@ import {
   Students,
 } from "@headless-lms/sdk";
 
-import { toQuery, unwrap } from "./shared";
-import { ensureConfigured, authHeaders } from "./server-call";
+import { toQuery } from "./shared";
+import { authHeaders } from "./server-call";
 import type {
   Asset,
   Automation,
@@ -42,7 +42,6 @@ import type {
   AvailableIntegration,
   ConnectedApp,
   Course,
-  DiscussionSettings,
   Download,
   DownloadAsset,
   Entitlement,
@@ -57,48 +56,41 @@ import type {
   CommentStates,
 } from "./types";
 
-
 export const serverApi = {
   // dashboard
   async overview(): Promise<OverviewStats> {
-    ensureConfigured();
-    return unwrap(await Dashboard.getOverview(await authHeaders()));
+    return await Dashboard.getOverview(await authHeaders());
   },
 
   // courses
   async listCourses(params: ListParams): Promise<Paginated<Course>> {
-    ensureConfigured();
-    return unwrap(
-      await Courses.listCourses({
-        query: toQuery(params, ["status", "category"]),
-        ...(await authHeaders()),
-      }),
-    );
+    return await Courses.listCourses({
+      query: toQuery(params, ["status", "category"]),
+      ...(await authHeaders()),
+    });
   },
   async getCourse(id: string): Promise<Course> {
-    ensureConfigured();
-    return unwrap(await Courses.getCourse({ path: { id }, ...(await authHeaders()) }));
+    return await Courses.getCourse({ path: { id }, ...(await authHeaders()) });
   },
   async listModules(courseId: string): Promise<Module[]> {
-    ensureConfigured();
-    return unwrap(
-      await Courses.listModules({ path: { courseId }, ...(await authHeaders()) }),
-    );
+    return await Courses.listModules({ path: { courseId }, ...(await authHeaders()) });
   },
   // Both content types offered by the entitlements grant pickers, tagged with
   // their type so the UI can group course vs. download options.
   async contentLite(): Promise<{ id: string; title: string; type: "course" | "download" }[]> {
-    ensureConfigured();
     const [coursesPage, downloadsPage] = await Promise.all([
       Courses.listCourses({ query: { pageSize: 100, sort: "title" }, ...(await authHeaders()) }),
-      Downloads.listDownloads({ query: { pageSize: 100, sort: "title" }, ...(await authHeaders()) }),
+      Downloads.listDownloads({
+        query: { pageSize: 100, sort: "title" },
+        ...(await authHeaders()),
+      }),
     ]);
-    const courses = unwrap(coursesPage).rows.map((c) => ({
+    const courses = coursesPage.rows.map((c) => ({
       id: c.id,
       title: c.title,
       type: "course" as const,
     }));
-    const downloads = unwrap(downloadsPage).rows.map((d) => ({
+    const downloads = downloadsPage.rows.map((d) => ({
       id: d.id,
       title: d.title,
       type: "download" as const,
@@ -108,130 +100,90 @@ export const serverApi = {
 
   // downloads
   async listDownloads(params: ListParams): Promise<Paginated<Download>> {
-    ensureConfigured();
-    return unwrap(
-      await Downloads.listDownloads({
-        query: toQuery(params, ["status", "category"]),
-        ...(await authHeaders()),
-      }),
-    );
+    return await Downloads.listDownloads({
+      query: toQuery(params, ["status", "category"]),
+      ...(await authHeaders()),
+    });
   },
   async getDownload(downloadId: string): Promise<Download> {
-    ensureConfigured();
-    return unwrap(
-      await Downloads.getDownload({ path: { downloadId }, ...(await authHeaders()) }),
-    );
+    return await Downloads.getDownload({ path: { downloadId }, ...(await authHeaders()) });
   },
   async listDownloadAssets(downloadId: string): Promise<DownloadAsset[]> {
-    ensureConfigured();
-    return unwrap(
-      await Downloads.listDownloadAssets({ path: { downloadId }, ...(await authHeaders()) }),
-    );
+    return await Downloads.listDownloadAssets({ path: { downloadId }, ...(await authHeaders()) });
   },
 
   // students
   async listStudents(params: ListParams): Promise<Paginated<Student>> {
-    ensureConfigured();
-    return unwrap(
-      await Students.listStudents({ query: toQuery(params, []), ...(await authHeaders()) }),
-    );
+    return await Students.listStudents({ query: toQuery(params, []), ...(await authHeaders()) });
   },
   async getStudent(id: string): Promise<Student> {
-    ensureConfigured();
-    return unwrap(await Students.getStudent({ path: { id }, ...(await authHeaders()) }));
+    return await Students.getStudent({ path: { id }, ...(await authHeaders()) });
   },
   async studentEntitlements(orgUserId: string): Promise<Entitlement[]> {
-    ensureConfigured();
-    const page = unwrap(
-      await Entitlements.listEntitlements({
-        query: { orgUserId, pageSize: 100 },
-        ...(await authHeaders()),
-      }),
-    );
+    const page = await Entitlements.listEntitlements({
+      query: { orgUserId, pageSize: 100 },
+      ...(await authHeaders()),
+    });
     return page.rows;
   },
   async studentsLite(search?: string): Promise<{ id: string; name: string; email: string }[]> {
-    ensureConfigured();
-    const page = unwrap(
-      await Students.listStudents({
-        query: { pageSize: 100, search: search || undefined, sort: "name" },
-        ...(await authHeaders()),
-      }),
-    );
+    const page = await Students.listStudents({
+      query: { pageSize: 100, search: search || undefined, sort: "name" },
+      ...(await authHeaders()),
+    });
     return page.rows.map((s) => ({ id: s.id, name: s.name, email: s.email }));
   },
 
   // entitlements
   async listEntitlements(params: ListParams): Promise<Paginated<Entitlement>> {
-    ensureConfigured();
-    return unwrap(
-      await Entitlements.listEntitlements({
-        query: toQuery(params, ["status", "source"]),
-        ...(await authHeaders()),
-      }),
-    );
+    return await Entitlements.listEntitlements({
+      query: toQuery(params, ["status", "source"]),
+      ...(await authHeaders()),
+    });
   },
   async contentEntitlements(contentId: string): Promise<Entitlement[]> {
-    ensureConfigured();
-    const page = unwrap(
-      await Entitlements.listEntitlements({
-        query: { contentId, pageSize: 100 },
-        ...(await authHeaders()),
-      }),
-    );
+    const page = await Entitlements.listEntitlements({
+      query: { contentId, pageSize: 100 },
+      ...(await authHeaders()),
+    });
     return page.rows;
   },
 
-  // discussion (course-scoped settings + the comment list)
-  async discussionSettings(courseId: string): Promise<DiscussionSettings> {
-    ensureConfigured();
-    return unwrap(
-      await Discussion.getDiscussionSettings({ path: { courseId }, ...(await authHeaders()) }),
-    );
-  },
+  // discussion (the comment list; settings ride on the course payload)
   /** The staff comment list, scoped to one course. `status` and `reported` are
    *  the two facets the Comments tab exposes; `reported` goes over the wire as
    *  a string because query values always do. */
-  async listComments(
-    courseId: string,
-    params: ListParams,
-  ): Promise<Paginated<CommentListItem>> {
-    ensureConfigured();
+  async listComments(courseId: string, params: ListParams): Promise<Paginated<CommentListItem>> {
     const { reported, ...query } = toQuery(params, ["status", "reported"]);
-    return unwrap(
-      await Discussion.listComments({
-        query: {
-          ...query,
-          courseId,
-          ...(reported === undefined ? {} : { reported: String(reported) }),
-        },
-        ...(await authHeaders()),
-      }),
-    );
+    return await Discussion.listComments({
+      query: {
+        ...query,
+        courseId,
+        ...(reported === undefined ? {} : { reported: String(reported) }),
+      },
+      ...(await authHeaders()),
+    });
   },
   async commentStates(courseId: string): Promise<CommentStates> {
-    ensureConfigured();
-    const { states } = unwrap(
-      await Discussion.listCourseCommentStates({ path: { courseId }, ...(await authHeaders()) }),
-    );
+    const { states } = await Discussion.listCourseCommentStates({
+      path: { courseId },
+      ...(await authHeaders()),
+    });
     return states;
   },
 
   // members
   async listMembers(params: ListParams): Promise<Paginated<Member>> {
-    ensureConfigured();
-    return unwrap(
-      await Organizations.listMembers({
-        query: toQuery(params, ["role", "status"]),
-        ...(await authHeaders()),
-      }),
-    );
+    return await Organizations.listMembers({
+      query: toQuery(params, ["role", "status"]),
+      ...(await authHeaders()),
+    });
   },
   async instructorsLite(): Promise<{ id: string; name: string }[]> {
-    ensureConfigured();
-    const page = unwrap(
-      await Organizations.listMembers({ query: { pageSize: 100 }, ...(await authHeaders()) }),
-    );
+    const page = await Organizations.listMembers({
+      query: { pageSize: 100 },
+      ...(await authHeaders()),
+    });
     return page.rows
       .filter((m) => m.role === "owner" || m.role === "admin" || m.role === "instructor")
       .map((m) => ({ id: m.id, name: m.name }));
@@ -239,44 +191,34 @@ export const serverApi = {
 
   // media library (assets) — list only; presigned URL/upload stay client-side
   async listAssets(params: ListParams): Promise<Paginated<Asset>> {
-    ensureConfigured();
-    return unwrap(
-      await Assets.listAssets({ query: toQuery(params, ["kind"]), ...(await authHeaders()) }),
-    );
+    return await Assets.listAssets({ query: toQuery(params, ["kind"]), ...(await authHeaders()) });
   },
 
   // connected apps
   async listConnectedApps(): Promise<ConnectedApp[]> {
-    ensureConfigured();
-    return unwrap(await ConnectedApps.listConnectedApps(await authHeaders()));
+    return await ConnectedApps.listConnectedApps(await authHeaders());
   },
 
   // integrations
   async listAvailableIntegrations(): Promise<AvailableIntegration[]> {
-    ensureConfigured();
-    return unwrap(await Integrations.listAvailableIntegrations(await authHeaders()));
+    return await Integrations.listAvailableIntegrations(await authHeaders());
   },
   async listConnections(): Promise<IntegrationConnection[]> {
-    ensureConfigured();
-    return unwrap(await Integrations.listConnections(await authHeaders()));
+    return await Integrations.listConnections(await authHeaders());
   },
 
   // automations
   async listAutomations(): Promise<Automation[]> {
-    ensureConfigured();
-    return unwrap(await Automations.listAutomations(await authHeaders()));
+    return await Automations.listAutomations(await authHeaders());
   },
   async getAutomation(id: string): Promise<Automation> {
-    ensureConfigured();
-    return unwrap(await Automations.getAutomation({ path: { id }, ...(await authHeaders()) }));
+    return await Automations.getAutomation({ path: { id }, ...(await authHeaders()) });
   },
   async automationActions(): Promise<AvailableAction[]> {
-    ensureConfigured();
-    return unwrap(await Automations.listAutomationActions(await authHeaders()));
+    return await Automations.listAutomationActions(await authHeaders());
   },
   async automationTriggers(): Promise<AutomationTriggerInfo[]> {
-    ensureConfigured();
-    const { triggers } = unwrap(await Automations.listAutomationTriggers(await authHeaders()));
+    const { triggers } = await Automations.listAutomationTriggers(await authHeaders());
     return triggers;
   },
 };

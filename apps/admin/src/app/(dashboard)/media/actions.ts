@@ -5,10 +5,9 @@
 import { revalidatePath } from "next/cache";
 import { Assets } from "@headless-lms/sdk";
 
-import { ensureConfigured, authHeaders, unwrap, expectOk } from "@/lib/api/server-call";
+import { authHeaders } from "@/lib/api/server-call";
 import { toQuery } from "@/lib/api/shared";
 import type { Asset, AssetKind, ListParams, Paginated, UploadTicket } from "@/lib/api/types";
-
 
 /**
  * Client-callable asset list. The media *page* reads through `serverApi` during
@@ -16,15 +15,11 @@ import type { Asset, AssetKind, ListParams, Paginated, UploadTicket } from "@/li
  * currently the editor's library picker dialog.
  */
 export async function listAssetsAction(params: ListParams): Promise<Paginated<Asset>> {
-  ensureConfigured();
-  return unwrap(
-    await Assets.listAssets({ query: toQuery(params, ["kind"]), ...(await authHeaders()) }),
-  );
+  return await Assets.listAssets({ query: toQuery(params, ["kind"]), ...(await authHeaders()) });
 }
 
 export async function deleteAssetAction(id: string): Promise<void> {
-  ensureConfigured();
-  expectOk(await Assets.deleteAsset({ path: { id }, ...(await authHeaders()) }));
+  await Assets.deleteAsset({ path: { id }, ...(await authHeaders()) });
   revalidatePath("/media");
 }
 
@@ -34,10 +29,11 @@ export async function deleteAssetAction(id: string): Promise<void> {
  * expire within minutes).
  */
 export async function getAssetUrlAction(id: string, filename?: string): Promise<string> {
-  ensureConfigured();
-  const ticket = unwrap(
-    await Assets.requestAssetDownload({ path: { id }, body: { filename }, ...(await authHeaders()) }),
-  );
+  const ticket = await Assets.requestAssetDownload({
+    path: { id },
+    body: { filename },
+    ...(await authHeaders()),
+  });
   return ticket.url;
 }
 
@@ -53,13 +49,11 @@ export interface UploadMeta {
  * calls `confirmAssetAction`.
  */
 export async function requestUploadAction(meta: UploadMeta): Promise<UploadTicket> {
-  ensureConfigured();
-  return unwrap(await Assets.requestUpload({ body: meta, ...(await authHeaders()) }));
+  return await Assets.requestUpload({ body: meta, ...(await authHeaders()) });
 }
 
 /** Step 3 of upload: confirm so the API captures the final size/content-type. */
 export async function confirmAssetAction(id: string): Promise<void> {
-  ensureConfigured();
-  unwrap(await Assets.confirmAsset({ path: { id }, ...(await authHeaders()) }));
+  await Assets.confirmAsset({ path: { id }, ...(await authHeaders()) });
   revalidatePath("/media");
 }

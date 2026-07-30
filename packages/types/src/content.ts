@@ -7,6 +7,7 @@
 //   completion rule, …). Assets are the one thing kept OUT of the blob (owned by
 //   the assets domain) and surfaced here as `Activity.assetIds`.
 
+import type { CommentSettings } from "./discussion.js";
 import type { DomainEvent } from "./shared.js";
 
 /** The registered content types — every row in the content_items registry is
@@ -18,16 +19,7 @@ export type CourseStatus = "draft" | "published";
 export interface CourseSettings {
   /** Students may download a text transcript for every video in the course. */
   transcriptDownloads: boolean;
-  comments?: {
-    /** Comments show on this course's lessons. */
-    enabled: boolean;
-    /** false = replies are not accepted; comments are a flat list. */
-    threaded: boolean;
-    /** Learner comments are held until a moderator approves them. */
-    requireReview: boolean;
-    /** Learners may react to a comment. */
-    reactions: boolean;
-  };
+  comments?: CommentSettings;
 }
 export interface ActivitySettings {
   comments?: {

@@ -112,8 +112,7 @@ export function CoursePlayer({
       const local = sessionPositions[lessonId]?.[assetId];
       if (local) return local;
       const hydrated = initialPositions?.[lessonId] as
-        | Record<string, VideoAssetSeed | undefined>
-        | undefined;
+        Record<string, VideoAssetSeed | undefined> | undefined;
       return hydrated?.[assetId];
     },
     [sessionPositions, initialPositions],
@@ -149,8 +148,8 @@ export function CoursePlayer({
   const refreshUrl = React.useCallback(async (assetId: string): Promise<string | null> => {
     ensureClientSdk();
     try {
-      const res = await Learn.requestLearnAssetDownload({ path: { id: assetId }, body: {} });
-      return res.data?.url ?? null;
+      const ticket = await Learn.requestLearnAssetDownload({ path: { id: assetId }, body: {} });
+      return ticket.url;
     } catch {
       return null;
     }
@@ -245,7 +244,16 @@ export function CoursePlayer({
         window.setTimeout(() => goNext(true), AUTO_ADVANCE_MS);
       }
     });
-  }, [isCompleted, reporter, course.id, curLessonId, setLessonStatus, showToast, autoAdvance, goNext]);
+  }, [
+    isCompleted,
+    reporter,
+    course.id,
+    curLessonId,
+    setLessonStatus,
+    showToast,
+    autoAdvance,
+    goNext,
+  ]);
 
   const sidebarShownDesktop = !isNarrow && sidebarOpen;
   const sidebarShownMobile = isNarrow && mobileSidebar;
@@ -280,67 +288,67 @@ export function CoursePlayer({
           </p>
         </div>
       ) : (
-      <div className="relative flex min-h-0 flex-1">
-        {showSidebar && sidebarShownMobile && (
-          <div
-            onClick={() => setMobileSidebar(false)}
-            className="absolute inset-0 z-40"
-            style={{ background: "rgba(20,20,18,0.4)" }}
-            aria-hidden
-          />
-        )}
+        <div className="relative flex min-h-0 flex-1">
+          {showSidebar && sidebarShownMobile && (
+            <div
+              onClick={() => setMobileSidebar(false)}
+              className="absolute inset-0 z-40"
+              style={{ background: "rgba(20,20,18,0.4)" }}
+              aria-hidden
+            />
+          )}
 
-        {showSidebar && (
-          <CurriculumSidebar
-            course={course}
-            completion={completion}
-            currentLessonId={curLessonId}
-            sidebarStyle={sidebarStyle}
-            sequentialLocking={sequentialLocking}
-            expanded={expanded}
-            isNarrow={isNarrow}
-            onToggleModule={(id) => setExpanded((e) => ({ ...e, [id]: !e[id] }))}
-            onSelectLesson={selectLesson}
-            onClose={() => setMobileSidebar(false)}
-          />
-        )}
+          {showSidebar && (
+            <CurriculumSidebar
+              course={course}
+              completion={completion}
+              currentLessonId={curLessonId}
+              sidebarStyle={sidebarStyle}
+              sequentialLocking={sequentialLocking}
+              expanded={expanded}
+              isNarrow={isNarrow}
+              onToggleModule={(id) => setExpanded((e) => ({ ...e, [id]: !e[id] }))}
+              onSelectLesson={selectLesson}
+              onClose={() => setMobileSidebar(false)}
+            />
+          )}
 
-        <main className="flex min-w-0 flex-1 flex-col bg-surface-warm-2">
-          <div className="flex-1 overflow-y-auto">
-            {courseCompleted && (
-              <div
-                className="flex items-center gap-[11px] border-b px-6 py-[13px]"
-                style={{
-                  background: "var(--brand-soft)",
-                  borderColor: "var(--brand)",
-                  color: "var(--brand-strong)",
-                }}
+          <main className="flex min-w-0 flex-1 flex-col bg-surface-warm-2">
+            <div className="flex-1 overflow-y-auto">
+              {courseCompleted && (
+                <div
+                  className="flex items-center gap-[11px] border-b px-6 py-[13px]"
+                  style={{
+                    background: "var(--brand-soft)",
+                    borderColor: "var(--brand)",
+                    color: "var(--brand-strong)",
+                  }}
+                >
+                  <span className="text-[13.5px] font-semibold">
+                    You&apos;ve completed this course. Revisit any lesson anytime.
+                  </span>
+                </div>
+              )}
+              <editorMedia.MediaProvider
+                onEvent={onMediaEvent}
+                startPosition={startPosition}
+                refreshUrl={refreshUrl}
               >
-                <span className="text-[13.5px] font-semibold">
-                  You&apos;ve completed this course. Revisit any lesson anytime.
-                </span>
-              </div>
-            )}
-            <editorMedia.MediaProvider
-              onEvent={onMediaEvent}
-              startPosition={startPosition}
-              refreshUrl={refreshUrl}
-            >
-              <ContentArea node={curLesson ? renderedContent[curLessonId] : null} />
-            </editorMedia.MediaProvider>
-            {curLessonId && <DiscussionPanel key={curLessonId} activityId={curLessonId} />}
-          </div>
+                <ContentArea node={curLesson ? renderedContent[curLessonId] : null} />
+              </editorMedia.MediaProvider>
+              {curLessonId && <DiscussionPanel key={curLessonId} activityId={curLessonId} />}
+            </div>
 
-          <FooterNav
-            isCompleted={isCompleted}
-            prevDisabled={curIdx <= 0}
-            nextDisabled={curIdx >= flat.length - 1}
-            onPrev={goPrev}
-            onNext={() => goNext(false)}
-            onMarkComplete={markComplete}
-          />
-        </main>
-      </div>
+            <FooterNav
+              isCompleted={isCompleted}
+              prevDisabled={curIdx <= 0}
+              nextDisabled={curIdx >= flat.length - 1}
+              onPrev={goPrev}
+              onNext={() => goNext(false)}
+              onMarkComplete={markComplete}
+            />
+          </main>
+        </div>
       )}
     </div>
   );

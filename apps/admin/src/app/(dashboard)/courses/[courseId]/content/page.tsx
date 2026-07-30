@@ -1,4 +1,3 @@
-import { requireAuth } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
 import type { CommentStates } from "@/lib/api/types";
 
@@ -16,12 +15,9 @@ export default async function CourseContentTab({
   const modulesPromise = serverApi.listModules(courseId);
   // Discussion is optional; a failure to load the overrides must not take down
   // the content tab. This deliberately absorbs any signal from the call —
-  // including a Next.js redirect thrown by `unwrap` on a 401 — so don't narrow
-  // this catch without weighing that tradeoff again.
-  const commentStatesPromise = serverApi
-    .commentStates(courseId)
-    .catch(() => ({}) as CommentStates);
-  await requireAuth(modulesPromise, commentStatesPromise);
+  // including a Next.js redirect thrown by the SDK's 401 mapping — so don't
+  // narrow this catch without weighing that tradeoff again.
+  const commentStatesPromise = serverApi.commentStates(courseId).catch(() => ({}) as CommentStates);
   const [modules, commentStates] = await Promise.all([modulesPromise, commentStatesPromise]);
 
   return (

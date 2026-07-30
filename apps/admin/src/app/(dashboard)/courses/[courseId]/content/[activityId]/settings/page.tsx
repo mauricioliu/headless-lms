@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 
-import { requireAuth } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
 
 import { ActivitySettingsForm } from "./activity-settings-form";
@@ -14,10 +13,10 @@ export default async function ActivitySettingsPage({
 }) {
   const { courseId, activityId } = await params;
 
-  const modulesPromise = serverApi.listModules(courseId);
-  const coursePromise = serverApi.getCourse(courseId);
-  await requireAuth(modulesPromise, coursePromise);
-  const [modules, course] = await Promise.all([modulesPromise, coursePromise]);
+  const [modules, course] = await Promise.all([
+    serverApi.listModules(courseId),
+    serverApi.getCourse(courseId),
+  ]);
 
   const parent = modules.find((m) => m.activities.some((a) => a.id === activityId));
   const activity = parent?.activities.find((a) => a.id === activityId);

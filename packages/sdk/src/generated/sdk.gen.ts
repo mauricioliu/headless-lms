@@ -258,12 +258,14 @@ export class Organizations {
    */
   public static activateInvite<ThrowOnError extends boolean = false>(
     options: Options<ActivateInviteData, ThrowOnError>,
-  ): RequestResult<ActivateInviteResponses, ActivateInviteErrors, ThrowOnError> {
+  ): RequestResult<ActivateInviteResponses, ActivateInviteErrors, ThrowOnError, "data"> {
     return (options.client ?? client).post<
       ActivateInviteResponses,
       ActivateInviteErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/organizations/invites/activate",
       ...options,
       headers: {
@@ -278,12 +280,14 @@ export class Organizations {
    */
   public static updateOrganization<ThrowOnError extends boolean = false>(
     options: Options<UpdateOrganizationData, ThrowOnError>,
-  ): RequestResult<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError> {
+  ): RequestResult<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError, "data"> {
     return (options.client ?? client).patch<
       UpdateOrganizationResponses,
       UpdateOrganizationErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/organizations",
       ...options,
       headers: {
@@ -298,8 +302,14 @@ export class Organizations {
    */
   public static createOrganization<ThrowOnError extends boolean = false>(
     options: Options<CreateOrganizationData, ThrowOnError>,
-  ): RequestResult<CreateOrganizationResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).post<CreateOrganizationResponses, unknown, ThrowOnError>({
+  ): RequestResult<CreateOrganizationResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).post<
+      CreateOrganizationResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/organizations",
       ...options,
       headers: {
@@ -314,8 +324,9 @@ export class Organizations {
    */
   public static listMembers<ThrowOnError extends boolean = false>(
     options?: Options<ListMembersData, ThrowOnError>,
-  ): RequestResult<ListMembersResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListMembersResponses, unknown, ThrowOnError>({
+  ): RequestResult<ListMembersResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<ListMembersResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/organizations/members",
       ...options,
     });
@@ -326,12 +337,14 @@ export class Organizations {
    */
   public static updateMemberRole<ThrowOnError extends boolean = false>(
     options: Options<UpdateMemberRoleData, ThrowOnError>,
-  ): RequestResult<UpdateMemberRoleResponses, UpdateMemberRoleErrors, ThrowOnError> {
+  ): RequestResult<UpdateMemberRoleResponses, UpdateMemberRoleErrors, ThrowOnError, "data"> {
     return (options.client ?? client).patch<
       UpdateMemberRoleResponses,
       UpdateMemberRoleErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/organizations/members/{id}/role",
       ...options,
       headers: {
@@ -346,12 +359,17 @@ export class Organizations {
    */
   public static removeMember<ThrowOnError extends boolean = false>(
     options: Options<RemoveMemberData, ThrowOnError>,
-  ): RequestResult<RemoveMemberResponses, RemoveMemberErrors, ThrowOnError> {
+  ): RequestResult<RemoveMemberResponses, RemoveMemberErrors, ThrowOnError, "data"> {
     return (options.client ?? client).delete<
       RemoveMemberResponses,
       RemoveMemberErrors,
-      ThrowOnError
-    >({ url: "/api/organizations/members/{id}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/organizations/members/{id}",
+      ...options,
+    });
   }
 
   /**
@@ -359,17 +377,21 @@ export class Organizations {
    */
   public static createInvite<ThrowOnError extends boolean = false>(
     options: Options<CreateInviteData, ThrowOnError>,
-  ): RequestResult<CreateInviteResponses, CreateInviteErrors, ThrowOnError> {
-    return (options.client ?? client).post<CreateInviteResponses, CreateInviteErrors, ThrowOnError>(
-      {
-        url: "/api/organizations/invites",
-        ...options,
-        headers: {
-          "Content-Type": "application/json",
-          ...options.headers,
-        },
+  ): RequestResult<CreateInviteResponses, CreateInviteErrors, ThrowOnError, "data"> {
+    return (options.client ?? client).post<
+      CreateInviteResponses,
+      CreateInviteErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/organizations/invites",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
       },
-    );
+    });
   }
 
   /**
@@ -377,17 +399,21 @@ export class Organizations {
    */
   public static acceptInvite<ThrowOnError extends boolean = false>(
     options: Options<AcceptInviteData, ThrowOnError>,
-  ): RequestResult<AcceptInviteResponses, AcceptInviteErrors, ThrowOnError> {
-    return (options.client ?? client).post<AcceptInviteResponses, AcceptInviteErrors, ThrowOnError>(
-      {
-        url: "/api/organizations/invites/accept",
-        ...options,
-        headers: {
-          "Content-Type": "application/json",
-          ...options.headers,
-        },
+  ): RequestResult<AcceptInviteResponses, AcceptInviteErrors, ThrowOnError, "data"> {
+    return (options.client ?? client).post<
+      AcceptInviteResponses,
+      AcceptInviteErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/organizations/invites/accept",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
       },
-    );
+    });
   }
 }
 
@@ -397,8 +423,9 @@ export class Courses {
    */
   public static listCourses<ThrowOnError extends boolean = false>(
     options?: Options<ListCoursesData, ThrowOnError>,
-  ): RequestResult<ListCoursesResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListCoursesResponses, unknown, ThrowOnError>({
+  ): RequestResult<ListCoursesResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<ListCoursesResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/courses",
       ...options,
     });
@@ -409,8 +436,9 @@ export class Courses {
    */
   public static createCourse<ThrowOnError extends boolean = false>(
     options: Options<CreateCourseData, ThrowOnError>,
-  ): RequestResult<CreateCourseResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).post<CreateCourseResponses, unknown, ThrowOnError>({
+  ): RequestResult<CreateCourseResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).post<CreateCourseResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/courses",
       ...options,
       headers: {
@@ -425,12 +453,17 @@ export class Courses {
    */
   public static deleteCourse<ThrowOnError extends boolean = false>(
     options: Options<DeleteCourseData, ThrowOnError>,
-  ): RequestResult<DeleteCourseResponses, DeleteCourseErrors, ThrowOnError> {
+  ): RequestResult<DeleteCourseResponses, DeleteCourseErrors, ThrowOnError, "data"> {
     return (options.client ?? client).delete<
       DeleteCourseResponses,
       DeleteCourseErrors,
-      ThrowOnError
-    >({ url: "/api/courses/{id}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/courses/{id}",
+      ...options,
+    });
   }
 
   /**
@@ -438,8 +471,14 @@ export class Courses {
    */
   public static getCourse<ThrowOnError extends boolean = false>(
     options: Options<GetCourseData, ThrowOnError>,
-  ): RequestResult<GetCourseResponses, GetCourseErrors, ThrowOnError> {
-    return (options.client ?? client).get<GetCourseResponses, GetCourseErrors, ThrowOnError>({
+  ): RequestResult<GetCourseResponses, GetCourseErrors, ThrowOnError, "data"> {
+    return (options.client ?? client).get<
+      GetCourseResponses,
+      GetCourseErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/courses/{id}",
       ...options,
     });
@@ -450,12 +489,14 @@ export class Courses {
    */
   public static updateCourse<ThrowOnError extends boolean = false>(
     options: Options<UpdateCourseData, ThrowOnError>,
-  ): RequestResult<UpdateCourseResponses, UpdateCourseErrors, ThrowOnError> {
+  ): RequestResult<UpdateCourseResponses, UpdateCourseErrors, ThrowOnError, "data"> {
     return (options.client ?? client).patch<
       UpdateCourseResponses,
       UpdateCourseErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/courses/{id}",
       ...options,
       headers: {
@@ -470,12 +511,19 @@ export class Courses {
    */
   public static updateCourseSettings<ThrowOnError extends boolean = false>(
     options: Options<UpdateCourseSettingsData, ThrowOnError>,
-  ): RequestResult<UpdateCourseSettingsResponses, UpdateCourseSettingsErrors, ThrowOnError> {
+  ): RequestResult<
+    UpdateCourseSettingsResponses,
+    UpdateCourseSettingsErrors,
+    ThrowOnError,
+    "data"
+  > {
     return (options.client ?? client).patch<
       UpdateCourseSettingsResponses,
       UpdateCourseSettingsErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/courses/{id}/settings",
       ...options,
       headers: {
@@ -490,8 +538,9 @@ export class Courses {
    */
   public static listModules<ThrowOnError extends boolean = false>(
     options: Options<ListModulesData, ThrowOnError>,
-  ): RequestResult<ListModulesResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).get<ListModulesResponses, unknown, ThrowOnError>({
+  ): RequestResult<ListModulesResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).get<ListModulesResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/courses/{courseId}/modules",
       ...options,
     });
@@ -502,8 +551,9 @@ export class Courses {
    */
   public static createModule<ThrowOnError extends boolean = false>(
     options: Options<CreateModuleData, ThrowOnError>,
-  ): RequestResult<CreateModuleResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).post<CreateModuleResponses, unknown, ThrowOnError>({
+  ): RequestResult<CreateModuleResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).post<CreateModuleResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/courses/{courseId}/modules",
       ...options,
       headers: {
@@ -518,8 +568,9 @@ export class Courses {
    */
   public static reorderModules<ThrowOnError extends boolean = false>(
     options: Options<ReorderModulesData, ThrowOnError>,
-  ): RequestResult<ReorderModulesResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).post<ReorderModulesResponses, unknown, ThrowOnError>({
+  ): RequestResult<ReorderModulesResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).post<ReorderModulesResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/courses/{courseId}/modules/reorder",
       ...options,
       headers: {
@@ -534,8 +585,9 @@ export class Courses {
    */
   public static deleteModule<ThrowOnError extends boolean = false>(
     options: Options<DeleteModuleData, ThrowOnError>,
-  ): RequestResult<DeleteModuleResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).delete<DeleteModuleResponses, unknown, ThrowOnError>({
+  ): RequestResult<DeleteModuleResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).delete<DeleteModuleResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/courses/{courseId}/modules/{moduleId}",
       ...options,
     });
@@ -546,8 +598,9 @@ export class Courses {
    */
   public static updateModule<ThrowOnError extends boolean = false>(
     options: Options<UpdateModuleData, ThrowOnError>,
-  ): RequestResult<UpdateModuleResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).patch<UpdateModuleResponses, unknown, ThrowOnError>({
+  ): RequestResult<UpdateModuleResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).patch<UpdateModuleResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/courses/{courseId}/modules/{moduleId}",
       ...options,
       headers: {
@@ -562,8 +615,14 @@ export class Courses {
    */
   public static reorderActivities<ThrowOnError extends boolean = false>(
     options: Options<ReorderActivitiesData, ThrowOnError>,
-  ): RequestResult<ReorderActivitiesResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).post<ReorderActivitiesResponses, unknown, ThrowOnError>({
+  ): RequestResult<ReorderActivitiesResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).post<
+      ReorderActivitiesResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/courses/{courseId}/modules/{moduleId}/activities/reorder",
       ...options,
       headers: {
@@ -578,8 +637,9 @@ export class Courses {
    */
   public static createActivity<ThrowOnError extends boolean = false>(
     options: Options<CreateActivityData, ThrowOnError>,
-  ): RequestResult<CreateActivityResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).post<CreateActivityResponses, unknown, ThrowOnError>({
+  ): RequestResult<CreateActivityResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).post<CreateActivityResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/courses/{courseId}/modules/{moduleId}/activities",
       ...options,
       headers: {
@@ -594,8 +654,14 @@ export class Courses {
    */
   public static deleteActivity<ThrowOnError extends boolean = false>(
     options: Options<DeleteActivityData, ThrowOnError>,
-  ): RequestResult<DeleteActivityResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).delete<DeleteActivityResponses, unknown, ThrowOnError>({
+  ): RequestResult<DeleteActivityResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).delete<
+      DeleteActivityResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/courses/{courseId}/modules/{moduleId}/activities/{activityId}",
       ...options,
     });
@@ -606,15 +672,18 @@ export class Courses {
    */
   public static updateActivity<ThrowOnError extends boolean = false>(
     options: Options<UpdateActivityData, ThrowOnError>,
-  ): RequestResult<UpdateActivityResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).patch<UpdateActivityResponses, unknown, ThrowOnError>({
-      url: "/api/courses/{courseId}/modules/{moduleId}/activities/{activityId}",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
+  ): RequestResult<UpdateActivityResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).patch<UpdateActivityResponses, unknown, ThrowOnError, "data">(
+      {
+        responseStyle: "data",
+        url: "/api/courses/{courseId}/modules/{moduleId}/activities/{activityId}",
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
       },
-    });
+    );
   }
 }
 
@@ -624,8 +693,9 @@ export class Downloads {
    */
   public static listDownloads<ThrowOnError extends boolean = false>(
     options?: Options<ListDownloadsData, ThrowOnError>,
-  ): RequestResult<ListDownloadsResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListDownloadsResponses, unknown, ThrowOnError>({
+  ): RequestResult<ListDownloadsResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<ListDownloadsResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/downloads",
       ...options,
     });
@@ -636,8 +706,9 @@ export class Downloads {
    */
   public static createDownload<ThrowOnError extends boolean = false>(
     options: Options<CreateDownloadData, ThrowOnError>,
-  ): RequestResult<CreateDownloadResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).post<CreateDownloadResponses, unknown, ThrowOnError>({
+  ): RequestResult<CreateDownloadResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).post<CreateDownloadResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/downloads",
       ...options,
       headers: {
@@ -652,12 +723,17 @@ export class Downloads {
    */
   public static deleteDownload<ThrowOnError extends boolean = false>(
     options: Options<DeleteDownloadData, ThrowOnError>,
-  ): RequestResult<DeleteDownloadResponses, DeleteDownloadErrors, ThrowOnError> {
+  ): RequestResult<DeleteDownloadResponses, DeleteDownloadErrors, ThrowOnError, "data"> {
     return (options.client ?? client).delete<
       DeleteDownloadResponses,
       DeleteDownloadErrors,
-      ThrowOnError
-    >({ url: "/api/downloads/{downloadId}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/downloads/{downloadId}",
+      ...options,
+    });
   }
 
   /**
@@ -665,8 +741,14 @@ export class Downloads {
    */
   public static getDownload<ThrowOnError extends boolean = false>(
     options: Options<GetDownloadData, ThrowOnError>,
-  ): RequestResult<GetDownloadResponses, GetDownloadErrors, ThrowOnError> {
-    return (options.client ?? client).get<GetDownloadResponses, GetDownloadErrors, ThrowOnError>({
+  ): RequestResult<GetDownloadResponses, GetDownloadErrors, ThrowOnError, "data"> {
+    return (options.client ?? client).get<
+      GetDownloadResponses,
+      GetDownloadErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/downloads/{downloadId}",
       ...options,
     });
@@ -677,12 +759,14 @@ export class Downloads {
    */
   public static updateDownload<ThrowOnError extends boolean = false>(
     options: Options<UpdateDownloadData, ThrowOnError>,
-  ): RequestResult<UpdateDownloadResponses, UpdateDownloadErrors, ThrowOnError> {
+  ): RequestResult<UpdateDownloadResponses, UpdateDownloadErrors, ThrowOnError, "data"> {
     return (options.client ?? client).patch<
       UpdateDownloadResponses,
       UpdateDownloadErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/downloads/{downloadId}",
       ...options,
       headers: {
@@ -697,12 +781,17 @@ export class Downloads {
    */
   public static listDownloadAssets<ThrowOnError extends boolean = false>(
     options: Options<ListDownloadAssetsData, ThrowOnError>,
-  ): RequestResult<ListDownloadAssetsResponses, ListDownloadAssetsErrors, ThrowOnError> {
+  ): RequestResult<ListDownloadAssetsResponses, ListDownloadAssetsErrors, ThrowOnError, "data"> {
     return (options.client ?? client).get<
       ListDownloadAssetsResponses,
       ListDownloadAssetsErrors,
-      ThrowOnError
-    >({ url: "/api/downloads/{downloadId}/assets", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/downloads/{downloadId}/assets",
+      ...options,
+    });
   }
 
   /**
@@ -710,12 +799,14 @@ export class Downloads {
    */
   public static addDownloadAsset<ThrowOnError extends boolean = false>(
     options: Options<AddDownloadAssetData, ThrowOnError>,
-  ): RequestResult<AddDownloadAssetResponses, AddDownloadAssetErrors, ThrowOnError> {
+  ): RequestResult<AddDownloadAssetResponses, AddDownloadAssetErrors, ThrowOnError, "data"> {
     return (options.client ?? client).post<
       AddDownloadAssetResponses,
       AddDownloadAssetErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/downloads/{downloadId}/assets",
       ...options,
       headers: {
@@ -730,12 +821,19 @@ export class Downloads {
    */
   public static reorderDownloadAssets<ThrowOnError extends boolean = false>(
     options: Options<ReorderDownloadAssetsData, ThrowOnError>,
-  ): RequestResult<ReorderDownloadAssetsResponses, ReorderDownloadAssetsErrors, ThrowOnError> {
+  ): RequestResult<
+    ReorderDownloadAssetsResponses,
+    ReorderDownloadAssetsErrors,
+    ThrowOnError,
+    "data"
+  > {
     return (options.client ?? client).put<
       ReorderDownloadAssetsResponses,
       ReorderDownloadAssetsErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/downloads/{downloadId}/assets/order",
       ...options,
       headers: {
@@ -750,12 +848,17 @@ export class Downloads {
    */
   public static removeDownloadAsset<ThrowOnError extends boolean = false>(
     options: Options<RemoveDownloadAssetData, ThrowOnError>,
-  ): RequestResult<RemoveDownloadAssetResponses, RemoveDownloadAssetErrors, ThrowOnError> {
+  ): RequestResult<RemoveDownloadAssetResponses, RemoveDownloadAssetErrors, ThrowOnError, "data"> {
     return (options.client ?? client).delete<
       RemoveDownloadAssetResponses,
       RemoveDownloadAssetErrors,
-      ThrowOnError
-    >({ url: "/api/downloads/{downloadId}/assets/{assetId}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/downloads/{downloadId}/assets/{assetId}",
+      ...options,
+    });
   }
 
   /**
@@ -763,12 +866,14 @@ export class Downloads {
    */
   public static renameDownloadAsset<ThrowOnError extends boolean = false>(
     options: Options<RenameDownloadAssetData, ThrowOnError>,
-  ): RequestResult<RenameDownloadAssetResponses, RenameDownloadAssetErrors, ThrowOnError> {
+  ): RequestResult<RenameDownloadAssetResponses, RenameDownloadAssetErrors, ThrowOnError, "data"> {
     return (options.client ?? client).patch<
       RenameDownloadAssetResponses,
       RenameDownloadAssetErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/downloads/{downloadId}/assets/{assetId}",
       ...options,
       headers: {
@@ -785,8 +890,9 @@ export class Learn {
    */
   public static getLearnOrg<ThrowOnError extends boolean = false>(
     options?: Options<GetLearnOrgData, ThrowOnError>,
-  ): RequestResult<GetLearnOrgResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<GetLearnOrgResponses, unknown, ThrowOnError>({
+  ): RequestResult<GetLearnOrgResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<GetLearnOrgResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/learn/org",
       ...options,
     });
@@ -797,8 +903,14 @@ export class Learn {
    */
   public static listLearnCourses<ThrowOnError extends boolean = false>(
     options?: Options<ListLearnCoursesData, ThrowOnError>,
-  ): RequestResult<ListLearnCoursesResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListLearnCoursesResponses, unknown, ThrowOnError>({
+  ): RequestResult<ListLearnCoursesResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<
+      ListLearnCoursesResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/learn/courses",
       ...options,
     });
@@ -809,12 +921,17 @@ export class Learn {
    */
   public static getLearnCourse<ThrowOnError extends boolean = false>(
     options: Options<GetLearnCourseData, ThrowOnError>,
-  ): RequestResult<GetLearnCourseResponses, GetLearnCourseErrors, ThrowOnError> {
+  ): RequestResult<GetLearnCourseResponses, GetLearnCourseErrors, ThrowOnError, "data"> {
     return (options.client ?? client).get<
       GetLearnCourseResponses,
       GetLearnCourseErrors,
-      ThrowOnError
-    >({ url: "/api/learn/courses/{courseId}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/courses/{courseId}",
+      ...options,
+    });
   }
 
   /**
@@ -822,12 +939,17 @@ export class Learn {
    */
   public static listLearnModules<ThrowOnError extends boolean = false>(
     options: Options<ListLearnModulesData, ThrowOnError>,
-  ): RequestResult<ListLearnModulesResponses, ListLearnModulesErrors, ThrowOnError> {
+  ): RequestResult<ListLearnModulesResponses, ListLearnModulesErrors, ThrowOnError, "data"> {
     return (options.client ?? client).get<
       ListLearnModulesResponses,
       ListLearnModulesErrors,
-      ThrowOnError
-    >({ url: "/api/learn/courses/{courseId}/modules", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/courses/{courseId}/modules",
+      ...options,
+    });
   }
 
   /**
@@ -835,12 +957,14 @@ export class Learn {
    */
   public static reportProgress<ThrowOnError extends boolean = false>(
     options: Options<ReportProgressData, ThrowOnError>,
-  ): RequestResult<ReportProgressResponses, ReportProgressErrors, ThrowOnError> {
+  ): RequestResult<ReportProgressResponses, ReportProgressErrors, ThrowOnError, "data"> {
     return (options.client ?? client).post<
       ReportProgressResponses,
       ReportProgressErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/learn/progress",
       ...options,
       headers: {
@@ -855,12 +979,22 @@ export class Learn {
    */
   public static getLearnCourseProgress<ThrowOnError extends boolean = false>(
     options: Options<GetLearnCourseProgressData, ThrowOnError>,
-  ): RequestResult<GetLearnCourseProgressResponses, GetLearnCourseProgressErrors, ThrowOnError> {
+  ): RequestResult<
+    GetLearnCourseProgressResponses,
+    GetLearnCourseProgressErrors,
+    ThrowOnError,
+    "data"
+  > {
     return (options.client ?? client).get<
       GetLearnCourseProgressResponses,
       GetLearnCourseProgressErrors,
-      ThrowOnError
-    >({ url: "/api/learn/courses/{courseId}/progress", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/courses/{courseId}/progress",
+      ...options,
+    });
   }
 
   /**
@@ -868,12 +1002,22 @@ export class Learn {
    */
   public static listActivityComments<ThrowOnError extends boolean = false>(
     options: Options<ListActivityCommentsData, ThrowOnError>,
-  ): RequestResult<ListActivityCommentsResponses, ListActivityCommentsErrors, ThrowOnError> {
+  ): RequestResult<
+    ListActivityCommentsResponses,
+    ListActivityCommentsErrors,
+    ThrowOnError,
+    "data"
+  > {
     return (options.client ?? client).get<
       ListActivityCommentsResponses,
       ListActivityCommentsErrors,
-      ThrowOnError
-    >({ url: "/api/learn/activities/{activityId}/comments", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/activities/{activityId}/comments",
+      ...options,
+    });
   }
 
   /**
@@ -881,8 +1025,14 @@ export class Learn {
    */
   public static postComment<ThrowOnError extends boolean = false>(
     options: Options<PostCommentData, ThrowOnError>,
-  ): RequestResult<PostCommentResponses, PostCommentErrors, ThrowOnError> {
-    return (options.client ?? client).post<PostCommentResponses, PostCommentErrors, ThrowOnError>({
+  ): RequestResult<PostCommentResponses, PostCommentErrors, ThrowOnError, "data"> {
+    return (options.client ?? client).post<
+      PostCommentResponses,
+      PostCommentErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/learn/activities/{activityId}/comments",
       ...options,
       headers: {
@@ -897,12 +1047,17 @@ export class Learn {
    */
   public static removeOwnComment<ThrowOnError extends boolean = false>(
     options: Options<RemoveOwnCommentData, ThrowOnError>,
-  ): RequestResult<RemoveOwnCommentResponses, RemoveOwnCommentErrors, ThrowOnError> {
+  ): RequestResult<RemoveOwnCommentResponses, RemoveOwnCommentErrors, ThrowOnError, "data"> {
     return (options.client ?? client).delete<
       RemoveOwnCommentResponses,
       RemoveOwnCommentErrors,
-      ThrowOnError
-    >({ url: "/api/learn/comments/{commentId}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/comments/{commentId}",
+      ...options,
+    });
   }
 
   /**
@@ -910,8 +1065,14 @@ export class Learn {
    */
   public static editComment<ThrowOnError extends boolean = false>(
     options: Options<EditCommentData, ThrowOnError>,
-  ): RequestResult<EditCommentResponses, EditCommentErrors, ThrowOnError> {
-    return (options.client ?? client).patch<EditCommentResponses, EditCommentErrors, ThrowOnError>({
+  ): RequestResult<EditCommentResponses, EditCommentErrors, ThrowOnError, "data"> {
+    return (options.client ?? client).patch<
+      EditCommentResponses,
+      EditCommentErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/learn/comments/{commentId}",
       ...options,
       headers: {
@@ -926,12 +1087,17 @@ export class Learn {
    */
   public static unreactToComment<ThrowOnError extends boolean = false>(
     options: Options<UnreactToCommentData, ThrowOnError>,
-  ): RequestResult<UnreactToCommentResponses, UnreactToCommentErrors, ThrowOnError> {
+  ): RequestResult<UnreactToCommentResponses, UnreactToCommentErrors, ThrowOnError, "data"> {
     return (options.client ?? client).delete<
       UnreactToCommentResponses,
       UnreactToCommentErrors,
-      ThrowOnError
-    >({ url: "/api/learn/comments/{commentId}/reactions/{emoji}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/comments/{commentId}/reactions/{emoji}",
+      ...options,
+    });
   }
 
   /**
@@ -939,12 +1105,17 @@ export class Learn {
    */
   public static reactToComment<ThrowOnError extends boolean = false>(
     options: Options<ReactToCommentData, ThrowOnError>,
-  ): RequestResult<ReactToCommentResponses, ReactToCommentErrors, ThrowOnError> {
+  ): RequestResult<ReactToCommentResponses, ReactToCommentErrors, ThrowOnError, "data"> {
     return (options.client ?? client).put<
       ReactToCommentResponses,
       ReactToCommentErrors,
-      ThrowOnError
-    >({ url: "/api/learn/comments/{commentId}/reactions/{emoji}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/comments/{commentId}/reactions/{emoji}",
+      ...options,
+    });
   }
 
   /**
@@ -952,12 +1123,14 @@ export class Learn {
    */
   public static reportComment<ThrowOnError extends boolean = false>(
     options: Options<ReportCommentData, ThrowOnError>,
-  ): RequestResult<ReportCommentResponses, ReportCommentErrors, ThrowOnError> {
+  ): RequestResult<ReportCommentResponses, ReportCommentErrors, ThrowOnError, "data"> {
     return (options.client ?? client).post<
       ReportCommentResponses,
       ReportCommentErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/learn/comments/{commentId}/reports",
       ...options,
       headers: {
@@ -975,13 +1148,16 @@ export class Learn {
   ): RequestResult<
     RequestLearnAssetDownloadResponses,
     RequestLearnAssetDownloadErrors,
-    ThrowOnError
+    ThrowOnError,
+    "data"
   > {
     return (options.client ?? client).post<
       RequestLearnAssetDownloadResponses,
       RequestLearnAssetDownloadErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/learn/assets/{id}/download-url",
       ...options,
       headers: {
@@ -996,8 +1172,14 @@ export class Learn {
    */
   public static listLearnDownloads<ThrowOnError extends boolean = false>(
     options?: Options<ListLearnDownloadsData, ThrowOnError>,
-  ): RequestResult<ListLearnDownloadsResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListLearnDownloadsResponses, unknown, ThrowOnError>({
+  ): RequestResult<ListLearnDownloadsResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<
+      ListLearnDownloadsResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/learn/downloads",
       ...options,
     });
@@ -1008,12 +1190,17 @@ export class Learn {
    */
   public static getLearnDownload<ThrowOnError extends boolean = false>(
     options: Options<GetLearnDownloadData, ThrowOnError>,
-  ): RequestResult<GetLearnDownloadResponses, GetLearnDownloadErrors, ThrowOnError> {
+  ): RequestResult<GetLearnDownloadResponses, GetLearnDownloadErrors, ThrowOnError, "data"> {
     return (options.client ?? client).get<
       GetLearnDownloadResponses,
       GetLearnDownloadErrors,
-      ThrowOnError
-    >({ url: "/api/learn/downloads/{downloadId}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/downloads/{downloadId}",
+      ...options,
+    });
   }
 
   /**
@@ -1021,8 +1208,14 @@ export class Learn {
    */
   public static getLearnDownloadAsset<ThrowOnError extends boolean = false>(
     options: Options<GetLearnDownloadAssetData, ThrowOnError>,
-  ): RequestResult<unknown, GetLearnDownloadAssetErrors, ThrowOnError> {
-    return (options.client ?? client).get<unknown, GetLearnDownloadAssetErrors, ThrowOnError>({
+  ): RequestResult<unknown, GetLearnDownloadAssetErrors, ThrowOnError, "data"> {
+    return (options.client ?? client).get<
+      unknown,
+      GetLearnDownloadAssetErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/learn/downloads/{downloadId}/assets/{assetId}",
       ...options,
     });
@@ -1035,8 +1228,9 @@ export class Discussion {
    */
   public static listComments<ThrowOnError extends boolean = false>(
     options?: Options<ListCommentsData, ThrowOnError>,
-  ): RequestResult<ListCommentsResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListCommentsResponses, unknown, ThrowOnError>({
+  ): RequestResult<ListCommentsResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<ListCommentsResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/comments",
       ...options,
     });
@@ -1047,12 +1241,22 @@ export class Discussion {
    */
   public static moderateRemoveComment<ThrowOnError extends boolean = false>(
     options: Options<ModerateRemoveCommentData, ThrowOnError>,
-  ): RequestResult<ModerateRemoveCommentResponses, ModerateRemoveCommentErrors, ThrowOnError> {
+  ): RequestResult<
+    ModerateRemoveCommentResponses,
+    ModerateRemoveCommentErrors,
+    ThrowOnError,
+    "data"
+  > {
     return (options.client ?? client).delete<
       ModerateRemoveCommentResponses,
       ModerateRemoveCommentErrors,
-      ThrowOnError
-    >({ url: "/api/comments/{commentId}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/comments/{commentId}",
+      ...options,
+    });
   }
 
   /**
@@ -1060,12 +1264,14 @@ export class Discussion {
    */
   public static editComment<ThrowOnError extends boolean = false>(
     options: Options<EditComment2Data, ThrowOnError>,
-  ): RequestResult<EditComment2Responses, EditComment2Errors, ThrowOnError> {
+  ): RequestResult<EditComment2Responses, EditComment2Errors, ThrowOnError, "data"> {
     return (options.client ?? client).patch<
       EditComment2Responses,
       EditComment2Errors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/comments/{commentId}",
       ...options,
       headers: {
@@ -1082,8 +1288,9 @@ export class Students {
    */
   public static listStudents<ThrowOnError extends boolean = false>(
     options?: Options<ListStudentsData, ThrowOnError>,
-  ): RequestResult<ListStudentsResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListStudentsResponses, unknown, ThrowOnError>({
+  ): RequestResult<ListStudentsResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<ListStudentsResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/students",
       ...options,
     });
@@ -1094,12 +1301,14 @@ export class Students {
    */
   public static createStudent<ThrowOnError extends boolean = false>(
     options: Options<CreateStudentData, ThrowOnError>,
-  ): RequestResult<CreateStudentResponses, CreateStudentErrors, ThrowOnError> {
+  ): RequestResult<CreateStudentResponses, CreateStudentErrors, ThrowOnError, "data"> {
     return (options.client ?? client).post<
       CreateStudentResponses,
       CreateStudentErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/students",
       ...options,
       headers: {
@@ -1114,12 +1323,17 @@ export class Students {
    */
   public static deleteStudent<ThrowOnError extends boolean = false>(
     options: Options<DeleteStudentData, ThrowOnError>,
-  ): RequestResult<DeleteStudentResponses, DeleteStudentErrors, ThrowOnError> {
+  ): RequestResult<DeleteStudentResponses, DeleteStudentErrors, ThrowOnError, "data"> {
     return (options.client ?? client).delete<
       DeleteStudentResponses,
       DeleteStudentErrors,
-      ThrowOnError
-    >({ url: "/api/students/{id}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/students/{id}",
+      ...options,
+    });
   }
 
   /**
@@ -1127,8 +1341,14 @@ export class Students {
    */
   public static getStudent<ThrowOnError extends boolean = false>(
     options: Options<GetStudentData, ThrowOnError>,
-  ): RequestResult<GetStudentResponses, GetStudentErrors, ThrowOnError> {
-    return (options.client ?? client).get<GetStudentResponses, GetStudentErrors, ThrowOnError>({
+  ): RequestResult<GetStudentResponses, GetStudentErrors, ThrowOnError, "data"> {
+    return (options.client ?? client).get<
+      GetStudentResponses,
+      GetStudentErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/students/{id}",
       ...options,
     });
@@ -1141,8 +1361,14 @@ export class Entitlements {
    */
   public static listEntitlements<ThrowOnError extends boolean = false>(
     options?: Options<ListEntitlementsData, ThrowOnError>,
-  ): RequestResult<ListEntitlementsResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListEntitlementsResponses, unknown, ThrowOnError>({
+  ): RequestResult<ListEntitlementsResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<
+      ListEntitlementsResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/entitlements",
       ...options,
     });
@@ -1153,8 +1379,14 @@ export class Entitlements {
    */
   public static grantEntitlement<ThrowOnError extends boolean = false>(
     options: Options<GrantEntitlementData, ThrowOnError>,
-  ): RequestResult<GrantEntitlementResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).post<GrantEntitlementResponses, unknown, ThrowOnError>({
+  ): RequestResult<GrantEntitlementResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).post<
+      GrantEntitlementResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/entitlements",
       ...options,
       headers: {
@@ -1169,12 +1401,19 @@ export class Entitlements {
    */
   public static setEntitlementStatus<ThrowOnError extends boolean = false>(
     options: Options<SetEntitlementStatusData, ThrowOnError>,
-  ): RequestResult<SetEntitlementStatusResponses, SetEntitlementStatusErrors, ThrowOnError> {
+  ): RequestResult<
+    SetEntitlementStatusResponses,
+    SetEntitlementStatusErrors,
+    ThrowOnError,
+    "data"
+  > {
     return (options.client ?? client).patch<
       SetEntitlementStatusResponses,
       SetEntitlementStatusErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/entitlements/{id}",
       ...options,
       headers: {
@@ -1191,11 +1430,14 @@ export class Automations {
    */
   public static listAutomations<ThrowOnError extends boolean = false>(
     options?: Options<ListAutomationsData, ThrowOnError>,
-  ): RequestResult<ListAutomationsResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListAutomationsResponses, unknown, ThrowOnError>({
-      url: "/api/automations",
-      ...options,
-    });
+  ): RequestResult<ListAutomationsResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<ListAutomationsResponses, unknown, ThrowOnError, "data">(
+      {
+        responseStyle: "data",
+        url: "/api/automations",
+        ...options,
+      },
+    );
   }
 
   /**
@@ -1203,8 +1445,14 @@ export class Automations {
    */
   public static createAutomation<ThrowOnError extends boolean = false>(
     options: Options<CreateAutomationData, ThrowOnError>,
-  ): RequestResult<CreateAutomationResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).post<CreateAutomationResponses, unknown, ThrowOnError>({
+  ): RequestResult<CreateAutomationResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).post<
+      CreateAutomationResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/automations",
       ...options,
       headers: {
@@ -1219,8 +1467,14 @@ export class Automations {
    */
   public static listAutomationActions<ThrowOnError extends boolean = false>(
     options?: Options<ListAutomationActionsData, ThrowOnError>,
-  ): RequestResult<ListAutomationActionsResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListAutomationActionsResponses, unknown, ThrowOnError>({
+  ): RequestResult<ListAutomationActionsResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<
+      ListAutomationActionsResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/automations/actions",
       ...options,
     });
@@ -1231,8 +1485,14 @@ export class Automations {
    */
   public static listAutomationTriggers<ThrowOnError extends boolean = false>(
     options?: Options<ListAutomationTriggersData, ThrowOnError>,
-  ): RequestResult<ListAutomationTriggersResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<ListAutomationTriggersResponses, unknown, ThrowOnError>({
+  ): RequestResult<ListAutomationTriggersResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<
+      ListAutomationTriggersResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/automations/triggers",
       ...options,
     });
@@ -1243,12 +1503,17 @@ export class Automations {
    */
   public static deleteAutomation<ThrowOnError extends boolean = false>(
     options: Options<DeleteAutomationData, ThrowOnError>,
-  ): RequestResult<DeleteAutomationResponses, DeleteAutomationErrors, ThrowOnError> {
+  ): RequestResult<DeleteAutomationResponses, DeleteAutomationErrors, ThrowOnError, "data"> {
     return (options.client ?? client).delete<
       DeleteAutomationResponses,
       DeleteAutomationErrors,
-      ThrowOnError
-    >({ url: "/api/automations/{id}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/automations/{id}",
+      ...options,
+    });
   }
 
   /**
@@ -1256,12 +1521,17 @@ export class Automations {
    */
   public static getAutomation<ThrowOnError extends boolean = false>(
     options: Options<GetAutomationData, ThrowOnError>,
-  ): RequestResult<GetAutomationResponses, GetAutomationErrors, ThrowOnError> {
+  ): RequestResult<GetAutomationResponses, GetAutomationErrors, ThrowOnError, "data"> {
     return (options.client ?? client).get<
       GetAutomationResponses,
       GetAutomationErrors,
-      ThrowOnError
-    >({ url: "/api/automations/{id}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/automations/{id}",
+      ...options,
+    });
   }
 
   /**
@@ -1269,12 +1539,14 @@ export class Automations {
    */
   public static updateAutomation<ThrowOnError extends boolean = false>(
     options: Options<UpdateAutomationData, ThrowOnError>,
-  ): RequestResult<UpdateAutomationResponses, UpdateAutomationErrors, ThrowOnError> {
+  ): RequestResult<UpdateAutomationResponses, UpdateAutomationErrors, ThrowOnError, "data"> {
     return (options.client ?? client).patch<
       UpdateAutomationResponses,
       UpdateAutomationErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/automations/{id}",
       ...options,
       headers: {
@@ -1289,8 +1561,14 @@ export class Automations {
    */
   public static listAutomationRuns<ThrowOnError extends boolean = false>(
     options: Options<ListAutomationRunsData, ThrowOnError>,
-  ): RequestResult<ListAutomationRunsResponses, unknown, ThrowOnError> {
-    return (options.client ?? client).get<ListAutomationRunsResponses, unknown, ThrowOnError>({
+  ): RequestResult<ListAutomationRunsResponses, unknown, ThrowOnError, "data"> {
+    return (options.client ?? client).get<
+      ListAutomationRunsResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/automations/{id}/runs",
       ...options,
     });
@@ -1303,8 +1581,9 @@ export class Dashboard {
    */
   public static getOverview<ThrowOnError extends boolean = false>(
     options?: Options<GetOverviewData, ThrowOnError>,
-  ): RequestResult<GetOverviewResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<GetOverviewResponses, unknown, ThrowOnError>({
+  ): RequestResult<GetOverviewResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<GetOverviewResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/overview",
       ...options,
     });
@@ -1317,12 +1596,14 @@ export class Assets {
    */
   public static requestUpload<ThrowOnError extends boolean = false>(
     options: Options<RequestUploadData, ThrowOnError>,
-  ): RequestResult<RequestUploadResponses, RequestUploadErrors, ThrowOnError> {
+  ): RequestResult<RequestUploadResponses, RequestUploadErrors, ThrowOnError, "data"> {
     return (options.client ?? client).post<
       RequestUploadResponses,
       RequestUploadErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/uploads",
       ...options,
       headers: {
@@ -1337,10 +1618,17 @@ export class Assets {
    */
   public static confirmAsset<ThrowOnError extends boolean = false>(
     options: Options<ConfirmAssetData, ThrowOnError>,
-  ): RequestResult<ConfirmAssetResponses, ConfirmAssetErrors, ThrowOnError> {
-    return (options.client ?? client).post<ConfirmAssetResponses, ConfirmAssetErrors, ThrowOnError>(
-      { url: "/api/assets/{id}/confirm", ...options },
-    );
+  ): RequestResult<ConfirmAssetResponses, ConfirmAssetErrors, ThrowOnError, "data"> {
+    return (options.client ?? client).post<
+      ConfirmAssetResponses,
+      ConfirmAssetErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/assets/{id}/confirm",
+      ...options,
+    });
   }
 
   /**
@@ -1348,8 +1636,14 @@ export class Assets {
    */
   public static listAssets<ThrowOnError extends boolean = false>(
     options?: Options<ListAssetsData, ThrowOnError>,
-  ): RequestResult<ListAssetsResponses, ListAssetsErrors, ThrowOnError> {
-    return (options?.client ?? client).get<ListAssetsResponses, ListAssetsErrors, ThrowOnError>({
+  ): RequestResult<ListAssetsResponses, ListAssetsErrors, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<
+      ListAssetsResponses,
+      ListAssetsErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
       url: "/api/assets",
       ...options,
     });
@@ -1360,10 +1654,17 @@ export class Assets {
    */
   public static deleteAsset<ThrowOnError extends boolean = false>(
     options: Options<DeleteAssetData, ThrowOnError>,
-  ): RequestResult<DeleteAssetResponses, DeleteAssetErrors, ThrowOnError> {
-    return (options.client ?? client).delete<DeleteAssetResponses, DeleteAssetErrors, ThrowOnError>(
-      { url: "/api/assets/{id}", ...options },
-    );
+  ): RequestResult<DeleteAssetResponses, DeleteAssetErrors, ThrowOnError, "data"> {
+    return (options.client ?? client).delete<
+      DeleteAssetResponses,
+      DeleteAssetErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/assets/{id}",
+      ...options,
+    });
   }
 
   /**
@@ -1371,8 +1672,9 @@ export class Assets {
    */
   public static getAsset<ThrowOnError extends boolean = false>(
     options: Options<GetAssetData, ThrowOnError>,
-  ): RequestResult<GetAssetResponses, GetAssetErrors, ThrowOnError> {
-    return (options.client ?? client).get<GetAssetResponses, GetAssetErrors, ThrowOnError>({
+  ): RequestResult<GetAssetResponses, GetAssetErrors, ThrowOnError, "data"> {
+    return (options.client ?? client).get<GetAssetResponses, GetAssetErrors, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/api/assets/{id}",
       ...options,
     });
@@ -1383,12 +1685,19 @@ export class Assets {
    */
   public static requestAssetDownload<ThrowOnError extends boolean = false>(
     options: Options<RequestAssetDownloadData, ThrowOnError>,
-  ): RequestResult<RequestAssetDownloadResponses, RequestAssetDownloadErrors, ThrowOnError> {
+  ): RequestResult<
+    RequestAssetDownloadResponses,
+    RequestAssetDownloadErrors,
+    ThrowOnError,
+    "data"
+  > {
     return (options.client ?? client).post<
       RequestAssetDownloadResponses,
       RequestAssetDownloadErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/assets/{id}/download-url",
       ...options,
       headers: {
@@ -1405,12 +1714,17 @@ export class ConnectedApps {
    */
   public static listConnectedApps<ThrowOnError extends boolean = false>(
     options?: Options<ListConnectedAppsData, ThrowOnError>,
-  ): RequestResult<ListConnectedAppsResponses, ListConnectedAppsErrors, ThrowOnError> {
+  ): RequestResult<ListConnectedAppsResponses, ListConnectedAppsErrors, ThrowOnError, "data"> {
     return (options?.client ?? client).get<
       ListConnectedAppsResponses,
       ListConnectedAppsErrors,
-      ThrowOnError
-    >({ url: "/api/connected-apps", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/connected-apps",
+      ...options,
+    });
   }
 
   /**
@@ -1418,12 +1732,17 @@ export class ConnectedApps {
    */
   public static revokeConnectedApp<ThrowOnError extends boolean = false>(
     options: Options<RevokeConnectedAppData, ThrowOnError>,
-  ): RequestResult<RevokeConnectedAppResponses, RevokeConnectedAppErrors, ThrowOnError> {
+  ): RequestResult<RevokeConnectedAppResponses, RevokeConnectedAppErrors, ThrowOnError, "data"> {
     return (options.client ?? client).delete<
       RevokeConnectedAppResponses,
       RevokeConnectedAppErrors,
-      ThrowOnError
-    >({ url: "/api/connected-apps/{id}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/connected-apps/{id}",
+      ...options,
+    });
   }
 }
 
@@ -1436,13 +1755,19 @@ export class Integrations {
   ): RequestResult<
     ListAvailableIntegrationsResponses,
     ListAvailableIntegrationsErrors,
-    ThrowOnError
+    ThrowOnError,
+    "data"
   > {
     return (options?.client ?? client).get<
       ListAvailableIntegrationsResponses,
       ListAvailableIntegrationsErrors,
-      ThrowOnError
-    >({ url: "/api/integrations/available", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/integrations/available",
+      ...options,
+    });
   }
 
   /**
@@ -1450,12 +1775,17 @@ export class Integrations {
    */
   public static listConnections<ThrowOnError extends boolean = false>(
     options?: Options<ListConnectionsData, ThrowOnError>,
-  ): RequestResult<ListConnectionsResponses, ListConnectionsErrors, ThrowOnError> {
+  ): RequestResult<ListConnectionsResponses, ListConnectionsErrors, ThrowOnError, "data"> {
     return (options?.client ?? client).get<
       ListConnectionsResponses,
       ListConnectionsErrors,
-      ThrowOnError
-    >({ url: "/api/integrations", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/integrations",
+      ...options,
+    });
   }
 
   /**
@@ -1463,12 +1793,14 @@ export class Integrations {
    */
   public static connectIntegration<ThrowOnError extends boolean = false>(
     options: Options<ConnectIntegrationData, ThrowOnError>,
-  ): RequestResult<ConnectIntegrationResponses, ConnectIntegrationErrors, ThrowOnError> {
+  ): RequestResult<ConnectIntegrationResponses, ConnectIntegrationErrors, ThrowOnError, "data"> {
     return (options.client ?? client).post<
       ConnectIntegrationResponses,
       ConnectIntegrationErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/integrations",
       ...options,
       headers: {
@@ -1483,12 +1815,22 @@ export class Integrations {
    */
   public static disconnectIntegration<ThrowOnError extends boolean = false>(
     options: Options<DisconnectIntegrationData, ThrowOnError>,
-  ): RequestResult<DisconnectIntegrationResponses, DisconnectIntegrationErrors, ThrowOnError> {
+  ): RequestResult<
+    DisconnectIntegrationResponses,
+    DisconnectIntegrationErrors,
+    ThrowOnError,
+    "data"
+  > {
     return (options.client ?? client).delete<
       DisconnectIntegrationResponses,
       DisconnectIntegrationErrors,
-      ThrowOnError
-    >({ url: "/api/integrations/{id}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/integrations/{id}",
+      ...options,
+    });
   }
 
   /**
@@ -1496,12 +1838,17 @@ export class Integrations {
    */
   public static getConnection<ThrowOnError extends boolean = false>(
     options: Options<GetConnectionData, ThrowOnError>,
-  ): RequestResult<GetConnectionResponses, GetConnectionErrors, ThrowOnError> {
+  ): RequestResult<GetConnectionResponses, GetConnectionErrors, ThrowOnError, "data"> {
     return (options.client ?? client).get<
       GetConnectionResponses,
       GetConnectionErrors,
-      ThrowOnError
-    >({ url: "/api/integrations/{id}", ...options });
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/integrations/{id}",
+      ...options,
+    });
   }
 
   /**
@@ -1509,12 +1856,14 @@ export class Integrations {
    */
   public static configureConnection<ThrowOnError extends boolean = false>(
     options: Options<ConfigureConnectionData, ThrowOnError>,
-  ): RequestResult<ConfigureConnectionResponses, ConfigureConnectionErrors, ThrowOnError> {
+  ): RequestResult<ConfigureConnectionResponses, ConfigureConnectionErrors, ThrowOnError, "data"> {
     return (options.client ?? client).patch<
       ConfigureConnectionResponses,
       ConfigureConnectionErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/integrations/{id}",
       ...options,
       headers: {
@@ -1529,12 +1878,19 @@ export class Integrations {
    */
   public static reconnectIntegration<ThrowOnError extends boolean = false>(
     options: Options<ReconnectIntegrationData, ThrowOnError>,
-  ): RequestResult<ReconnectIntegrationResponses, ReconnectIntegrationErrors, ThrowOnError> {
+  ): RequestResult<
+    ReconnectIntegrationResponses,
+    ReconnectIntegrationErrors,
+    ThrowOnError,
+    "data"
+  > {
     return (options.client ?? client).post<
       ReconnectIntegrationResponses,
       ReconnectIntegrationErrors,
-      ThrowOnError
+      ThrowOnError,
+      "data"
     >({
+      responseStyle: "data",
       url: "/api/integrations/{id}/reconnect",
       ...options,
       headers: {
@@ -1548,8 +1904,9 @@ export class Integrations {
 export class Default {
   public static deleteMcp<ThrowOnError extends boolean = false>(
     options?: Options<DeleteMcpData, ThrowOnError>,
-  ): RequestResult<DeleteMcpResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).delete<DeleteMcpResponses, unknown, ThrowOnError>({
+  ): RequestResult<DeleteMcpResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).delete<DeleteMcpResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/mcp",
       ...options,
     });
@@ -1557,8 +1914,9 @@ export class Default {
 
   public static getMcp<ThrowOnError extends boolean = false>(
     options?: Options<GetMcpData, ThrowOnError>,
-  ): RequestResult<GetMcpResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).get<GetMcpResponses, unknown, ThrowOnError>({
+  ): RequestResult<GetMcpResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<GetMcpResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/mcp",
       ...options,
     });
@@ -1566,8 +1924,9 @@ export class Default {
 
   public static postMcp<ThrowOnError extends boolean = false>(
     options?: Options<PostMcpData, ThrowOnError>,
-  ): RequestResult<PostMcpResponses, unknown, ThrowOnError> {
-    return (options?.client ?? client).post<PostMcpResponses, unknown, ThrowOnError>({
+  ): RequestResult<PostMcpResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).post<PostMcpResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
       url: "/mcp",
       ...options,
     });

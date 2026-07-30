@@ -6,82 +6,76 @@ import "server-only";
  * `server-call.ts`), never the shared SDK client.
  *
  * A 404 means the student isn't enrolled in (or can't see) the course — the
- * reads return `null` so the RSC page can `notFound()`. A 401 means the session
- * doesn't resolve to a portal student at all → drop it and redirect to
- * /login?reset=1.
+ * reads return `null` so the RSC page can `notFound()`. A 401 never reaches
+ * here: the SDK's error mapping redirects to /login?reset=1.
  */
+import { unstable_rethrow } from "next/navigation";
 import { Learn } from "@headless-lms/sdk";
 
-import { redirectIfNoStudent, unwrap } from "./shared";
-import { ensureConfigured, authHeaders } from "./server-call";
+import { statusOf } from "./shared";
+import { authHeaders } from "./server-call";
 import type { Course, CourseSummary, Download, DownloadDetail, Module, Org } from "./types";
+
+/** Run a Learn read, mapping a 404 to `null` and rethrowing anything else. */
+async function orNullOn404<T>(read: () => Promise<T>): Promise<T | null> {
+  try {
+    return await read();
+  } catch (e) {
+    unstable_rethrow(e);
+    if (statusOf(e) === 404) return null;
+    throw e;
+  }
+}
+
+/** Run a read whose failure is tolerable, degrading to `null`. The 401 handler
+ *  redirects by throwing, so Next's control-flow errors have to pass through. */
+async function orNull<T>(read: () => Promise<T>): Promise<T | null> {
+  try {
+    return await read();
+  } catch (e) {
+    unstable_rethrow(e);
+    return null;
+  }
+}
 
 export const learnApi = {
   async listCourses(): Promise<CourseSummary[]> {
-    ensureConfigured();
-    return unwrap(await Learn.listLearnCourses(await authHeaders()));
+    return await Learn.listLearnCourses(await authHeaders());
   },
   async org(): Promise<Org> {
-    ensureConfigured();
-    return unwrap(await Learn.getLearnOrg(await authHeaders()));
+    return await Learn.getLearnOrg(await authHeaders());
   },
   async getCourse(courseId: string): Promise<Course | null> {
-    ensureConfigured();
-    const res = await Learn.getLearnCourse({ path: { courseId }, ...(await authHeaders()) });
-    if (res.error) {
-      redirectIfNoStudent(res.response?.status);
-      if ((res.response?.status ?? 0) === 404) return null;
-      throw new Error(`getCourse failed: ${res.response?.status}`);
-    }
-    return res.data ?? null;
+    const headers = await authHeaders();
+    return orNullOn404(() => Learn.getLearnCourse({ path: { courseId }, ...headers }));
   },
   async listModules(courseId: string): Promise<Module[] | null> {
-    ensureConfigured();
-    const res = await Learn.listLearnModules({ path: { courseId }, ...(await authHeaders()) });
-    if (res.error) {
-      redirectIfNoStudent(res.response?.status);
-      if ((res.response?.status ?? 0) === 404) return null;
-      throw new Error(`listModules failed: ${res.response?.status}`);
-    }
-    return res.data ?? null;
+    const headers = await authHeaders();
+    return orNullOn404(() => Learn.listLearnModules({ path: { courseId }, ...headers }));
   },
+  /** Progress is decoration on an otherwise-renderable page, so any failure
+   *  (other than the 401 redirect) degrades to "no progress" rather than
+   *  taking the page down. */
   async courseProgress(courseId: string): Promise<{
     activities: Record<string, "in-progress" | "completed">;
     positions: Record<string, unknown>;
   } | null> {
-    ensureConfigured();
-    const res = await Learn.getLearnCourseProgress({
-      path: { courseId },
-      ...(await authHeaders()),
-    });
-    if (res.error) {
-      redirectIfNoStudent(res.response?.status);
-      return null;
-    }
-    return res.data ?? null;
+    const headers = await authHeaders();
+    return orNull(() => Learn.getLearnCourseProgress({ path: { courseId }, ...headers }));
   },
   async listDownloads(): Promise<Download[]> {
-    ensureConfigured();
-    return unwrap(await Learn.listLearnDownloads(await authHeaders()));
+    return await Learn.listLearnDownloads(await authHeaders());
   },
   async getDownload(downloadId: string): Promise<DownloadDetail | null> {
-    ensureConfigured();
-    const res = await Learn.getLearnDownload({ path: { downloadId }, ...(await authHeaders()) });
-    if (res.error) {
-      redirectIfNoStudent(res.response?.status);
-      if ((res.response?.status ?? 0) === 404) return null;
-      throw new Error(`getDownload failed: ${res.response?.status}`);
-    }
-    return res.data ?? null;
+    const headers = await authHeaders();
+    return orNullOn404(() => Learn.getLearnDownload({ path: { downloadId }, ...headers }));
   },
   /** Sign a fresh short-lived URL for an org asset (e.g. a download thumbnail). */
   async assetUrl(assetId: string): Promise<string | null> {
-    ensureConfigured();
-    const res = await Learn.requestLearnAssetDownload({
-      path: { id: assetId },
-      body: {},
-      ...(await authHeaders()),
-    });
-    return res.error ? null : (res.data?.url ?? null);
+    const headers = await authHeaders();
+    const ticket = await orNull(() =>
+      Learn.requestLearnAssetDownload({ path: { id: assetId }, body: {}, ...headers }),
+    );
+    return ticket?.url ?? null;
   },
 };

@@ -58,6 +58,15 @@ export class ContentServiceImpl implements ContentService {
       orgId,
       SettingsNamespace.content,
       id,
+      {
+        transcriptDownloads: true,
+        comments: {
+          enabled: false,
+          reactions: false,
+          requireReview: false,
+          threaded: false,
+        },
+      },
     );
 
     return {
@@ -107,7 +116,7 @@ export class ContentServiceImpl implements ContentService {
       id,
       value,
     );
-    this.logger.info('course settings patched', { orgId, courseId: id });
+    this.logger.info('course settings patched', { orgId, courseId: id, value });
     return { ...course.settings, ...merged };
   }
 

@@ -18,9 +18,8 @@ import "server-only";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
-import { API_URL } from "../api/server-call";
+import { API_URL } from "../api/api-url";
 import { isManager } from "../roles";
-
 
 export type ServerRole = "owner" | "admin" | "instructor";
 
@@ -123,6 +122,28 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
   };
 });
 
+/**
+ * The data-access gate: every server-side API call runs through this via
+ * `authHeaders()`, so authorization is enforced where the data is fetched
+ * rather than re-declared on each route.
+ *
+ * It requires a *valid, staff-eligible* session and nothing more. An active org
+ * is deliberately not required: the org-creation and org-activation flows call
+ * the API while the session still has no active org, so gating on one here
+ * would deadlock onboarding. Route-level org and role expectations stay with
+ * `requireAuth` / `requireManager`.
+ *
+ * Free after the first call in a request — it wraps the `React.cache`'d resolver.
+ */
+export async function requireSession(): Promise<ServerSession> {
+  const session = await getServerSession();
+  if (!session) redirect("/login");
+  // Valid cookie, no staff role (e.g. a student login) — the login page
+  // force-signs-out on `denied`.
+  if (session.status === "denied") redirect("/login?denied=1");
+  return session;
+}
+
 /** An authenticated session with a resolved active org (`organization` non-null). */
 export type AuthenticatedSession = ServerSession & {
   status: "authenticated";
@@ -155,7 +176,9 @@ export async function requireAuth(...pending: Promise<unknown>[]): Promise<Authe
  * `notFound()` to authenticated non-managers (and `redirect("/login")` when
  * there's no session). Same `pending` contract as `requireAuth`.
  */
-export async function requireManager(...pending: Promise<unknown>[]): Promise<AuthenticatedSession> {
+export async function requireManager(
+  ...pending: Promise<unknown>[]
+): Promise<AuthenticatedSession> {
   const session = await getServerSession();
   if (!session || session.status !== "authenticated" || !isManager(session.role)) {
     for (const p of pending) void p.catch(() => {});

@@ -1,6 +1,9 @@
 // Shared contract primitives reused across resource contracts.
 import { z } from "zod";
 
+/** Fails typecheck when a schema and its domain type drift apart. */
+export type Matches<A, B extends A> = true;
+
 /** Uniform error envelope returned by every non-2xx response. */
 export const ErrorBody = z.object({
   error: z.string(),

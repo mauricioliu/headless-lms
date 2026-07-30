@@ -234,7 +234,7 @@ export function AutomationEditor({
             disabled={pending || (automation != null && !dirty)}
           >
             {pending && <Loader2 className="animate-spin" />}
-            {automation ? "Save changes" : "Create automation"}
+            {automation ? "Save" : "Create automation"}
           </Button>
         </div>
       </div>

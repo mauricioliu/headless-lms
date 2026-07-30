@@ -64,7 +64,7 @@ export function DownloadDetailsForm({ download }: { download: Download }) {
         toast.success("Changes saved");
         router.refresh();
       } catch (err) {
-        toast.error("Couldn't save changes", { description: (err as Error).message });
+        toast.error("Couldn't Save", { description: (err as Error).message });
       }
     });
   }
@@ -92,7 +92,7 @@ export function DownloadDetailsForm({ download }: { download: Download }) {
 
       <div className="flex items-center justify-end gap-2 border-t border-line pt-5">
         <Button type="submit" variant="primary" disabled={isPending || !isDirty}>
-          {isPending ? "Saving…" : "Save changes"}
+          {isPending ? "Saving…" : "Save"}
         </Button>
       </div>
     </form>

@@ -4,8 +4,9 @@
 // The author is the participation's profile minus its email — learners read each
 // other's comments and the list must not be a directory of the cohort's
 // addresses. The staff-facing comment list carries `authorEmail` separately.
+import type { CommentSettings as DomainCommentSettings } from "@headless-lms/types";
 import { z } from "zod";
-import { ListQuery, OrgRole, OrgUserProfileSchema, paginated } from "./shared.js";
+import { ListQuery, type Matches, OrgRole, OrgUserProfileSchema, paginated } from "./shared.js";
 
 export const CommentStatus = z.enum(["pending", "published", "removed"]);
 export type CommentStatus = z.infer<typeof CommentStatus>;
@@ -45,11 +46,20 @@ export const CommentView = z.object({
 });
 export type CommentView = z.infer<typeof CommentView>;
 
-export const CommentsConfig = z.object({
+/** A course's comment settings. Stored under the course, carried on the course
+ *  payload as `settings.comments`. */
+export const CommentSettings = z.object({
   enabled: z.boolean(),
   threaded: z.boolean(),
   requireReview: z.boolean(),
   reactions: z.boolean(),
+});
+export type CommentSettings = z.infer<typeof CommentSettings>;
+type _CommentSettingsMatchesDomain = Matches<DomainCommentSettings, CommentSettings> &
+  Matches<CommentSettings, DomainCommentSettings>;
+
+/** The course settings with an activity's override applied. */
+export const CommentsConfig = CommentSettings.extend({
   state: CommentsState,
 });
 export type CommentsConfig = z.infer<typeof CommentsConfig>;

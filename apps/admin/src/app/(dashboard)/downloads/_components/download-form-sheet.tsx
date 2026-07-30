@@ -79,7 +79,7 @@ export function DownloadFormSheet({
         toast.success(isEdit ? "Changes saved" : "Download created");
         onOpenChange(false);
       } catch (e) {
-        toast.error(isEdit ? "Couldn't save changes" : "Couldn't create download", {
+        toast.error(isEdit ? "Couldn't Save" : "Couldn't create download", {
           description: (e as Error).message,
         });
       }
@@ -97,7 +97,7 @@ export function DownloadFormSheet({
           : "Create a draft download. You can add files next."
       }
       formId={FORM_ID}
-      submitLabel={isEdit ? "Save changes" : "Create download"}
+      submitLabel={isEdit ? "Save" : "Create download"}
       pending={pending}
     >
       <form id={FORM_ID} onSubmit={onSubmit} className="flex flex-col gap-5">

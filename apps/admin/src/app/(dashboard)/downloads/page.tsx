@@ -1,4 +1,3 @@
-import { requireAuth } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
 import { parseListParams } from "@/lib/table/parse-list-params";
 
@@ -16,12 +15,7 @@ export default async function DownloadsPage({
     initialSort: [{ id: "updatedAt", desc: true }],
   });
 
-  // Start the data fetch immediately, await the session gate, then await the
-  // data. The fetch only needs the forwarded cookie (not the session result),
-  // so the two API round-trips run in parallel instead of sequentially.
-  const dataPromise = serverApi.listDownloads(params);
-  await requireAuth(dataPromise);
-  const { rows, total } = await dataPromise;
+  const { rows, total } = await serverApi.listDownloads(params);
 
   return <DownloadsTable rows={rows} total={total} params={params} />;
 }
