@@ -8,7 +8,7 @@ export type {
   ActivityComments,
   Actor,
   AuthorRecord,
-  PostCommentInput,
+  CommentWithContext,
   CourseAccessReader,
 } from './ports.js';
 export type {

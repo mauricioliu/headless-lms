@@ -5,6 +5,7 @@ import type { Activity, Role } from '@headless-lms/types';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 import type { Comment, CommentAuthor, CommentReaction, CommentReport } from './model.js';
 import type {
+  PostCommentInput,
   CommentsConfig,
   CommentView,
   CommentListItem,

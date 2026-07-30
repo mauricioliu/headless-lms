@@ -105,8 +105,6 @@ export const ReportComment = z.object({
 });
 export type ReportComment = z.infer<typeof ReportComment>;
 
-/** The stored row. No courseId — which course an activity sits in is content's
- *  fact, resolved at read time. */
 export const Comment = z.object({
   id: z.string(),
   activityId: z.string(),
@@ -115,8 +113,8 @@ export const Comment = z.object({
   body: z.string(),
   status: CommentStatus,
   removedBy: z.string().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 export type Comment = z.infer<typeof Comment>;
 

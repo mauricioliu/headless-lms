@@ -8,7 +8,6 @@ import { and, asc, desc, eq, ilike, inArray, isNull, sql, type SQL } from 'drizz
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type {
   AuthorRecord,
-  CommentWithContext,
   DiscussionRepository,
 } from '../../../core/discussion/ports.js';
 import type { Comment, CommentReaction, CommentReport } from '@headless-lms/types';
@@ -70,7 +69,6 @@ function toReport(row: typeof commentReports.$inferSelect): CommentReport {
     orgUserId: row.orgUserId,
     reason: row.reason,
     resolvedAt: row.resolvedAt ? row.resolvedAt.toISOString() : null,
-    createdAt: row.createdAt,
   };
 }
 
@@ -273,7 +271,7 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
       .where(where);
   }
 
-  async listComments(orgId: string, query: ListCommentsQuery): Promise<Page<CommentWithContext>> {
+  async listComments(orgId: string, query: ListCommentsQuery): Promise<Page<Comment>> {
     const conditions: SQL[] = [eq(comments.orgId, orgId)];
     if (query.status) {
       conditions.push(eq(comments.status, query.status));
@@ -323,11 +321,7 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
     const [{ total } = { total: 0 }] = await this.listTotal(where);
 
     return {
-      rows: rows.map((r) => ({
-        comment: toComment(r.comment),
-        courseId: r.courseId,
-        activityTitle: r.activityTitle,
-      })),
+      rows: rows.map((r) => toComment(r.comment)),
       total,
       page: query.page,
       pageSize: query.pageSize,
