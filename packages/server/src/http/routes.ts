@@ -13,7 +13,7 @@ import { activitiesRoutes } from './routes/activities.js';
 import { studentsRoutes } from './routes/students.js';
 import { entitlementsRoutes } from './routes/entitlements.js';
 import { automationsRoutes } from './routes/automations.js';
-import { organizationsRoutes, organizationsPublicRoutes } from './routes/organizations.js';
+import { organizationsRoutes } from './routes/organizations.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { assetsRoutes } from './routes/assets.js';
 import { connectedAppsRoutes } from './routes/connected-apps.js';
@@ -26,15 +26,6 @@ export function registerRoutes(
   config: ServerConfig,
 ): void {
   app.get('/health', async () => ({ status: 'ok' }));
-
-  // Invite activation is the one route an invitee can reach without a session —
-  // registered outside the session-guarded plugin below.
-  app.register(async (instance) => {
-    await organizationsPublicRoutes(instance, container, {
-      secureCookies: config.container.secureCookies ?? false,
-    });
-  });
-
 
   app.register(async (instance) => {
     // instance.addHook('onRequest', instance.requireSession);

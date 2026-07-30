@@ -1,9 +1,3 @@
-// discussion — Drizzle repository (implements the core outbound port).
-//
-// Two facts discussion does not own are resolved here rather than stored:
-//   - the author's profile and current role, via the shared display join
-//   - the course an activity sits in, via its module
-// Both change independently of a comment, so a stored copy would go stale.
 import { and, asc, desc, eq, ilike, inArray, isNull, sql, type SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type {
@@ -61,16 +55,7 @@ function toReaction(row: typeof commentReactions.$inferSelect): CommentReaction 
   };
 }
 
-function toReport(row: typeof commentReports.$inferSelect): CommentReport {
-  return {
-    id: row.id,
-    orgId: row.orgId,
-    commentId: row.commentId,
-    orgUserId: row.orgUserId,
-    reason: row.reason,
-    resolvedAt: row.resolvedAt ? row.resolvedAt.toISOString() : null,
-  };
-}
+
 
 export class DrizzleDiscussionRepository implements DiscussionRepository {
   constructor(
@@ -205,7 +190,7 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
       })
       .onConflictDoNothing()
       .returning();
-    return row ? toReport(row) : null;
+    return row ?? null;
   }
 
   async listOpenReports(orgId: string, commentIds: string[]): Promise<CommentReport[]> {
@@ -223,21 +208,9 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
         ),
       )
       .orderBy(commentReports.createdAt);
-    return rows.map(toReport);
+    return rows;
   }
 
-  async resolveReportsFor(orgId: string, commentId: string, resolvedAt: string): Promise<void> {
-    await this.db
-      .update(commentReports)
-      .set({ resolvedAt: new Date(resolvedAt) })
-      .where(
-        and(
-          eq(commentReports.orgId, orgId),
-          eq(commentReports.commentId, commentId),
-          isNull(commentReports.resolvedAt),
-        ),
-      );
-  }
 
   /** The list's one join: comments to their activity, which carries both the
    *  course (denormalised, so the module never enters the query) and the title.
@@ -332,11 +305,7 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
     if (orgUserIds.length === 0) {
       return {};
     }
-    // The shared display join (Task 2): name/email live on org_users, the
-    // avatar on the auth engine's mirrored `user` table, reached through
-    // identity `users`. Both joins are LEFT — user_id is null until an
-    // invitation is accepted. Inlined per-repository (see org-user-profile.ts)
-    // rather than through a generic helper, matching members.ts/students.ts.
+
     const rows = await this.db
       .select({ ...orgUserProfileColumns, role: orgUsers.role })
       .from(orgUsers)

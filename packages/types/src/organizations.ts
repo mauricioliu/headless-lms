@@ -1,6 +1,6 @@
 // organizations context — domain entities, DTOs, and events.
 // The org is the tenant root that owns all org-scoped data; org users and
-// invitations are mirrored from the auth adapter's organization plugin.
+// invites are mirrored from the auth adapter's organization plugin.
 // Owner/member/inviter all reference the identity USER (staff), not a student.
 import type { DomainEvent } from "./shared.js";
 
@@ -19,7 +19,7 @@ export interface Organization {
 }
 
 /**
- * A person's participation in one organization under one role.
+ * Links a user to an organization under one role.
  *
  * The single org-scoped actor: staff and learners are the same row shape,
  * distinguished only by `role`. Named `org_users` rather than "membership"
@@ -28,15 +28,9 @@ export interface Organization {
 export interface OrgUser {
   readonly id: string;
   readonly orgId: string;
-  /**
-   * The identity USER this participation belongs to. NULL for a roster entry an
-   * admin created before the person ever logged in; stamped at invite acceptance.
-   */
-  readonly userId: string | null;
+  /** The identity USER this row links to the org. */
+  readonly userId: string;
   readonly role: Role;
-  readonly email: string;
-  readonly firstName: string;
-  readonly lastName: string;
   /** better-auth member record id — staff only; NULL for students. */
   readonly externalId: string | null;
   readonly createdAt: Date;
@@ -44,10 +38,9 @@ export interface OrgUser {
 }
 
 /**
- * One person's participation in one org, as displayed. `id` is `org_users.id`.
- * `name` is composed from the participation's first and last name; `image` comes
- * from the auth engine's user record, so it is null for a roster entry that has
- * no person behind it yet.
+ * One org user, as displayed. `id` is `org_users.id`;
+ * `name` and `email` come from the identity USER, `image` from the auth engine's
+ * user record.
  */
 export interface OrgUserProfile {
   readonly id: string;
@@ -56,24 +49,24 @@ export interface OrgUserProfile {
   image: string | null;
 }
 
-export interface Invitation {
+export interface Invite {
   readonly id: string;
   readonly orgId: string;
   readonly email: string;
   readonly role: InviteRole;
   readonly status: string;
-  // The identity USER who issued the invitation.
+  // The identity USER who issued the invite.
   readonly invitedBy: string;
   readonly expiresAt: Date | null;
   readonly createdAt: Date;
 }
 
-/** Roles an invitation can carry — staff roles plus the portal student. Never owner. */
+/** Roles an invite can carry — staff roles plus the portal student. Never owner. */
 export type InviteRole = "admin" | "instructor" | "student";
 
 export type OrganizationId = string;
 export type OrgUserId = string;
-export type InvitationId = string;
+export type InviteId = string;
 
 export interface CreateOrganizationInput {
   // Links to the better-auth organization record.
@@ -103,96 +96,78 @@ export interface UpdateOrganizationInput {
 export interface AddOrgUserInput {
   // The owning org's better-auth id (used to locate the domain org).
   orgExternalId: string;
-  // The participation's own better-auth member id.
+  // The org user's own better-auth member id.
   externalId: string;
-  // The identity USER this participation belongs to.
+  // The identity USER this org user links to the org.
   userId: string;
   role: string;
-  email: string;
-  firstName: string;
-  lastName: string;
 }
 
-/**
- * An admin adding someone to the org roster before they hold an account.
- * The only way a participation exists with no person behind it — invitations
- * create nothing, they are claimed at acceptance.
- */
-export interface CreateParticipantInput {
+
+export interface CreateOrgUserInput {
   orgId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
+  userId: string;
   role: Role;
 }
 
-/** A request to mint an invitation: domain-owned token, emailed to the invitee. */
+/** A request to mint an invite: domain-owned token, emailed to the invitee. */
 export interface CreateInviteInput {
   orgId: string;
   email: string;
   role: InviteRole;
-  // The identity USER issuing the invitation.
+  // The identity USER issuing the invite.
   inviterUserId: string;
 }
 
-/** A token-carrying acceptance: the logged-in account claiming an invitation. */
+/** A token-carrying acceptance: the logged-in account claiming an invite. */
 export interface AcceptInviteInput {
   token: string;
   /** The accepting auth account's id. */
-  userExternalId: string;
-  /** The accepting account's email — must match the invitation. */
+  userId: string;
+  /** The accepting account's email — must match the invite. */
   email: string;
 }
 
-/** An invitation was created or re-issued (any role; a resend rotates the token). */
-export interface InvitationCreated extends DomainEvent {
-  type: "invitation.created";
-  invitation: Invitation;
+/** An invite was created or re-issued (any role; a resend rotates the token). */
+export interface InviteCreated extends DomainEvent {
+  type: "invite.created";
+  invite: Invite;
 }
 
-/** A pending invitation was canceled (the token dies with it). */
-export interface InvitationCanceled extends DomainEvent {
-  type: "invitation.canceled";
-  invitationId: string;
+/** A pending invite was canceled (the token dies with it). */
+export interface InviteCanceled extends DomainEvent {
+  type: "invite.canceled";
+  inviteId: string;
 }
 
-/** An invitation was accepted — the org-user participation was granted. */
-export interface InvitationAccepted extends DomainEvent {
-  type: "invitation.accepted";
-  invitationId: string;
+/** An invite was accepted — the org user was created. */
+export interface InviteAccepted extends DomainEvent {
+  type: "invite.accepted";
+  inviteId: string;
   role: string;
   userExternalId: string;
 }
 
-// Participation events. The `student.*` type strings are the published
-// automation and integration contract, so they are kept verbatim even though
-// the payload is now the unified participation row.
+// Org user events. The `student.*` type strings are the published automation
+// and integration contract, so they are kept verbatim even though the payload
+// is the unified org_users row.
 
-/** A participant was added to the roster (admin creation or portal registration). */
+/** A user joined the org (invite redemption or portal registration). */
 export interface StudentCreated extends DomainEvent {
   type: "student.created";
   student: OrgUser;
 }
 
-/** A participant was removed; carries the last known state. */
+/** A user was removed from the org; carries the last known state. */
 export interface StudentDeleted extends DomainEvent {
   type: "student.deleted";
   student: OrgUser;
 }
 
-/** A pending participant was claimed by an auth account (invite acceptance). */
-export interface StudentLinked extends DomainEvent {
-  type: "student.linked";
-  email: string;
-  invitationId: string;
-  userExternalId: string;
-}
-
 /** Domain events the organizations context emits. */
 export type OrganizationEvent =
-  | InvitationCreated
-  | InvitationCanceled
-  | InvitationAccepted
+  | InviteCreated
+  | InviteCanceled
+  | InviteAccepted
   | StudentCreated
-  | StudentDeleted
-  | StudentLinked;
+  | StudentDeleted;

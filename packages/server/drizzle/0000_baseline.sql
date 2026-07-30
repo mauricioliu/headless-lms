@@ -17,15 +17,11 @@ CREATE TABLE "org_users" (
 	"id" text NOT NULL,
 	"user_id" text,
 	"role" text NOT NULL,
-	"email" text NOT NULL,
-	"first_name" text NOT NULL,
-	"last_name" text NOT NULL,
 	"external_id" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "org_users_org_id_id_pk" PRIMARY KEY("org_id","id"),
 	CONSTRAINT "org_users_external_id_unique" UNIQUE("external_id"),
-	CONSTRAINT "org_users_org_id_email_unique" UNIQUE("org_id","email"),
 	CONSTRAINT "org_users_org_id_user_id_unique" UNIQUE("org_id","user_id")
 );
 --> statement-breakpoint

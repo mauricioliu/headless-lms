@@ -18,7 +18,7 @@ interface Org {
 
 /**
  * Org selection for the MCP OAuth flow. The provider redirects here — between
- * login and consent — when the person participates in more than one
+ * login and consent — when the person belongs to more than one
  * organization, because an access token acts in exactly one and the choice
  * cannot be inferred.
  *

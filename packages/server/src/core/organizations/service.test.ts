@@ -15,7 +15,7 @@ import { ConflictError } from '../shared/errors.js';
 import type {
   CreateOrganizationInput,
   AddOrgUserInput,
-  CreateParticipantInput,
+  CreateOrgUserInput,
 } from './types.js';
 
 // Member-management stubs for tests that only exercise the provisioning/course
@@ -161,7 +161,7 @@ function fakeRepo() {
     async findOrgUserByEmail(orgId: string, email: string) {
       return members.find((m) => m.orgId === orgId && m.email === email) ?? null;
     },
-    async insertPendingOrgUser(input: CreateParticipantInput) {
+    async createOrgUser(input: CreateOrgUserInput) {
       const row: OrgUser = {
         id: `m${++n}`,
         orgId: input.orgId,

@@ -34,5 +34,5 @@ export type {
   CreateInviteInput,
   AcceptInviteInput,
   InviteRole,
-  CreateParticipantInput,
+  CreateOrgUserInput,
 } from './types.js';

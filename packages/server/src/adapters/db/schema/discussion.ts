@@ -3,7 +3,7 @@
 // comments-state override are rows in the cross-cutting `settings` store under
 // the `discussion` namespace, scoped by course id and activity id.
 //
-// The author is always an org_users participation, so one column covers both
+// The author is always an org user, so one column covers both
 // learners and staff. Staff-ness is NOT stored — it is read from the author's
 // current role. A removed comment keeps its row so replies below it survive;
 // only the body stops being served.

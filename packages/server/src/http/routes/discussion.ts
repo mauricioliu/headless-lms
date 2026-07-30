@@ -65,21 +65,9 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
       response: { 200: Comment, 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req) => {
-      const scope = await resolveScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: scope.role };
-      if (req.body.body !== undefined) {
-        // edit() renders a CommentView (author, reactions, isOwn) for the
-        // learner surface. publish() only ever returns the raw Comment, so
-        // the two branches of this route share that shape — re-read the row
-        // rather than serve the rendered one.
-        await discussion.edit(scope.orgId, req.params.commentId, actor, req.body.body);
-        const comment = await discussion.getComment(scope.orgId, req.params.commentId);
-        if (!comment) {
-          throw new NotFoundError('Comment', req.params.commentId);
-        }
-        return comment;
-      }
-      return discussion.publish(scope.orgId, req.params.commentId, actor);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+
+      return discussion.publish(req.orgId, req.params.commentId, orgUser!);
     },
   });
 }

@@ -20,8 +20,7 @@ export interface ContentRef {
 export interface Entitlement {
   readonly id: string;
   orgUserId: string;
-  firstName: string;
-  lastName: string;
+  studentName: string;
   studentEmail: string;
   content: ContentRef;
   status: EntitlementStatus;

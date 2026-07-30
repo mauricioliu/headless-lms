@@ -14,7 +14,7 @@ export const ROLES = [
 ] as const satisfies readonly Role[];
 
 /**
- * The roles that operate the back office. `student` participates in the org but
+ * The roles that operate the back office. `student` belongs to the org but
  * never appears on a staff surface, so the member-management types are typed
  * with this narrower union — the exclusion is a compiler guarantee, not a
  * convention a query has to remember.
@@ -75,7 +75,7 @@ const MATRIX: Record<Role, Partial<Record<Permission, Capability>>> = {
     edit_assigned_course: 'assigned',
     view_student_progress: 'assigned',
   },
-  // A learner participates in the org to consume content they hold an
+  // A learner belongs to the org to consume content they hold an
   // entitlement for. No management capability of any kind.
   student: {
     consume_content: 'enrolled',

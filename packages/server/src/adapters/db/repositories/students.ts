@@ -1,12 +1,11 @@
 // students — Drizzle repository (implements the core outbound port).
-// A read-model over participations + entitlements: a "student" row in the report
-// is any org_users row with role 'student', with or without entitlements (roster
-// creation adds zero-entitlement students). Rooted at `org_users` and scoped by
-// its org, with entitlements LEFT JOINed in for the aggregated count.
-// Name/email/joinedAt come from the participation; the avatar comes from the
-// better-auth `user` table, reached via the person row — both LEFT JOINed, since
-// a roster entry has no person until an invitation is accepted.
-import { and, asc, desc, eq, ilike, isNotNull, or, sql, type SQL } from 'drizzle-orm';
+// A read-model over org users + entitlements: a "student" row in the report is
+// any org_users row with role 'student', with or without entitlements. Rooted at
+// `org_users` and scoped by its org, with entitlements LEFT JOINed in for the
+// aggregated count. Name/email come from the identity `users` row (INNER, since
+// user_id is NOT NULL); the avatar comes from the better-auth `user` table,
+// LEFT JOINed via that same identity row.
+import { and, asc, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { StudentsReportRepository } from '../../../reporting/students/index.js';
 import type { Page, Student, StudentsQuery } from '../../../reporting/students/index.js';
@@ -15,14 +14,12 @@ import { STUDENT_ROLE } from '../../../core/organizations/index.js';
 import { user } from '../../auth/schema.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
-import { orgUserProfileColumns, orgUserNameExpr } from './org-user-profile.js';
+import { orgUserProfileColumns } from './org-user-profile.js';
 
 const entitlementCountExpr = sql<number>`count(${entitlements.id})`;
 // Completion now lives in the progress domain; the students report no longer
 // derives a percentage from entitlements. Placeholder until wired to progress.
 const avgProgressExpr = sql<number>`0`;
-// A roster entry has no person until an invitation is accepted.
-const hasAccountExpr = sql<boolean>`${isNotNull(orgUsers.userId)}`;
 
 interface StudentRow {
   id: string;
@@ -32,7 +29,6 @@ interface StudentRow {
   createdAt: Date;
   entitlementCount: number;
   avgProgress: number;
-  hasAccount: boolean;
 }
 
 function toStudent(row: StudentRow): Student {
@@ -45,7 +41,6 @@ function toStudent(row: StudentRow): Student {
     avgProgress: Number(row.avgProgress),
     joinedAt: row.createdAt.toISOString(),
     lastActiveAt: null,
-    hasAccount: row.hasAccount,
   };
 }
 
@@ -62,19 +57,14 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
     const q = query.search?.trim();
     if (q) {
       const like = `%${q}%`;
-      filters.push(
-        or(
-          ilike(orgUsers.firstName, like),
-          ilike(orgUsers.lastName, like),
-          ilike(orgUsers.email, like),
-        )!,
-      );
+      filters.push(or(ilike(users.displayName, like), ilike(users.email, like))!);
     }
     const where = and(...filters);
 
     const [totals] = await this.db
       .select({ total: sql<number>`count(*)` })
       .from(orgUsers)
+      .innerJoin(users, eq(users.id, orgUsers.userId))
       .where(where);
 
     const rows = await this.db
@@ -83,19 +73,18 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
         createdAt: orgUsers.createdAt,
         entitlementCount: entitlementCountExpr,
         avgProgress: avgProgressExpr,
-        hasAccount: hasAccountExpr,
       })
       .from(orgUsers)
       .leftJoin(
         entitlements,
         and(eq(entitlements.orgId, orgUsers.orgId), eq(entitlements.orgUserId, orgUsers.id)),
       )
-      .leftJoin(users, eq(users.id, orgUsers.userId))
+      .innerJoin(users, eq(users.id, orgUsers.userId))
       .leftJoin(user, eq(user.id, users.externalId))
       .where(where)
       // Group by the full composite PK (orgId, id): grouping by id alone gives
       // Postgres no functional dependency for the other students columns.
-      .groupBy(orgUsers.orgId, orgUsers.id, user.image)
+      .groupBy(orgUsers.orgId, orgUsers.id, users.displayName, users.email, user.image)
       .orderBy(...this.resolveOrder(query.sort))
       .limit(query.pageSize)
       .offset((query.page - 1) * query.pageSize);
@@ -111,26 +100,20 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
   async findById(orgId: string, id: string): Promise<Student | null> {
     const [row] = await this.db
       .select({
-        id: orgUsers.id,
-        name: orgUserNameExpr,
-        email: orgUsers.email,
-        image: user.image,
+        ...orgUserProfileColumns,
         createdAt: orgUsers.createdAt,
         entitlementCount: entitlementCountExpr,
         avgProgress: avgProgressExpr,
-        hasAccount: hasAccountExpr,
       })
       .from(orgUsers)
       .leftJoin(
         entitlements,
         and(eq(entitlements.orgId, orgUsers.orgId), eq(entitlements.orgUserId, orgUsers.id)),
       )
-      .leftJoin(users, eq(users.id, orgUsers.userId))
+      .innerJoin(users, eq(users.id, orgUsers.userId))
       .leftJoin(user, eq(user.id, users.externalId))
-      .where(
-        and(eq(orgUsers.orgId, orgId), eq(orgUsers.id, id), eq(orgUsers.role, STUDENT_ROLE)),
-      )
-      .groupBy(orgUsers.orgId, orgUsers.id, user.image)
+      .where(and(eq(orgUsers.orgId, orgId), eq(orgUsers.id, id), eq(orgUsers.role, STUDENT_ROLE)))
+      .groupBy(orgUsers.orgId, orgUsers.id, users.displayName, users.email, user.image)
       .limit(1);
     return row ? toStudent(row) : null;
   }
@@ -141,7 +124,7 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
     const dir = descending ? desc : asc;
     switch (field) {
       case 'email':
-        return [dir(orgUsers.email)];
+        return [dir(users.email)];
       case 'entitlementCount':
         return [dir(entitlementCountExpr)];
       case 'avgProgress':
@@ -150,7 +133,7 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
         return [dir(orgUsers.createdAt)];
       case 'name':
       default:
-        return [dir(orgUserNameExpr)];
+        return [dir(users.displayName)];
     }
   }
 }

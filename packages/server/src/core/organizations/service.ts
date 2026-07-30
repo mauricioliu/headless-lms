@@ -1,39 +1,37 @@
 // organizations context — service implementation (inbound port).
 import type {
+  AuthHeaders,
+  MemberRecord,
+  MembersRepository,
+  MemberWriteContext,
+  OrgAdmin,
   OrganizationService,
   OrganizationsRepository,
   OrganizationsUnitOfWork,
-  MembersRepository,
-  MemberRecord,
-  MemberWriteContext,
-  OrgAdmin,
   PersonResolver,
-  AuthHeaders,
 } from './ports.js';
-import type { Organization, OrgUser, Invitation } from './model.js';
-import { STUDENT_ROLE, parseRole, type Role } from './roles.js';
+import type { Invitation, Organization, OrgUser } from './model.js';
+import { type Role, STUDENT_ROLE } from './roles.js';
 import {
-  OrganizationRuleError,
+  InviteError,
   type Member,
   type MembersQuery,
+  OrganizationRuleError,
   type Page,
 } from './members.js';
 import type {
+  AcceptInviteInput,
+  AddOrgUserInput,
+  CreateInviteInput,
   CreateOrganizationInput,
   NewOrganizationInput,
   UpdateOrganizationInput,
-  AddOrgUserInput,
-  CreateInviteInput,
-  AcceptInviteInput,
-  InviteRole,
-  CreateParticipantInput,
 } from './types.js';
 import type { Logger, OutboxAppender } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 import type { Mailer } from '../shared/mailer.js';
 import { generateInviteToken, hashInviteToken } from '../shared/invite-token.js';
-import { splitName } from '../shared/name.js';
-import { ConflictError, NotFoundError } from '../shared/errors.js';
+import { NotFoundError } from '../shared/errors.js';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -74,7 +72,6 @@ export class OrganizationServiceImpl implements OrganizationService {
   ) {
     this.uow = uow ?? { run: (fn) => fn({ organizations: repo, outbox: noopOutbox }) };
   }
-
 
   async createOrg(input: CreateOrganizationInput): Promise<Organization> {
     const existing = await this.repo.findByExternalId(input.externalId);
@@ -131,18 +128,12 @@ export class OrganizationServiceImpl implements OrganizationService {
     this.logger.info('orgUser removed', { externalId });
   }
 
-  // An invitation creates nothing but itself. Everything needed to build the
-  // participation is in the token, and the row is minted at acceptance when the
-  // person is known — see acceptInvite.
+
   async createInvite(input: CreateInviteInput): Promise<Invitation> {
     const { orgId, email, role, inviterUserId } = input;
-    const existing = await this.repo.findOrgUserByEmail(orgId, email);
-    if (existing?.userId) {
-      this.logger.warn('invite rejected: already a participant', { orgId, role });
-      throw new OrganizationRuleError('This email already belongs to this organization.');
-    }
     const { token, tokenHash } = generateInviteToken();
     const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
+
     const invitation = await this.uow.run(async ({ organizations, outbox }) => {
       const row = await organizations.upsertPendingInvitation(orgId, {
         email,
@@ -151,10 +142,13 @@ export class OrganizationServiceImpl implements OrganizationService {
         tokenHash,
         expiresAt,
       });
-      await outbox.append([{ type: 'invitation.created', orgId, invitation: row }]);
+      await outbox.append([{ type: 'invite.created', orgId, invite: row }]);
       return row;
     });
+
+    // TODO make this workflow durable
     await this.sendInviteEmail(invitation, token);
+
     this.logger.info('invite created', { orgId, invitationId: invitation.id, role });
     return invitation;
   }
@@ -177,183 +171,32 @@ export class OrganizationServiceImpl implements OrganizationService {
 
   async acceptInvite(
     input: AcceptInviteInput,
-  ): Promise<{ orgExternalId: string; role: InviteRole } | null> {
-    const invitation = await this.peekInvite(input.token);
-    if (!invitation) {
+  ): Promise<OrgUser> {
+    const invite = await this.peekInvite(input.token);
+    if (!invite) {
       this.logger.warn('invite accept refused: token invalid or expired');
-      return null;
+      throw new InviteError('invalid invite');
     }
-    if (invitation.email.toLowerCase() !== input.email.toLowerCase()) {
-      this.logger.warn('invite accept refused: email mismatch', {
-        orgId: invitation.orgId,
-        invitationId: invitation.id,
-      });
-      return null;
-    }
-    const org = await this.repo.findById(invitation.orgId);
+
+    const org = await this.repo.findById(invite.orgId);
     if (!org) {
-      return null;
+      throw new InviteError('Org not found');
     }
-    // The account exists by now, so its domain person does too (the auth
-    // adapter provisions one on user creation).
-    const person = await this.people.getUserByExternalId(input.userExternalId);
-    if (!person) {
-      this.logger.warn('invite accept refused: no domain person for the account', {
-        orgId: invitation.orgId,
-        invitationId: invitation.id,
-      });
-      return null;
-    }
-    // Claim-or-create: an admin-built roster entry for this email is claimed so
-    // its entitlements survive; otherwise the participation is created now.
-    // One person holds at most one participation per org. If they already have
-    // one — typically invited under a second address — the invitation cannot be
-    // honoured, and refusing here keeps it from hitting the (org_id, user_id)
-    // unique as an unhandled error.
-    const existing = await this.repo.findOrgUser(invitation.orgId, person.id);
-    if (existing) {
-      this.logger.warn('invite accept refused: already participates in this org', {
-        orgId: invitation.orgId,
-        invitationId: invitation.id,
-        orgUserId: existing.id,
-      });
-      return null;
-    }
-    const settled = await this.claimOrCreateParticipant(
-      invitation,
-      person,
-      input.userExternalId,
-    );
-    if (!settled) {
-      this.logger.warn('invite accept refused: participation could not be settled', {
-        orgId: invitation.orgId,
-        invitationId: invitation.id,
-      });
-      return null;
-    }
-    if (invitation.role !== STUDENT_ROLE) {
-      // Staff also need better-auth's member record; its afterAddMember hook
-      // stamps external_id onto the row we just settled.
-      await this.orgAdmin().grantMembership(org.externalId, input.userExternalId, invitation.role);
-    }
-    await this.uow.run(async ({ organizations, outbox }) => {
-      await organizations.setInvitationStatus(invitation.orgId, invitation.id, 'accepted');
-      await outbox.append([
-        {
-          type: 'invitation.accepted',
-          orgId: invitation.orgId,
-          invitationId: invitation.id,
-          role: invitation.role,
-          userExternalId: input.userExternalId,
-        },
-      ]);
-    });
+
     this.logger.info('invite accepted', {
-      orgId: invitation.orgId,
-      invitationId: invitation.id,
-      role: invitation.role,
+      orgId: invite.orgId,
+      userId: input.userId,
     });
-    return { orgExternalId: org.externalId, role: invitation.role };
+    const orgUser = await this.repo.createOrgUser({
+      orgId: invite.orgId,
+      userId: input.userId,
+      role: invite.role,
+    });
+    return orgUser;
   }
 
-  /**
-   * Settles the participation an accepted invitation implies.
-   *
-   * A roster entry the admin created earlier (`user_id` NULL) is claimed in
-   * place, so entitlements already granted against it stay attached. With no
-   * such entry — every staff invite, and any student invited without first
-   * being added — the participation is created here.
-   */
-  private async claimOrCreateParticipant(
-    invitation: Invitation,
-    person: { id: string; displayName: string },
-    userExternalId: string,
-  ): Promise<boolean> {
-    try {
-      return await this.settleParticipation(invitation, person, userExternalId);
-    } catch (err) {
-      // acceptInvite pre-checks that this person holds no participation here,
-      // but a concurrent accept can take it in between. The uniqueness rule is
-      // the real guard; losing that race is a refusal, not a crash.
-      if (err instanceof ConflictError) {
-        return false;
-      }
-      throw err;
-    }
-  }
 
-  private async settleParticipation(
-    invitation: Invitation,
-    person: { id: string; displayName: string },
-    userExternalId: string,
-  ): Promise<boolean> {
-    const claimed = await this.uow.run(async ({ organizations, outbox }) => {
-      const count = await organizations.claimOrgUser(
-        invitation.orgId,
-        invitation.email,
-        person.id,
-      );
-      if (count > 0) {
-        await outbox.append([
-          {
-            type: 'student.linked',
-            orgId: invitation.orgId,
-            email: invitation.email,
-            invitationId: invitation.id,
-            userExternalId,
-          },
-        ]);
-      }
-      return count > 0;
-    });
-    if (claimed) {
-      return true;
-    }
-    const { first, last } = splitName(person.displayName);
-    await this.uow.run(async ({ organizations, outbox }) => {
-      const created = await organizations.insertPendingOrgUser({
-        orgId: invitation.orgId,
-        email: invitation.email,
-        firstName: first,
-        lastName: last,
-        role: parseRole(invitation.role),
-      });
-      const settled = await organizations.claimOrgUser(
-        invitation.orgId,
-        invitation.email,
-        person.id,
-      );
-      if (settled === 0) {
-        throw new Error('participation was created but could not be claimed');
-      }
-      await outbox.append([
-        { type: 'student.created', orgId: created.orgId, student: created },
-      ]);
-    });
-    return true;
-  }
-
-  // --- Roster (participants) -------------------------------------------------
-
-  async createParticipant(input: CreateParticipantInput): Promise<OrgUser> {
-    const existing = await this.repo.findOrgUserByEmail(input.orgId, input.email);
-    if (existing) {
-      throw new ConflictError('A participant with this email already exists');
-    }
-    const participant = await this.uow.run(async ({ organizations, outbox }) => {
-      const created = await organizations.insertPendingOrgUser(input);
-      await outbox.append([{ type: 'student.created', orgId: created.orgId, student: created }]);
-      return created;
-    });
-    this.logger.info('participant created', {
-      orgId: input.orgId,
-      orgUserId: participant.id,
-      role: input.role,
-    });
-    return participant;
-  }
-
-  async getParticipant(orgId: string, id: string): Promise<OrgUser | null> {
+  async getOrgUser(orgId: string, id: string): Promise<OrgUser | null> {
     return this.repo.findOrgUserById(orgId, id);
   }
 
@@ -396,7 +239,11 @@ export class OrganizationServiceImpl implements OrganizationService {
       if (role === STUDENT_ROLE) {
         await this.mailer.send(email, 'studentInvite', { inviteUrl, studentName: email });
       } else {
-        await this.mailer.send(email, 'memberInvite', { inviteUrl, inviterName: 'Your team', role });
+        await this.mailer.send(email, 'memberInvite', {
+          inviteUrl,
+          inviterName: 'Your team',
+          role,
+        });
       }
     } catch (err) {
       // A failed email must not abort invite creation: the token is already
@@ -417,29 +264,11 @@ export class OrganizationServiceImpl implements OrganizationService {
     return this.repo.findBySlug(slug);
   }
 
-  async getOrgUser(orgId: string, userId: string): Promise<OrgUser | null> {
-    return this.repo.findOrgUser(orgId, userId);
-  }
-
-  // --- Member management (formerly the `team` context) -----------------------
-  // Reads come from the domain mirror; writes go through Better Auth (OrgAdmin),
-  // whose hooks then mirror the change back into the domain tables.
 
   listMembers(orgId: string, query: MembersQuery): Promise<Page<Member>> {
     return this.membersRepo.list(orgId, query);
   }
 
-  async assertInvitable(orgExternalId: string, email: string, role: string): Promise<void> {
-    if (role === STUDENT_ROLE) {
-      return;
-    }
-    const org = await this.requireOrg(orgExternalId);
-    const existing = await this.membersRepo.findByEmail(org.id, email);
-    if (existing) {
-      this.logger.warn('invite rejected: already a member or invited', { orgId: org.id });
-      throw new OrganizationRuleError('That email is already a member or invited');
-    }
-  }
 
   async updateMemberRole(ctx: MemberWriteContext, id: string, role: Role): Promise<Member | null> {
     const member = await this.membersRepo.findById(ctx.orgId, id);

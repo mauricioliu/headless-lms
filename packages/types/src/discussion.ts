@@ -1,7 +1,7 @@
 // discussion context — domain entities, DTOs, and events.
 //
 // A Comment attaches to an activity and optionally replies to another comment.
-// The author is an org_users participation; their profile and role are resolved
+// The author is an org user; their profile and role are resolved
 // at read time and never stored here. A removed comment is retained so its
 // replies survive — only its body stops being served.
 //
@@ -36,7 +36,7 @@ export interface Comment {
 }
 
 /**
- * A comment's author as served to a reader: their participation profile plus
+ * A comment's author as served to a reader: their org user profile plus
  * the role they hold in this org right now. Read fresh on every read — staff
  * standing is never stored on a comment.
  *
@@ -63,7 +63,7 @@ export interface CommentReport {
   readonly orgUserId: string;
   readonly reason: string;
 
-  resolvedAt: string | null;
+  resolvedAt: Date | null;
   readonly createdAt: Date;
 }
 

@@ -1,6 +1,3 @@
-// organizations tables — the domain mirror of the auth adapter's organization
-// plugin. `organizations` is the tenant root (every org-scoped table FKs to it);
-// org users and invitations carry a composite (org_id, id) key.
 import { sql } from 'drizzle-orm';
 import {
   pgTable,
@@ -27,9 +24,7 @@ export const organizations = pgTable('organizations', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-// A person's participation in one organization under one role — the single
-// org-scoped actor for staff and learners alike. Everything actor-shaped
-// (entitlements, progress) FKs (org_id, id) here.
+// A person's link to an organization under one role
 export const orgUsers = pgTable(
   'org_users',
   {
@@ -40,16 +35,12 @@ export const orgUsers = pgTable(
       .notNull()
       .$defaultFn(() => genId('orgUser')),
 
-    // The person. NULL for a roster entry an admin created before the human
-    // ever logged in — invitations never create rows, so this is the only
-    // way a participation exists without an account behind it.
-    userId: text('user_id').references(() => users.id),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
     role: text('role', { enum: ['owner', 'admin', 'instructor', 'student'] }).notNull(),
-    email: text('email').notNull(),
-    firstName: text('first_name').notNull(),
-    lastName: text('last_name').notNull(),
-    // better-auth's member record id. Staff only — students are not members of
-    // the auth-side organization, so theirs stays NULL.
+
+    // optional auth system's member record id.
     externalId: text('external_id').unique(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
@@ -59,20 +50,19 @@ export const orgUsers = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),
-    emailUq: unique().on(t.orgId, t.email),
     userUq: unique().on(t.orgId, t.userId),
   }),
 );
 
-export const invitations = pgTable(
-  'invitations',
+export const invites = pgTable(
+  'invites',
   {
     orgId: text('org_id')
       .notNull()
       .references(() => organizations.id),
     id: text('id')
       .notNull()
-      .$defaultFn(() => genId('invitation')),
+      .$defaultFn(() => genId('invite')),
     email: text('email').notNull(),
     role: text('role', { enum: ['admin', 'instructor', 'student'] }).notNull(),
     status: text('status', {
@@ -87,8 +77,8 @@ export const invitations = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),
-    // One pending invitation per (org, email) — the upsert's conflict target.
-    pendingEmailUq: uniqueIndex('invitations_pending_email_uq')
+    // One pending invite per (org, email) — the upsert's conflict target.
+    pendingEmailUq: uniqueIndex('invites_pending_email_uq')
       .on(t.orgId, t.email)
       .where(sql`${t.status} = 'pending'`),
   }),

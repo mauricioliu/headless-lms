@@ -1,9 +1,9 @@
 // identity context — the person.
 //
 // One row per human, global, mirroring a Better Auth account via `externalId`.
-// A person's participation in an organization — including whether they are
-// staff or a learner there — is the organizations context's OrgUser, not a
-// second identity. See ./organizations.ts.
+// A person's link to an organization — including whether they are staff or a
+// learner there — is the organizations context's OrgUser, not a second
+// identity. See ./organizations.ts.
 
 export interface User {
   readonly id: string;

@@ -100,7 +100,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     return { id: record.id, name: record.name, image: record.image, role: record.role };
   }
 
-  /** Any participation that is not a learner moderates. The role arrives from
+  /** Any org user that is not a learner moderates. The role arrives from
    *  the edge already resolved; core never looks one up to authorise. */
   private isStaff(actor: Actor): boolean {
     return actor.role !== 'student';

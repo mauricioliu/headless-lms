@@ -29,6 +29,11 @@ export interface Page<T> {
   pageSize: number;
 }
 
-/** Raised when an action violates a member-management rule (e.g. reassigning the
- *  owner). Surfaces at the HTTP boundary as 409 Conflict. */
+
 export class OrganizationRuleError extends Error {}
+export class InviteError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InviteError';
+  }
+}

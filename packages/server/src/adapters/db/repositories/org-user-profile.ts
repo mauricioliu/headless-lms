@@ -1,28 +1,25 @@
-// The one display join for a participation's profile.
+// The one display join for an org user's profile.
 //
-// A person's name and email live on org_users (so a roster entry created before
-// the human ever logged in still has them); their avatar lives on the auth
-// engine's mirrored `user` table, reached through the identity `users` row. Both
-// joins are LEFT: user_id is null until an invitation is accepted.
+// Name and email live on the identity `users` row the org_users row links to;
+// the avatar lives on the auth engine's mirrored `user` table, reached through
+// that same identity row. The identity join is INNER (user_id is NOT NULL); the
+// auth join is LEFT, since only the avatar depends on it.
 //
 // Sanctioned by .eslintrc.cjs — "db repositories read the auth adapter's
 // mirrored `user` table for display joins".
 //
 // No `joinOrgUserProfile` helper: Drizzle's query builder type narrows on every
-// chained call, so a generic wrapper around `.leftJoin(...).leftJoin(...)`
+// chained call, so a generic wrapper around `.innerJoin(...).leftJoin(...)`
 // can't be typed without widening it to `unknown` — each repository chains the
 // two joins inline instead.
-import { sql } from 'drizzle-orm';
 import { orgUsers } from '../schema/organizations.js';
+import { users } from '../schema/identity.js';
 import { user } from '../../auth/schema.js';
-
-/** `first last`, trimmed — the single `name` every person DTO exposes. */
-export const orgUserNameExpr = sql<string>`trim(${orgUsers.firstName} || ' ' || ${orgUsers.lastName})`;
 
 /** Spread into a `.select({ ... })` to get the profile columns. */
 export const orgUserProfileColumns = {
   id: orgUsers.id,
-  name: orgUserNameExpr,
-  email: orgUsers.email,
+  name: users.displayName,
+  email: users.email,
   image: user.image,
 };

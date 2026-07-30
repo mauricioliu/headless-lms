@@ -92,7 +92,7 @@ export interface Config {
   /** Consent page URL the MCP OAuth flow redirects to. */
   mcpConsentPage: string;
   /** Org-selection page URL, shown between login and consent when the person
-   *  participates in more than one org. */
+   *  belongs to more than one org. */
   mcpSelectOrgPage: string;
   /** Branding threaded into every email template. Default: brandName "Headless LMS", baseUrl = adminAppUrl.
    *  (studentPortalUrl is composed in from the top-level config field.) */

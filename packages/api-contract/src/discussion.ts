@@ -1,7 +1,7 @@
 // Discussion resource schemas. Comments attach to an activity; settings are
 // per course with an optional per-activity comments state.
 //
-// The author is the participation's profile minus its email — learners read each
+// The author is the org user's profile minus its email — learners read each
 // other's comments and the list must not be a directory of the cohort's
 // addresses. The staff-facing comment list carries `authorEmail` separately.
 import type { CommentSettings as DomainCommentSettings } from "@headless-lms/types";

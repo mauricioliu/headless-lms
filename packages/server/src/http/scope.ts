@@ -1,18 +1,3 @@
-// Resolves a request's session into the domain ids the org-scoped back-office
-// services expect. `req.orgId` is the better-auth active-organization id and
-// `req.authUser` the better-auth user — both set by the `requireOrgSession`
-// preHandler. Back-office routes run `requireOrgSession` then `resolveScope`.
-//
-// Session + active org alone are not staff-only: every better-auth user
-// (including portal students) gets a mirrored domain `users` row, and a
-// student session carries their org as `activeOrganizationId` too. Students
-// now hold an `org_users` row like everyone else, so the participation
-// existing is no longer proof of staff — its role is what gates the
-// back-office API.
-//
-// The active org selects which participation applies, which is what makes an
-// org switcher work: one person can be owner in one org and instructor in
-// another, and the session says which they are acting as.
 import type { FastifyRequest } from 'fastify';
 import type { Container } from '../app/container.js';
 import { isStaffRole, type StaffRole } from '../core/organizations/index.js';
@@ -22,7 +7,7 @@ export interface OrgScope {
   orgId: string;
   /** Domain `users.id` of the acting person. */
   userId: string;
-  /** Domain `org_users.id` — the acting participation in this org. */
+  /** Domain `org_users.id` — the acting org user in this org. */
   orgUserId: string;
   /** The role held in this org. */
   role: StaffRole;

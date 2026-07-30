@@ -30,7 +30,7 @@ export class PrincipalError extends Error {
  *
  * Throws PrincipalError (401) when no domain person maps to the auth user, and
  * PrincipalError (403) when the token names no organization or the person does
- * not participate in the one it names.
+ * not belong to the one it names.
  */
 export async function buildPrincipal(
   token: AccessTokenClaims,
@@ -65,14 +65,14 @@ export async function buildPrincipal(
   // for the rest of the token's lifetime.
   const orgUser = await container.organizations.getOrgUser(org.id, user.id);
   if (!orgUser) {
-    throw new PrincipalError('user does not participate in this organization', 403);
+    throw new PrincipalError('user does not belong to this organization', 403);
   }
 
   // JWT `scope` is a space-separated string per OAuth 2.0 convention.
   const scopes = typeof token.scope === 'string' ? token.scope.split(' ').filter(Boolean) : [];
 
   return {
-    // The participation acted as — the tool layer's self-scope default.
+    // The org user acted as — the tool layer's self-scope default.
     orgUserId: orgUser.id,
     orgId: org.id,
     role: parseRole(orgUser.role),

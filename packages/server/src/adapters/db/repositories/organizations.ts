@@ -1,30 +1,22 @@
 // organizations — Drizzle repository (implements the core outbound port).
-import { eq, and, sql, isNull } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { OrganizationsRepository } from '../../../core/organizations/ports.js';
 import type {
-  Organization,
-  OrgUser,
-  Invitation,
-} from '../../../core/organizations/model.js';
-import { parseRole, normalizeRole } from '../../../core/organizations/index.js';
-import type { NewInvitationRow } from '../../../core/organizations/ports.js';
+  NewInvitationRow,
+  OrganizationsRepository,
+} from '../../../core/organizations/ports.js';
+import type { Invitation, Organization, OrgUser } from '../../../core/organizations/model.js';
+import { normalizeRole, parseRole } from '../../../core/organizations/index.js';
 import type {
-  CreateOrganizationInput,
-  UpdateOrganizationInput,
   AddOrgUserInput,
-  CreateParticipantInput,
+  CreateOrganizationInput,
+  CreateOrgUserInput,
+  UpdateOrganizationInput,
 } from '../../../core/organizations/types.js';
-import {
-  organizations,
-  orgUsers,
-  invitations,
-} from '../schema/organizations.js';
+import { invitations, organizations, orgUsers } from '../schema/organizations.js';
 import { progressRecords } from '../schema/progress.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
-import { ConflictError } from '../../../core/shared/errors.js';
-import { isUniqueViolation } from './pg-errors.js';
 
 const INVITATION_STATUSES = ['pending', 'accepted', 'rejected', 'canceled'] as const;
 type InvitationStatus = (typeof INVITATION_STATUSES)[number];
@@ -129,9 +121,6 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
         userId: input.userId,
         role: normalizeRole(input.role),
         externalId: input.externalId,
-        email: input.email,
-        firstName: input.firstName,
-        lastName: input.lastName,
       })
       .onConflictDoNothing({ target: orgUsers.externalId })
       .returning();
@@ -229,37 +218,16 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row ? { ...row, role: parseRole(row.role) } : null;
   }
 
-  async findOrgUserByEmail(orgId: string, email: string): Promise<OrgUser | null> {
-    const [row] = await this.db
-      .select()
-      .from(orgUsers)
-      .where(and(eq(orgUsers.orgId, orgId), eq(orgUsers.email, email)))
-      .limit(1);
-    return row ? { ...row, role: parseRole(row.role) } : null;
-  }
-
-  async insertPendingOrgUser(input: CreateParticipantInput): Promise<OrgUser> {
-    try {
+  async createOrgUser(input: CreateOrgUserInput): Promise<OrgUser> {
       const [row] = await this.db
         .insert(orgUsers)
         .values({
           orgId: input.orgId,
-          email: input.email,
-          firstName: input.firstName,
-          lastName: input.lastName,
           role: input.role,
         })
         .returning();
-      if (!row) {
-        throw new Error('failed to insert org user');
-      }
-      return { ...row, role: parseRole(row.role) };
-    } catch (err) {
-      if (isUniqueViolation(err)) {
-        throw new ConflictError('A participant with this email already exists');
-      }
-      throw err;
-    }
+
+      return row!;
   }
 
   async deleteOrgUser(orgId: string, id: string): Promise<boolean> {
@@ -273,24 +241,5 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
       .where(and(eq(orgUsers.orgId, orgId), eq(orgUsers.id, id)))
       .returning({ id: orgUsers.id });
     return rows.length > 0;
-  }
-
-  // Throws ConflictError when the person already holds a participation in this
-  // org — `(org_id, user_id)` is unique. Translating here keeps core free of
-  // Postgres error codes; the service treats it as a refusal.
-  async claimOrgUser(orgId: string, email: string, userId: string): Promise<number> {
-    try {
-      const rows = await this.db
-        .update(orgUsers)
-        .set({ userId })
-        .where(and(eq(orgUsers.orgId, orgId), eq(orgUsers.email, email), isNull(orgUsers.userId)))
-        .returning({ id: orgUsers.id });
-      return rows.length;
-    } catch (err) {
-      if (isUniqueViolation(err)) {
-        throw new ConflictError('That account already belongs to this organization');
-      }
-      throw err;
-    }
   }
 }

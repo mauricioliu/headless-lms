@@ -6,7 +6,6 @@ export interface Student extends OrgUserProfile {
   avgProgress: number;
   joinedAt: string;
   lastActiveAt: string | null;
-  hasAccount: boolean;
 }
 
 export interface StudentsQuery {

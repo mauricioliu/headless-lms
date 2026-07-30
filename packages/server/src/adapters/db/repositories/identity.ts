@@ -1,6 +1,6 @@
 // identity — Drizzle repository (implements the core outbound port).
 //
-// The person only. A person's participation in an organization lives in the
+// The person only. A person's link to an organization lives in the
 // organizations context (`org_users`), not here.
 import { eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';

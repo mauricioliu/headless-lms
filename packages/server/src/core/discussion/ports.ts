@@ -23,7 +23,7 @@ export interface ActivityComments {
  * Who is acting, and the role they hold in this org right now.
  *
  * The role is resolved at the HTTP edge from the session's active-org
- * participation and handed in — read fresh on every request, never stored on a
+ * org user and handed in — read fresh on every request, never stored on a
  * comment. Core does not look a role up to authorise; it reads roles back only
  * to render an author, which is presentation.
  */
@@ -126,7 +126,7 @@ export interface DiscussionRepository {
    *  service against the page it gets back, not joined per row here. */
   listComments(orgId: string, query: ListCommentsQuery): Promise<Page<Comment>>;
 
-  /** Profiles and current roles of the given participations, keyed by
+  /** Profiles and current roles of the given org users, keyed by
    *  org_users.id. One join covers the author badge, the moderation card and
    *  the removal placeholder. */
   authorsOf(orgId: string, orgUserIds: string[]): Promise<Record<string, AuthorRecord>>;

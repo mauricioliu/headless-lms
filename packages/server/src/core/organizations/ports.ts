@@ -11,7 +11,7 @@ import type {
   CreateInviteInput,
   AcceptInviteInput,
   InviteRole,
-  CreateParticipantInput,
+  CreateOrgUserInput,
 } from './types.js';
 
 /** Inbound HTTP headers carrying the session, forwarded to the auth provider. */
@@ -48,7 +48,7 @@ export interface OrganizationService extends OrganizationProvisioner {
   // Token-based acceptance by the logged-in account: student → links the pending
   // student row (via identity), staff → grants the orgUser. Returns the org
   // the account should act in, for session stamping; null when refused.
-  acceptInvite(input: AcceptInviteInput): Promise<{ orgExternalId: string; role: InviteRole } | null>;
+  acceptInvite(input: AcceptInviteInput): Promise<OrgUser>;
   // Creates a new organization on the caller's behalf and makes it the session's
   // active org. Drives Better Auth (via OrgAdmin); its hooks mirror the org into
   // the domain, which this method then returns.
@@ -60,11 +60,8 @@ export interface OrganizationService extends OrganizationProvisioner {
     authOrgId: string,
     input: UpdateOrganizationInput,
   ): Promise<Organization>;
-  // --- Roster (participants) ------------------------------------------------
-  // An admin adds someone before they hold an account; the row carries their
-  // entitlements until an invitation is accepted and stamps `user_id`.
-  createParticipant(input: CreateParticipantInput): Promise<OrgUser>;
-  getParticipant(orgId: string, id: string): Promise<OrgUser | null>;
+
+  getOrgUser(orgId: string, id: string): Promise<OrgUser | null>;
   deleteParticipant(orgId: string, id: string): Promise<void>;
   // Resolve an org by its public slug — used by the student portal boundary to
   // map the portal org slug to the tenant org id.
@@ -114,17 +111,10 @@ export interface OrganizationsRepository {
   /** Every org this person participates in, oldest first. */
   findOrgUsersByUser(userId: string): Promise<OrgUser[]>;
   findOrgUserById(orgId: string, id: string): Promise<OrgUser | null>;
-  findOrgUserByEmail(orgId: string, email: string): Promise<OrgUser | null>;
   /** Roster entry with no person behind it yet (`user_id` NULL). */
-  insertPendingOrgUser(input: CreateParticipantInput): Promise<OrgUser>;
+  createOrgUser(input: CreateOrgUserInput): Promise<OrgUser>;
   /** Deletes the participation and its dependent rows; false when none matched. */
   deleteOrgUser(orgId: string, id: string): Promise<boolean>;
-  /**
-   * Stamps `user_id` onto the org's pending row for this email; rows updated.
-   * Throws ConflictError when the person already participates in this org —
-   * one person holds at most one participation per org.
-   */
-  claimOrgUser(orgId: string, email: string, userId: string): Promise<number>;
 }
 
 /** A member row enriched with the ids needed to drive writes. */
