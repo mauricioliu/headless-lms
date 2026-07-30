@@ -26,7 +26,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
   r.route({
     method: 'GET',
     url: '/api/courses',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listCourses',
       tags: ['Courses'],
@@ -43,7 +43,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
   r.route({
     method: 'GET',
     url: '/api/courses/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getCourse',
       tags: ['Courses'],
@@ -53,7 +53,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
-      const course = await courses.get(scope.orgId, req.params.id);
+      const course = await courses.getCourse(scope.orgId, req.params.id);
       if (!course) {
         throw new NotFoundError('Course', req.params.id);
       }
@@ -64,7 +64,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
   r.route({
     method: 'POST',
     url: '/api/courses',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'createCourse',
       tags: ['Courses'],
@@ -74,7 +74,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
     },
     handler: async (req, reply) => {
       const scope = await resolveScope(container, req);
-      const course = await courses.create(scope.orgId, req.body);
+      const course = await courses.createCourse(scope.orgId, req.body);
       return reply.code(201).send(course);
     },
   });
@@ -82,7 +82,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
   r.route({
     method: 'PATCH',
     url: '/api/courses/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'updateCourse',
       tags: ['Courses'],
@@ -93,14 +93,14 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
-      return courses.update(scope.orgId, req.params.id, req.body);
+      return courses.updateCourse(scope.orgId, req.params.id, req.body);
     },
   });
 
   r.route({
     method: 'PATCH',
     url: '/api/courses/:id/settings',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'updateCourseSettings',
       tags: ['Courses'],
@@ -119,7 +119,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
   r.route({
     method: 'DELETE',
     url: '/api/courses/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'deleteCourse',
       tags: ['Courses'],
@@ -129,7 +129,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
     },
     handler: async (req, reply) => {
       const scope = await resolveScope(container, req);
-      await courses.remove(scope.orgId, req.params.id);
+      await courses.deleteCourse(scope.orgId, req.params.id);
       return reply.code(204).send();
     },
   });

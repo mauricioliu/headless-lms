@@ -27,7 +27,7 @@ export async function automationsRoutes(app: FastifyInstance, container: Contain
   r.route({
     method: 'GET',
     url: '/api/automations',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listAutomations',
       tags,
@@ -44,7 +44,7 @@ export async function automationsRoutes(app: FastifyInstance, container: Contain
   r.route({
     method: 'GET',
     url: '/api/automations/actions',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listAutomationActions',
       tags,
@@ -60,7 +60,7 @@ export async function automationsRoutes(app: FastifyInstance, container: Contain
   r.route({
     method: 'GET',
     url: '/api/automations/triggers',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listAutomationTriggers',
       tags,
@@ -76,7 +76,7 @@ export async function automationsRoutes(app: FastifyInstance, container: Contain
   r.route({
     method: 'POST',
     url: '/api/automations',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'createAutomation',
       tags,
@@ -94,7 +94,7 @@ export async function automationsRoutes(app: FastifyInstance, container: Contain
   r.route({
     method: 'GET',
     url: '/api/automations/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getAutomation',
       tags,
@@ -115,7 +115,7 @@ export async function automationsRoutes(app: FastifyInstance, container: Contain
   r.route({
     method: 'PATCH',
     url: '/api/automations/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'updateAutomation',
       tags,
@@ -137,7 +137,7 @@ export async function automationsRoutes(app: FastifyInstance, container: Contain
   r.route({
     method: 'DELETE',
     url: '/api/automations/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'deleteAutomation',
       tags,
@@ -158,7 +158,7 @@ export async function automationsRoutes(app: FastifyInstance, container: Contain
   r.route({
     method: 'GET',
     url: '/api/automations/:id/runs',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listAutomationRuns',
       tags,

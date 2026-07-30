@@ -67,8 +67,15 @@ function structure(overrides?: { a1Settings?: unknown }): Module[] {
       title: 'Module 1',
       seq: 0,
       activities: [
-        { id: 'a1', moduleId: 'm1', seq: 0, settings: overrides?.a1Settings ?? {}, assetIds: [] },
-        { id: 'a2', moduleId: 'm1', seq: 1, settings: {}, assetIds: [] },
+        {
+          id: 'a1',
+          moduleId: 'm1',
+          courseId: 'c1',
+          seq: 0,
+          settings: overrides?.a1Settings ?? {},
+          assetIds: [],
+        },
+        { id: 'a2', moduleId: 'm1', courseId: 'c1', seq: 1, settings: {}, assetIds: [] },
       ],
     },
     {
@@ -76,7 +83,7 @@ function structure(overrides?: { a1Settings?: unknown }): Module[] {
       courseId: 'c1',
       title: 'Module 2',
       seq: 1,
-      activities: [{ id: 'a3', moduleId: 'm2', seq: 0, settings: {}, assetIds: [] }],
+      activities: [{ id: 'a3', moduleId: 'm2', courseId: 'c1', seq: 0, settings: {}, assetIds: [] }],
     },
   ];
 }

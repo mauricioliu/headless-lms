@@ -1,11 +1,11 @@
 // identity context — ports.
 import type { User } from './model.js';
-import type { RegisterUserInput } from './types.js';
+import type { CreateUserInput } from './types.js';
 
 // Capability used by the auth adapter to provision a domain person when a
 // credential user is created — a narrow slice of the identity service.
 export interface UserProvisioner {
-  registerUser(input: RegisterUserInput): Promise<User>;
+  createUser(input: CreateUserInput): Promise<User>;
 }
 
 /** Resolves an auth account to the domain person. Used by the organizations
@@ -19,6 +19,6 @@ export interface IdentityService extends UserProvisioner, UserResolver {}
 
 // Outbound port (persistence contract the repository fulfils).
 export interface IdentityRepository {
-  insertUser(input: RegisterUserInput): Promise<User>;
+  insertUser(input: CreateUserInput): Promise<User>;
   findUserByExternalId(externalId: string): Promise<User | null>;
 }

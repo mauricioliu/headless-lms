@@ -1,7 +1,7 @@
 // Resolves a request's session into the domain ids the org-scoped back-office
 // services expect. `req.orgId` is the better-auth active-organization id and
-// `req.authUser` the better-auth user — both set by the `requireSession`
-// preHandler. Back-office routes run `requireSession` then `resolveScope`.
+// `req.authUser` the better-auth user — both set by the `requireOrgSession`
+// preHandler. Back-office routes run `requireOrgSession` then `resolveScope`.
 //
 // Session + active org alone are not staff-only: every better-auth user
 // (including portal students) gets a mirrored domain `users` row, and a

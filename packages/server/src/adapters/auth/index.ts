@@ -282,8 +282,9 @@ export function createAuth(opts: CreateAuthOptions): Auth {
       user: {
         create: {
           after: async (user) => {
-            // Translate better-auth's user into the identity context's staff User.
-            await opts.identity.registerUser({
+            // Translate better-auth's user into the our User. Use the same ID.
+            await opts.identity.createUser({
+              id: user.id,
               externalId: user.id,
               email: user.email,
               displayName: user.name,
@@ -339,7 +340,7 @@ export interface Auth {
   api: {
     getSession: (input: { headers: Headers }) => Promise<{
       user: AuthUser;
-      session: Record<string, unknown>;
+      session: {activeOrganizationId?: string};
     } | null>;
     // Consumed structurally by the oauth provider's discovery helper
     // (oauthProviderAuthServerMetadata).

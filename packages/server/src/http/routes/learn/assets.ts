@@ -19,7 +19,7 @@ export async function learnAssetsRoutes(app: FastifyInstance, container: Contain
   r.route({
     method: 'POST',
     url: '/api/learn/assets/:id/download-url',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'requestLearnAssetDownload',
       tags: ['Learn'],

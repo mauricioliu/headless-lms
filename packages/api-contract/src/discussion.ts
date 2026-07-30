@@ -41,8 +41,8 @@ export const CommentView = z.object({
   /** Who removed it. null unless removed. */
   removedBy: CommentAuthor.nullable(),
   reactions: z.array(ReactionSummary),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 export type CommentView = z.infer<typeof CommentView>;
 
@@ -126,7 +126,7 @@ export const CommentReport = z.object({
   orgUserId: z.string(),
   reason: z.string(),
   resolvedAt: z.string().nullable(),
-  createdAt: z.string(),
+  createdAt: z.date(),
 });
 export type CommentReport = z.infer<typeof CommentReport>;
 

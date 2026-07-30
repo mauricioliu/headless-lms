@@ -96,7 +96,7 @@ export function registerTools(
         return forbidden();
       }
       try {
-        const course = await container.content.get(principal.orgId, args.id);
+        const course = await container.content.getCourse(principal.orgId, args.id);
         if (!course) {
           return notFound('course', args.id);
         }

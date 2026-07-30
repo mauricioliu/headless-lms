@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { FileText, GripVertical, Pencil, SlidersHorizontal, Trash2 } from "lucide-react";
+import { FileText, GripVertical, SlidersHorizontal, Trash2 } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -34,13 +34,11 @@ export function ItemRow({
   courseId,
   moduleId,
   canEdit,
-  onEdit,
 }: {
   item: Activity;
   courseId: string;
   moduleId: string;
   canEdit: boolean;
-  onEdit: (item: Activity) => void;
 }) {
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
@@ -99,10 +97,6 @@ export function ItemRow({
 
       {canEdit ? (
         <RowActions label="Item actions">
-          <DropdownMenuItem onClick={() => onEdit(item)}>
-            <Pencil className="size-4" />
-            Edit
-          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href={`/courses/${courseId}/content/${item.id}/editor`}>
               <FileText className="size-4" />

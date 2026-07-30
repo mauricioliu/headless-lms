@@ -26,7 +26,7 @@ export async function activitiesRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'GET',
     url: '/api/courses/:courseId/modules',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listModules',
       tags,
@@ -36,14 +36,14 @@ export async function activitiesRoutes(app: FastifyInstance, container: Containe
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
-      return content.listForCourse(scope.orgId, req.params.courseId);
+      return content.listCourseModules(scope.orgId, req.params.courseId);
     },
   });
 
   r.route({
     method: 'POST',
     url: '/api/courses/:courseId/modules',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'createModule',
       tags,
@@ -61,7 +61,7 @@ export async function activitiesRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'POST',
     url: '/api/courses/:courseId/modules/reorder',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'reorderModules',
       tags,
@@ -79,7 +79,7 @@ export async function activitiesRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'PATCH',
     url: '/api/courses/:courseId/modules/:moduleId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'updateModule',
       tags,
@@ -102,7 +102,7 @@ export async function activitiesRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'DELETE',
     url: '/api/courses/:courseId/modules/:moduleId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'deleteModule',
       tags,
@@ -119,7 +119,7 @@ export async function activitiesRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'POST',
     url: '/api/courses/:courseId/modules/:moduleId/activities/reorder',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'reorderActivities',
       tags,
@@ -142,7 +142,7 @@ export async function activitiesRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'POST',
     url: '/api/courses/:courseId/modules/:moduleId/activities',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'createActivity',
       tags,
@@ -160,7 +160,7 @@ export async function activitiesRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'PATCH',
     url: '/api/courses/:courseId/modules/:moduleId/activities/:activityId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'updateActivity',
       tags,
@@ -184,7 +184,7 @@ export async function activitiesRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'DELETE',
     url: '/api/courses/:courseId/modules/:moduleId/activities/:activityId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'deleteActivity',
       tags,

@@ -11,19 +11,15 @@ import type {
   CommentWithContext,
   DiscussionRepository,
 } from '../../../core/discussion/ports.js';
-import type {
-  Comment,
-  CommentReaction,
-  CommentReport,
-} from '../../../core/discussion/model.js';
-import type { ListCommentsQuery, Page } from '../../../core/discussion/types.js';
-import { commentReactions, commentReports, comments } from '../schema/discussion.js';
-import { activities, courses, modules } from '../schema/content.js';
-import { orgUsers } from '../schema/organizations.js';
+import type { Comment, CommentReaction, CommentReport } from '@headless-lms/types';
+import type { ListCommentsQuery, Page } from '@headless-lms/types';
+import { commentReactions, commentReports, comments } from '../schema/index.js';
+import { activities } from '../schema/content.js';
+import { orgUsers } from '../schema/index.js';
 import { users } from '../schema/identity.js';
 import { user } from '../../auth/schema.js';
 import { orgUserProfileColumns } from './org-user-profile.js';
-import type { Logger } from '../../../core/shared/ports.js';
+import type { Logger } from '@headless-lms/types';
 import { noopLogger } from '../../../core/shared/logger.js';
 
 type CommentRow = typeof comments.$inferSelect;
@@ -51,8 +47,18 @@ function toComment(row: CommentRow): Comment {
     body: row.body,
     status: row.status,
     removedBy: row.removedBy ?? null,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+function toReaction(row: typeof commentReactions.$inferSelect): CommentReaction {
+  return {
+    orgId: row.orgId,
+    commentId: row.commentId,
+    orgUserId: row.orgUserId,
+    emoji: row.emoji,
     createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
   };
 }
 
@@ -64,7 +70,7 @@ function toReport(row: typeof commentReports.$inferSelect): CommentReport {
     orgUserId: row.orgUserId,
     reason: row.reason,
     resolvedAt: row.resolvedAt ? row.resolvedAt.toISOString() : null,
-    createdAt: row.createdAt.toISOString(),
+    createdAt: row.createdAt,
   };
 }
 
@@ -113,9 +119,6 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
         ...('body' in patch ? { body: patch.body } : {}),
         ...('status' in patch ? { status: patch.status } : {}),
         ...('removedBy' in patch ? { removedBy: patch.removedBy ?? null } : {}),
-        ...('updatedAt' in patch && patch.updatedAt
-          ? { updatedAt: new Date(patch.updatedAt) }
-          : {}),
       })
       .where(and(eq(comments.orgId, orgId), eq(comments.id, id)))
       .returning();
@@ -141,26 +144,35 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
       .where(
         and(eq(commentReactions.orgId, orgId), inArray(commentReactions.commentId, commentIds)),
       );
-    return rows.map((r) => ({
-      orgId: r.orgId,
-      commentId: r.commentId,
-      orgUserId: r.orgUserId,
-      emoji: r.emoji,
-      createdAt: r.createdAt.toISOString(),
-    }));
+    return rows.map(toReaction);
   }
 
-  async insertReaction(orgId: string, reaction: CommentReaction): Promise<void> {
-    await this.db
+  async insertReaction(
+    orgId: string,
+    reaction: Omit<CommentReaction, 'createdAt'>,
+  ): Promise<CommentReaction> {
+    // `createdAt` is the column default, so the stored row is the only place it
+    // exists. The conflict branch sets the emoji it already holds — a no-op
+    // whose only job is to make RETURNING hand back the existing row.
+    const [row] = await this.db
       .insert(commentReactions)
       .values({
         orgId,
         commentId: reaction.commentId,
         orgUserId: reaction.orgUserId,
         emoji: reaction.emoji,
-        createdAt: new Date(reaction.createdAt),
       })
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: [
+          commentReactions.orgId,
+          commentReactions.commentId,
+          commentReactions.orgUserId,
+          commentReactions.emoji,
+        ],
+        set: { emoji: reaction.emoji },
+      })
+      .returning();
+    return toReaction(row!);
   }
 
   async deleteReaction(
@@ -229,37 +241,21 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
       );
   }
 
-  async courseOfActivity(orgId: string, activityId: string): Promise<string | null> {
-    const [row] = await this.db
-      .select({ courseId: modules.courseId })
-      .from(activities)
-      .innerJoin(
-        modules,
-        and(eq(modules.orgId, activities.orgId), eq(modules.id, activities.moduleId)),
-      )
-      .where(and(eq(activities.orgId, orgId), eq(activities.id, activityId)))
-      .limit(1);
-    return row?.courseId ?? null;
-  }
-
-  /** The list's one join: comments to their activity to its module, which is
-   *  where the course lives. The course filter and the row's activity title
-   *  both come out of that same pass, so neither costs an extra query. */
+  /** The list's one join: comments to their activity, which carries both the
+   *  course (denormalised, so the module never enters the query) and the title.
+   *  The course filter and the row's activity title come out of that same pass,
+   *  so neither costs an extra query. */
   private listRows(where: SQL | undefined) {
     return this.db
       .select({
         comment: comments,
-        courseId: modules.courseId,
+        courseId: activities.courseId,
         activityTitle: activityTitleExpr,
       })
       .from(comments)
       .innerJoin(
         activities,
         and(eq(activities.orgId, comments.orgId), eq(activities.id, comments.activityId)),
-      )
-      .innerJoin(
-        modules,
-        and(eq(modules.orgId, activities.orgId), eq(modules.id, activities.moduleId)),
       )
       .where(where);
   }
@@ -274,10 +270,6 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
         activities,
         and(eq(activities.orgId, comments.orgId), eq(activities.id, comments.activityId)),
       )
-      .innerJoin(
-        modules,
-        and(eq(modules.orgId, activities.orgId), eq(modules.id, activities.moduleId)),
-      )
       .where(where);
   }
 
@@ -287,7 +279,7 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
       conditions.push(eq(comments.status, query.status));
     }
     if (query.courseId) {
-      conditions.push(eq(modules.courseId, query.courseId));
+      conditions.push(eq(activities.courseId, query.courseId));
     }
     if (query.activityId) {
       conditions.push(eq(comments.activityId, query.activityId));

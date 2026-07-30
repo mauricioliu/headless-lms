@@ -47,6 +47,7 @@ export class DrizzleContentStructureRepository implements CourseRepository {
     return {
       id: row.id,
       moduleId: row.moduleId,
+      courseId: row.courseId,
       seq: row.seq,
       settings: row.settings ?? null,
       assetIds: assetRows.map((r) => r.assetId),
@@ -109,6 +110,7 @@ export class DrizzleContentStructureRepository implements CourseRepository {
       list.push({
         id: row.id,
         moduleId: row.moduleId,
+        courseId: row.courseId,
         seq: row.seq,
         settings: row.settings ?? null,
         assetIds: assetIdsByActivity.get(row.id) ?? [],
@@ -327,7 +329,7 @@ export class DrizzleContentStructureRepository implements CourseRepository {
 
         const [ins] = await tx
           .insert(activities)
-          .values({ orgId, moduleId, seq: nextSeq, settings: input.settings ?? null })
+          .values({ orgId, moduleId, courseId, seq: nextSeq, settings: input.settings ?? null })
           .returning({ id: activities.id });
         if (!ins) {
           throw new Error('failed to insert activity');

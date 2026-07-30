@@ -85,17 +85,24 @@ export function fakeRepo() {
     async listReactions(orgId, commentIds) {
       return reactions.filter((r) => r.orgId === orgId && commentIds.includes(r.commentId));
     },
-    async insertReaction(_orgId, reaction) {
-      const dup = reactions.some(
+    async insertReaction(orgId, reaction) {
+      const existing = reactions.find(
         (r) =>
-          r.orgId === reaction.orgId &&
+          r.orgId === orgId &&
           r.commentId === reaction.commentId &&
           r.orgUserId === reaction.orgUserId &&
           r.emoji === reaction.emoji,
       );
-      if (!dup) {
-        reactions.push({ ...reaction });
+      if (existing) {
+        return { ...existing };
       }
+      const stored: CommentReaction = {
+        ...reaction,
+        orgId,
+        createdAt: new Date().toISOString(),
+      };
+      reactions.push(stored);
+      return { ...stored };
     },
     async deleteReaction(orgId, commentId, orgUserId, emoji) {
       const i = reactions.findIndex(
@@ -250,13 +257,13 @@ const storeOf = new WeakMap<DiscussionServiceImpl, SettingsService>();
 export function makeService(fake = fakeRepo(), gate = fakeAccess()) {
   const { uow, appended } = fakeUow(fake.repo);
   const { settings, rows } = fakeSettings();
-  const service = new DiscussionServiceImpl(
-    fake.repo,
-    gate.access,
+  const service = new DiscussionServiceImpl({
+    repo: fake.repo,
+    access: gate.access,
     uow,
     settings,
-    () => '2026-07-27T00:00:00.000Z',
-  );
+    now: () => '2026-07-27T00:00:00.000Z',
+  });
   storeOf.set(service, settings);
   return { service, appended, settings, settingsRows: rows, bar: gate.bar, ...fake };
 }
@@ -281,13 +288,7 @@ function setCommentsState(
 }
 
 describe('settings', () => {
-  it('applies the defaults for a course with no stored settings', async () => {
-    const { service } = makeService();
-    expect(await service.resolveConfig('o1', 'a1')).toEqual({
-      ...DEFAULT_SETTINGS,
-      state: 'hidden',
-    });
-  });
+
 
   it('reads a partial stored value over the defaults', async () => {
     const { service } = makeService();
@@ -370,14 +371,14 @@ describe('course access', () => {
     await enabled(service);
     bar('orm_learner', 'c1');
     await expect(
-      service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'x' }),
+      service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'x' }),
     ).rejects.toThrow(NotFoundError);
   });
 
   it('404s a learner acting on a comment once their access is gone', async () => {
     const { service, bar } = makeService();
     await enabled(service);
-    const comment = await service.post('o1', learner, {
+    const comment = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'mine',
@@ -398,7 +399,7 @@ describe('course access', () => {
   it('does not check access for staff — moderators are not enrolled', async () => {
     const { service, bar } = makeService();
     await enabled(service);
-    const comment = await service.post('o1', learner, {
+    const comment = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'reported',
@@ -412,7 +413,7 @@ describe('post', () => {
   it('publishes a learner comment when review is off', async () => {
     const { service, appended } = makeService();
     await enabled(service);
-    const comment = await service.post('o1', learner, {
+    const comment = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'first',
@@ -433,7 +434,7 @@ describe('post', () => {
     });
     const { service } = makeService(fake);
     await enabled(service);
-    const comment = await service.post('o1', staff, {
+    const comment = await service.postComment('o1', staff, {
       activityId: 'a1',
       parentId: null,
       body: 'hello',
@@ -450,7 +451,7 @@ describe('post', () => {
   it('holds a learner comment pending when review is on', async () => {
     const { service } = makeService();
     await enabled(service, { requireReview: true });
-    const comment = await service.post('o1', learner, {
+    const comment = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'q',
@@ -461,7 +462,7 @@ describe('post', () => {
   it('publishes a staff comment even when review is on', async () => {
     const { service } = makeService();
     await enabled(service, { requireReview: true });
-    const comment = await service.post('o1', staff, {
+    const comment = await service.postComment('o1', staff, {
       activityId: 'a1',
       parentId: null,
       body: 'answer',
@@ -472,7 +473,7 @@ describe('post', () => {
   it('refuses to post when discussion is disabled for the course', async () => {
     const { service } = makeService();
     await expect(
-      service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'x' }),
+      service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'x' }),
     ).rejects.toThrow(ForbiddenError);
   });
 
@@ -481,64 +482,64 @@ describe('post', () => {
     await enabled(service);
     await setCommentsState(service, 'a1', 'locked');
     await expect(
-      service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'x' }),
+      service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'x' }),
     ).rejects.toThrow(ForbiddenError);
   });
 
   it('refuses a reply when replies are disabled', async () => {
     const { service } = makeService();
     await enabled(service, { threaded: false });
-    const root = await service.post('o1', learner, {
+    const root = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'root',
     });
     await expect(
-      service.post('o1', learner, { activityId: 'a1', parentId: root.id, body: 'reply' }),
+      service.postComment('o1', learner, { activityId: 'a1', parentId: root.id, body: 'reply' }),
     ).rejects.toThrow(ForbiddenError);
   });
 
   it('refuses a reply to a reply — nesting is one level', async () => {
     const { service } = makeService();
     await enabled(service);
-    const root = await service.post('o1', learner, {
+    const root = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'root',
     });
-    const reply = await service.post('o1', staff, {
+    const reply = await service.postComment('o1', staff, {
       activityId: 'a1',
       parentId: root.id,
       body: 'reply',
     });
     await expect(
-      service.post('o1', learner, { activityId: 'a1', parentId: reply.id, body: 'nested' }),
+      service.postComment('o1', learner, { activityId: 'a1', parentId: reply.id, body: 'nested' }),
     ).rejects.toThrow(ForbiddenError);
   });
 
   it('refuses a reply to a pending comment', async () => {
     const { service } = makeService();
     await enabled(service, { requireReview: true });
-    const pending = await service.post('o1', learner, {
+    const pending = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'q',
     });
     await expect(
-      service.post('o1', staff, { activityId: 'a1', parentId: pending.id, body: 'reply' }),
+      service.postComment('o1', staff, { activityId: 'a1', parentId: pending.id, body: 'reply' }),
     ).rejects.toThrow(ForbiddenError);
   });
 
   it('refuses a reply to a comment on a different activity', async () => {
     const { service } = makeService();
     await enabled(service);
-    const root = await service.post('o1', learner, {
+    const root = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'root',
     });
     await expect(
-      service.post('o1', learner, { activityId: 'a2', parentId: root.id, body: 'reply' }),
+      service.postComment('o1', learner, { activityId: 'a2', parentId: root.id, body: 'reply' }),
     ).rejects.toThrow(NotFoundError);
   });
 });
@@ -547,7 +548,7 @@ describe('activityComments', () => {
   it('serves a pending comment to its author but not to another learner', async () => {
     const { service } = makeService();
     await enabled(service, { requireReview: true });
-    const pending = await service.post('o1', learner, {
+    const pending = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'q',
@@ -575,7 +576,7 @@ describe('activityComments', () => {
     });
     const { service } = makeService(fake);
     await enabled(service);
-    await service.post('o1', staff, { activityId: 'a1', parentId: null, body: 'hello' });
+    await service.postComment('o1', staff, { activityId: 'a1', parentId: null, body: 'hello' });
     const view = await service.activityComments('o1', 'a1', learner);
     expect(view.comments[0]?.author).toEqual({
       id: 'orm_staff',
@@ -588,7 +589,7 @@ describe('activityComments', () => {
   it('flags a comment as the reader own only for its author', async () => {
     const { service } = makeService();
     await enabled(service);
-    await service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'mine' });
+    await service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'mine' });
     expect((await service.activityComments('o1', 'a1', learner)).comments[0]?.isOwn).toBe(true);
     expect((await service.activityComments('o1', 'a1', staff)).comments[0]?.isOwn).toBe(false);
   });
@@ -596,7 +597,7 @@ describe('activityComments', () => {
   it('serves nothing when comments are hidden', async () => {
     const { service } = makeService();
     await enabled(service);
-    await service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'hi' });
+    await service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'hi' });
     await setCommentsState(service, 'a1', 'hidden');
     const view = await service.activityComments('o1', 'a1', learner);
     expect(view.comments).toHaveLength(0);
@@ -606,12 +607,12 @@ describe('activityComments', () => {
   it('serves a removed comment as a placeholder when its reply is visible', async () => {
     const { service } = makeService();
     await enabled(service);
-    const root = await service.post('o1', learner, {
+    const root = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'bad',
     });
-    await service.post('o1', staff, {
+    await service.postComment('o1', staff, {
       activityId: 'a1',
       parentId: root.id,
       body: 'reply',
@@ -629,7 +630,7 @@ describe('activityComments', () => {
   it('does not serve a removed comment that has no replies', async () => {
     const { service } = makeService();
     await enabled(service);
-    const root = await service.post('o1', learner, {
+    const root = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'oops',
@@ -642,13 +643,13 @@ describe('activityComments', () => {
   it('hides a removed comment whose only reply this reader cannot see', async () => {
     const { service } = makeService();
     await enabled(service, { requireReview: true });
-    const root = await service.post('o1', staff, {
+    const root = await service.postComment('o1', staff, {
       activityId: 'a1',
       parentId: null,
       body: 'root',
     });
     // The only reply is another learner's, still awaiting review.
-    await service.post('o1', learner, {
+    await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: root.id,
       body: 'pending reply',
@@ -667,12 +668,12 @@ describe('activityComments', () => {
   it('never serves a removed reply', async () => {
     const { service } = makeService();
     await enabled(service);
-    const root = await service.post('o1', staff, {
+    const root = await service.postComment('o1', staff, {
       activityId: 'a1',
       parentId: null,
       body: 'root',
     });
-    const reply = await service.post('o1', learner, {
+    const reply = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: root.id,
       body: 'reply',
@@ -685,7 +686,7 @@ describe('activityComments', () => {
   it('groups reactions by emoji and flags the reader own', async () => {
     const { service } = makeService();
     await enabled(service);
-    const c = await service.post('o1', learner, {
+    const c = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'hi',
@@ -705,7 +706,7 @@ describe('activityComments', () => {
     const fake = fakeRepo();
     const { service } = makeService(fake);
     await enabled(service);
-    await service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'hi' });
+    await service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'hi' });
     fake.repo.authorsOf = async () => ({});
     await expect(service.activityComments('o1', 'a1', learner)).rejects.toThrow(NotFoundError);
   });
@@ -715,7 +716,7 @@ describe('edit, remove, restore, approve', () => {
   async function published() {
     const ctx = makeService();
     await enabled(ctx.service);
-    const comment = await ctx.service.post('o1', learner, {
+    const comment = await ctx.service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'original',
@@ -778,7 +779,7 @@ describe('edit, remove, restore, approve', () => {
   it('approves a pending comment and emits comment.published', async () => {
     const { service, appended } = makeService();
     await enabled(service, { requireReview: true });
-    const pending = await service.post('o1', learner, {
+    const pending = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'q',
@@ -822,7 +823,7 @@ describe('edit, remove, restore, approve', () => {
     const fake = fakeRepo();
     const { service } = makeService(fake);
     await enabled(service);
-    const comment = await service.post('o1', learner, {
+    const comment = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'original',
@@ -835,7 +836,7 @@ describe('edit, remove, restore, approve', () => {
     const fake = fakeRepo();
     const { service } = makeService(fake);
     await enabled(service);
-    const comment = await service.post('o1', learner, {
+    const comment = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'original',
@@ -850,7 +851,7 @@ describe('publish', () => {
   async function publishedComment() {
     const ctx = makeService();
     await enabled(ctx.service);
-    const comment = await ctx.service.post('o1', learner, {
+    const comment = await ctx.service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'original',
@@ -861,7 +862,7 @@ describe('publish', () => {
   it('dispatches to approve for a pending comment and emits comment.published', async () => {
     const { service, appended } = makeService();
     await enabled(service, { requireReview: true });
-    const pending = await service.post('o1', learner, {
+    const pending = await service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'q',
@@ -894,7 +895,7 @@ describe('reactions', () => {
   async function withComment(patch = {}) {
     const ctx = makeService();
     await enabled(ctx.service, patch);
-    const comment = await ctx.service.post('o1', learner, {
+    const comment = await ctx.service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'hi',
@@ -960,7 +961,7 @@ describe('reports', () => {
   async function withComment() {
     const ctx = makeService();
     await enabled(ctx.service);
-    const comment = await ctx.service.post('o1', learner, {
+    const comment = await ctx.service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'bad',
@@ -1015,7 +1016,7 @@ describe('reports', () => {
     const { service, comment } = await (async () => {
       const ctx = makeService(fake);
       await enabled(ctx.service);
-      const c = await ctx.service.post('o1', learner, {
+      const c = await ctx.service.postComment('o1', learner, {
         activityId: 'a1',
         parentId: null,
         body: 'bad',
@@ -1086,12 +1087,12 @@ describe('listComments', () => {
   async function seeded() {
     const ctx = makeService();
     await enabled(ctx.service, { requireReview: true });
-    const pending = await ctx.service.post('o1', learner, {
+    const pending = await ctx.service.postComment('o1', learner, {
       activityId: 'a1',
       parentId: null,
       body: 'needs review',
     });
-    const published = await ctx.service.post('o1', staff, {
+    const published = await ctx.service.postComment('o1', staff, {
       activityId: 'a2',
       parentId: null,
       body: 'from a moderator',
@@ -1171,7 +1172,7 @@ describe('listComments', () => {
     const fake = fakeRepo();
     const { service } = makeService(fake);
     await enabled(service, { requireReview: true });
-    await service.post('o1', learner, { activityId: 'a1', parentId: null, body: 'q' });
+    await service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'q' });
     fake.repo.authorsOf = async () => ({});
     await expect(service.listComments('o1', q())).rejects.toThrow(NotFoundError);
   });

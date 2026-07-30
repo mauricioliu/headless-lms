@@ -50,7 +50,7 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
   r.route({
     method: 'POST',
     url: '/api/uploads',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'requestUpload',
       tags,
@@ -74,7 +74,7 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
   r.route({
     method: 'POST',
     url: '/api/assets/:id/confirm',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'confirmAsset',
       tags,
@@ -98,7 +98,7 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
   r.route({
     method: 'GET',
     url: '/api/assets',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listAssets',
       tags,
@@ -118,7 +118,7 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
   r.route({
     method: 'GET',
     url: '/api/assets/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getAsset',
       tags,
@@ -142,7 +142,7 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
   r.route({
     method: 'POST',
     url: '/api/assets/:id/download-url',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'requestAssetDownload',
       tags,
@@ -167,7 +167,7 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
   r.route({
     method: 'DELETE',
     url: '/api/assets/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'deleteAsset',
       tags,

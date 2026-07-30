@@ -306,20 +306,18 @@ export async function buildContainer(
     () => new Date().toISOString(),
     progressLogger,
   );
-  // Discussion: comment writes + outbox append in one tx; entitlements answers
-  // whether a learner may reach the activity a comment hangs off.
-  const discussionUow = new DrizzleUnitOfWork(db, (tx) => ({
-    discussion: new DrizzleDiscussionRepository(tx, discussionLogger),
-    outbox: new DrizzleOutboxAppender(tx, outboxLogger),
-  }));
-  const discussion = new DiscussionServiceImpl(
-    new DrizzleDiscussionRepository(db, discussionLogger),
-    entitlements,
-    discussionUow,
+
+  const discussion = new DiscussionServiceImpl({
+    repo: new DrizzleDiscussionRepository(db, discussionLogger),
+    access: entitlements,
+    content: content,
+    uow: new DrizzleUnitOfWork(db, (tx) => ({
+      discussion: new DrizzleDiscussionRepository(tx, discussionLogger),
+      outbox: new DrizzleOutboxAppender(tx, outboxLogger),
+    })),
     settings,
-    () => new Date().toISOString(),
-    discussionLogger,
-  );
+    logger: discussionLogger,
+  });
   const assets = new AssetsServiceImpl(
     storage,
     new DrizzleAssetsRepository(db, assetsLogger),
@@ -405,8 +403,7 @@ export async function buildContainer(
     outboxLogger,
   );
 
-  // Auth adapter — depends on core ports (email, identity, organizations);
-  // composition only injects the implementations.
+  // Auth adapter
   const auth = createAuth({
     db,
     baseURL: config.authBaseURL,

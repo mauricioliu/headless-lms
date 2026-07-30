@@ -8,6 +8,7 @@ import { z } from "zod";
 export const Activity = z.object({
   id: z.string(),
   moduleId: z.string(),
+  courseId: z.string(),
   seq: z.number().int(),
   settings: z.unknown(),
   assetIds: z.array(z.string()),

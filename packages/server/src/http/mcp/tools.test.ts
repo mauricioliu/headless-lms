@@ -274,7 +274,7 @@ describe('registerTools — get_course', () => {
     const result = await getCourse({ id: 'course-1' });
 
     expect(result.isError).toBe(true);
-    expect(container.content.get as Mock).not.toHaveBeenCalled();
+    expect(container.content.getCourse as Mock).not.toHaveBeenCalled();
   });
 });
 

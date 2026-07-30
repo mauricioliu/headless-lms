@@ -53,7 +53,7 @@ export async function integrationsRoutes(
   r.route({
     method: 'GET',
     url: '/api/integrations/available',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listAvailableIntegrations',
       tags,
@@ -66,7 +66,7 @@ export async function integrationsRoutes(
   r.route({
     method: 'GET',
     url: '/api/integrations',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listConnections',
       tags,
@@ -85,7 +85,7 @@ export async function integrationsRoutes(
   r.route({
     method: 'POST',
     url: '/api/integrations',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'connectIntegration',
       tags,
@@ -106,7 +106,7 @@ export async function integrationsRoutes(
   r.route({
     method: 'GET',
     url: '/api/integrations/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getConnection',
       tags,
@@ -130,7 +130,7 @@ export async function integrationsRoutes(
   r.route({
     method: 'PATCH',
     url: '/api/integrations/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'configureConnection',
       tags,
@@ -155,7 +155,7 @@ export async function integrationsRoutes(
   r.route({
     method: 'POST',
     url: '/api/integrations/:id/reconnect',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'reconnectIntegration',
       tags,
@@ -180,7 +180,7 @@ export async function integrationsRoutes(
   r.route({
     method: 'DELETE',
     url: '/api/integrations/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'disconnectIntegration',
       tags,

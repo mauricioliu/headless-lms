@@ -119,6 +119,8 @@ export const modules = pgTable(
       columns: [t.orgId, t.courseId],
       foreignColumns: [courses.orgId, courses.id],
     }).onDelete('cascade'),
+    // FK target for the course-pinned reference from activities.
+    courseUq: unique().on(t.orgId, t.id, t.courseId),
   }),
 );
 
@@ -133,6 +135,10 @@ export const activities = pgTable(
       .notNull()
       .$defaultFn(() => genId('activity')),
     moduleId: text('module_id').notNull(),
+    // Denormalised from the module: the course an activity belongs to is asked
+    // for far more often than its module (progress, discussion, entitlements),
+    // and the FK below pins the pair, so it cannot disagree with the module.
+    courseId: text('course_id').notNull(),
     seq: integer('seq').notNull(),
     // Opaque per-activity blob: title, type, body, completion rule — whatever the
     // content needs. Assets are the one thing kept out of the blob.
@@ -145,9 +151,12 @@ export const activities = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),
+    // Course-pinned, like `courses.contentItemFk`: the module reference carries
+    // `course_id`, so an activity whose stored course disagrees with its
+    // module's is rejected by the database rather than silently rotting.
     moduleFk: foreignKey({
-      columns: [t.orgId, t.moduleId],
-      foreignColumns: [modules.orgId, modules.id],
+      columns: [t.orgId, t.moduleId, t.courseId],
+      foreignColumns: [modules.orgId, modules.id, modules.courseId],
     }).onDelete('cascade'),
     seqUq: unique().on(t.orgId, t.moduleId, t.seq),
   }),

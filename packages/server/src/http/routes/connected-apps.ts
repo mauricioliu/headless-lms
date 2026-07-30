@@ -18,7 +18,7 @@ export async function connectedAppsRoutes(
   r.route({
     method: 'GET',
     url: '/api/connected-apps',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listConnectedApps',
       tags,
@@ -34,7 +34,7 @@ export async function connectedAppsRoutes(
   r.route({
     method: 'DELETE',
     url: '/api/connected-apps/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'revokeConnectedApp',
       tags,

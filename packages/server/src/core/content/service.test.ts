@@ -100,7 +100,7 @@ describe('ContentServiceImpl', () => {
     (repo.create as ReturnType<typeof vi.fn>).mockResolvedValue(created);
 
     const { svc } = build(repo);
-    const result = await svc.create('org1', { title: 'My New Course' });
+    const result = await svc.createCourse('org1', { title: 'My New Course' });
 
     expect(repo.create).toHaveBeenCalledWith('org1', { title: 'My New Course' }, 'my-new-course');
     expect(result).toBe(created);
@@ -112,7 +112,7 @@ describe('ContentServiceImpl', () => {
     (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(course);
 
     const { svc, append } = build(repo);
-    const result = await svc.get('org1', 'c1');
+    const result = await svc.getCourse('org1', 'c1');
 
     expect(repo.findById).toHaveBeenCalledWith('org1', 'c1');
     expect(result).toEqual(course);
@@ -127,7 +127,7 @@ describe('ContentServiceImpl', () => {
     (settingsRepo.find as ReturnType<typeof vi.fn>).mockResolvedValue([
       { namespace: 'content', scopeId: 'c1', value: { transcriptDownloads: true } },
     ]);
-    const result = await svc.get('org1', 'c1');
+    const result = await svc.getCourse('org1', 'c1');
 
     expect(settingsRepo.find).toHaveBeenCalledWith('org1', 'c1', 'content');
     expect(result?.settings).toEqual({ transcriptDownloads: true });
@@ -141,7 +141,7 @@ describe('ContentServiceImpl', () => {
 
     const { svc } = build(repo);
 
-    expect((await svc.get('org1', 'c1'))?.settings).toEqual({ transcriptDownloads: true });
+    expect((await svc.getCourse('org1', 'c1'))?.settings).toEqual({ transcriptDownloads: true });
   });
 
   it('patches settings into the content namespace and returns them complete', async () => {
@@ -173,7 +173,7 @@ describe('ContentServiceImpl', () => {
     (repo.create as ReturnType<typeof vi.fn>).mockResolvedValue(created);
 
     const { svc, appended } = build(repo);
-    await svc.create('org1', { title: 'Intro' });
+    await svc.createCourse('org1', { title: 'Intro' });
 
     expect(appended).toEqual([{ type: 'course.created', orgId: 'org1', course: created }]);
   });
@@ -184,7 +184,7 @@ describe('ContentServiceImpl', () => {
     (repo.update as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
 
     const { svc, appended } = build(repo);
-    const result = await svc.update('org1', 'c1', { title: 'Renamed' });
+    const result = await svc.updateCourse('org1', 'c1', { title: 'Renamed' });
 
     expect(repo.update).toHaveBeenCalledWith('org1', 'c1', { title: 'Renamed' });
     expect(result).toBe(updated);
@@ -197,7 +197,7 @@ describe('ContentServiceImpl', () => {
     (repo.update as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
 
     const { svc } = build(repo);
-    const result = await svc.update('org1', 'c1', { settings: { transcriptDownloads: true } });
+    const result = await svc.updateCourse('org1', 'c1', { settings: { transcriptDownloads: true } });
 
     expect(repo.update).toHaveBeenCalledWith('org1', 'c1', {
       settings: { transcriptDownloads: true },
@@ -210,7 +210,7 @@ describe('ContentServiceImpl', () => {
     (repo.update as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     const { svc, append } = build(repo);
-    await expect(svc.update('org1', 'missing', { title: 'X' })).rejects.toThrow(NotFoundError);
+    await expect(svc.updateCourse('org1', 'missing', { title: 'X' })).rejects.toThrow(NotFoundError);
     expect(append).not.toHaveBeenCalled();
   });
 
@@ -221,7 +221,7 @@ describe('ContentServiceImpl', () => {
     (repo.delete as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
     const { svc, appended } = build(repo);
-    await svc.remove('org1', 'c1');
+    await svc.deleteCourse('org1', 'c1');
 
     expect(appended).toEqual([{ type: 'course.deleted', orgId: 'org1', course }]);
   });
@@ -231,7 +231,7 @@ describe('ContentServiceImpl', () => {
     (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     const { svc, repo: r, append } = build(repo);
-    await expect(svc.remove('org1', 'missing')).rejects.toThrow(NotFoundError);
+    await expect(svc.deleteCourse('org1', 'missing')).rejects.toThrow(NotFoundError);
     expect(r.delete).not.toHaveBeenCalled();
     expect(append).not.toHaveBeenCalled();
   });
@@ -242,7 +242,7 @@ describe('ContentServiceImpl', () => {
     (repo.delete as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
     const { svc, append } = build(repo);
-    await expect(svc.remove('org1', 'c1')).rejects.toThrow(NotFoundError);
+    await expect(svc.deleteCourse('org1', 'c1')).rejects.toThrow(NotFoundError);
     expect(append).not.toHaveBeenCalled();
   });
 
@@ -251,7 +251,7 @@ describe('ContentServiceImpl', () => {
     (repo.create as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('boom'));
 
     const { svc, append } = build(repo);
-    await expect(svc.create('org1', { title: 'Intro' })).rejects.toThrow('boom');
+    await expect(svc.createCourse('org1', { title: 'Intro' })).rejects.toThrow('boom');
     expect(append).not.toHaveBeenCalled();
   });
 
@@ -296,7 +296,7 @@ describe('ContentServiceImpl', () => {
 describe('hierarchy reads', () => {
   it('getActivity and getModule delegate to the structure repository', async () => {
     const structure = makeStructureRepo();
-    const activity = { id: 'a1', moduleId: 'm1', seq: 0, settings: {}, assetIds: [] };
+    const activity = { id: 'a1', moduleId: 'm1', courseId: 'c1', seq: 0, settings: {}, assetIds: [] };
     const module = { id: 'm1', courseId: 'c1', title: 'M1', seq: 0, activities: [activity] };
     vi.mocked(structure.findActivity).mockResolvedValue(activity);
     vi.mocked(structure.findModule).mockResolvedValue(module);
@@ -336,9 +336,9 @@ describe('logging', () => {
       logger,
     );
 
-    await svc.create('org-1', { title: 'Intro' });
-    await svc.update('org-1', course.id, { title: 'Intro 2' });
-    await svc.remove('org-1', course.id);
+    await svc.createCourse('org-1', { title: 'Intro' });
+    await svc.updateCourse('org-1', course.id, { title: 'Intro 2' });
+    await svc.deleteCourse('org-1', course.id);
 
     expect(entries.filter((e) => e.level === 'info').map((e) => e.msg)).toEqual([
       'course created',

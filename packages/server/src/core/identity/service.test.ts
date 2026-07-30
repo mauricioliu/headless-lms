@@ -2,13 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { IdentityServiceImpl } from './service.js';
 import type { IdentityRepository } from './ports.js';
 import type { User } from './model.js';
-import type { RegisterUserInput } from './types.js';
+import type { CreateUserInput } from './types.js';
 
 function fakeRepo() {
   const users: User[] = [];
   let n = 0;
   const repo: IdentityRepository = {
-    async insertUser(input: RegisterUserInput) {
+    async insertUser(input: CreateUserInput) {
       const row: User = { id: `u${++n}`, createdAt: new Date(0), updatedAt: new Date(0), ...input };
       users.push(row);
       return row;
@@ -36,7 +36,7 @@ describe('IdentityService.registerUser', () => {
   it('is idempotent — a second call returns the existing row', async () => {
     const { repo, rows } = fakeRepo();
     const svc = new IdentityServiceImpl(repo);
-    const input: RegisterUserInput = {
+    const input: CreateUserInput = {
       externalId: 'auth-1',
       email: 'a@b.c',
       displayName: 'Ada Lovelace',
@@ -65,7 +65,7 @@ describe('logging', () => {
     const { repo } = fakeRepo();
     const svc = new IdentityServiceImpl(repo, logger);
 
-    const input: RegisterUserInput = { externalId: 'auth-1', email: 'a@b.c', displayName: 'A' };
+    const input: CreateUserInput = { externalId: 'auth-1', email: 'a@b.c', displayName: 'A' };
     const user = await svc.registerUser(input);
     await svc.registerUser(input); // idempotent → no second log
 

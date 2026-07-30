@@ -24,7 +24,7 @@ export async function entitlementsRoutes(
   r.route({
     method: 'GET',
     url: '/api/entitlements',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listEntitlements',
       tags: ['Entitlements'],
@@ -41,7 +41,7 @@ export async function entitlementsRoutes(
   r.route({
     method: 'POST',
     url: '/api/entitlements',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'grantEntitlement',
       tags: ['Entitlements'],
@@ -59,7 +59,7 @@ export async function entitlementsRoutes(
   r.route({
     method: 'PATCH',
     url: '/api/entitlements/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'setEntitlementStatus',
       tags: ['Entitlements'],

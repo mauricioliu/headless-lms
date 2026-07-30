@@ -22,7 +22,7 @@ export async function learnDownloadsRoutes(
   r.route({
     method: 'GET',
     url: '/api/learn/downloads',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listLearnDownloads',
       tags: ['Learn'],
@@ -38,7 +38,7 @@ export async function learnDownloadsRoutes(
   r.route({
     method: 'GET',
     url: '/api/learn/downloads/:downloadId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getLearnDownload',
       tags: ['Learn'],
@@ -62,7 +62,7 @@ export async function learnDownloadsRoutes(
   r.route({
     method: 'GET',
     url: '/api/learn/downloads/:downloadId/assets/:assetId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getLearnDownloadAsset',
       tags: ['Learn'],

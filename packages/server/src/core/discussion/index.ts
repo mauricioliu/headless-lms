@@ -8,7 +8,7 @@ export type {
   ActivityComments,
   Actor,
   AuthorRecord,
-  CommentWithContext,
+  PostCommentInput,
   CourseAccessReader,
 } from './ports.js';
 export type {
@@ -28,4 +28,4 @@ export type {
   CommentListItem,
   ListCommentsQuery,
 } from './types.js';
-export type { DiscussionEvent } from './events.js';
+export type { CommentEvent } from './events.js';

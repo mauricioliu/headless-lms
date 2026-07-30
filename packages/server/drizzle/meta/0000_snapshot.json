@@ -1,5 +1,5 @@
 {
-  "id": "934f3eed-838c-4866-9c11-027b54f0ea43",
+  "id": "df6fdc1e-9c9b-4a57-ad34-ab39f5c5ab87",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -373,6 +373,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "course_id": {
+          "name": "course_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "seq": {
           "name": "seq",
           "type": "integer",
@@ -415,17 +421,19 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "activities_org_id_module_id_modules_org_id_id_fk": {
-          "name": "activities_org_id_module_id_modules_org_id_id_fk",
+        "activities_org_id_module_id_course_id_modules_org_id_id_course_id_fk": {
+          "name": "activities_org_id_module_id_course_id_modules_org_id_id_course_id_fk",
           "tableFrom": "activities",
           "tableTo": "modules",
           "columnsFrom": [
             "org_id",
-            "module_id"
+            "module_id",
+            "course_id"
           ],
           "columnsTo": [
             "org_id",
-            "id"
+            "id",
+            "course_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1146,7 +1154,17 @@
           ]
         }
       },
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "modules_org_id_id_course_id_unique": {
+          "name": "modules_org_id_id_course_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "org_id",
+            "id",
+            "course_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -2633,8 +2651,8 @@
       },
       "isRLSEnabled": false
     },
-    "public.account": {
-      "name": "account",
+    "public.ba_account": {
+      "name": "ba_account",
       "schema": "",
       "columns": {
         "id": {
@@ -2718,10 +2736,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "account_user_id_user_id_fk": {
-          "name": "account_user_id_user_id_fk",
-          "tableFrom": "account",
-          "tableTo": "user",
+        "ba_account_user_id_ba_user_id_fk": {
+          "name": "ba_account_user_id_ba_user_id_fk",
+          "tableFrom": "ba_account",
+          "tableTo": "ba_user",
           "columnsFrom": [
             "user_id"
           ],
@@ -2738,8 +2756,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.invitation": {
-      "name": "invitation",
+    "public.ba_invitation": {
+      "name": "ba_invitation",
       "schema": "",
       "columns": {
         "id": {
@@ -2794,10 +2812,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "invitation_organization_id_organization_id_fk": {
-          "name": "invitation_organization_id_organization_id_fk",
-          "tableFrom": "invitation",
-          "tableTo": "organization",
+        "ba_invitation_organization_id_ba_organization_id_fk": {
+          "name": "ba_invitation_organization_id_ba_organization_id_fk",
+          "tableFrom": "ba_invitation",
+          "tableTo": "ba_organization",
           "columnsFrom": [
             "organization_id"
           ],
@@ -2807,10 +2825,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "invitation_inviter_id_user_id_fk": {
-          "name": "invitation_inviter_id_user_id_fk",
-          "tableFrom": "invitation",
-          "tableTo": "user",
+        "ba_invitation_inviter_id_ba_user_id_fk": {
+          "name": "ba_invitation_inviter_id_ba_user_id_fk",
+          "tableFrom": "ba_invitation",
+          "tableTo": "ba_user",
           "columnsFrom": [
             "inviter_id"
           ],
@@ -2827,8 +2845,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.jwks": {
-      "name": "jwks",
+    "public.ba_jwks": {
+      "name": "ba_jwks",
       "schema": "",
       "columns": {
         "id": {
@@ -2864,8 +2882,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.member": {
-      "name": "member",
+    "public.ba_member": {
+      "name": "ba_member",
       "schema": "",
       "columns": {
         "id": {
@@ -2902,10 +2920,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "member_organization_id_organization_id_fk": {
-          "name": "member_organization_id_organization_id_fk",
-          "tableFrom": "member",
-          "tableTo": "organization",
+        "ba_member_organization_id_ba_organization_id_fk": {
+          "name": "ba_member_organization_id_ba_organization_id_fk",
+          "tableFrom": "ba_member",
+          "tableTo": "ba_organization",
           "columnsFrom": [
             "organization_id"
           ],
@@ -2915,10 +2933,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "member_user_id_user_id_fk": {
-          "name": "member_user_id_user_id_fk",
-          "tableFrom": "member",
-          "tableTo": "user",
+        "ba_member_user_id_ba_user_id_fk": {
+          "name": "ba_member_user_id_ba_user_id_fk",
+          "tableFrom": "ba_member",
+          "tableTo": "ba_user",
           "columnsFrom": [
             "user_id"
           ],
@@ -2935,8 +2953,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.oauth_access_token": {
-      "name": "oauth_access_token",
+    "public.ba_oauth_access_token": {
+      "name": "ba_oauth_access_token",
       "schema": "",
       "columns": {
         "id": {
@@ -3001,8 +3019,8 @@
         }
       },
       "indexes": {
-        "oauth_access_token_client_id_idx": {
-          "name": "oauth_access_token_client_id_idx",
+        "ba_oauth_access_token_client_id_idx": {
+          "name": "ba_oauth_access_token_client_id_idx",
           "columns": [
             {
               "expression": "client_id",
@@ -3016,8 +3034,8 @@
           "method": "btree",
           "with": {}
         },
-        "oauth_access_token_session_id_idx": {
-          "name": "oauth_access_token_session_id_idx",
+        "ba_oauth_access_token_session_id_idx": {
+          "name": "ba_oauth_access_token_session_id_idx",
           "columns": [
             {
               "expression": "session_id",
@@ -3031,8 +3049,8 @@
           "method": "btree",
           "with": {}
         },
-        "oauth_access_token_user_id_idx": {
-          "name": "oauth_access_token_user_id_idx",
+        "ba_oauth_access_token_user_id_idx": {
+          "name": "ba_oauth_access_token_user_id_idx",
           "columns": [
             {
               "expression": "user_id",
@@ -3046,8 +3064,8 @@
           "method": "btree",
           "with": {}
         },
-        "oauth_access_token_refresh_id_idx": {
-          "name": "oauth_access_token_refresh_id_idx",
+        "ba_oauth_access_token_refresh_id_idx": {
+          "name": "ba_oauth_access_token_refresh_id_idx",
           "columns": [
             {
               "expression": "refresh_id",
@@ -3063,10 +3081,10 @@
         }
       },
       "foreignKeys": {
-        "oauth_access_token_client_id_oauth_client_client_id_fk": {
-          "name": "oauth_access_token_client_id_oauth_client_client_id_fk",
-          "tableFrom": "oauth_access_token",
-          "tableTo": "oauth_client",
+        "ba_oauth_access_token_client_id_ba_oauth_client_client_id_fk": {
+          "name": "ba_oauth_access_token_client_id_ba_oauth_client_client_id_fk",
+          "tableFrom": "ba_oauth_access_token",
+          "tableTo": "ba_oauth_client",
           "columnsFrom": [
             "client_id"
           ],
@@ -3076,10 +3094,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "oauth_access_token_session_id_session_id_fk": {
-          "name": "oauth_access_token_session_id_session_id_fk",
-          "tableFrom": "oauth_access_token",
-          "tableTo": "session",
+        "ba_oauth_access_token_session_id_ba_session_id_fk": {
+          "name": "ba_oauth_access_token_session_id_ba_session_id_fk",
+          "tableFrom": "ba_oauth_access_token",
+          "tableTo": "ba_session",
           "columnsFrom": [
             "session_id"
           ],
@@ -3089,10 +3107,10 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "oauth_access_token_user_id_user_id_fk": {
-          "name": "oauth_access_token_user_id_user_id_fk",
-          "tableFrom": "oauth_access_token",
-          "tableTo": "user",
+        "ba_oauth_access_token_user_id_ba_user_id_fk": {
+          "name": "ba_oauth_access_token_user_id_ba_user_id_fk",
+          "tableFrom": "ba_oauth_access_token",
+          "tableTo": "ba_user",
           "columnsFrom": [
             "user_id"
           ],
@@ -3102,10 +3120,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "oauth_access_token_refresh_id_oauth_refresh_token_id_fk": {
-          "name": "oauth_access_token_refresh_id_oauth_refresh_token_id_fk",
-          "tableFrom": "oauth_access_token",
-          "tableTo": "oauth_refresh_token",
+        "ba_oauth_access_token_refresh_id_ba_oauth_refresh_token_id_fk": {
+          "name": "ba_oauth_access_token_refresh_id_ba_oauth_refresh_token_id_fk",
+          "tableFrom": "ba_oauth_access_token",
+          "tableTo": "ba_oauth_refresh_token",
           "columnsFrom": [
             "refresh_id"
           ],
@@ -3118,8 +3136,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "oauth_access_token_token_unique": {
-          "name": "oauth_access_token_token_unique",
+        "ba_oauth_access_token_token_unique": {
+          "name": "ba_oauth_access_token_token_unique",
           "nullsNotDistinct": false,
           "columns": [
             "token"
@@ -3130,8 +3148,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.oauth_client": {
-      "name": "oauth_client",
+    "public.ba_oauth_client": {
+      "name": "ba_oauth_client",
       "schema": "",
       "columns": {
         "id": {
@@ -3317,8 +3335,8 @@
         }
       },
       "indexes": {
-        "oauth_client_user_id_idx": {
-          "name": "oauth_client_user_id_idx",
+        "ba_oauth_client_user_id_idx": {
+          "name": "ba_oauth_client_user_id_idx",
           "columns": [
             {
               "expression": "user_id",
@@ -3334,10 +3352,10 @@
         }
       },
       "foreignKeys": {
-        "oauth_client_user_id_user_id_fk": {
-          "name": "oauth_client_user_id_user_id_fk",
-          "tableFrom": "oauth_client",
-          "tableTo": "user",
+        "ba_oauth_client_user_id_ba_user_id_fk": {
+          "name": "ba_oauth_client_user_id_ba_user_id_fk",
+          "tableFrom": "ba_oauth_client",
+          "tableTo": "ba_user",
           "columnsFrom": [
             "user_id"
           ],
@@ -3350,8 +3368,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "oauth_client_client_id_unique": {
-          "name": "oauth_client_client_id_unique",
+        "ba_oauth_client_client_id_unique": {
+          "name": "ba_oauth_client_client_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "client_id"
@@ -3362,8 +3380,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.oauth_consent": {
-      "name": "oauth_consent",
+    "public.ba_oauth_consent": {
+      "name": "ba_oauth_consent",
       "schema": "",
       "columns": {
         "id": {
@@ -3410,8 +3428,8 @@
         }
       },
       "indexes": {
-        "oauth_consent_client_id_idx": {
-          "name": "oauth_consent_client_id_idx",
+        "ba_oauth_consent_client_id_idx": {
+          "name": "ba_oauth_consent_client_id_idx",
           "columns": [
             {
               "expression": "client_id",
@@ -3425,8 +3443,8 @@
           "method": "btree",
           "with": {}
         },
-        "oauth_consent_user_id_idx": {
-          "name": "oauth_consent_user_id_idx",
+        "ba_oauth_consent_user_id_idx": {
+          "name": "ba_oauth_consent_user_id_idx",
           "columns": [
             {
               "expression": "user_id",
@@ -3442,10 +3460,10 @@
         }
       },
       "foreignKeys": {
-        "oauth_consent_client_id_oauth_client_client_id_fk": {
-          "name": "oauth_consent_client_id_oauth_client_client_id_fk",
-          "tableFrom": "oauth_consent",
-          "tableTo": "oauth_client",
+        "ba_oauth_consent_client_id_ba_oauth_client_client_id_fk": {
+          "name": "ba_oauth_consent_client_id_ba_oauth_client_client_id_fk",
+          "tableFrom": "ba_oauth_consent",
+          "tableTo": "ba_oauth_client",
           "columnsFrom": [
             "client_id"
           ],
@@ -3455,10 +3473,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "oauth_consent_user_id_user_id_fk": {
-          "name": "oauth_consent_user_id_user_id_fk",
-          "tableFrom": "oauth_consent",
-          "tableTo": "user",
+        "ba_oauth_consent_user_id_ba_user_id_fk": {
+          "name": "ba_oauth_consent_user_id_ba_user_id_fk",
+          "tableFrom": "ba_oauth_consent",
+          "tableTo": "ba_user",
           "columnsFrom": [
             "user_id"
           ],
@@ -3475,8 +3493,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.oauth_refresh_token": {
-      "name": "oauth_refresh_token",
+    "public.ba_oauth_refresh_token": {
+      "name": "ba_oauth_refresh_token",
       "schema": "",
       "columns": {
         "id": {
@@ -3547,8 +3565,8 @@
         }
       },
       "indexes": {
-        "oauth_refresh_token_client_id_idx": {
-          "name": "oauth_refresh_token_client_id_idx",
+        "ba_oauth_refresh_token_client_id_idx": {
+          "name": "ba_oauth_refresh_token_client_id_idx",
           "columns": [
             {
               "expression": "client_id",
@@ -3562,8 +3580,8 @@
           "method": "btree",
           "with": {}
         },
-        "oauth_refresh_token_session_id_idx": {
-          "name": "oauth_refresh_token_session_id_idx",
+        "ba_oauth_refresh_token_session_id_idx": {
+          "name": "ba_oauth_refresh_token_session_id_idx",
           "columns": [
             {
               "expression": "session_id",
@@ -3577,8 +3595,8 @@
           "method": "btree",
           "with": {}
         },
-        "oauth_refresh_token_user_id_idx": {
-          "name": "oauth_refresh_token_user_id_idx",
+        "ba_oauth_refresh_token_user_id_idx": {
+          "name": "ba_oauth_refresh_token_user_id_idx",
           "columns": [
             {
               "expression": "user_id",
@@ -3594,10 +3612,10 @@
         }
       },
       "foreignKeys": {
-        "oauth_refresh_token_client_id_oauth_client_client_id_fk": {
-          "name": "oauth_refresh_token_client_id_oauth_client_client_id_fk",
-          "tableFrom": "oauth_refresh_token",
-          "tableTo": "oauth_client",
+        "ba_oauth_refresh_token_client_id_ba_oauth_client_client_id_fk": {
+          "name": "ba_oauth_refresh_token_client_id_ba_oauth_client_client_id_fk",
+          "tableFrom": "ba_oauth_refresh_token",
+          "tableTo": "ba_oauth_client",
           "columnsFrom": [
             "client_id"
           ],
@@ -3607,10 +3625,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "oauth_refresh_token_session_id_session_id_fk": {
-          "name": "oauth_refresh_token_session_id_session_id_fk",
-          "tableFrom": "oauth_refresh_token",
-          "tableTo": "session",
+        "ba_oauth_refresh_token_session_id_ba_session_id_fk": {
+          "name": "ba_oauth_refresh_token_session_id_ba_session_id_fk",
+          "tableFrom": "ba_oauth_refresh_token",
+          "tableTo": "ba_session",
           "columnsFrom": [
             "session_id"
           ],
@@ -3620,10 +3638,10 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "oauth_refresh_token_user_id_user_id_fk": {
-          "name": "oauth_refresh_token_user_id_user_id_fk",
-          "tableFrom": "oauth_refresh_token",
-          "tableTo": "user",
+        "ba_oauth_refresh_token_user_id_ba_user_id_fk": {
+          "name": "ba_oauth_refresh_token_user_id_ba_user_id_fk",
+          "tableFrom": "ba_oauth_refresh_token",
+          "tableTo": "ba_user",
           "columnsFrom": [
             "user_id"
           ],
@@ -3636,8 +3654,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "oauth_refresh_token_token_unique": {
-          "name": "oauth_refresh_token_token_unique",
+        "ba_oauth_refresh_token_token_unique": {
+          "name": "ba_oauth_refresh_token_token_unique",
           "nullsNotDistinct": false,
           "columns": [
             "token"
@@ -3648,8 +3666,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.organization": {
-      "name": "organization",
+    "public.ba_organization": {
+      "name": "ba_organization",
       "schema": "",
       "columns": {
         "id": {
@@ -3699,8 +3717,8 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "organization_slug_unique": {
-          "name": "organization_slug_unique",
+        "ba_organization_slug_unique": {
+          "name": "ba_organization_slug_unique",
           "nullsNotDistinct": false,
           "columns": [
             "slug"
@@ -3711,8 +3729,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.session": {
-      "name": "session",
+    "public.ba_session": {
+      "name": "ba_session",
       "schema": "",
       "columns": {
         "id": {
@@ -3772,10 +3790,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "session_user_id_user_id_fk": {
-          "name": "session_user_id_user_id_fk",
-          "tableFrom": "session",
-          "tableTo": "user",
+        "ba_session_user_id_ba_user_id_fk": {
+          "name": "ba_session_user_id_ba_user_id_fk",
+          "tableFrom": "ba_session",
+          "tableTo": "ba_user",
           "columnsFrom": [
             "user_id"
           ],
@@ -3788,8 +3806,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "session_token_unique": {
-          "name": "session_token_unique",
+        "ba_session_token_unique": {
+          "name": "ba_session_token_unique",
           "nullsNotDistinct": false,
           "columns": [
             "token"
@@ -3800,8 +3818,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.user": {
-      "name": "user",
+    "public.ba_user": {
+      "name": "ba_user",
       "schema": "",
       "columns": {
         "id": {
@@ -3851,8 +3869,8 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "user_email_unique": {
-          "name": "user_email_unique",
+        "ba_user_email_unique": {
+          "name": "ba_user_email_unique",
           "nullsNotDistinct": false,
           "columns": [
             "email"
@@ -3863,8 +3881,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.verification": {
-      "name": "verification",
+    "public.ba_verification": {
+      "name": "ba_verification",
       "schema": "",
       "columns": {
         "id": {

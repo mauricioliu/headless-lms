@@ -1,7 +1,7 @@
 import 'fastify';
 import type { UserProfile } from '@headless-lms/types';
 
-// The authenticated person attached to a request by `requireSession`. `id` is
+// The authenticated person attached to a request by `requireOrgSession`. `id` is
 // the auth engine's user id, not org_users.id — see UserProfile.
 export interface AuthUser extends UserProfile {
   emailVerified: boolean;
@@ -9,11 +9,12 @@ export interface AuthUser extends UserProfile {
 
 declare module 'fastify' {
   interface FastifyInstance {
-    requireSession(request: FastifyRequest, reply: FastifyReply): Promise<void>;
+    /** Session guard. Populates `authUser`/`orgId`, or throws `UnauthorizedError`. */
+    requireOrgSession(request: FastifyRequest): Promise<void>;
   }
   interface FastifyRequest {
-    authUser?: AuthUser;
-    /** Active organization id from the session, set by `requireSession`. */
-    orgId?: string | null;
+    authUser: AuthUser;
+    /** Active organization id from the session, set by `requireOrgSession`. */
+    orgId: string;
   }
 }

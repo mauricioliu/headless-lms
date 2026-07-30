@@ -16,7 +16,7 @@ import { configureSdk } from "@headless-lms/sdk";
 import { redirect } from "next/navigation";
 
 import { API_URL } from "./api-url";
-import { requireSession } from "../auth/server-session";
+import { requireOrgSession } from "../auth/server-session";
 import { ApiError } from "./http";
 
 export { API_URL };
@@ -54,12 +54,12 @@ configureSdk({
  * the single place server-side auth is enforced.
  *
  * Every RSC read and Server Action reaches the API through here, so gating on
- * `requireSession()` here means an unauthenticated request can't produce a data
- * call at all, without any route having to remember to ask. `requireSession`
+ * `requireOrgSession()` here means an unauthenticated request can't produce a data
+ * call at all, without any route having to remember to ask. `requireOrgSession`
  * is request-cached, so this costs one resolution per request no matter how
  * many calls a page makes.
  */
 export async function authHeaders(): Promise<{ headers: { cookie: string } }> {
-  await requireSession();
+  await requireOrgSession();
   return { headers: { cookie: (await cookies()).toString() } };
 }

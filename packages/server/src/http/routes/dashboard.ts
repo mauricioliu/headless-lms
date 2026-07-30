@@ -11,7 +11,7 @@ export async function dashboardRoutes(app: FastifyInstance, container: Container
   r.route({
     method: 'GET',
     url: '/api/overview',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getOverview',
       tags: ['Dashboard'],

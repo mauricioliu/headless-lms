@@ -1,7 +1,3 @@
-// The learner side of discussion: comments, reactions and reports on an
-// activity. The moderator side lives in routes/discussion.ts.
-// The actor is always a student here; discussion decides what that reaches,
-// including the course-access check behind every 404.
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
@@ -19,8 +15,7 @@ import {
   ReportComment,
 } from '@headless-lms/api-contract';
 import type { Container } from '../../../app/container.js';
-import type { Actor } from '../../../core/discussion/index.js';
-import { resolveStudentScope } from '../../student-scope.js';
+import { UnauthorizedError } from '../../plugins/auth.js';
 
 export async function learnCommentsRoutes(
   app: FastifyInstance,
@@ -32,7 +27,7 @@ export async function learnCommentsRoutes(
   r.route({
     method: 'GET',
     url: '/api/learn/activities/:activityId/comments',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listActivityComments',
       tags: ['Learn'],
@@ -41,16 +36,19 @@ export async function learnCommentsRoutes(
       response: { 200: ActivityComments, 404: ErrorBody },
     },
     handler: async (req) => {
-      const scope = await resolveStudentScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
-      return discussion.activityComments(scope.orgId, req.params.activityId, actor);
+      const orgId = req.orgId;
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      return discussion.activityComments(orgId, req.params.activityId, orgUser);
     },
   });
 
   r.route({
     method: 'POST',
     url: '/api/learn/activities/:activityId/comments',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'postComment',
       tags: ['Learn'],
@@ -60,9 +58,13 @@ export async function learnCommentsRoutes(
       response: { 200: CommentView, 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req) => {
-      const scope = await resolveStudentScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
-      return discussion.post(scope.orgId, actor, {
+      const orgId = req.orgId;
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      return discussion.postComment(orgId, {
+        actor: orgUser,
         activityId: req.params.activityId,
         parentId: req.body.parentId,
         body: req.body.body,
@@ -73,7 +75,7 @@ export async function learnCommentsRoutes(
   r.route({
     method: 'PATCH',
     url: '/api/learn/comments/:commentId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'editComment',
       tags: ['Learn'],
@@ -83,34 +85,40 @@ export async function learnCommentsRoutes(
       response: { 200: CommentView, 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req) => {
-      const scope = await resolveStudentScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
-      return discussion.edit(scope.orgId, req.params.commentId, actor, req.body.body);
+      const orgId = req.orgId;
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      return discussion.edit(orgId, req.params.commentId, orgUser, req.body.body);
     },
   });
 
   r.route({
     method: 'DELETE',
     url: '/api/learn/comments/:commentId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
-      operationId: 'removeOwnComment',
+      operationId: 'deleteComment',
       tags: ['Learn'],
-      summary: 'Remove your own comment',
+      summary: 'Delete a comment',
       params: CommentIdParam,
       response: { 200: Comment, 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req) => {
-      const scope = await resolveStudentScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
-      return discussion.remove(scope.orgId, req.params.commentId, actor);
+      const orgId = req.orgId;
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      return discussion.remove(orgId, req.params.commentId, orgUser);
     },
   });
 
   r.route({
     method: 'PUT',
     url: '/api/learn/comments/:commentId/reactions/:emoji',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'reactToComment',
       tags: ['Learn'],
@@ -119,9 +127,12 @@ export async function learnCommentsRoutes(
       response: { 204: z.void(), 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req, reply) => {
-      const scope = await resolveStudentScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
-      await discussion.react(scope.orgId, req.params.commentId, actor, req.params.emoji);
+      const orgId = req.orgId;
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      await discussion.react(orgId, req.params.commentId, orgUser, req.params.emoji);
       return reply.code(204).send();
     },
   });
@@ -129,7 +140,7 @@ export async function learnCommentsRoutes(
   r.route({
     method: 'DELETE',
     url: '/api/learn/comments/:commentId/reactions/:emoji',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'unreactToComment',
       tags: ['Learn'],
@@ -138,9 +149,12 @@ export async function learnCommentsRoutes(
       response: { 204: z.void(), 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req, reply) => {
-      const scope = await resolveStudentScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
-      await discussion.unreact(scope.orgId, req.params.commentId, actor, req.params.emoji);
+      const orgId = req.orgId;
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      await discussion.unreact(orgId, req.params.commentId, orgUser, req.params.emoji);
       return reply.code(204).send();
     },
   });
@@ -148,7 +162,7 @@ export async function learnCommentsRoutes(
   r.route({
     method: 'POST',
     url: '/api/learn/comments/:commentId/reports',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'reportComment',
       tags: ['Learn'],
@@ -158,9 +172,12 @@ export async function learnCommentsRoutes(
       response: { 200: CommentReport, 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req) => {
-      const scope = await resolveStudentScope(container, req);
-      const actor: Actor = { orgUserId: scope.orgUserId, role: 'student' };
-      return discussion.reportComment(scope.orgId, req.params.commentId, actor, req.body.reason);
+      const orgId = req.orgId;
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      return discussion.reportComment(orgId, req.params.commentId, orgUser, req.body.reason);
     },
   });
 }

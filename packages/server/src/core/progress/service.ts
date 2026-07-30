@@ -80,12 +80,8 @@ export class ProgressServiceImpl implements ProgressService {
     if (!activity || !isActivityPublished(activity.settings)) {
       throw new NotFoundError('Activity', input.activityId);
     }
-    const module = await this.content.getModule(orgId, activity.moduleId);
-    if (!module) {
-      throw new NotFoundError('Module', activity.moduleId);
-    }
-    const courseId = module.courseId;
-    const modules = await this.content.listForCourse(orgId, courseId);
+    const courseId = activity.courseId;
+    const modules = await this.content.listCourseModules(orgId, courseId);
     return this.uow.run(async (scope) => {
       // Serializes concurrent reports for this student+course (locks are tx-scoped;
       // both racers lock in the same order, the loser waits and then sees committed state).

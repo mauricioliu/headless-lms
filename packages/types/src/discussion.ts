@@ -30,8 +30,9 @@ export interface Comment {
   status: CommentStatus;
   /** The `org_users.id` that removed it; null unless status is "removed". */
   removedBy: string | null;
-  readonly createdAt: string;
-  updatedAt: string;
+
+  readonly createdAt: Date;
+  updatedAt: Date;
 }
 
 /**
@@ -59,12 +60,11 @@ export interface CommentReport {
   readonly id: string;
   readonly orgId: string;
   readonly commentId: string;
-  /** The reporter's `org_users.id`. */
   readonly orgUserId: string;
   readonly reason: string;
-  /** null = still open. */
+
   resolvedAt: string | null;
-  readonly createdAt: string;
+  readonly createdAt: Date;
 }
 
 /** A course's discussion settings, stored as the value of its `discussion`
@@ -87,12 +87,7 @@ export interface CommentsConfig extends CommentSettings {
   state: CommentsState;
 }
 
-export interface PostCommentInput {
-  activityId: string;
-  /** null = a root comment. */
-  parentId: string | null;
-  body: string;
-}
+
 
 /** One comment as served to a reader: the row plus what the reader is allowed
  *  to see. `body` is null when the comment is removed. */
@@ -111,8 +106,8 @@ export interface CommentView {
    *  removed. The placeholder names them. */
   removedBy: CommentAuthor | null;
   reactions: { emoji: string; count: number; reacted: boolean }[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /** An unresolved report as the staff list serves it — who flagged it and why.
@@ -195,4 +190,4 @@ export interface CommentRemoved extends DomainEvent {
   removedBy: string;
 }
 
-export type DiscussionEvent = CommentCreated | CommentPublished | CommentReported | CommentRemoved;
+export type CommentEvent = CommentCreated | CommentPublished | CommentReported | CommentRemoved;

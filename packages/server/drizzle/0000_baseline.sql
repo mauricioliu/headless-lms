@@ -44,6 +44,7 @@ CREATE TABLE "activities" (
 	"org_id" text NOT NULL,
 	"id" text NOT NULL,
 	"module_id" text NOT NULL,
+	"course_id" text NOT NULL,
 	"seq" integer NOT NULL,
 	"settings" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -124,7 +125,8 @@ CREATE TABLE "modules" (
 	"seq" integer NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "modules_org_id_id_pk" PRIMARY KEY("org_id","id")
+	CONSTRAINT "modules_org_id_id_pk" PRIMARY KEY("org_id","id"),
+	CONSTRAINT "modules_org_id_id_course_id_unique" UNIQUE("org_id","id","course_id")
 );
 --> statement-breakpoint
 CREATE TABLE "entitlements" (
@@ -287,7 +289,7 @@ CREATE TABLE "comments" (
 	CONSTRAINT "comments_removed_by_check" CHECK (("comments"."status" = 'removed') = ("comments"."removed_by" is not null))
 );
 --> statement-breakpoint
-CREATE TABLE "account" (
+CREATE TABLE "ba_account" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
 	"provider_id" text NOT NULL,
@@ -303,7 +305,7 @@ CREATE TABLE "account" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "invitation" (
+CREATE TABLE "ba_invitation" (
 	"id" text PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"email" text NOT NULL,
@@ -314,14 +316,14 @@ CREATE TABLE "invitation" (
 	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "jwks" (
+CREATE TABLE "ba_jwks" (
 	"id" text PRIMARY KEY NOT NULL,
 	"public_key" text NOT NULL,
 	"private_key" text NOT NULL,
 	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "member" (
+CREATE TABLE "ba_member" (
 	"id" text PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"user_id" text NOT NULL,
@@ -329,7 +331,7 @@ CREATE TABLE "member" (
 	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "oauth_access_token" (
+CREATE TABLE "ba_oauth_access_token" (
 	"id" text PRIMARY KEY NOT NULL,
 	"token" text NOT NULL,
 	"client_id" text NOT NULL,
@@ -340,10 +342,10 @@ CREATE TABLE "oauth_access_token" (
 	"expires_at" timestamp with time zone NOT NULL,
 	"created_at" timestamp with time zone NOT NULL,
 	"scopes" text[] NOT NULL,
-	CONSTRAINT "oauth_access_token_token_unique" UNIQUE("token")
+	CONSTRAINT "ba_oauth_access_token_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
-CREATE TABLE "oauth_client" (
+CREATE TABLE "ba_oauth_client" (
 	"id" text PRIMARY KEY NOT NULL,
 	"client_id" text NOT NULL,
 	"client_secret" text,
@@ -374,10 +376,10 @@ CREATE TABLE "oauth_client" (
 	"metadata" text,
 	"created_at" timestamp with time zone,
 	"updated_at" timestamp with time zone,
-	CONSTRAINT "oauth_client_client_id_unique" UNIQUE("client_id")
+	CONSTRAINT "ba_oauth_client_client_id_unique" UNIQUE("client_id")
 );
 --> statement-breakpoint
-CREATE TABLE "oauth_consent" (
+CREATE TABLE "ba_oauth_consent" (
 	"id" text PRIMARY KEY NOT NULL,
 	"client_id" text NOT NULL,
 	"user_id" text,
@@ -387,7 +389,7 @@ CREATE TABLE "oauth_consent" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "oauth_refresh_token" (
+CREATE TABLE "ba_oauth_refresh_token" (
 	"id" text PRIMARY KEY NOT NULL,
 	"token" text NOT NULL,
 	"client_id" text NOT NULL,
@@ -399,10 +401,10 @@ CREATE TABLE "oauth_refresh_token" (
 	"revoked" timestamp with time zone,
 	"auth_time" timestamp with time zone,
 	"scopes" text[] NOT NULL,
-	CONSTRAINT "oauth_refresh_token_token_unique" UNIQUE("token")
+	CONSTRAINT "ba_oauth_refresh_token_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
-CREATE TABLE "organization" (
+CREATE TABLE "ba_organization" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"slug" text NOT NULL,
@@ -410,10 +412,10 @@ CREATE TABLE "organization" (
 	"metadata" text,
 	"created_at" timestamp with time zone NOT NULL,
 	"updated_at" timestamp with time zone,
-	CONSTRAINT "organization_slug_unique" UNIQUE("slug")
+	CONSTRAINT "ba_organization_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
-CREATE TABLE "session" (
+CREATE TABLE "ba_session" (
 	"id" text PRIMARY KEY NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
 	"token" text NOT NULL,
@@ -423,10 +425,10 @@ CREATE TABLE "session" (
 	"user_agent" text,
 	"user_id" text NOT NULL,
 	"active_organization_id" text,
-	CONSTRAINT "session_token_unique" UNIQUE("token")
+	CONSTRAINT "ba_session_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
-CREATE TABLE "user" (
+CREATE TABLE "ba_user" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"email" text NOT NULL,
@@ -434,10 +436,10 @@ CREATE TABLE "user" (
 	"image" text,
 	"created_at" timestamp with time zone NOT NULL,
 	"updated_at" timestamp with time zone NOT NULL,
-	CONSTRAINT "user_email_unique" UNIQUE("email")
+	CONSTRAINT "ba_user_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
-CREATE TABLE "verification" (
+CREATE TABLE "ba_verification" (
 	"id" text PRIMARY KEY NOT NULL,
 	"identifier" text NOT NULL,
 	"value" text NOT NULL,
@@ -452,7 +454,7 @@ ALTER TABLE "org_users" ADD CONSTRAINT "org_users_org_id_organizations_id_fk" FO
 ALTER TABLE "org_users" ADD CONSTRAINT "org_users_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activities" ADD CONSTRAINT "activities_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "activities" ADD CONSTRAINT "activities_org_id_module_id_modules_org_id_id_fk" FOREIGN KEY ("org_id","module_id") REFERENCES "public"."modules"("org_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activities" ADD CONSTRAINT "activities_org_id_module_id_course_id_modules_org_id_id_course_id_fk" FOREIGN KEY ("org_id","module_id","course_id") REFERENCES "public"."modules"("org_id","id","course_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activity_assets" ADD CONSTRAINT "activity_assets_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activity_assets" ADD CONSTRAINT "activity_assets_org_id_activity_id_activities_org_id_id_fk" FOREIGN KEY ("org_id","activity_id") REFERENCES "public"."activities"("org_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activity_assets" ADD CONSTRAINT "activity_assets_org_id_asset_id_assets_org_id_id_fk" FOREIGN KEY ("org_id","asset_id") REFERENCES "public"."assets"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -491,22 +493,22 @@ ALTER TABLE "comments" ADD CONSTRAINT "comments_org_id_activity_id_activities_or
 ALTER TABLE "comments" ADD CONSTRAINT "comments_org_id_org_user_id_org_users_org_id_id_fk" FOREIGN KEY ("org_id","org_user_id") REFERENCES "public"."org_users"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "comments" ADD CONSTRAINT "comments_org_id_removed_by_org_users_org_id_id_fk" FOREIGN KEY ("org_id","removed_by") REFERENCES "public"."org_users"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "comments" ADD CONSTRAINT "comments_org_id_parent_id_comments_org_id_id_fk" FOREIGN KEY ("org_id","parent_id") REFERENCES "public"."comments"("org_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "invitation" ADD CONSTRAINT "invitation_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "invitation" ADD CONSTRAINT "invitation_inviter_id_user_id_fk" FOREIGN KEY ("inviter_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "member" ADD CONSTRAINT "member_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "member" ADD CONSTRAINT "member_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "oauth_access_token" ADD CONSTRAINT "oauth_access_token_client_id_oauth_client_client_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."oauth_client"("client_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "oauth_access_token" ADD CONSTRAINT "oauth_access_token_session_id_session_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."session"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "oauth_access_token" ADD CONSTRAINT "oauth_access_token_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "oauth_access_token" ADD CONSTRAINT "oauth_access_token_refresh_id_oauth_refresh_token_id_fk" FOREIGN KEY ("refresh_id") REFERENCES "public"."oauth_refresh_token"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "oauth_client" ADD CONSTRAINT "oauth_client_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "oauth_consent" ADD CONSTRAINT "oauth_consent_client_id_oauth_client_client_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."oauth_client"("client_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "oauth_consent" ADD CONSTRAINT "oauth_consent_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "oauth_refresh_token" ADD CONSTRAINT "oauth_refresh_token_client_id_oauth_client_client_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."oauth_client"("client_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "oauth_refresh_token" ADD CONSTRAINT "oauth_refresh_token_session_id_session_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."session"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "oauth_refresh_token" ADD CONSTRAINT "oauth_refresh_token_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_account" ADD CONSTRAINT "ba_account_user_id_ba_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."ba_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_invitation" ADD CONSTRAINT "ba_invitation_organization_id_ba_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."ba_organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_invitation" ADD CONSTRAINT "ba_invitation_inviter_id_ba_user_id_fk" FOREIGN KEY ("inviter_id") REFERENCES "public"."ba_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_member" ADD CONSTRAINT "ba_member_organization_id_ba_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."ba_organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_member" ADD CONSTRAINT "ba_member_user_id_ba_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."ba_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_oauth_access_token" ADD CONSTRAINT "ba_oauth_access_token_client_id_ba_oauth_client_client_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."ba_oauth_client"("client_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_oauth_access_token" ADD CONSTRAINT "ba_oauth_access_token_session_id_ba_session_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."ba_session"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_oauth_access_token" ADD CONSTRAINT "ba_oauth_access_token_user_id_ba_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."ba_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_oauth_access_token" ADD CONSTRAINT "ba_oauth_access_token_refresh_id_ba_oauth_refresh_token_id_fk" FOREIGN KEY ("refresh_id") REFERENCES "public"."ba_oauth_refresh_token"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_oauth_client" ADD CONSTRAINT "ba_oauth_client_user_id_ba_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."ba_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_oauth_consent" ADD CONSTRAINT "ba_oauth_consent_client_id_ba_oauth_client_client_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."ba_oauth_client"("client_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_oauth_consent" ADD CONSTRAINT "ba_oauth_consent_user_id_ba_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."ba_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_oauth_refresh_token" ADD CONSTRAINT "ba_oauth_refresh_token_client_id_ba_oauth_client_client_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."ba_oauth_client"("client_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_oauth_refresh_token" ADD CONSTRAINT "ba_oauth_refresh_token_session_id_ba_session_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."ba_session"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_oauth_refresh_token" ADD CONSTRAINT "ba_oauth_refresh_token_user_id_ba_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."ba_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ba_session" ADD CONSTRAINT "ba_session_user_id_ba_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."ba_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "invitations_pending_email_uq" ON "invitations" USING btree ("org_id","email") WHERE "invitations"."status" = 'pending';--> statement-breakpoint
 CREATE INDEX "event_outbox_pending_idx" ON "event_outbox" USING btree ("id") WHERE "event_outbox"."processed_at" is null;--> statement-breakpoint
 CREATE INDEX "automation_runs_org_automation_idx" ON "automation_runs" USING btree ("org_id","automation_id");--> statement-breakpoint
@@ -515,48 +517,13 @@ CREATE INDEX "automations_org_trigger_idx" ON "automations" USING btree ("org_id
 CREATE INDEX "comment_reports_open_idx" ON "comment_reports" USING btree ("org_id","comment_id","resolved_at");--> statement-breakpoint
 CREATE INDEX "comments_activity_idx" ON "comments" USING btree ("org_id","activity_id","status","created_at");--> statement-breakpoint
 CREATE INDEX "comments_queue_idx" ON "comments" USING btree ("org_id","status","created_at");--> statement-breakpoint
-CREATE INDEX "oauth_access_token_client_id_idx" ON "oauth_access_token" USING btree ("client_id");--> statement-breakpoint
-CREATE INDEX "oauth_access_token_session_id_idx" ON "oauth_access_token" USING btree ("session_id");--> statement-breakpoint
-CREATE INDEX "oauth_access_token_user_id_idx" ON "oauth_access_token" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX "oauth_access_token_refresh_id_idx" ON "oauth_access_token" USING btree ("refresh_id");--> statement-breakpoint
-CREATE INDEX "oauth_client_user_id_idx" ON "oauth_client" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX "oauth_consent_client_id_idx" ON "oauth_consent" USING btree ("client_id");--> statement-breakpoint
-CREATE INDEX "oauth_consent_user_id_idx" ON "oauth_consent" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX "oauth_refresh_token_client_id_idx" ON "oauth_refresh_token" USING btree ("client_id");--> statement-breakpoint
-CREATE INDEX "oauth_refresh_token_session_id_idx" ON "oauth_refresh_token" USING btree ("session_id");--> statement-breakpoint
-CREATE INDEX "oauth_refresh_token_user_id_idx" ON "oauth_refresh_token" USING btree ("user_id");--> statement-breakpoint
--- Recursive jsonb merge. `||` only merges top-level keys, so patching
--- {"ui":{"theme":"light"}} over {"ui":{"theme":"dark","density":"compact"}}
--- drops `density`. This walks nested objects instead: objects merge key by
--- key, everything else (scalars, arrays, json null) is replaced by the patch.
-CREATE OR REPLACE FUNCTION jsonb_deep_merge(base jsonb, patch jsonb)
-RETURNS jsonb
-LANGUAGE plpgsql
-IMMUTABLE
-AS $$
-DECLARE
-  merged jsonb;
-  key text;
-BEGIN
-  IF base IS NULL THEN
-    RETURN patch;
-  END IF;
-  IF patch IS NULL THEN
-    RETURN base;
-  END IF;
-  IF jsonb_typeof(base) <> 'object' OR jsonb_typeof(patch) <> 'object' THEN
-    RETURN patch;
-  END IF;
-
-  merged := base;
-  FOR key IN SELECT jsonb_object_keys(patch) LOOP
-    IF jsonb_typeof(base -> key) = 'object' AND jsonb_typeof(patch -> key) = 'object' THEN
-      merged := jsonb_set(merged, ARRAY[key], jsonb_deep_merge(base -> key, patch -> key), true);
-    ELSE
-      merged := jsonb_set(merged, ARRAY[key], patch -> key, true);
-    END IF;
-  END LOOP;
-
-  RETURN merged;
-END;
-$$;
+CREATE INDEX "ba_oauth_access_token_client_id_idx" ON "ba_oauth_access_token" USING btree ("client_id");--> statement-breakpoint
+CREATE INDEX "ba_oauth_access_token_session_id_idx" ON "ba_oauth_access_token" USING btree ("session_id");--> statement-breakpoint
+CREATE INDEX "ba_oauth_access_token_user_id_idx" ON "ba_oauth_access_token" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "ba_oauth_access_token_refresh_id_idx" ON "ba_oauth_access_token" USING btree ("refresh_id");--> statement-breakpoint
+CREATE INDEX "ba_oauth_client_user_id_idx" ON "ba_oauth_client" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "ba_oauth_consent_client_id_idx" ON "ba_oauth_consent" USING btree ("client_id");--> statement-breakpoint
+CREATE INDEX "ba_oauth_consent_user_id_idx" ON "ba_oauth_consent" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "ba_oauth_refresh_token_client_id_idx" ON "ba_oauth_refresh_token" USING btree ("client_id");--> statement-breakpoint
+CREATE INDEX "ba_oauth_refresh_token_session_id_idx" ON "ba_oauth_refresh_token" USING btree ("session_id");--> statement-breakpoint
+CREATE INDEX "ba_oauth_refresh_token_user_id_idx" ON "ba_oauth_refresh_token" USING btree ("user_id");

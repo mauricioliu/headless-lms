@@ -49,7 +49,7 @@ export class ContentServiceImpl implements ContentService {
     return this.repo.list(orgId, query);
   }
 
-  async get(orgId: string, id: string): Promise<Course | null> {
+  async getCourse(orgId: string, id: string): Promise<Course | null> {
     const course = await this.repo.findById(orgId, id);
     if (!course) {
       return null;
@@ -78,7 +78,7 @@ export class ContentServiceImpl implements ContentService {
     };
   }
 
-  async create(orgId: string, input: CreateCourseInput): Promise<Course> {
+  async createCourse(orgId: string, input: CreateCourseInput): Promise<Course> {
     const course = await this.uow.run(async ({ content, outbox }) => {
       const created = await content.create(orgId, input, slugify(input.title));
       await outbox.append([{ type: 'course.created', orgId, course: created }]);
@@ -88,7 +88,7 @@ export class ContentServiceImpl implements ContentService {
     return course;
   }
 
-  async update(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course> {
+  async updateCourse(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course> {
     const course = await this.uow.run(async ({ content, outbox }) => {
       const updated = await content.update(orgId, id, patch);
       if (!updated) {
@@ -120,8 +120,8 @@ export class ContentServiceImpl implements ContentService {
     return { ...course.settings, ...merged };
   }
 
-  async remove(orgId: string, id: string): Promise<void> {
-    await this.uow.run(async ({ content, outbox }) => {
+  async deleteCourse(orgId: string, id: string): Promise<void> {
+    return this.uow.run(async ({ content, outbox }) => {
       // Snapshot before the delete — the event carries the last known state.
       const course = await content.findById(orgId, id);
       if (!course) {
@@ -132,13 +132,13 @@ export class ContentServiceImpl implements ContentService {
         throw new NotFoundError('Course', id);
       }
       await outbox.append([{ type: 'course.deleted', orgId, course }]);
+      this.logger.info('course deleted', { orgId, courseId: id });
     });
-    this.logger.info('course deleted', { orgId, courseId: id });
   }
 
   // --- modules & activities (delegated to the structure repository) -------
 
-  listForCourse(orgId: string, courseId: string): Promise<Module[]> {
+  listCourseModules(orgId: string, courseId: string): Promise<Module[]> {
     return this.structureRepo.listForCourse(orgId, courseId);
   }
   getActivity(orgId: string, activityId: string): Promise<Activity | null> {

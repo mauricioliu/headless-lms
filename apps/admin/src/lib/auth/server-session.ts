@@ -135,7 +135,7 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
  *
  * Free after the first call in a request — it wraps the `React.cache`'d resolver.
  */
-export async function requireSession(): Promise<ServerSession> {
+export async function requireOrgSession(): Promise<ServerSession> {
   const session = await getServerSession();
   if (!session) redirect("/login");
   // Valid cookie, no staff role (e.g. a student login) — the login page

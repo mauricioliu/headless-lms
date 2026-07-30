@@ -28,11 +28,11 @@ import { Input } from "@/components/ui/input";
 import { RowActions } from "@/components/data-table/row-actions";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import type { Activity, Module, CommentStates } from "@/lib/api/types";
+import type { Activity, Module } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
 import { ItemRow } from "./item-row";
-import { ItemFormSheet } from "./item-form-sheet";
+import { NewActivityDialog } from "./new-activity-dialog";
 import {
   createModuleAction,
   deleteModuleAction,
@@ -59,13 +59,11 @@ function SortableModule({
   courseId,
   index,
   canEdit,
-  commentStates,
 }: {
   module: Module;
   courseId: string;
   index: number;
   canEdit: boolean;
-  commentStates: CommentStates;
 }) {
   const router = useRouter();
   const sensors = useDndSensors();
@@ -77,8 +75,7 @@ function SortableModule({
   const [titleDraft, setTitleDraft] = React.useState(module.title);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
-  const [sheetOpen, setSheetOpen] = React.useState(false);
-  const [sheetItem, setSheetItem] = React.useState<Activity | null>(null);
+  const [newItemOpen, setNewItemOpen] = React.useState(false);
 
   // Re-sync local ordering when the server returns a new activity set.
   if (module.activities !== serverItems) {
@@ -127,16 +124,6 @@ function SortableModule({
         setTitleDraft(module.title);
       }
     });
-  }
-
-  function openCreate() {
-    setSheetItem(null);
-    setSheetOpen(true);
-  }
-
-  function openEdit(item: Activity) {
-    setSheetItem(item);
-    setSheetOpen(true);
   }
 
   return (
@@ -218,7 +205,7 @@ function SortableModule({
         {canEdit ? (
           <RowActions label="Module actions">
             <DropdownMenuItem onClick={() => setEditingTitle(true)}>Rename</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => openCreate()}>Add activity</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setNewItemOpen(true)}>Add activity</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="danger" onClick={() => setConfirmOpen(true)}>
               Delete module
@@ -248,7 +235,6 @@ function SortableModule({
                     courseId={courseId}
                     moduleId={module.id}
                     canEdit={canEdit}
-                    onEdit={openEdit}
                   />
                 ))}
               </div>
@@ -258,7 +244,7 @@ function SortableModule({
 
         {canEdit ? (
           <div className="flex items-center gap-2 px-1 pt-2">
-            <Button size="sm" variant="ghost" onClick={() => openCreate()}>
+            <Button size="sm" variant="ghost" onClick={() => setNewItemOpen(true)}>
               <Sparkles className="size-4" />
               Add activity
             </Button>
@@ -268,13 +254,11 @@ function SortableModule({
 
       {canEdit ? (
         <>
-          <ItemFormSheet
-            open={sheetOpen}
-            onOpenChange={setSheetOpen}
+          <NewActivityDialog
+            open={newItemOpen}
+            onOpenChange={setNewItemOpen}
             courseId={courseId}
             moduleId={module.id}
-            item={sheetItem}
-            commentsState={sheetItem ? (commentStates[sheetItem.id] ?? null) : null}
           />
           <ConfirmDialog
             open={confirmOpen}
@@ -380,12 +364,10 @@ function ModuleComposer({ courseId }: { courseId: string }) {
 export function ModuleList({
   courseId,
   modules,
-  commentStates,
   canEdit,
 }: {
   courseId: string;
   modules: Module[];
-  commentStates: CommentStates;
   canEdit: boolean;
 }) {
   const router = useRouter();
@@ -453,7 +435,6 @@ export function ModuleList({
                   index={i}
                   courseId={courseId}
                   canEdit={canEdit}
-                  commentStates={commentStates}
                 />
               ))}
             </div>
@@ -468,7 +449,6 @@ export function ModuleList({
               index={i}
               courseId={courseId}
               canEdit={canEdit}
-              commentStates={commentStates}
             />
           ))}
         </div>

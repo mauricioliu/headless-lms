@@ -29,7 +29,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
   r.route({
     method: 'GET',
     url: '/api/downloads',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listDownloads',
       tags: ['Downloads'],
@@ -46,7 +46,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
   r.route({
     method: 'GET',
     url: '/api/downloads/:downloadId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getDownload',
       tags: ['Downloads'],
@@ -67,7 +67,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
   r.route({
     method: 'POST',
     url: '/api/downloads',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'createDownload',
       tags: ['Downloads'],
@@ -85,7 +85,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
   r.route({
     method: 'PATCH',
     url: '/api/downloads/:downloadId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'updateDownload',
       tags: ['Downloads'],
@@ -103,7 +103,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
   r.route({
     method: 'DELETE',
     url: '/api/downloads/:downloadId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'deleteDownload',
       tags: ['Downloads'],
@@ -121,7 +121,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
   r.route({
     method: 'GET',
     url: '/api/downloads/:downloadId/assets',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listDownloadAssets',
       tags: ['Downloads'],
@@ -138,7 +138,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
   r.route({
     method: 'POST',
     url: '/api/downloads/:downloadId/assets',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'addDownloadAsset',
       tags: ['Downloads'],
@@ -158,7 +158,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
   r.route({
     method: 'PUT',
     url: '/api/downloads/:downloadId/assets/order',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'reorderDownloadAssets',
       tags: ['Downloads'],
@@ -180,7 +180,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
   r.route({
     method: 'PATCH',
     url: '/api/downloads/:downloadId/assets/:assetId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'renameDownloadAsset',
       tags: ['Downloads'],
@@ -203,7 +203,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
   r.route({
     method: 'DELETE',
     url: '/api/downloads/:downloadId/assets/:assetId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'removeDownloadAsset',
       tags: ['Downloads'],

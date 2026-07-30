@@ -17,7 +17,7 @@ export type { ServerConfig } from './http/config.js';
 // Re-exporting AuthUser also pulls its module into any program that imports
 // this file (directly or via the workspace path mapping), which is what
 // applies its ambient `declare module "fastify"` augmentation
-// (FastifyRequest.authUser/orgId, FastifyInstance.requireSession) —
+// (FastifyRequest.authUser/orgId, FastifyInstance.requireOrgSession) —
 // otherwise nothing imports fastify.d.ts and the augmentation never loads.
 export type { AuthUser } from './http/fastify.js';
 export type {

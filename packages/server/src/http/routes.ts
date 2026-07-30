@@ -35,12 +35,9 @@ export function registerRoutes(
     });
   });
 
-  // Back-office routes (validated against the shared contract). A scoped
-  // onRequest hook enforces the session on EVERY route in this plugin, so a new
-  // route cannot accidentally be public; the per-route `requireSession`
-  // preHandlers remain as explicit, idempotent belt-and-suspenders.
+
   app.register(async (instance) => {
-    instance.addHook('onRequest', instance.requireSession);
+    instance.addHook('onRequest', instance.requireOrgSession);
     await coursesRoutes(instance, container);
     await downloadsRoutes(instance, container);
     await learnRoutes(instance, container);

@@ -84,7 +84,7 @@ export async function organizationsRoutes(
   r.route({
     method: 'POST',
     url: '/api/organizations',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'createOrganization',
       tags,
@@ -108,7 +108,7 @@ export async function organizationsRoutes(
   r.route({
     method: 'PATCH',
     url: '/api/organizations',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'updateOrganization',
       tags,
@@ -131,7 +131,7 @@ export async function organizationsRoutes(
   r.route({
     method: 'GET',
     url: '/api/organizations/members',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listMembers',
       tags,
@@ -148,7 +148,7 @@ export async function organizationsRoutes(
   r.route({
     method: 'PATCH',
     url: '/api/organizations/members/:id/role',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'updateMemberRole',
       tags,
@@ -175,7 +175,7 @@ export async function organizationsRoutes(
   r.route({
     method: 'DELETE',
     url: '/api/organizations/members/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'removeMember',
       tags,
@@ -201,7 +201,7 @@ export async function organizationsRoutes(
   r.route({
     method: 'POST',
     url: '/api/organizations/invites',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'createInvite',
       tags,
@@ -231,7 +231,7 @@ export async function organizationsRoutes(
   r.route({
     method: 'POST',
     url: '/api/organizations/invites/accept',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'acceptInvite',
       tags,

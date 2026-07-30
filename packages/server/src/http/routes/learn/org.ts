@@ -10,7 +10,7 @@ export async function learnOrgRoutes(app: FastifyInstance, container: Container)
   r.route({
     method: 'GET',
     url: '/api/learn/org',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getLearnOrg',
       tags: ['Learn'],

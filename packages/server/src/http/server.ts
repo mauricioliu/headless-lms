@@ -5,7 +5,7 @@ import type { ServerConfig } from './config.js';
 import { registerCors } from './plugins/cors.js';
 import { registerOpenApi } from './plugins/openapi.js';
 import { registerAuth } from './plugins/auth.js';
-import { registerErrorHandler } from './plugins/error-handler.js';
+import { errorHandler } from './plugins/error-handler.js';
 import { registerRoutes } from './routes.js';
 
 export async function buildServer(
@@ -29,11 +29,12 @@ export async function buildServer(
   // Validate + serialize request/response bodies from the shared Zod contract.
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+  app.setErrorHandler(errorHandler);
 
   registerCors(app, config);
   registerOpenApi(app, config);
   registerAuth(app, container);
-  registerErrorHandler(app);
+
   registerRoutes(app, container, config);
 
   // Drain + stop the outbox relay and the automation engine on shutdown.

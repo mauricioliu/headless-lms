@@ -22,7 +22,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'GET',
     url: '/api/comments',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listComments',
       tags: ['Discussion'],
@@ -31,7 +31,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
       response: { 200: CommentsPage },
     },
     handler: async (req) => {
-      const scope = await resolveScope(container, req);
+
       return discussion.listComments(scope.orgId, req.query);
     },
   });
@@ -39,7 +39,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'DELETE',
     url: '/api/comments/:commentId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'moderateRemoveComment',
       tags: ['Discussion'],
@@ -57,7 +57,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
   r.route({
     method: 'PATCH',
     url: '/api/comments/:commentId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'editComment',
       tags: ['Discussion'],

@@ -15,11 +15,6 @@ export interface User {
   readonly updatedAt: Date;
 }
 
-/**
- * A person as displayed. `id` is the auth engine's user id — the same id the
- * session carries — NOT `org_users.id`. Anything keyed on a participation uses
- * OrgUserProfile in ./organizations.ts instead.
- */
 export interface UserProfile {
   readonly id: string;
   name: string;
@@ -29,8 +24,9 @@ export interface UserProfile {
 
 export type UserId = string;
 
-export interface RegisterUserInput {
+export type CreateUserInput = {
+  id?: string;
   externalId: string;
   email: string;
   displayName: string;
-}
+};

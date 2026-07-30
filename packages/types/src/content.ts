@@ -48,6 +48,9 @@ export interface Course {
 export interface Activity {
   readonly id: string;
   moduleId: string;
+  /** The course the activity's module belongs to, carried on the activity so
+   *  callers that only hold an activity id never have to walk the hierarchy. */
+  courseId: string;
   seq: number;
   settings: unknown;
   /** Media-library assets backing this activity (activity_assets), ordered. */

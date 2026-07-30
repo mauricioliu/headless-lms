@@ -1,6 +1,11 @@
+// Better Auth's own tables. Every physical table is prefixed `ba_` so the auth
+// engine's storage is visibly separate from the domain's own tables (`users`,
+// `organizations`, …) it is mirrored into. The exported identifiers stay the
+// better-auth model names — that is the key `drizzleAdapter` looks each model
+// up by, so it must not carry the prefix.
 import { pgTable, text, timestamp, boolean, index } from 'drizzle-orm/pg-core';
 
-export const user = pgTable('user', {
+export const user = pgTable('ba_user', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
@@ -16,7 +21,7 @@ export const user = pgTable('user', {
     .notNull(),
 });
 
-export const session = pgTable('session', {
+export const session = pgTable('ba_session', {
   id: text('id').primaryKey(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   token: text('token').notNull().unique(),
@@ -31,7 +36,7 @@ export const session = pgTable('session', {
   activeOrganizationId: text('active_organization_id'),
 });
 
-export const account = pgTable('account', {
+export const account = pgTable('ba_account', {
   id: text('id').primaryKey(),
   accountId: text('account_id').notNull(),
   providerId: text('provider_id').notNull(),
@@ -49,7 +54,7 @@ export const account = pgTable('account', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
 });
 
-export const verification = pgTable('verification', {
+export const verification = pgTable('ba_verification', {
   id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
@@ -60,7 +65,7 @@ export const verification = pgTable('verification', {
 
 // --- organization plugin tables ---
 
-export const organization = pgTable('organization', {
+export const organization = pgTable('ba_organization', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
@@ -70,7 +75,7 @@ export const organization = pgTable('organization', {
   updatedAt: timestamp('updated_at', { withTimezone: true }),
 });
 
-export const member = pgTable('member', {
+export const member = pgTable('ba_member', {
   id: text('id').primaryKey(),
   organizationId: text('organization_id')
     .notNull()
@@ -82,7 +87,7 @@ export const member = pgTable('member', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
 });
 
-export const invitation = pgTable('invitation', {
+export const invitation = pgTable('ba_invitation', {
   id: text('id').primaryKey(),
   organizationId: text('organization_id')
     .notNull()
@@ -101,7 +106,7 @@ export const invitation = pgTable('invitation', {
 // `reference_id` is the plugin's tenant slot: the organization the person chose
 // at consent. It is the only thing that tells a token which org it acts in.
 export const oauthClient = pgTable(
-  'oauth_client',
+  'ba_oauth_client',
   {
     id: text('id').primaryKey(),
     clientId: text('client_id').notNull().unique(),
@@ -134,11 +139,11 @@ export const oauthClient = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }),
     updatedAt: timestamp('updated_at', { withTimezone: true }),
   },
-  (t) => [index('oauth_client_user_id_idx').on(t.userId)],
+  (t) => [index('ba_oauth_client_user_id_idx').on(t.userId)],
 );
 
 export const oauthRefreshToken = pgTable(
-  'oauth_refresh_token',
+  'ba_oauth_refresh_token',
   {
     id: text('id').primaryKey(),
     token: text('token').notNull().unique(),
@@ -157,14 +162,14 @@ export const oauthRefreshToken = pgTable(
     scopes: text('scopes').array().notNull(),
   },
   (t) => [
-    index('oauth_refresh_token_client_id_idx').on(t.clientId),
-    index('oauth_refresh_token_session_id_idx').on(t.sessionId),
-    index('oauth_refresh_token_user_id_idx').on(t.userId),
+    index('ba_oauth_refresh_token_client_id_idx').on(t.clientId),
+    index('ba_oauth_refresh_token_session_id_idx').on(t.sessionId),
+    index('ba_oauth_refresh_token_user_id_idx').on(t.userId),
   ],
 );
 
 export const oauthAccessToken = pgTable(
-  'oauth_access_token',
+  'ba_oauth_access_token',
   {
     id: text('id').primaryKey(),
     token: text('token').notNull().unique(),
@@ -180,15 +185,15 @@ export const oauthAccessToken = pgTable(
     scopes: text('scopes').array().notNull(),
   },
   (t) => [
-    index('oauth_access_token_client_id_idx').on(t.clientId),
-    index('oauth_access_token_session_id_idx').on(t.sessionId),
-    index('oauth_access_token_user_id_idx').on(t.userId),
-    index('oauth_access_token_refresh_id_idx').on(t.refreshId),
+    index('ba_oauth_access_token_client_id_idx').on(t.clientId),
+    index('ba_oauth_access_token_session_id_idx').on(t.sessionId),
+    index('ba_oauth_access_token_user_id_idx').on(t.userId),
+    index('ba_oauth_access_token_refresh_id_idx').on(t.refreshId),
   ],
 );
 
 export const oauthConsent = pgTable(
-  'oauth_consent',
+  'ba_oauth_consent',
   {
     id: text('id').primaryKey(),
     clientId: text('client_id')
@@ -201,13 +206,13 @@ export const oauthConsent = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
   },
   (t) => [
-    index('oauth_consent_client_id_idx').on(t.clientId),
-    index('oauth_consent_user_id_idx').on(t.userId),
+    index('ba_oauth_consent_client_id_idx').on(t.clientId),
+    index('ba_oauth_consent_user_id_idx').on(t.userId),
   ],
 );
 
 // better-auth's jwt plugin: the signing keys behind JWT access tokens.
-export const jwks = pgTable('jwks', {
+export const jwks = pgTable('ba_jwks', {
   id: text('id').primaryKey(),
   publicKey: text('public_key').notNull(),
   privateKey: text('private_key').notNull(),

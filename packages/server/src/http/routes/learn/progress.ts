@@ -21,7 +21,7 @@ export async function learnProgressRoutes(
   r.route({
     method: 'POST',
     url: '/api/learn/progress',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'reportProgress',
       tags: ['Learn'],
@@ -31,14 +31,13 @@ export async function learnProgressRoutes(
     },
     handler: async (req) => {
       const scope = await resolveStudentScope(container, req);
-      // Resolve the hierarchy (activity → module → course), then the same
-      // enrollment gate as every Learn read.
+      // The activity carries its course, then the same enrollment gate as every
+      // Learn read.
       const activity = await container.content.getActivity(scope.orgId, req.body.activity);
-      const module = activity && (await container.content.getModule(scope.orgId, activity.moduleId));
-      if (!module) {
+      if (!activity) {
         throw new NotFoundError('Activity', req.body.activity);
       }
-      const course = await learn.getCourse(scope.orgId, scope.orgUserId, module.courseId);
+      const course = await learn.getCourse(scope.orgId, scope.orgUserId, activity.courseId);
       if (!course) {
         throw new NotFoundError('Activity', req.body.activity);
       }
@@ -54,7 +53,7 @@ export async function learnProgressRoutes(
   r.route({
     method: 'GET',
     url: '/api/learn/courses/:courseId/progress',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getLearnCourseProgress',
       tags: ['Learn'],

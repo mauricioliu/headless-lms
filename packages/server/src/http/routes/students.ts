@@ -23,7 +23,7 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
   r.route({
     method: 'GET',
     url: '/api/students',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listStudents',
       tags: ['Students'],
@@ -40,7 +40,7 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
   r.route({
     method: 'GET',
     url: '/api/students/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getStudent',
       tags: ['Students'],
@@ -61,7 +61,7 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
   r.route({
     method: 'POST',
     url: '/api/students',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'createStudent',
       tags: ['Students'],
@@ -89,7 +89,7 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
   r.route({
     method: 'DELETE',
     url: '/api/students/:id',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'deleteStudent',
       tags: ['Students'],

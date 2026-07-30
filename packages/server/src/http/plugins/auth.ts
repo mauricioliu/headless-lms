@@ -1,12 +1,20 @@
 // Everything better-auth touches on the HTTP surface:
 //   - the /api/auth/* catch-all bridged to better-auth's Web handler
 //   - the RFC 8414 OAuth discovery endpoints MCP clients need at the root
-//   - the `requireSession` decorator that back-office routes guard with
+//   - the `requireOrgSession` decorator that back-office routes guard with
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { fromNodeHeaders } from 'better-auth/node';
 import { oauthProviderAuthServerMetadata } from '@better-auth/oauth-provider';
 import type { Container } from '../../app/container.js';
 import { bridgeWebResponse, toWebRequest } from '../web-bridge.js';
+
+/** The request carries no session. The central error handler maps this to 401. */
+export class UnauthorizedError extends Error {
+  constructor(message = 'no session on the request') {
+    super(message);
+    this.name = 'UnauthorizedError';
+  }
+}
 
 export function registerAuth(app: FastifyInstance, container: Container): void {
   const { auth, authBaseURL } = container;
@@ -54,23 +62,15 @@ export function registerAuth(app: FastifyInstance, container: Container): void {
     await reply.send(protectedResource);
   });
 
-  // Resolves the current session; 401 when absent. Idempotent — if the session
-  // is already resolved on this request (e.g. the scoped onRequest hook ran, and
-  // a route also lists it as a preHandler) it returns without a second lookup.
-  app.decorate('requireSession', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (request.authUser) {
-      return;
-    }
+  // Requires a valid session with active org set
+  app.decorate('requireOrgSession', async (request: FastifyRequest) => {
     const sessionData = await auth.api.getSession({
       headers: fromNodeHeaders(request.headers),
     });
-    if (!sessionData) {
-      reply.status(401).send({ error: 'unauthorized' });
-      return;
+    if (!sessionData || !sessionData.session.activeOrganizationId) {
+      throw new UnauthorizedError();
     }
     request.authUser = sessionData.user;
-    request.orgId =
-      (sessionData.session as { activeOrganizationId?: string | null }).activeOrganizationId ??
-      null;
+    request.orgId = sessionData.session.activeOrganizationId ?? null;
   });
 }

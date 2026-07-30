@@ -21,10 +21,10 @@ import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 
 export interface ContentService {
   list(orgId: string, query: ListCoursesQuery): Promise<Page<Course>>;
-  get(orgId: string, id: string): Promise<Course | null>;
-  create(orgId: string, input: CreateCourseInput): Promise<Course>;
+  getCourse(orgId: string, id: string): Promise<Course | null>;
+  createCourse(orgId: string, input: CreateCourseInput): Promise<Course>;
   /** @throws NotFoundError when no course with this id exists in the org. */
-  update(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course>;
+  updateCourse(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course>;
   /** @throws NotFoundError when no course with this id exists in the org. */
   patchSettings(
     orgId: string,
@@ -32,9 +32,9 @@ export interface ContentService {
     value: Partial<CourseSettings>,
   ): Promise<CourseSettings>;
   /** @throws NotFoundError when no course with this id exists in the org. */
-  remove(orgId: string, id: string): Promise<void>;
+  deleteCourse(orgId: string, id: string): Promise<void>;
 
-  listForCourse(orgId: string, courseId: string): Promise<Module[]>;
+  listCourseModules(orgId: string, courseId: string): Promise<Module[]>;
   getActivity(orgId: string, activityId: string): Promise<Activity | null>;
   getModule(orgId: string, moduleId: string): Promise<Module | null>;
   reorderModules(orgId: string, courseId: string, orderedIds: string[]): Promise<Module[]>;

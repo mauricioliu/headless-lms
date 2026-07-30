@@ -21,7 +21,7 @@ export async function learnCoursesRoutes(
   r.route({
     method: 'GET',
     url: '/api/learn/courses',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listLearnCourses',
       tags: ['Learn'],
@@ -37,7 +37,7 @@ export async function learnCoursesRoutes(
   r.route({
     method: 'GET',
     url: '/api/learn/courses/:courseId',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getLearnCourse',
       tags: ['Learn'],
@@ -58,7 +58,7 @@ export async function learnCoursesRoutes(
   r.route({
     method: 'GET',
     url: '/api/learn/courses/:courseId/modules',
-    preHandler: app.requireSession,
+    preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listLearnModules',
       tags: ['Learn'],
