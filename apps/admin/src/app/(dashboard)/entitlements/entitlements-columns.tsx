@@ -36,17 +36,17 @@ export function entitlementColumns(
 ): ColumnDef<Entitlement, unknown>[] {
   return [
     {
-      accessorKey: "studentName",
+      accessorKey: "firstName",
       header: ({ column }) => <ColumnHeader column={column} title="Student" />,
       cell: ({ row }) => {
         const e = row.original;
-        const name = e.studentName;
+        const name = fullName(e);
         return (
           <div className="flex min-w-0 items-center gap-2.5">
             <NameAvatar name={name} className="size-7 shrink-0" />
             <div className="min-w-0">
               <div className="truncate font-medium text-ink">{name}</div>
-              <div className="truncate text-sm text-ink-4">{e.studentEmail}</div>
+              <div className="truncate text-sm text-ink-4">{e.email}</div>
             </div>
           </div>
         );

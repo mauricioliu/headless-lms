@@ -15,6 +15,7 @@ import { isManager } from "@/lib/roles";
 import type { Entitlement, ListParams } from "@/lib/api/types";
 
 import { entitlementColumns } from "./entitlements-columns";
+import { fullName } from "@/lib/format";
 import { GrantAccessDialog, type LiteContent, type LiteStudent } from "./_components/grant-access-dialog";
 import { setEntitlementStatusAction } from "./actions";
 
@@ -161,7 +162,7 @@ function EntitlementsTableInner({
         title="Revoke access?"
         description={
           revokeTarget
-            ? `${revokeTarget.studentName} will immediately lose access to ${revokeTarget.content.title}. You can reinstate it later.`
+            ? `${fullName(revokeTarget)} will immediately lose access to ${revokeTarget.content.title}. You can reinstate it later.`
             : ""
         }
         confirmLabel="Revoke access"

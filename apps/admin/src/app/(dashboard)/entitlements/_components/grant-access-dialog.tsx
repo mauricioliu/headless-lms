@@ -9,12 +9,11 @@ import { toast } from "sonner";
 import { FormDialog } from "@/components/forms/form-dialog";
 import { Field } from "@/components/forms/field";
 import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -72,8 +71,19 @@ export function GrantAccessDialog({
 
   const expiryMode = useWatch({ control, name: "expiryMode" });
 
-  const courses = content.filter((c) => c.type === "course");
-  const downloads = content.filter((c) => c.type === "download");
+  const studentOptions = React.useMemo(
+    () => students.map((s) => ({ value: s.id, label: s.name, description: s.email })),
+    [students],
+  );
+  const contentOptions = React.useMemo(
+    () =>
+      content.map((c) => ({
+        value: c.id,
+        label: c.title,
+        group: c.type === "course" ? "Courses" : "Downloads",
+      })),
+    [content],
+  );
 
   const onSubmit = handleSubmit((values) => {
     const input = {
@@ -111,18 +121,16 @@ export function GrantAccessDialog({
           name="studentId"
           render={({ field }) => (
             <Field id="studentId" label="Student" required error={errors.studentId?.message}>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="studentId" aria-invalid={!!errors.studentId}>
-                  <SelectValue placeholder="Select a student" />
-                </SelectTrigger>
-                <SelectContent>
-                  {students.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name} · {s.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                id="studentId"
+                value={field.value}
+                onValueChange={field.onChange}
+                options={studentOptions}
+                placeholder="Select a student"
+                searchPlaceholder="Search by name or email…"
+                emptyText="No students match"
+                aria-invalid={!!errors.studentId}
+              />
             </Field>
           )}
         />
@@ -132,29 +140,16 @@ export function GrantAccessDialog({
           name="contentId"
           render={({ field }) => (
             <Field id="contentId" label="Content" required error={errors.contentId?.message}>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="contentId" aria-invalid={!!errors.contentId}>
-                  <SelectValue placeholder="Select a course or download" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Courses</SelectLabel>
-                    {courses.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.title}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Downloads</SelectLabel>
-                    {downloads.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.title}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <Combobox
+                id="contentId"
+                value={field.value}
+                onValueChange={field.onChange}
+                options={contentOptions}
+                placeholder="Select a course or download"
+                searchPlaceholder="Search courses and downloads…"
+                emptyText="No content matches"
+                aria-invalid={!!errors.contentId}
+              />
             </Field>
           )}
         />
