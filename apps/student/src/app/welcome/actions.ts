@@ -11,7 +11,6 @@
  * email from the invitation row and refuses a token whose email doesn't match
  * the session, so nothing here is steerable from the query string.
  */
-import { redirect } from "next/navigation";
 import { Organizations } from "@headless-lms/sdk";
 
 import { authHeaders } from "@/lib/api/server-call";
@@ -28,8 +27,10 @@ export async function acceptInvite(token: string): Promise<AcceptInviteState> {
     if (!(e instanceof ApiError)) throw e;
     return { error: messageFor(e) };
   }
-  // Outside the try: redirect() signals by throwing.
-  redirect("/");
+  // No redirect from here: accepting stamps the session's active org, and the
+  // browser's cached session still predates that stamp. The caller refreshes it
+  // before navigating, or the first portal read 401s.
+  return null;
 }
 
 function messageFor(e: ApiError): string {

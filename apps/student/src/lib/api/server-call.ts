@@ -30,7 +30,7 @@ export const API_URL =
 configureSdk({
   baseUrl: API_URL,
   onError: (error, response) => {
-    if (response?.status === 401) redirect("/login?reset=1");
+    if (response?.status === 401) redirect("/login");
     return new ApiError(responseStatus(response), responseMessage(error, response));
   },
 });

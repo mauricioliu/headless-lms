@@ -8,7 +8,7 @@
  * client components.
  */
 import type { Metadata } from "next";
-import { Organizations, type ResolveInviteResponse } from "@headless-lms/sdk";
+import { Organizations, type GetInviteResponse } from "@headless-lms/sdk";
 
 import { AuthShell, AuthHeading } from "@/components/auth/auth-shell";
 import { InviteProblem } from "@/components/welcome/invite-problem";
@@ -30,10 +30,10 @@ export default async function WelcomePage({
 }) {
   const { token = "" } = await searchParams;
 
-  let invite: ResolveInviteResponse | undefined;
+  let invite: GetInviteResponse | undefined;
   if (token) {
     try {
-      invite = await Organizations.resolveInvite({ token }, await authHeaders());
+      invite = await Organizations.getInvite({ token }, await authHeaders());
     } catch (e) {
       // 404 is the answer for a forged, expired or already-used token — a page
       // state. Every other failure is a real one and stays unhandled.
@@ -65,11 +65,7 @@ export default async function WelcomePage({
           />
         </>
       ) : (
-        <InviteAuthForm
-          token={token}
-          email={invite.email}
-          accountExists={invite.accountExists}
-        />
+        <InviteAuthForm token={token} email={invite.email} name={invite.name} />
       )}
     </AuthShell>
   );
