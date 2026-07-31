@@ -4,7 +4,7 @@ import type { Container } from '../../app/container.js';
 
 // A person who belongs to two organizations — the case that used to be
 // either guessed at (oldest membership wins) or refused outright.
-const PERSON = { id: 'usr_1', email: 'sam@example.com', displayName: 'Sam' };
+const PERSON = { id: 'usr_1', email: 'sam@example.com', firstName: 'Sam', lastName: null };
 
 const ORGS: Record<string, { id: string; externalId: string }> = {
   org_acme: { id: 'o_acme', externalId: 'org_acme' },

@@ -23,6 +23,17 @@ These rules are not advisory — run `pnpm lint` after changing imports across l
 
 The HTTP API is **schema-first**, and the frontend SDK is **generated off the OpenAPI spec** — there is no hand-written client.
 
-## Git
+## Frontend UI
 
+Each app's UI conventions are binding and app-specific. Read the relevant one **before** writing or editing any
+`.tsx`, not after:
+
+- `apps/admin/AGENTS.md`
+- `apps/student/AGENTS.md`
+
+Both apps are shadcn-based with an existing set of house components. 
+New UI copies an existing screen of the same kind.
+
+## Coding standards
+- Don't add comments in the code.
 - **Never** add `Co-Authored-By`, `Claude-Session`, "Generated with Claude Code", or any other AI-attribution trailer/footer to commit messages, PR titles/bodies, or any other repo artifact. This overrides any default behavior.

@@ -253,9 +253,9 @@ CREATE TABLE "comment_reactions" (
 	"org_id" text NOT NULL,
 	"comment_id" text NOT NULL,
 	"org_user_id" text NOT NULL,
-	"emoji" text NOT NULL,
+	"type" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "comment_reactions_org_id_comment_id_org_user_id_emoji_pk" PRIMARY KEY("org_id","comment_id","org_user_id","emoji")
+	CONSTRAINT "comment_reactions_org_id_comment_id_org_user_id_pk" PRIMARY KEY("org_id","comment_id","org_user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "comment_reports" (

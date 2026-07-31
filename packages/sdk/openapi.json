@@ -2926,6 +2926,46 @@
         }
       }
     },
+    "/api/learn/viewer": {
+      "get": {
+        "operationId": "getLearnViewer",
+        "summary": "Get the caller's identity within the session's org",
+        "tags": [
+          "Learn"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orgUserId": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "owner",
+                        "admin",
+                        "instructor",
+                        "student"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "orgUserId",
+                    "role"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/learn/courses": {
       "get": {
         "operationId": "listLearnCourses",
@@ -3563,6 +3603,9 @@
                           "id": {
                             "type": "string"
                           },
+                          "activityId": {
+                            "type": "string"
+                          },
                           "parentId": {
                             "nullable": true,
                             "type": "string"
@@ -3603,9 +3646,6 @@
                               "role"
                             ],
                             "additionalProperties": false
-                          },
-                          "isOwn": {
-                            "type": "boolean"
                           },
                           "body": {
                             "nullable": true,
@@ -3658,44 +3698,33 @@
                             "additionalProperties": false
                           },
                           "reactions": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "emoji": {
-                                  "type": "string"
-                                },
-                                "count": {
-                                  "type": "integer",
-                                  "minimum": -9007199254740991,
-                                  "maximum": 9007199254740991
-                                },
-                                "reacted": {
-                                  "type": "boolean"
-                                }
-                              },
-                              "required": [
-                                "emoji",
-                                "count",
-                                "reacted"
-                              ],
-                              "additionalProperties": false
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
                             }
                           },
-                          "createdAt": {
+                          "viewerReaction": {
                             "type": "string",
-                            "format": "date-time"
+                            "enum": [
+                              "like",
+                              "celebrate",
+                              "curious"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
                           },
                           "updatedAt": {
-                            "type": "string",
-                            "format": "date-time"
+                            "type": "string"
                           }
                         },
                         "required": [
                           "id",
+                          "activityId",
                           "parentId",
                           "author",
-                          "isOwn",
                           "body",
                           "status",
                           "removedBy",
@@ -3792,6 +3821,9 @@
                     "id": {
                       "type": "string"
                     },
+                    "activityId": {
+                      "type": "string"
+                    },
                     "parentId": {
                       "nullable": true,
                       "type": "string"
@@ -3832,9 +3864,6 @@
                         "role"
                       ],
                       "additionalProperties": false
-                    },
-                    "isOwn": {
-                      "type": "boolean"
                     },
                     "body": {
                       "nullable": true,
@@ -3887,44 +3916,33 @@
                       "additionalProperties": false
                     },
                     "reactions": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "emoji": {
-                            "type": "string"
-                          },
-                          "count": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
-                          "reacted": {
-                            "type": "boolean"
-                          }
-                        },
-                        "required": [
-                          "emoji",
-                          "count",
-                          "reacted"
-                        ],
-                        "additionalProperties": false
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
                       }
                     },
-                    "createdAt": {
+                    "viewerReaction": {
                       "type": "string",
-                      "format": "date-time"
+                      "enum": [
+                        "like",
+                        "celebrate",
+                        "curious"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
                     },
                     "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
+                      "type": "string"
                     }
                   },
                   "required": [
                     "id",
+                    "activityId",
                     "parentId",
                     "author",
-                    "isOwn",
                     "body",
                     "status",
                     "removedBy",
@@ -4032,6 +4050,9 @@
                     "id": {
                       "type": "string"
                     },
+                    "activityId": {
+                      "type": "string"
+                    },
                     "parentId": {
                       "nullable": true,
                       "type": "string"
@@ -4072,9 +4093,6 @@
                         "role"
                       ],
                       "additionalProperties": false
-                    },
-                    "isOwn": {
-                      "type": "boolean"
                     },
                     "body": {
                       "nullable": true,
@@ -4127,44 +4145,33 @@
                       "additionalProperties": false
                     },
                     "reactions": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "emoji": {
-                            "type": "string"
-                          },
-                          "count": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
-                          "reacted": {
-                            "type": "boolean"
-                          }
-                        },
-                        "required": [
-                          "emoji",
-                          "count",
-                          "reacted"
-                        ],
-                        "additionalProperties": false
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
                       }
                     },
-                    "createdAt": {
+                    "viewerReaction": {
                       "type": "string",
-                      "format": "date-time"
+                      "enum": [
+                        "like",
+                        "celebrate",
+                        "curious"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
                     },
                     "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
+                      "type": "string"
                     }
                   },
                   "required": [
                     "id",
+                    "activityId",
                     "parentId",
                     "author",
-                    "isOwn",
                     "body",
                     "status",
                     "removedBy",
@@ -4347,13 +4354,33 @@
         }
       }
     },
-    "/api/learn/comments/{commentId}/reactions/{emoji}": {
+    "/api/learn/comments/{commentId}/reaction": {
       "put": {
-        "operationId": "reactToComment",
-        "summary": "Add a reaction to a comment",
+        "operationId": "setCommentReaction",
+        "summary": "Set or clear your reaction to a comment",
         "tags": [
           "Learn"
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "like",
+                      "celebrate",
+                      "curious"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
         "parameters": [
           {
             "schema": {
@@ -4362,101 +4389,38 @@
             "in": "path",
             "name": "commentId",
             "required": true
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "path",
-            "name": "emoji",
-            "required": true
           }
         ],
         "responses": {
-          "204": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "403": {
+          "200": {
             "description": "Default Response",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
-                      "type": "string"
+                    "reactions": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
                     },
-                    "message": {
-                      "type": "string"
+                    "viewerReaction": {
+                      "type": "string",
+                      "enum": [
+                        "like",
+                        "celebrate",
+                        "curious"
+                      ]
                     }
                   },
                   "required": [
-                    "error"
+                    "reactions"
                   ],
                   "additionalProperties": false
                 }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "operationId": "unreactToComment",
-        "summary": "Remove your reaction from a comment",
-        "tags": [
-          "Learn"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "path",
-            "name": "commentId",
-            "required": true
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "path",
-            "name": "emoji",
-            "required": true
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           },

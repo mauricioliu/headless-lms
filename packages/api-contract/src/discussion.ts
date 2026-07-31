@@ -4,7 +4,7 @@
 // The author is the org user's profile minus its email — learners read each
 // other's comments and the list must not be a directory of the cohort's
 // addresses. The staff-facing comment list carries `authorEmail` separately.
-import type { CommentSettings as DomainCommentSettings } from "@headless-lms/types";
+import { REACTION_TYPES, type CommentSettings as DomainCommentSettings } from "@headless-lms/types";
 import { z } from "zod";
 import { ListQuery, type Matches, OrgRole, OrgUserProfileSchema, paginated } from "./shared.js";
 
@@ -19,32 +19,40 @@ export const CommentAuthor = OrgUserProfileSchema.omit({ email: true }).extend({
 });
 export type CommentAuthor = z.infer<typeof CommentAuthor>;
 
-export const ReactionSummary = z.object({
-  emoji: z.string(),
-  count: z.number().int(),
-  /** True when the requesting person is one of the reactors. */
-  reacted: z.boolean(),
-});
-export type ReactionSummary = z.infer<typeof ReactionSummary>;
+/** A closed set of named kinds. The glyph is the client's business. */
+export const ReactionType = z.enum(REACTION_TYPES);
+export type ReactionType = z.infer<typeof ReactionType>;
+
+/** Counts by kind; unused kinds are absent, so no reactions serves `{}`. */
+export const ReactionCounts = z.partialRecord(ReactionType, z.number().int());
+export type ReactionCounts = z.infer<typeof ReactionCounts>;
 
 export const CommentView = z.object({
   id: z.string(),
+  activityId: z.string(),
   /** null = a root comment. Replies nest one level. */
   parentId: z.string().nullable(),
   author: CommentAuthor,
-  /** True when the reader wrote it. Resolved server-side — the client never
-   *  learns its own org_users.id. */
-  isOwn: z.boolean(),
   /** null for a removed comment — the placeholder carries removedBy instead. */
   body: z.string().nullable(),
   status: CommentStatus,
   /** Who removed it. null unless removed. */
   removedBy: CommentAuthor.nullable(),
-  reactions: z.array(ReactionSummary),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  reactions: ReactionCounts,
+  /** This reader's own kind; absent when they have none. Ownership is not
+   *  served here — compare `author.id` against `getLearnViewer`. */
+  viewerReaction: ReactionType.optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 export type CommentView = z.infer<typeof CommentView>;
+
+/** What the reaction write returns, so the client never recomputes a count. */
+export const CommentReactions = z.object({
+  reactions: ReactionCounts,
+  viewerReaction: ReactionType.optional(),
+});
+export type CommentReactions = z.infer<typeof CommentReactions>;
 
 /** A course's comment settings. Stored under the course, carried on the course
  *  payload as `settings.comments`. */
@@ -95,10 +103,11 @@ export const PatchComment = z
   });
 export type PatchComment = z.infer<typeof PatchComment>;
 
-export const ReactToComment = z.object({
-  emoji: z.string().min(1).max(16),
+/** The reader's whole reaction state, not a delta: omitting `type` clears. */
+export const SetCommentReaction = z.object({
+  type: ReactionType.optional(),
 });
-export type ReactToComment = z.infer<typeof ReactToComment>;
+export type SetCommentReaction = z.infer<typeof SetCommentReaction>;
 
 export const ReportComment = z.object({
   reason: z.string().max(1_000).default(""),
@@ -182,8 +191,6 @@ export type DiscussionActivityParam = z.infer<typeof DiscussionActivityParam>;
 export const CommentIdParam = z.object({ commentId: z.string() });
 export type CommentIdParam = z.infer<typeof CommentIdParam>;
 
-export const CommentReactionParam = z.object({ commentId: z.string(), emoji: z.string() });
-export type CommentReactionParam = z.infer<typeof CommentReactionParam>;
 
 export const DiscussionCourseParam = z.object({ courseId: z.string() });
 export type DiscussionCourseParam = z.infer<typeof DiscussionCourseParam>;

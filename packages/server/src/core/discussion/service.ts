@@ -2,13 +2,28 @@ import { genId } from '../shared/id.js';
 import { ForbiddenError, NotFoundError } from '../shared/errors.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
-import type { Comment, CommentReaction, CommentReport, CommentSettings, CommentsState, } from './model.js';
-import type { CommentsConfig, ListCommentsQuery, Page } from './types.js';
+import type {
+  Comment,
+  CommentAuthor,
+  CommentReport,
+  CommentSettings,
+  CommentsState,
+} from './model.js';
+import type {
+  CommentListItem,
+  CommentsConfig,
+  CommentView,
+  ListCommentsQuery,
+  Page,
+  ReactionType,
+} from './types.js';
 import { SettingsNamespace, type SettingsService } from '../shared/settings.js';
 import type {
   ActivityComments,
   ActivityGetter,
   Actor,
+  AuthorRecord,
+  CommentReactions,
   CourseAccessReader,
   DiscussionRepository,
   DiscussionService,
@@ -25,11 +40,19 @@ export const DEFAULT_SETTINGS = {
   reactions: true,
 } as const;
 
+/** The slice of the course's stored settings this context reads. Absent for a
+ *  course that has never been configured, so the defaults apply. */
+interface StoredCourseSettings {
+  comments?: Partial<CommentSettings>;
+}
+
 /** An activity's stored override, scoped by activity id in the same namespace.
  *  `state` absent or null = no override, so the course setting applies. */
 interface StoredCommentsState {
   state?: CommentsState | null;
 }
+
+const EMPTY_REACTIONS: CommentReactions = { reactions: {} };
 
 export type DiscussionServiceParams = {
   repo: DiscussionRepository;
@@ -60,12 +83,14 @@ export class DiscussionServiceImpl implements DiscussionService {
   async resolveConfig(orgId: string, activityId: string): Promise<CommentsConfig> {
     const activity = await this.content.getActivity(orgId, activityId);
 
-    const stored = await this.settings.get<Partial<CommentSettings>>(
+    // The `content` namespace row is the whole CourseSettings; comment settings
+    // are one key inside it, written there by content.patchSettings.
+    const stored = await this.settings.get<StoredCourseSettings>(
       orgId,
       SettingsNamespace.content,
       activity?.courseId!,
     );
-    const settings = { ...DEFAULT_SETTINGS, ...stored };
+    const settings = { ...DEFAULT_SETTINGS, ...stored?.comments };
     const override = await this.settings.get<StoredCommentsState>(
       orgId,
       SettingsNamespace.discussion,
@@ -89,6 +114,65 @@ export class DiscussionServiceImpl implements DiscussionService {
     return actor.role !== 'student';
   }
 
+  private toAuthor(record: AuthorRecord): CommentAuthor {
+    return {
+      id: record.id,
+      firstName: record.firstName,
+      lastName: record.lastName,
+      image: record.image,
+      role: record.role,
+    };
+  }
+
+  private toView(
+    comment: Comment,
+    authors: Record<string, AuthorRecord>,
+    reactions: CommentReactions,
+  ): CommentView {
+    const author = authors[comment.orgUserId];
+    if (!author) {
+      throw new NotFoundError('OrgUser', comment.orgUserId);
+    }
+    if (comment.removedBy && !authors[comment.removedBy]) {
+      throw new NotFoundError('OrgUser', comment.removedBy);
+    }
+    const remover = comment.removedBy ? authors[comment.removedBy] : undefined;
+    return {
+      id: comment.id,
+      activityId: comment.activityId,
+      parentId: comment.parentId,
+      author: this.toAuthor(author),
+      body: comment.status === 'removed' ? null : comment.body,
+      status: comment.status,
+      removedBy: remover ? this.toAuthor(remover) : null,
+      reactions: reactions.reactions,
+      viewerReaction: reactions.viewerReaction,
+      createdAt: comment.createdAt.toISOString(),
+      updatedAt: comment.updatedAt.toISOString(),
+    };
+  }
+
+  private peopleIn(comments: Comment[]): string[] {
+    const ids = new Set<string>();
+    for (const c of comments) {
+      ids.add(c.orgUserId);
+      if (c.removedBy) {
+        ids.add(c.removedBy);
+      }
+    }
+    return [...ids];
+  }
+
+  private async renderOne(orgId: string, comment: Comment, actor: Actor): Promise<CommentView> {
+    const authors = await this.repo.authorsOf(orgId, this.peopleIn([comment]));
+    const stored =
+      comment.status === 'removed'
+        ? EMPTY_REACTIONS
+        : ((await this.repo.reactionsOf(orgId, [comment.id], actor.id))[comment.id] ??
+          EMPTY_REACTIONS);
+    return this.toView(comment, authors, stored);
+  }
+
   private async hasAccess(orgId: string, activityId: string, actor: Actor): Promise<boolean> {
     return (
       this.isStaff(actor) ||
@@ -102,7 +186,7 @@ export class DiscussionServiceImpl implements DiscussionService {
   async postComment(
     orgId: string,
     { activityId, actor, parentId, body }: PostCommentInput,
-  ): Promise<Comment> {
+  ): Promise<CommentView> {
     await this.hasAccess(orgId, activityId, actor);
     const config = await this.resolveConfig(orgId, activityId);
 
@@ -143,12 +227,13 @@ export class DiscussionServiceImpl implements DiscussionService {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    return this.uow.run(async (scope) => {
+    const saved = await this.uow.run(async (scope) => {
       const row = await scope.discussion.insertComment(orgId, comment);
       await scope.outbox.append([{ type: 'comment.created', orgId, comment: row }]);
       this.logger.info('comment created', { orgId, commentId: row.id, status });
       return row;
     });
+    return this.renderOne(orgId, saved, actor);
   }
 
   async activityComments(
@@ -182,10 +267,26 @@ export class DiscussionServiceImpl implements DiscussionService {
       (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
     );
 
-    return { config, comments: served };
+    const [authors, reactions] = await Promise.all([
+      this.repo.authorsOf(orgId, this.peopleIn(served)),
+      config.reactions
+        ? this.repo.reactionsOf(
+            orgId,
+            served.map((c) => c.id),
+            actor.id,
+          )
+        : Promise.resolve<Record<string, CommentReactions>>({}),
+    ]);
+
+    return {
+      config,
+      comments: served.map((c) =>
+        this.toView(c, authors, reactions[c.id] ?? EMPTY_REACTIONS),
+      ),
+    };
   }
 
-  async edit(orgId: string, commentId: string, actor: Actor, body: string): Promise<Comment> {
+  async edit(orgId: string, commentId: string, actor: Actor, body: string): Promise<CommentView> {
     const { comment, config } = await this.loadWithConfig(orgId, commentId, actor);
     if (config.state !== 'visible') {
       throw new ForbiddenError('discussion is not open on this activity');
@@ -206,7 +307,7 @@ export class DiscussionServiceImpl implements DiscussionService {
       // the old body.
       throw new NotFoundError('Comment', commentId);
     }
-    return updated;
+    return this.renderOne(orgId, updated, actor);
   }
 
   async remove(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
@@ -283,30 +384,28 @@ export class DiscussionServiceImpl implements DiscussionService {
     return { comment, config };
   }
 
-  async createReaction(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void> {
-    const { config } = await this.loadWithConfig(orgId, commentId, actor);
+  async setReaction(
+    orgId: string,
+    commentId: string,
+    actor: Actor,
+    type: ReactionType | null,
+  ): Promise<CommentReactions> {
+    const { comment, config } = await this.loadWithConfig(orgId, commentId, actor);
     // Writing to comments — locked and hidden both refuse.
     if (config.state !== 'visible') {
       throw new ForbiddenError('discussion is not open on this activity');
     }
-    if (!config.reactions) {
+    if (!config.reactions && type !== null) {
       throw new ForbiddenError('reactions are disabled on this course');
     }
-    await this.repo.insertReaction(orgId, {
-      orgId,
-      commentId,
-      orgUserId: actor.id,
-      emoji,
-    });
+    if (comment.status === 'removed') {
+      throw new ForbiddenError('a removed comment cannot be reacted to');
+    }
+    await this.repo.setReaction(orgId, commentId, actor.id, type);
+    const stored = await this.repo.reactionsOf(orgId, [commentId], actor.id);
+    return stored[commentId] ?? EMPTY_REACTIONS;
   }
 
-  async removeReaction(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void> {
-    const { config } = await this.loadWithConfig(orgId, commentId, actor);
-    if (config.state !== 'visible') {
-      throw new ForbiddenError('discussion is not open on this activity');
-    }
-    await this.repo.deleteReaction(orgId, commentId, actor.id, emoji);
-  }
 
   async approve(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
     if (!this.isStaff(actor)) {
@@ -391,15 +490,59 @@ export class DiscussionServiceImpl implements DiscussionService {
     });
   }
 
-  async listComments(orgId: string, query: ListCommentsQuery): Promise<Page<Comment>> {
-    return this.repo.listComments(orgId, query);
+  async listComments(orgId: string, query: ListCommentsQuery): Promise<Page<CommentListItem>> {
+    const page = await this.repo.listComments(orgId, query);
+    const rows = page.rows.map((r) => r.comment);
+    if (rows.length === 0) {
+      return { ...page, rows: [] };
+    }
+    const reports = await this.repo.listOpenReports(orgId, rows.map((c) => c.id));
+    const authors = await this.repo.authorsOf(orgId, [
+      ...new Set([...this.peopleIn(rows), ...reports.map((r) => r.orgUserId)]),
+    ]);
+
+    const byComment = new Map<string, CommentReport[]>();
+    for (const report of reports) {
+      byComment.set(report.commentId, [...(byComment.get(report.commentId) ?? []), report]);
+    }
+
+    return {
+      ...page,
+      rows: page.rows.map(({ comment, courseId, activityTitle }) => {
+        const author = authors[comment.orgUserId];
+        if (!author) {
+          throw new NotFoundError('OrgUser', comment.orgUserId);
+        }
+        return {
+          id: comment.id,
+          parentId: comment.parentId,
+          activityId: comment.activityId,
+          activityTitle,
+          courseId,
+          body: comment.body,
+          status: comment.status,
+          author: this.toAuthor(author),
+          authorEmail: author.email,
+          removedBy: comment.removedBy,
+          reports: (byComment.get(comment.id) ?? []).map((r) => {
+            const reporter = authors[r.orgUserId];
+            if (!reporter) {
+              throw new NotFoundError('OrgUser', r.orgUserId);
+            }
+            return {
+              reporter: this.toAuthor(reporter),
+              reason: r.reason,
+              createdAt: r.createdAt.toISOString(),
+            };
+          }),
+          createdAt: comment.createdAt.toISOString(),
+          updatedAt: comment.updatedAt.toISOString(),
+        };
+      }),
+    };
   }
 
   getComment(orgId: string, commentId: string): Promise<Comment | null> {
     return this.repo.findComment(orgId, commentId);
-  }
-
-  listReactions(orgId: string, commentIds: string[]): Promise<CommentReaction[]> {
-    return this.repo.listReactions(orgId, commentIds);
   }
 }

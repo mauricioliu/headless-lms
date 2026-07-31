@@ -7,23 +7,42 @@ import {
   commentsReducer,
 } from "./comment-state";
 
-const author = { id: "orm_a", name: "Ana Diaz", image: null, role: "student" as const };
-const instructor = { id: "orm_s", name: "Sarah Chen", image: null, role: "instructor" as const };
+const author = {
+  id: "orm_a",
+  firstName: "Ana",
+  lastName: "Diaz",
+  image: null,
+  role: "student" as const,
+};
+const instructor = {
+  id: "orm_s",
+  firstName: "Sarah",
+  lastName: "Chen",
+  image: null,
+  role: "instructor" as const,
+};
+
+const ME = "orm_me";
 
 function comment(over: Partial<CommentView> = {}): CommentView {
   return {
     id: "cmt_1",
+    activityId: "act_1",
     parentId: null,
     author,
-    isOwn: false,
     body: "hello",
     status: "published",
     removedBy: null,
-    reactions: [],
+    reactions: {},
     createdAt: "2026-07-27T00:00:00.000Z",
     updatedAt: "2026-07-27T00:00:00.000Z",
     ...over,
   };
+}
+
+/** Written by the reader the permission tests are asking about. */
+function mine(over: Partial<CommentView> = {}): CommentView {
+  return comment({ author: { ...author, id: ME }, ...over });
 }
 
 const open: CommentsConfig = {
@@ -68,7 +87,7 @@ describe("groupComments", () => {
 
 describe("permissions", () => {
   it("offers reply, react, edit and remove when comments are open", () => {
-    const p = permissions(open, comment({ isOwn: true }));
+    const p = permissions(open, mine(), ME);
     expect(p).toMatchObject({
       canReply: true,
       canReact: true,
@@ -79,31 +98,31 @@ describe("permissions", () => {
   });
 
   it("offers report on someone else's comment, never on your own", () => {
-    expect(permissions(open, comment({ isOwn: false })).canReport).toBe(true);
-    expect(permissions(open, comment({ isOwn: true })).canReport).toBe(false);
+    expect(permissions(open, comment(), ME).canReport).toBe(true);
+    expect(permissions(open, mine(), ME).canReport).toBe(false);
   });
 
   it("keeps reporting available on locked comments and nothing else", () => {
     const locked = { ...open, state: "locked" as const };
-    const p = permissions(locked, comment());
+    const p = permissions(locked, comment(), ME);
     expect(p.canReport).toBe(true);
     expect(p.canReply).toBe(false);
     expect(p.canReact).toBe(false);
-    expect(permissions(locked, comment({ isOwn: true })).canEdit).toBe(false);
+    expect(permissions(locked, mine(), ME).canEdit).toBe(false);
   });
 
   it("lets an author still remove their own comment when comments are locked", () => {
     const locked = { ...open, state: "locked" as const };
-    expect(permissions(locked, comment({ isOwn: true })).canRemove).toBe(true);
+    expect(permissions(locked, mine(), ME).canRemove).toBe(true);
   });
 
   it("refuses replies to a reply and to a pending comment", () => {
-    expect(permissions(open, comment({ parentId: "r1" })).canReply).toBe(false);
-    expect(permissions(open, comment({ status: "pending" })).canReply).toBe(false);
+    expect(permissions(open, comment({ parentId: "r1" }), ME).canReply).toBe(false);
+    expect(permissions(open, comment({ status: "pending" }), ME).canReply).toBe(false);
   });
 
   it("offers no reactions when the course disables them", () => {
-    expect(permissions({ ...open, reactions: false }, comment()).canReact).toBe(false);
+    expect(permissions({ ...open, reactions: false }, comment(), ME).canReact).toBe(false);
   });
 });
 
@@ -139,14 +158,14 @@ describe("commentsReducer", () => {
     });
     const optimistic = commentsReducer(loaded, {
       kind: "inserted",
-      comment: comment({ id: "temp_1", isOwn: true }),
+      comment: mine({ id: "temp_1" }),
     });
     expect(optimistic.comments.map((c) => c.id)).toEqual(["temp_1"]);
 
     const confirmed = commentsReducer(optimistic, {
       kind: "replaced",
       id: "temp_1",
-      comment: comment({ id: "cmt_9", isOwn: true }),
+      comment: mine({ id: "cmt_9" }),
     });
     expect(confirmed.comments.map((c) => c.id)).toEqual(["cmt_9"]);
   });
@@ -154,7 +173,7 @@ describe("commentsReducer", () => {
   it("marks a removal locally rather than deleting the row", () => {
     const loaded = commentsReducer(initialCommentsState, {
       kind: "loaded",
-      view: { config: open, comments: [comment({ id: "r1", isOwn: true })] },
+      view: { config: open, comments: [mine({ id: "r1" })] },
     });
     const next = commentsReducer(loaded, { kind: "removed", id: "r1", by: author });
     expect(next.comments[0]?.status).toBe("removed");
@@ -162,55 +181,38 @@ describe("commentsReducer", () => {
     expect(next.comments[0]?.removedBy).toEqual(author);
   });
 
-  it("toggles a reaction on and back off", () => {
+  it("takes the server's counts verbatim rather than computing them", () => {
     const loaded = commentsReducer(initialCommentsState, {
       kind: "loaded",
       view: { config: open, comments: [comment({ id: "r1" })] },
     });
     const on = commentsReducer(loaded, {
-      kind: "reacted", id: "r1", emoji: "👍", on: true,
-    });
-    expect(on.comments[0]?.reactions).toEqual([{ emoji: "👍", count: 1, reacted: true }]);
-
-    const off = commentsReducer(on, { kind: "reacted", id: "r1", emoji: "👍", on: false });
-    expect(off.comments[0]?.reactions).toEqual([]);
-  });
-
-  it("does not double-count a reader reacting twice without an intervening toggle off", () => {
-    const loaded = commentsReducer(initialCommentsState, {
-      kind: "loaded",
-      view: { config: open, comments: [comment({ id: "r1" })] },
-    });
-    const once = commentsReducer(loaded, { kind: "reacted", id: "r1", emoji: "👍", on: true });
-    const twice = commentsReducer(once, { kind: "reacted", id: "r1", emoji: "👍", on: true });
-    expect(twice.comments[0]?.reactions).toEqual([{ emoji: "👍", count: 1, reacted: true }]);
-  });
-
-  it("does not go negative un-reacting twice without an intervening toggle on", () => {
-    const seeded = comment({
+      kind: "reacted",
       id: "r1",
-      reactions: [{ emoji: "👍", count: 1, reacted: true }],
+      reactions: { like: 4 },
+      viewerReaction: "like",
     });
-    const loaded = commentsReducer(initialCommentsState, {
-      kind: "loaded",
-      view: { config: open, comments: [seeded] },
-    });
-    const once = commentsReducer(loaded, { kind: "reacted", id: "r1", emoji: "👍", on: false });
-    const twice = commentsReducer(once, { kind: "reacted", id: "r1", emoji: "👍", on: false });
-    expect(twice.comments[0]?.reactions).toEqual([]);
+    expect(on.comments[0]?.reactions).toEqual({ like: 4 });
+    expect(on.comments[0]?.viewerReaction).toBe("like");
+
+    const off = commentsReducer(on, { kind: "reacted", id: "r1", reactions: { like: 3 } });
+    expect(off.comments[0]?.reactions).toEqual({ like: 3 });
+    expect(off.comments[0]?.viewerReaction).toBeUndefined();
   });
 
-  it("keeps other people's reaction count when the reader removes their own", () => {
-    const seeded = comment({
-      id: "r1",
-      reactions: [{ emoji: "👍", count: 2, reacted: true }],
-    });
+  it("leaves other comments untouched when one is reacted to", () => {
     const loaded = commentsReducer(initialCommentsState, {
       kind: "loaded",
-      view: { config: open, comments: [seeded] },
+      view: { config: open, comments: [comment({ id: "r1" }), comment({ id: "r2" })] },
     });
-    const off = commentsReducer(loaded, { kind: "reacted", id: "r1", emoji: "👍", on: false });
-    expect(off.comments[0]?.reactions).toEqual([{ emoji: "👍", count: 1, reacted: false }]);
+    const next = commentsReducer(loaded, {
+      kind: "reacted",
+      id: "r1",
+      reactions: { like: 1 },
+      viewerReaction: "like",
+    });
+    expect(next.comments[1]?.reactions).toEqual({});
+    expect(next.comments[1]?.viewerReaction).toBeUndefined();
   });
 
   it("restores a snapshot on rollback", () => {

@@ -8,7 +8,13 @@ import { useComments } from "./use-comments";
 import { CommentComposer } from "./comment-composer";
 import { CommentItem } from "./comment-item";
 
-export function DiscussionPanel({ activityId }: { activityId: string }) {
+export function DiscussionPanel({
+  activityId,
+  orgUserId,
+}: {
+  activityId: string;
+  orgUserId: string;
+}) {
   const panel = useComments(activityId);
   const { showToast } = useApp();
 
@@ -84,10 +90,11 @@ export function DiscussionPanel({ activityId }: { activityId: string }) {
               <CommentItem
                 comment={comment}
                 config={config}
+                orgUserId={orgUserId}
                 onReply={(body) => panel.post(body, comment.id)}
                 onEdit={(body) => panel.edit(comment.id, body)}
                 onRemove={() => panel.remove(comment.id, comment.author)}
-                onReact={(emoji, on) => panel.react(comment.id, emoji, on)}
+                onReact={(type) => panel.react(comment.id, type)}
                 onReport={async (reason) => {
                   try {
                     await panel.report(comment.id, reason);
@@ -102,10 +109,11 @@ export function DiscussionPanel({ activityId }: { activityId: string }) {
                   key={reply.id}
                   comment={reply}
                   config={config}
+                  orgUserId={orgUserId}
                   isReply
                   onEdit={(body) => panel.edit(reply.id, body)}
                   onRemove={() => panel.remove(reply.id, reply.author)}
-                  onReact={(emoji, on) => panel.react(reply.id, emoji, on)}
+                  onReact={(type) => panel.react(reply.id, type)}
                   onReport={async (reason) => {
                     try {
                       await panel.report(reply.id, reason);

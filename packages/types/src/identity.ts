@@ -5,7 +5,7 @@
 // learner there — is the organizations context's OrgUser, not a second
 // identity. See ./organizations.ts.
 
-import type { DomainEvent } from "./shared";
+import type { DomainEvent } from "./shared.js";
 
 export interface User {
   readonly id: string;

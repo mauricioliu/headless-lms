@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
-import { registerErrorHandler } from './error-handler.js';
 import { NotFoundError, ConflictError } from '../../core/shared/errors.js';
 import { OrganizationRuleError } from '../../core/organizations/index.js';
 import {
@@ -8,12 +7,13 @@ import {
   InvalidConfigError,
   UnknownIntegrationError,
 } from '../../core/integrations/index.js';
+import { errorHandler } from './error-handler.js';
 
 let app: FastifyInstance;
 
 beforeAll(async () => {
   app = Fastify();
-  registerErrorHandler(app);
+  app.setErrorHandler(errorHandler);
   const throwers: Record<string, () => never> = {
     'not-found': () => {
       throw new NotFoundError('Course', 'c1');

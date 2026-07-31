@@ -1007,6 +1007,25 @@ export type GetLearnOrgResponses = {
 
 export type GetLearnOrgResponse = GetLearnOrgResponses[keyof GetLearnOrgResponses];
 
+export type GetLearnViewerData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/learn/viewer";
+};
+
+export type GetLearnViewerResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    orgUserId: string;
+    role: "owner" | "admin" | "instructor" | "student";
+  };
+};
+
+export type GetLearnViewerResponse = GetLearnViewerResponses[keyof GetLearnViewerResponses];
+
 export type ListLearnCoursesData = {
   body?: never;
   path?: never;
@@ -1254,6 +1273,7 @@ export type ListActivityCommentsResponses = {
     };
     comments: Array<{
       id: string;
+      activityId: string;
       parentId: string | null;
       author: {
         id: string;
@@ -1262,7 +1282,6 @@ export type ListActivityCommentsResponses = {
         image: string | null;
         role: "owner" | "admin" | "instructor" | "student";
       };
-      isOwn: boolean;
       body: string | null;
       status: "pending" | "published" | "removed";
       removedBy: {
@@ -1272,11 +1291,10 @@ export type ListActivityCommentsResponses = {
         image: string | null;
         role: "owner" | "admin" | "instructor" | "student";
       } | null;
-      reactions: Array<{
-        emoji: string;
-        count: number;
-        reacted: boolean;
-      }>;
+      reactions: {
+        [key: string]: number;
+      };
+      viewerReaction?: "like" | "celebrate" | "curious";
       createdAt: string;
       updatedAt: string;
     }>;
@@ -1323,6 +1341,7 @@ export type PostCommentResponses = {
    */
   200: {
     id: string;
+    activityId: string;
     parentId: string | null;
     author: {
       id: string;
@@ -1331,7 +1350,6 @@ export type PostCommentResponses = {
       image: string | null;
       role: "owner" | "admin" | "instructor" | "student";
     };
-    isOwn: boolean;
     body: string | null;
     status: "pending" | "published" | "removed";
     removedBy: {
@@ -1341,11 +1359,10 @@ export type PostCommentResponses = {
       image: string | null;
       role: "owner" | "admin" | "instructor" | "student";
     } | null;
-    reactions: Array<{
-      emoji: string;
-      count: number;
-      reacted: boolean;
-    }>;
+    reactions: {
+      [key: string]: number;
+    };
+    viewerReaction?: "like" | "celebrate" | "curious";
     createdAt: string;
     updatedAt: string;
   };
@@ -1436,6 +1453,7 @@ export type EditCommentResponses = {
    */
   200: {
     id: string;
+    activityId: string;
     parentId: string | null;
     author: {
       id: string;
@@ -1444,7 +1462,6 @@ export type EditCommentResponses = {
       image: string | null;
       role: "owner" | "admin" | "instructor" | "student";
     };
-    isOwn: boolean;
     body: string | null;
     status: "pending" | "published" | "removed";
     removedBy: {
@@ -1454,11 +1471,10 @@ export type EditCommentResponses = {
       image: string | null;
       role: "owner" | "admin" | "instructor" | "student";
     } | null;
-    reactions: Array<{
-      emoji: string;
-      count: number;
-      reacted: boolean;
-    }>;
+    reactions: {
+      [key: string]: number;
+    };
+    viewerReaction?: "like" | "celebrate" | "curious";
     createdAt: string;
     updatedAt: string;
   };
@@ -1466,17 +1482,18 @@ export type EditCommentResponses = {
 
 export type EditCommentResponse = EditCommentResponses[keyof EditCommentResponses];
 
-export type UnreactToCommentData = {
-  body?: never;
+export type SetCommentReactionData = {
+  body: {
+    type?: "like" | "celebrate" | "curious";
+  };
   path: {
     commentId: string;
-    emoji: string;
   };
   query?: never;
-  url: "/api/learn/comments/{commentId}/reactions/{emoji}";
+  url: "/api/learn/comments/{commentId}/reaction";
 };
 
-export type UnreactToCommentErrors = {
+export type SetCommentReactionErrors = {
   /**
    * Default Response
    */
@@ -1493,50 +1510,22 @@ export type UnreactToCommentErrors = {
   };
 };
 
-export type UnreactToCommentError = UnreactToCommentErrors[keyof UnreactToCommentErrors];
+export type SetCommentReactionError = SetCommentReactionErrors[keyof SetCommentReactionErrors];
 
-export type UnreactToCommentResponses = {
+export type SetCommentReactionResponses = {
   /**
    * Default Response
    */
-  204: unknown;
-};
-
-export type ReactToCommentData = {
-  body?: never;
-  path: {
-    commentId: string;
-    emoji: string;
-  };
-  query?: never;
-  url: "/api/learn/comments/{commentId}/reactions/{emoji}";
-};
-
-export type ReactToCommentErrors = {
-  /**
-   * Default Response
-   */
-  403: {
-    error: string;
-    message?: string;
-  };
-  /**
-   * Default Response
-   */
-  404: {
-    error: string;
-    message?: string;
+  200: {
+    reactions: {
+      [key: string]: number;
+    };
+    viewerReaction?: "like" | "celebrate" | "curious";
   };
 };
 
-export type ReactToCommentError = ReactToCommentErrors[keyof ReactToCommentErrors];
-
-export type ReactToCommentResponses = {
-  /**
-   * Default Response
-   */
-  204: unknown;
-};
+export type SetCommentReactionResponse =
+  SetCommentReactionResponses[keyof SetCommentReactionResponses];
 
 export type ReportCommentData = {
   body: {

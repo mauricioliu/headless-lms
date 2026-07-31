@@ -48,7 +48,6 @@ const ENTITLEMENT: Entitlement = {
 
 const STUDENT: Student = {
   id: 'student-1',
-  name: 'Bob',
   email: 'bob@example.com',
   image: null,
   firstName: 'Bob',

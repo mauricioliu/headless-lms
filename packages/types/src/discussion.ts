@@ -17,6 +17,13 @@ export type CommentStatus = "pending" | "published" | "removed";
 /** Per-activity override of the course's discussion settings. */
 export type CommentsState = "visible" | "hidden" | "locked";
 
+/** A closed set of named kinds. The glyph a client draws is presentation. */
+export const REACTION_TYPES = ["like", "celebrate", "curious"] as const;
+export type ReactionType = (typeof REACTION_TYPES)[number];
+
+/** Counts by kind. A kind nobody has used is absent, not zero. */
+export type ReactionCounts = Partial<Record<ReactionType, number>>;
+
 export interface Comment {
   readonly id: string;
   readonly orgId: string;
@@ -48,11 +55,12 @@ export interface CommentAuthor extends Omit<OrgUserProfile, "email"> {
   role: Role;
 }
 
+/** One person's reaction to one comment. At most one exists per pair. */
 export interface CommentReaction {
   readonly orgId: string;
   readonly commentId: string;
   readonly orgUserId: string;
-  readonly emoji: string;
+  readonly type: ReactionType;
   readonly createdAt: string;
 }
 
@@ -93,21 +101,21 @@ export interface CommentsConfig extends CommentSettings {
  *  to see. `body` is null when the comment is removed. */
 export interface CommentView {
   id: string;
+  activityId: string;
   parentId: string | null;
   author: CommentAuthor;
-  /** True when the reader wrote this. Resolved server-side: the client knows
-   *  the session's auth user id, never its org_users.id, so it cannot compare
-   *  against `author.id` itself. */
-  isOwn: boolean;
   /** null when removed — the placeholder carries `removedBy` instead. */
   body: string | null;
   status: CommentStatus;
   /** Who removed it — the author themselves, or a moderator. null unless
    *  removed. The placeholder names them. */
   removedBy: CommentAuthor | null;
-  reactions: { emoji: string; count: number; reacted: boolean }[];
-  createdAt: Date;
-  updatedAt: Date;
+  reactions: ReactionCounts;
+  /** This reader's own reaction; absent when they have none. For ownership,
+   *  compare `author.id` against the caller's org user id from the viewer. */
+  viewerReaction?: ReactionType;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /** An unresolved report as the staff list serves it — who flagged it and why.

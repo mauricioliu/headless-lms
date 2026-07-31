@@ -1,4 +1,5 @@
 import type {
+  GetLearnViewerResponse,
   ListActivityCommentsResponse,
   GetLearnCourseResponse,
   GetLearnDownloadResponse,
@@ -20,6 +21,10 @@ export type ActivityComments = ListActivityCommentsResponse;
 export type CommentsConfig = ActivityComments["config"];
 export type CommentView = ActivityComments["comments"][number];
 export type CommentAuthor = CommentView["author"];
+export type ReactionType = NonNullable<CommentView["viewerReaction"]>;
+export type ReactionCounts = CommentView["reactions"];
+/** Who the caller is inside the session's org. */
+export type Viewer = GetLearnViewerResponse;
 export type Download = ListLearnDownloadsResponse[number];
 export type DownloadDetail = GetLearnDownloadResponse;
 export type DownloadAsset = DownloadDetail["assets"][number];

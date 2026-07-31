@@ -1,11 +1,10 @@
-import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
   ActivityComments,
   Comment,
   CommentIdParam,
-  CommentReactionParam,
+  CommentReactions,
   CommentReport,
   CommentView,
   DiscussionActivityParam,
@@ -13,6 +12,7 @@ import {
   ErrorBody,
   PostComment,
   ReportComment,
+  SetCommentReaction,
 } from '@headless-lms/api-contract';
 import type { Container } from '../../../app/container.js';
 import { UnauthorizedError } from '../../plugins/auth.js';
@@ -117,45 +117,23 @@ export async function learnCommentsRoutes(
 
   r.route({
     method: 'PUT',
-    url: '/api/learn/comments/:commentId/reactions/:emoji',
+    url: '/api/learn/comments/:commentId/reaction',
     preHandler: app.requireOrgSession,
     schema: {
-      operationId: 'reactToComment',
+      operationId: 'setCommentReaction',
       tags: ['Learn'],
-      summary: 'Add a reaction to a comment',
-      params: CommentReactionParam,
-      response: { 204: z.void(), 403: ErrorBody, 404: ErrorBody },
+      summary: "Set or clear your reaction to a comment",
+      params: CommentIdParam,
+      body: SetCommentReaction,
+      response: { 200: CommentReactions, 403: ErrorBody, 404: ErrorBody },
     },
-    handler: async (req, reply) => {
+    handler: async (req) => {
       const orgId = req.orgId;
       const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }
-      await discussion.createReaction(orgId, req.params.commentId, orgUser, req.params.emoji);
-      return reply.code(204).send();
-    },
-  });
-
-  r.route({
-    method: 'DELETE',
-    url: '/api/learn/comments/:commentId/reactions/:emoji',
-    preHandler: app.requireOrgSession,
-    schema: {
-      operationId: 'unreactToComment',
-      tags: ['Learn'],
-      summary: 'Remove your reaction from a comment',
-      params: CommentReactionParam,
-      response: { 204: z.void(), 403: ErrorBody, 404: ErrorBody },
-    },
-    handler: async (req, reply) => {
-      const orgId = req.orgId;
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
-      if (!orgUser) {
-        throw new UnauthorizedError();
-      }
-      await discussion.removeReaction(orgId, req.params.commentId, orgUser, req.params.emoji);
-      return reply.code(204).send();
+      return discussion.setReaction(orgId, req.params.commentId, orgUser, req.body.type ?? null);
     },
   });
 

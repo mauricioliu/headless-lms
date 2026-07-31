@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Course } from "./content.js";
 import { Module } from "./activities.js";
 import { Download, DownloadAsset } from "./downloads.js";
+import { OrgRole } from "./shared.js";
 
 /** Courses the authenticated student is actively enrolled in (published only). */
 export const LearnCourses = z.array(Course);
@@ -35,6 +36,14 @@ export const LearnOrg = z.object({
   slug: z.string(),
 });
 export type LearnOrg = z.infer<typeof LearnOrg>;
+
+/** Who the caller is within the session's org. The session cookie identifies
+ *  an auth user; the learner surface is keyed on `org_users.id`. */
+export const LearnViewer = z.object({
+  orgUserId: z.string(),
+  role: OrgRole,
+});
+export type LearnViewer = z.infer<typeof LearnViewer>;
 
 /** One reported fact — never a decision. `asset` names the subject within the
  *  activity (absent = the activity itself); `completed` is the learner's

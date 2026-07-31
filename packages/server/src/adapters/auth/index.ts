@@ -237,11 +237,16 @@ export function createAuth(opts: CreateAuthOptions): Auth {
       user: {
         create: {
           after: async ({ id, email, name }) => {
+            // Sign-up collects one free-text name; identity stores two columns.
+            // First token is the given name, the rest the family name — wrong
+            // for some naming orders, but the person can correct it, and
+            // copying the whole string into both columns never can be right.
+            const parts = name.trim().split(/\s+/).filter(Boolean);
             await opts.identity.handleExternalUserCreated({
               email,
               externalId: id,
-              firstName: name,
-              lastName: name,
+              firstName: parts[0] ?? '',
+              lastName: parts.slice(1).join(' '),
             });
           },
         },

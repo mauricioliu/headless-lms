@@ -3,15 +3,33 @@
 // Outbound: the persistence contract the repository fulfils.
 import type { Activity, Role } from '@headless-lms/types';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
-import type { Comment, CommentAuthor, CommentReaction, CommentReport } from './model.js';
-import type { CommentsConfig, CommentListItem, ListCommentsQuery, Page } from './types.js';
+import type { Comment, CommentAuthor, CommentReport } from './model.js';
+import type {
+  CommentsConfig,
+  CommentListItem,
+  CommentView,
+  ListCommentsQuery,
+  Page,
+  ReactionCounts,
+  ReactionType,
+} from './types.js';
 
 /** An activity's comments as this reader may see them, with the config that
- *  decided it. Domain rows — who wrote them and what they carry is the
- *  caller's to resolve. */
+ *  decided it. */
 export interface ActivityComments {
   config: CommentsConfig;
-  comments: Comment[];
+  comments: CommentView[];
+}
+
+export interface CommentReactions {
+  reactions: ReactionCounts;
+  viewerReaction?: ReactionType;
+}
+
+export interface CommentWithContext {
+  comment: Comment;
+  courseId: string;
+  activityTitle: string;
 }
 
 /**
@@ -32,8 +50,8 @@ export type PostCommentInput = {
   body: string;
 };
 
-/** A profile row as the repository loads it. `email` is stripped before
- *  comments are served and kept only for the staff comment list. */
+/** A profile row as the repository loads it, keyed by `org_users.id`. `email`
+ *  is stripped before comments are served and kept only for the staff list. */
 export interface AuthorRecord extends CommentAuthor {
   email: string;
 }
@@ -41,9 +59,9 @@ export interface AuthorRecord extends CommentAuthor {
 export interface DiscussionService {
   /** Post a root comment or a reply. Lands pending where review is required and
    *  the poster is not staff. */
-  postComment(orgId: string, input: PostCommentInput): Promise<Comment>;
+  postComment(orgId: string, input: PostCommentInput): Promise<CommentView>;
   /** Author-only. Throws ForbiddenError for anyone else, staff included. */
-  edit(orgId: string, commentId: string, actor: Actor, body: string): Promise<Comment>;
+  edit(orgId: string, commentId: string, actor: Actor, body: string): Promise<CommentView>;
   /** The author, or anyone whose role is staff. */
   remove(orgId: string, commentId: string, actor: Actor): Promise<Comment>;
   /** Staff only. Returns the comment to published. */
@@ -64,13 +82,14 @@ export interface DiscussionService {
    * No rule is applied beyond the filters — this is what exists, not what
    * someone is allowed to read.
    */
-  listComments(orgId: string, query: ListCommentsQuery): Promise<Page<Comment>>;
+  listComments(orgId: string, query: ListCommentsQuery): Promise<Page<CommentListItem>>;
 
-  /** Plain read: every reaction on the given comments. Ungrouped. */
-  listReactions(orgId: string, commentIds: string[]): Promise<CommentReaction[]>;
-
-  createReaction(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void>;
-  removeReaction(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void>;
+  setReaction(
+    orgId: string,
+    commentId: string,
+    actor: Actor,
+    type: ReactionType | null,
+  ): Promise<CommentReactions>;
 
   /** Accepted even on locked comments — a locked activity can still hold
    *  something a moderator needs to see. */
@@ -104,21 +123,26 @@ export interface DiscussionRepository {
   /** Every comment on the activity, oldest first, including removed ones. */
   listByActivity(orgId: string, activityId: string): Promise<Comment[]>;
 
-  listReactions(orgId: string, commentIds: string[]): Promise<CommentReaction[]>;
-  /** Idempotent: reacting again with the same emoji returns the reaction
-   *  already stored, keeping its original `createdAt`. */
-  insertReaction(
+  reactionsOf(
     orgId: string,
-    reaction: Omit<CommentReaction, 'createdAt'>,
-  ): Promise<CommentReaction>;
-  deleteReaction(orgId: string, commentId: string, orgUserId: string, emoji: string): Promise<void>;
+    commentIds: string[],
+    viewerId: string,
+  ): Promise<Record<string, CommentReactions>>;
+  setReaction(
+    orgId: string,
+    commentId: string,
+    orgUserId: string,
+    type: ReactionType | null,
+  ): Promise<void>;
 
   /** Returns null when this person has already reported this comment. */
   insertReport(orgId: string, report: CommentReport): Promise<CommentReport | null>;
   /** Every unresolved report against the given comments. */
   listOpenReports(orgId: string, commentIds: string[]): Promise<CommentReport[]>;
 
-  listComments(orgId: string, query: ListCommentsQuery): Promise<Page<Comment>>;
+  authorsOf(orgId: string, orgUserIds: string[]): Promise<Record<string, AuthorRecord>>;
+
+  listComments(orgId: string, query: ListCommentsQuery): Promise<Page<CommentWithContext>>;
 }
 
 /** Writes that emit events run through this scope so the row and the outbox

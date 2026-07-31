@@ -71,6 +71,7 @@ import type {
   GetLearnDownloadErrors,
   GetLearnDownloadResponses,
   GetLearnOrgResponses,
+  GetLearnViewerResponses,
   GetMcpResponses,
   GetOverviewResponses,
   GetStudentErrors,
@@ -108,8 +109,6 @@ import type {
   PostCommentErrors,
   PostCommentResponses,
   PostMcpResponses,
-  ReactToCommentErrors,
-  ReactToCommentResponses,
   ReconnectIntegrationErrors,
   ReconnectIntegrationResponses,
   RemoveDownloadAssetErrors,
@@ -134,10 +133,10 @@ import type {
   ResendStudentInviteResponses,
   RevokeConnectedAppErrors,
   RevokeConnectedAppResponses,
+  SetCommentReactionErrors,
+  SetCommentReactionResponses,
   SetEntitlementStatusErrors,
   SetEntitlementStatusResponses,
-  UnreactToCommentErrors,
-  UnreactToCommentResponses,
   UpdateActivityResponses,
   UpdateAutomationErrors,
   UpdateAutomationResponses,
@@ -1363,6 +1362,19 @@ export class Learn {
   }
 
   /**
+   * Get the caller's identity within the session's org
+   */
+  public static getLearnViewer<ThrowOnError extends boolean = false>(
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetLearnViewerResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<GetLearnViewerResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/learn/viewer",
+      ...options,
+    });
+  }
+
+  /**
    * List the student's enrolled courses
    */
   public static listLearnCourses<ThrowOnError extends boolean = false>(
@@ -1629,70 +1641,41 @@ export class Learn {
   }
 
   /**
-   * Remove your reaction from a comment
+   * Set or clear your reaction to a comment
    */
-  public static unreactToComment<ThrowOnError extends boolean = false>(
+  public static setCommentReaction<ThrowOnError extends boolean = false>(
     parameters: {
       commentId: string;
-      emoji: string;
+      type?: "like" | "celebrate" | "curious";
     },
     options?: Options<never, ThrowOnError>,
-  ): RequestResult<UnreactToCommentResponses, UnreactToCommentErrors, ThrowOnError, "data"> {
+  ): RequestResult<SetCommentReactionResponses, SetCommentReactionErrors, ThrowOnError, "data"> {
     const params = buildClientParams(
       [parameters],
       [
         {
           args: [
             { in: "path", key: "commentId" },
-            { in: "path", key: "emoji" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).delete<
-      UnreactToCommentResponses,
-      UnreactToCommentErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/learn/comments/{commentId}/reactions/{emoji}",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Add a reaction to a comment
-   */
-  public static reactToComment<ThrowOnError extends boolean = false>(
-    parameters: {
-      commentId: string;
-      emoji: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ReactToCommentResponses, ReactToCommentErrors, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "commentId" },
-            { in: "path", key: "emoji" },
+            { in: "body", key: "type" },
           ],
         },
       ],
     );
     return (options?.client ?? client).put<
-      ReactToCommentResponses,
-      ReactToCommentErrors,
+      SetCommentReactionResponses,
+      SetCommentReactionErrors,
       ThrowOnError,
       "data"
     >({
       responseStyle: "data",
-      url: "/api/learn/comments/{commentId}/reactions/{emoji}",
+      url: "/api/learn/comments/{commentId}/reaction",
       ...options,
       ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
     });
   }
 

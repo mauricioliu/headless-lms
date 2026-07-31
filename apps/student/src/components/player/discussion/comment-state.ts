@@ -2,10 +2,12 @@
 // permissions and the optimistic transitions. Kept separate so the rules are
 // testable without a renderer, the way lib/video-tracking.ts is.
 import type {
+  ActivityComments,
   CommentAuthor,
   CommentsConfig,
   CommentView,
-  ActivityComments,
+  ReactionCounts,
+  ReactionType,
 } from "@/lib/api/types";
 
 export type CommentsStatus = "loading" | "ready" | "error" | "off";
@@ -32,7 +34,7 @@ export type CommentsAction =
   | { kind: "inserted"; comment: CommentView }
   | { kind: "replaced"; id: string; comment: CommentView }
   | { kind: "removed"; id: string; by: CommentAuthor }
-  | { kind: "reacted"; id: string; emoji: string; on: boolean }
+  | { kind: "reacted"; id: string; reactions: ReactionCounts; viewerReaction?: ReactionType }
   /** Rollback: put back the snapshot taken before an optimistic change. */
   | { kind: "restored"; comments: CommentView[] };
 
@@ -42,37 +44,6 @@ function mapOne(
   fn: (c: CommentView) => CommentView,
 ): CommentView[] {
   return comments.map((c) => (c.id === id ? fn(c) : c));
-}
-
-function toggleReaction(
-  comment: CommentView,
-  emoji: string,
-  on: boolean,
-): CommentView {
-  const existing = comment.reactions.find((r) => r.emoji === emoji);
-  if (on) {
-    // Idempotent: a stale render can dispatch "on" twice for the same reader
-    // (e.g. `!summary?.reacted` read before the first dispatch's state lands).
-    // Already reacted — nothing to do.
-    if (existing?.reacted) {
-      return comment;
-    }
-    const reactions = existing
-      ? comment.reactions.map((r) =>
-          r.emoji === emoji ? { ...r, count: r.count + 1, reacted: true } : r,
-        )
-      : [...comment.reactions, { emoji, count: 1, reacted: true }];
-    return { ...comment, reactions };
-  }
-  // Same for the "off" direction: nothing to undo if the reader never reacted.
-  if (!existing?.reacted) {
-    return comment;
-  }
-  // Only the reader's own reaction goes away — everyone else's count stands.
-  const reactions = comment.reactions
-    .map((r) => (r.emoji === emoji ? { ...r, count: r.count - 1, reacted: false } : r))
-    .filter((r) => r.count > 0);
-  return { ...comment, reactions };
 }
 
 export function commentsReducer(
@@ -114,9 +85,11 @@ export function commentsReducer(
     case "reacted":
       return {
         ...state,
-        comments: mapOne(state.comments, action.id, (c) =>
-          toggleReaction(c, action.emoji, action.on),
-        ),
+        comments: mapOne(state.comments, action.id, (c) => ({
+          ...c,
+          reactions: action.reactions,
+          viewerReaction: action.viewerReaction,
+        })),
       };
     case "restored":
       return { ...state, comments: action.comments };
@@ -165,16 +138,18 @@ export interface CommentPermissions {
 export function permissions(
   config: CommentsConfig,
   comment: CommentView,
+  orgUserId: string,
 ): CommentPermissions {
   const open = config.enabled && config.state === "visible";
   const live = comment.status !== "removed";
+  const isOwn = comment.author.id === orgUserId;
   return {
     canReply:
       open && config.threaded && comment.parentId === null && comment.status === "published",
     canReact: open && config.reactions && live,
-    canEdit: open && live && comment.isOwn,
-    canRemove: live && comment.isOwn,
-    canReport: config.state !== "hidden" && live && !comment.isOwn,
+    canEdit: open && live && isOwn,
+    canRemove: live && isOwn,
+    canReport: config.state !== "hidden" && live && !isOwn,
   };
 }
 

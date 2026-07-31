@@ -15,7 +15,15 @@ import { Learn } from "@headless-lms/sdk";
 
 import { statusOf } from "./shared";
 import { authHeaders } from "./server-call";
-import type { Course, CourseSummary, Download, DownloadDetail, Module, Org } from "./types";
+import type {
+  Course,
+  CourseSummary,
+  Download,
+  DownloadDetail,
+  Module,
+  Org,
+  Viewer,
+} from "./types";
 
 /** Run a Learn read, mapping a 404 to `null` and rethrowing anything else. */
 async function orNullOn404<T>(read: () => Promise<T>): Promise<T | null> {
@@ -45,6 +53,9 @@ export const learnApi = {
   },
   async org(): Promise<Org> {
     return await Learn.getLearnOrg(await authHeaders());
+  },
+  async viewer(): Promise<Viewer> {
+    return await Learn.getLearnViewer(await authHeaders());
   },
   async getCourse(courseId: string): Promise<Course | null> {
     const headers = await authHeaders();

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { LearnOrg } from '@headless-lms/api-contract';
+import { LearnOrg, LearnViewer } from '@headless-lms/api-contract';
 import type { Container } from '../../../app/container.js';
 import { UnauthorizedError } from '../../plugins/auth.js';
 
@@ -25,6 +25,25 @@ export async function learnOrgRoutes(app: FastifyInstance, container: Container)
         throw new UnauthorizedError('session organization not found');
       }
       return { id: org.id, name: org.name, slug: org.slug };
+    },
+  });
+
+  r.route({
+    method: 'GET',
+    url: '/api/learn/viewer',
+    preHandler: app.requireOrgSession,
+    schema: {
+      operationId: 'getLearnViewer',
+      tags: ['Learn'],
+      summary: "Get the caller's identity within the session's org",
+      response: { 200: LearnViewer },
+    },
+    handler: async (req) => {
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      return { orgUserId: orgUser.id, role: orgUser.role };
     },
   });
 }

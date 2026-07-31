@@ -19,6 +19,16 @@ export function firstName(name: string): string {
   return name.split(" ")[0] ?? name;
 }
 
+/** Renders a person for the screen. Purely presentational — the API sends the
+ *  names as typed and never a composed one, so joining them is the UI's job. */
+export function fullName(p: {
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string;
+}): string {
+  return [p.firstName, p.lastName].filter(Boolean).join(" ") || (p.email ?? "");
+}
+
 /** Up-to-two-letter initials from a display name. */
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

@@ -41,6 +41,7 @@ import { useIsNarrow } from "./use-viewport";
 export interface CoursePlayerProps {
   course: Course;
   studentName: string;
+  orgUserId: string;
   /** Portal org name — the header brand. */
   orgName: string;
   /** Server-rendered activity content, keyed by lesson id (see render-activity). */
@@ -61,6 +62,7 @@ const AUTO_ADVANCE_MS = 420;
 export function CoursePlayer({
   course,
   studentName,
+  orgUserId,
   orgName,
   renderedContent,
   initialCompletion,
@@ -336,7 +338,13 @@ export function CoursePlayer({
               >
                 <ContentArea node={curLesson ? renderedContent[curLessonId] : null} />
               </editorMedia.MediaProvider>
-              {curLessonId && <DiscussionPanel key={curLessonId} activityId={curLessonId} />}
+              {curLessonId && (
+                <DiscussionPanel
+                  key={curLessonId}
+                  activityId={curLessonId}
+                  orgUserId={orgUserId}
+                />
+              )}
             </div>
 
             <FooterNav

@@ -1,5 +1,5 @@
 {
-  "id": "275d54a0-0b7f-4be1-bd4a-77997b8fe52d",
+  "id": "5a74b9ae-95eb-4c90-8a67-9dc23b8c1407",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2178,8 +2178,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "emoji": {
-          "name": "emoji",
+        "type": {
+          "name": "type",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -2239,13 +2239,12 @@
         }
       },
       "compositePrimaryKeys": {
-        "comment_reactions_org_id_comment_id_org_user_id_emoji_pk": {
-          "name": "comment_reactions_org_id_comment_id_org_user_id_emoji_pk",
+        "comment_reactions_org_id_comment_id_org_user_id_pk": {
+          "name": "comment_reactions_org_id_comment_id_org_user_id_pk",
           "columns": [
             "org_id",
             "comment_id",
-            "org_user_id",
-            "emoji"
+            "org_user_id"
           ]
         }
       },

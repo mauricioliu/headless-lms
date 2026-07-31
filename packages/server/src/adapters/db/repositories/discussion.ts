@@ -1,16 +1,26 @@
 import { and, asc, desc, eq, ilike, inArray, isNull, sql, type SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { DiscussionRepository } from '../../../core/discussion/ports.js';
+import type {
+  AuthorRecord,
+  CommentReactions,
+  CommentWithContext,
+  DiscussionRepository,
+} from '../../../core/discussion/ports.js';
 import type {
   Comment,
-  CommentReaction,
   CommentReport,
   ListCommentsQuery,
   Logger,
   Page,
+  ReactionType,
+  Role,
 } from '@headless-lms/types';
 import { commentReactions, commentReports, comments } from '../schema/index.js';
 import { activities } from '../schema/content.js';
+import { orgUsers } from '../schema/organizations.js';
+import { users } from '../schema/identity.js';
+import { user } from '../../auth/schema.js';
+import { orgUserProfileColumns } from './org-user-profile.js';
 import { noopLogger } from '../../../core/shared/logger.js';
 
 type CommentRow = typeof comments.$inferSelect;
@@ -40,16 +50,6 @@ function toComment(row: CommentRow): Comment {
     removedBy: row.removedBy ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
-  };
-}
-
-function toReaction(row: typeof commentReactions.$inferSelect): CommentReaction {
-  return {
-    orgId: row.orgId,
-    commentId: row.commentId,
-    orgUserId: row.orgUserId,
-    emoji: row.emoji,
-    createdAt: row.createdAt.toISOString(),
   };
 }
 
@@ -113,63 +113,88 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
     return rows.map(toComment);
   }
 
-  async listReactions(orgId: string, commentIds: string[]): Promise<CommentReaction[]> {
+  async reactionsOf(
+    orgId: string,
+    commentIds: string[],
+    viewerId: string,
+  ): Promise<Record<string, CommentReactions>> {
     if (commentIds.length === 0) {
-      return [];
+      return {};
     }
     const rows = await this.db
-      .select()
+      .select({
+        commentId: commentReactions.commentId,
+        type: commentReactions.type,
+        count: sql<number>`cast(count(*) as int)`,
+        mine: sql<boolean>`bool_or(${commentReactions.orgUserId} = ${viewerId})`,
+      })
       .from(commentReactions)
       .where(
         and(eq(commentReactions.orgId, orgId), inArray(commentReactions.commentId, commentIds)),
-      );
-    return rows.map(toReaction);
+      )
+      .groupBy(commentReactions.commentId, commentReactions.type);
+
+    const byComment: Record<string, CommentReactions> = {};
+    for (const row of rows) {
+      const entry = (byComment[row.commentId] ??= { reactions: {} });
+      entry.reactions[row.type] = row.count;
+      if (row.mine) {
+        entry.viewerReaction = row.type;
+      }
+    }
+    return byComment;
   }
 
-  async insertReaction(
-    orgId: string,
-    reaction: Omit<CommentReaction, 'createdAt'>,
-  ): Promise<CommentReaction> {
-    // `createdAt` is the column default, so the stored row is the only place it
-    // exists. The conflict branch sets the emoji it already holds — a no-op
-    // whose only job is to make RETURNING hand back the existing row.
-    const [row] = await this.db
-      .insert(commentReactions)
-      .values({
-        orgId,
-        commentId: reaction.commentId,
-        orgUserId: reaction.orgUserId,
-        emoji: reaction.emoji,
-      })
-      .onConflictDoUpdate({
-        target: [
-          commentReactions.orgId,
-          commentReactions.commentId,
-          commentReactions.orgUserId,
-          commentReactions.emoji,
-        ],
-        set: { emoji: reaction.emoji },
-      })
-      .returning();
-    return toReaction(row!);
-  }
-
-  async deleteReaction(
+  async setReaction(
     orgId: string,
     commentId: string,
     orgUserId: string,
-    emoji: string,
+    type: ReactionType | null,
   ): Promise<void> {
+    if (type === null) {
+      await this.db
+        .delete(commentReactions)
+        .where(
+          and(
+            eq(commentReactions.orgId, orgId),
+            eq(commentReactions.commentId, commentId),
+            eq(commentReactions.orgUserId, orgUserId),
+          ),
+        );
+      return;
+    }
     await this.db
-      .delete(commentReactions)
-      .where(
-        and(
-          eq(commentReactions.orgId, orgId),
-          eq(commentReactions.commentId, commentId),
-          eq(commentReactions.orgUserId, orgUserId),
-          eq(commentReactions.emoji, emoji),
-        ),
-      );
+      .insert(commentReactions)
+      .values({ orgId, commentId, orgUserId, type })
+      .onConflictDoUpdate({
+        target: [commentReactions.orgId, commentReactions.commentId, commentReactions.orgUserId],
+        set: { type },
+      });
+  }
+
+  async authorsOf(orgId: string, orgUserIds: string[]): Promise<Record<string, AuthorRecord>> {
+    if (orgUserIds.length === 0) {
+      return {};
+    }
+    const rows = await this.db
+      .select({ ...orgUserProfileColumns, role: orgUsers.role })
+      .from(orgUsers)
+      .innerJoin(users, eq(users.id, orgUsers.userId))
+      .leftJoin(user, eq(user.id, users.externalId))
+      .where(and(eq(orgUsers.orgId, orgId), inArray(orgUsers.id, orgUserIds)));
+
+    const byId: Record<string, AuthorRecord> = {};
+    for (const row of rows) {
+      byId[row.id] = {
+        id: row.id,
+        firstName: row.firstName,
+        lastName: row.lastName,
+        email: row.email,
+        image: row.image ?? null,
+        role: row.role as Role,
+      };
+    }
+    return byId;
   }
 
   async insertReport(orgId: string, report: CommentReport): Promise<CommentReport | null> {
@@ -239,7 +264,7 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
       .where(where);
   }
 
-  async listComments(orgId: string, query: ListCommentsQuery): Promise<Page<Comment>> {
+  async listComments(orgId: string, query: ListCommentsQuery): Promise<Page<CommentWithContext>> {
     const conditions: SQL[] = [eq(comments.orgId, orgId)];
     if (query.status) {
       conditions.push(eq(comments.status, query.status));
@@ -289,7 +314,11 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
     const [{ total } = { total: 0 }] = await this.listTotal(where);
 
     return {
-      rows: rows.map((r) => toComment(r.comment)),
+      rows: rows.map((r) => ({
+        comment: toComment(r.comment),
+        courseId: r.courseId,
+        activityTitle: r.activityTitle,
+      })),
       total,
       page: query.page,
       pageSize: query.pageSize,

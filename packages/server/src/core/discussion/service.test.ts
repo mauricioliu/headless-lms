@@ -1,14 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { DiscussionServiceImpl, DEFAULT_SETTINGS } from './service.js';
 import type {
+  Actor,
+  ActivityGetter,
   AuthorRecord,
+  CommentReactions,
   CommentWithContext,
   CourseAccessReader,
   DiscussionRepository,
   DiscussionUnitOfWork,
 } from './ports.js';
-import type { Comment, CommentReaction, CommentReport, CommentSettings } from './model.js';
+import type { Comment, CommentReport, CommentSettings } from './model.js';
 import type { NewDiscussionEvent } from './events.js';
+import type { ListCommentsQuery, ReactionType } from './types.js';
 import { NotFoundError, ForbiddenError } from '../shared/errors.js';
 import {
   SettingsNamespace,
@@ -16,19 +20,19 @@ import {
   type SettingsRecord,
   type SettingsRepository,
 } from '../shared/settings.js';
-import type { Actor } from './ports.js';
-import type { ListCommentsQuery } from './types.js';
 
-/** Paging is required on the comment-list query; the tests are about filters. */
 function q(filters: Partial<ListCommentsQuery> = {}): ListCommentsQuery {
   return { page: 1, pageSize: 20, ...filters };
 }
 
-/** Every activity in these tests belongs to course c1 unless a test says
- *  otherwise — the service resolves the course rather than being handed it. */
+const learner: Actor = { id: 'ou_learner', role: 'student' };
+const other: Actor = { id: 'ou_other', role: 'student' };
+const staff: Actor = { id: 'ou_staff', role: 'instructor' };
+
+/** Every activity belongs to course c1 unless a test says otherwise. */
 export function fakeRepo() {
   const comments: Comment[] = [];
-  const reactions: CommentReaction[] = [];
+  const reactions: { commentId: string; orgUserId: string; type: ReactionType }[] = [];
   const reports: CommentReport[] = [];
   const authors = new Map<string, AuthorRecord>();
   const activityCourse = new Map<string, string>([
@@ -44,9 +48,10 @@ export function fakeRepo() {
     return (
       authors.get(id) ?? {
         id,
-        name: id,
+        firstName: id,
+        lastName: null,
         image: null,
-        role: 'student',
+        role: id === staff.id ? 'instructor' : 'student',
         email: `${id}@example.test`,
       }
     );
@@ -79,49 +84,37 @@ export function fakeRepo() {
     async listByActivity(orgId, activityId) {
       return comments
         .filter((c) => c.orgId === orgId && c.activityId === activityId)
-        .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
         .map((c) => ({ ...c }));
     },
-    async listReactions(orgId, commentIds) {
-      return reactions.filter((r) => r.orgId === orgId && commentIds.includes(r.commentId));
-    },
-    async insertReaction(orgId, reaction) {
-      const existing = reactions.find(
-        (r) =>
-          r.orgId === orgId &&
-          r.commentId === reaction.commentId &&
-          r.orgUserId === reaction.orgUserId &&
-          r.emoji === reaction.emoji,
-      );
-      if (existing) {
-        return { ...existing };
+    async reactionsOf(_orgId, commentIds, viewerId) {
+      const out: Record<string, CommentReactions> = {};
+      for (const r of reactions) {
+        if (!commentIds.includes(r.commentId)) {
+          continue;
+        }
+        const entry = (out[r.commentId] ??= { reactions: {} });
+        entry.reactions[r.type] = (entry.reactions[r.type] ?? 0) + 1;
+        if (r.orgUserId === viewerId) {
+          entry.viewerReaction = r.type;
+        }
       }
-      const stored: CommentReaction = {
-        ...reaction,
-        orgId,
-        createdAt: new Date().toISOString(),
-      };
-      reactions.push(stored);
-      return { ...stored };
+      return out;
     },
-    async deleteReaction(orgId, commentId, orgUserId, emoji) {
+    async setReaction(_orgId, commentId, orgUserId, type) {
       const i = reactions.findIndex(
-        (r) =>
-          r.orgId === orgId &&
-          r.commentId === commentId &&
-          r.orgUserId === orgUserId &&
-          r.emoji === emoji,
+        (r) => r.commentId === commentId && r.orgUserId === orgUserId,
       );
       if (i >= 0) {
         reactions.splice(i, 1);
       }
+      if (type !== null) {
+        reactions.push({ commentId, orgUserId, type });
+      }
     },
     async insertReport(_orgId, report) {
       const dup = reports.some(
-        (r) =>
-          r.orgId === report.orgId &&
-          r.commentId === report.commentId &&
-          r.orgUserId === report.orgUserId,
+        (r) => r.commentId === report.commentId && r.orgUserId === report.orgUserId,
       );
       if (dup) {
         return null;
@@ -134,15 +127,12 @@ export function fakeRepo() {
         .filter((r) => r.orgId === orgId && !r.resolvedAt && commentIds.includes(r.commentId))
         .map((r) => ({ ...r }));
     },
-    async resolveReportsFor(orgId, commentId, resolvedAt) {
-      for (const r of reports) {
-        if (r.orgId === orgId && r.commentId === commentId && !r.resolvedAt) {
-          r.resolvedAt = resolvedAt;
-        }
+    async authorsOf(_orgId, orgUserIds) {
+      const out: Record<string, AuthorRecord> = {};
+      for (const id of orgUserIds) {
+        out[id] = author(id);
       }
-    },
-    async courseOfActivity(_orgId, activityId) {
-      return activityCourse.get(activityId) ?? null;
+      return out;
     },
     async listComments(orgId, query) {
       const open = new Set(reports.filter((r) => !r.resolvedAt).map((r) => r.commentId));
@@ -171,7 +161,7 @@ export function fakeRepo() {
           }
           return true;
         })
-        .sort((a, b) => b.comment.createdAt.localeCompare(a.comment.createdAt));
+        .sort((a, b) => b.comment.createdAt.getTime() - a.comment.createdAt.getTime());
       const from = (query.page - 1) * query.pageSize;
       return {
         rows: matched.slice(from, from + query.pageSize),
@@ -180,20 +170,10 @@ export function fakeRepo() {
         pageSize: query.pageSize,
       };
     },
-    async authorsOf(_orgId, orgUserIds) {
-      const out: Record<string, AuthorRecord> = {};
-      for (const id of orgUserIds) {
-        out[id] = author(id);
-      }
-      return out;
-    },
   };
   return { repo, comments, reactions, reports, authors, activityCourse };
 }
 
-/** The cross-cutting settings store, in memory. Discussion's configuration is
- *  rows in here under the `discussion` namespace — the course's settings scoped
- *  by course id, an activity's comments-state override by activity id. */
 export function fakeSettings() {
   const rows = new Map<string, Record<string, unknown>>();
   const repo: SettingsRepository = {
@@ -209,7 +189,6 @@ export function fakeSettings() {
     },
     async patch(orgId, namespace, scopeId, value) {
       const key = `${orgId}:${namespace}:${scopeId}`;
-      // Shallow is enough: every discussion value is a flat object.
       const merged = { ...(rows.get(key) ?? {}), ...(value as Record<string, unknown>) };
       rows.set(key, merged);
       return { namespace, scopeId, value: merged };
@@ -234,8 +213,6 @@ export function fakeUow(repo: DiscussionRepository) {
   return { uow, appended };
 }
 
-/** Course access, as entitlements would answer it. Everyone is in unless a
- *  test bars them from a course. */
 export function fakeAccess() {
   const barred = new Set<string>();
   const access: CourseAccessReader = {
@@ -249,10 +226,14 @@ export function fakeAccess() {
   };
 }
 
-/** Discussion no longer writes its own configuration — the settings store does.
- *  Keeping the store beside the service it was built with lets the helpers
- *  below configure a course without every test threading it through. */
-const storeOf = new WeakMap<DiscussionServiceImpl, SettingsService>();
+function fakeContent(activityCourse: Map<string, string>): ActivityGetter {
+  return {
+    async getActivity(_orgId, activityId) {
+      const courseId = activityCourse.get(activityId);
+      return courseId ? ({ id: activityId, courseId } as never) : null;
+    },
+  };
+}
 
 export function makeService(fake = fakeRepo(), gate = fakeAccess()) {
   const { uow, appended } = fakeUow(fake.repo);
@@ -260,920 +241,756 @@ export function makeService(fake = fakeRepo(), gate = fakeAccess()) {
   const service = new DiscussionServiceImpl({
     repo: fake.repo,
     access: gate.access,
+    content: fakeContent(fake.activityCourse),
     uow,
     settings,
-    now: () => '2026-07-27T00:00:00.000Z',
   });
-  storeOf.set(service, settings);
   return { service, appended, settings, settingsRows: rows, bar: gate.bar, ...fake };
 }
 
-/** Write a course's discussion settings the way the settings surface would. */
-function setSettings(
-  service: DiscussionServiceImpl,
+/** Write a course's comment settings the way the content surface would: as one
+ *  key inside the course's `content` settings row. */
+async function setSettings(
+  settings: SettingsService,
   courseId: string,
   patch: Partial<CommentSettings>,
-): Promise<unknown> {
-  return storeOf.get(service)!.patch('o1', SettingsNamespace.discussion, courseId, patch);
+): Promise<void> {
+  const current =
+    (await settings.get<{ comments?: Partial<CommentSettings> }>(
+      'o1',
+      SettingsNamespace.content,
+      courseId,
+    )) ?? {};
+  await settings.patch('o1', SettingsNamespace.content, courseId, {
+    comments: { ...DEFAULT_SETTINGS, ...current.comments, ...patch },
+  });
 }
 
-/** Write an activity's comments-state override. `null` clears it: the key stays
- *  in the stored value, and a null state reads as "no override". */
-function setCommentsState(
-  service: DiscussionServiceImpl,
+async function setActivityState(
+  settings: SettingsService,
   activityId: string,
-  state: 'visible' | 'hidden' | 'locked' | null,
-): Promise<unknown> {
-  return storeOf.get(service)!.patch('o1', SettingsNamespace.discussion, activityId, { state });
+  state: 'visible' | 'hidden' | 'locked',
+): Promise<void> {
+  await settings.patch('o1', SettingsNamespace.discussion, activityId, { state });
+}
+
+/** A course with discussion switched on, ready to post into. */
+async function openCourse() {
+  const s = makeService();
+  await setSettings(s.settings, 'c1', { enabled: true });
+  return s;
 }
 
 describe('settings', () => {
-
-
-  it('reads a partial stored value over the defaults', async () => {
-    const { service } = makeService();
-    await setSettings(service, 'c1', { enabled: true, requireReview: true });
-    expect(await service.resolveConfig('o1', 'a1')).toEqual({
-      enabled: true,
-      threaded: true,
-      requireReview: true,
-      reactions: true,
-      state: 'visible',
-    });
-  });
-
-  it('scopes the settings row to the course the activity resolves to', async () => {
-    const { service } = makeService();
-    // Written against c2, which holds neither a1 nor a2 — a1 must not see it.
-    await setSettings(service, 'c2', { enabled: true });
-    expect((await service.resolveConfig('o1', 'a1')).enabled).toBe(false);
-  });
-
-  it('throws NotFoundError for an activity that does not exist', async () => {
-    const { service } = makeService();
-    await expect(service.resolveConfig('o1', 'nope')).rejects.toThrow(NotFoundError);
-  });
-
-  it("lets an activity's comments state override the course", async () => {
-    const { service } = makeService();
-    await setSettings(service, 'c1', { enabled: true });
-    await setCommentsState(service, 'a1', 'locked');
-    expect((await service.resolveConfig('o1', 'a1')).state).toBe('locked');
-  });
-
-  it('leaves the sibling activity on the course setting', async () => {
-    const { service } = makeService();
-    await setSettings(service, 'c1', { enabled: true });
-    await setCommentsState(service, 'a1', 'locked');
-    expect((await service.resolveConfig('o1', 'a2')).state).toBe('visible');
-  });
-
-  it('falls back to the course setting once the override is cleared', async () => {
-    const { service } = makeService();
-    await setSettings(service, 'c1', { enabled: true });
-    await setCommentsState(service, 'a1', 'hidden');
-    await setCommentsState(service, 'a1', null);
-    expect((await service.resolveConfig('o1', 'a1')).state).toBe('visible');
-  });
-
-  it('resolves state to hidden when discussion is disabled for the course', async () => {
+  it('is off for a course that has never been configured', async () => {
     const { service } = makeService();
     const config = await service.resolveConfig('o1', 'a1');
     expect(config.enabled).toBe(false);
     expect(config.state).toBe('hidden');
   });
 
-  it('keeps a disabled course hidden even when the activity overrides the state', async () => {
-    const { service } = makeService();
-    await setSettings(service, 'c1', { enabled: false });
-    await setCommentsState(service, 'a1', 'visible');
+  it('reads comment settings from under the course settings `comments` key', async () => {
+    const { service, settings } = makeService();
+    await setSettings(settings, 'c1', { enabled: true, requireReview: true });
+    const config = await service.resolveConfig('o1', 'a1');
+    expect(config.enabled).toBe(true);
+    expect(config.requireReview).toBe(true);
+    expect(config.state).toBe('visible');
+  });
+
+  it('ignores sibling course settings that are not about comments', async () => {
+    const { service, settings } = makeService();
+    await settings.patch('o1', SettingsNamespace.content, 'c1', {
+      transcriptDownloads: true,
+      comments: { ...DEFAULT_SETTINGS, enabled: true },
+    });
+    const config = await service.resolveConfig('o1', 'a1');
+    expect(config.enabled).toBe(true);
+  });
+
+  it('applies an activity override on top of the course settings', async () => {
+    const { service, settings } = await openCourse();
+    await setActivityState(settings, 'a1', 'locked');
+    expect((await service.resolveConfig('o1', 'a1')).state).toBe('locked');
+    expect((await service.resolveConfig('o1', 'a2')).state).toBe('visible');
+  });
+
+  it('cannot be turned back on for an activity once the course switches it off', async () => {
+    const { service, settings } = makeService();
+    await setSettings(settings, 'c1', { enabled: false });
+    await setActivityState(settings, 'a1', 'visible');
     expect((await service.resolveConfig('o1', 'a1')).state).toBe('hidden');
   });
 });
 
-const learner: Actor = { orgUserId: 'orm_learner', role: 'student' };
-const staff: Actor = { orgUserId: 'orm_staff', role: 'instructor' };
-
-async function enabled(service: DiscussionServiceImpl, patch: Partial<CommentSettings> = {}) {
-  await setSettings(service, 'c1', { enabled: true, ...patch });
-}
-
-describe('course access', () => {
-  it('serves a learner nothing for a course they hold no access to', async () => {
-    const { service, bar } = makeService();
-    await enabled(service);
-    bar('orm_learner', 'c1');
-    await expect(service.activityComments('o1', 'a1', learner)).rejects.toThrow(NotFoundError);
-  });
-
-  it('refuses a learner post to a course they hold no access to', async () => {
-    const { service, bar } = makeService();
-    await enabled(service);
-    bar('orm_learner', 'c1');
-    await expect(
-      service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'x' }),
-    ).rejects.toThrow(NotFoundError);
-  });
-
-  it('404s a learner acting on a comment once their access is gone', async () => {
-    const { service, bar } = makeService();
-    await enabled(service);
-    const comment = await service.postComment('o1', learner, {
-      activityId: 'a1',
-      parentId: null,
-      body: 'mine',
-    });
-    bar('orm_learner', 'c1');
-    // Their own comment, and it is still there — reach is what they lost.
-    await expect(service.edit('o1', comment.id, learner, 'edited')).rejects.toThrow(NotFoundError);
-    await expect(service.remove('o1', comment.id, learner)).rejects.toThrow(NotFoundError);
-    await expect(service.createReaction('o1', comment.id, learner, '👍')).rejects.toThrow(NotFoundError);
-    await expect(service.reportComment('o1', comment.id, learner, 'spam')).rejects.toThrow(NotFoundError);
-  });
-
-  it('404s a learner for an activity that does not exist', async () => {
-    const { service } = makeService();
-    await expect(service.activityComments('o1', 'nope', learner)).rejects.toThrow(NotFoundError);
-  });
-
-  it('does not check access for staff — moderators are not enrolled', async () => {
-    const { service, bar } = makeService();
-    await enabled(service);
-    const comment = await service.postComment('o1', learner, {
-      activityId: 'a1',
-      parentId: null,
-      body: 'reported',
-    });
-    bar('orm_staff', 'c1');
-    expect((await service.remove('o1', comment.id, staff)).status).toBe('removed');
-  });
-});
-
 describe('post', () => {
-  it('publishes a learner comment when review is off', async () => {
-    const { service, appended } = makeService();
-    await enabled(service);
-    const comment = await service.postComment('o1', learner, {
-      activityId: 'a1',
-      parentId: null,
-      body: 'first',
-    });
-    expect(comment.status).toBe('published');
-    expect(appended).toHaveLength(1);
-    expect(appended[0]?.type).toBe('comment.created');
-  });
-
-  it('returns a resolved author and never an email', async () => {
-    const fake = fakeRepo();
-    fake.authors.set('orm_staff', {
-      id: 'orm_staff',
-      name: 'Sarah Chen',
-      image: 'https://img.test/s.png',
-      role: 'instructor',
-      email: 'sarah@example.test',
-    });
-    const { service } = makeService(fake);
-    await enabled(service);
-    const comment = await service.postComment('o1', staff, {
+  it('publishes a learner comment when review is not required', async () => {
+    const { service } = await openCourse();
+    const view = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
       body: 'hello',
     });
-    expect(comment.author).toEqual({
-      id: 'orm_staff',
-      name: 'Sarah Chen',
-      image: 'https://img.test/s.png',
-      role: 'instructor',
-    });
-    expect('email' in comment.author).toBe(false);
+    expect(view.status).toBe('published');
+    expect(view.author.id).toBe(learner.id);
+    expect(view.activityId).toBe('a1');
+    expect(view.reactions).toEqual({});
+    expect(view.viewerReaction).toBeUndefined();
   });
 
-  it('holds a learner comment pending when review is on', async () => {
-    const { service } = makeService();
-    await enabled(service, { requireReview: true });
-    const comment = await service.postComment('o1', learner, {
+  it('holds a learner comment pending when the course requires review', async () => {
+    const { service, settings } = await openCourse();
+    await setSettings(settings, 'c1', { requireReview: true });
+    const view = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
-      body: 'q',
+      body: 'hello',
     });
-    expect(comment.status).toBe('pending');
+    expect(view.status).toBe('pending');
   });
 
-  it('publishes a staff comment even when review is on', async () => {
-    const { service } = makeService();
-    await enabled(service, { requireReview: true });
-    const comment = await service.postComment('o1', staff, {
+  it('publishes a staff comment even when review is required', async () => {
+    const { service, settings } = await openCourse();
+    await setSettings(settings, 'c1', { requireReview: true });
+    const view = await service.postComment('o1', {
+      actor: staff,
       activityId: 'a1',
       parentId: null,
-      body: 'answer',
+      body: 'hello',
     });
-    expect(comment.status).toBe('published');
+    expect(view.status).toBe('published');
   });
 
-  it('refuses to post when discussion is disabled for the course', async () => {
-    const { service } = makeService();
+  it('emits comment.created in the same transaction as the row', async () => {
+    const { service, appended } = await openCourse();
+    await service.postComment('o1', {
+      actor: learner,
+      activityId: 'a1',
+      parentId: null,
+      body: 'hello',
+    });
+    expect(appended.map((e) => e.type)).toEqual(['comment.created']);
+  });
+
+  it('refuses to post when the activity is locked or hidden', async () => {
+    const { service, settings } = await openCourse();
+    await setActivityState(settings, 'a1', 'locked');
     await expect(
-      service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'x' }),
-    ).rejects.toThrow(ForbiddenError);
+      service.postComment('o1', { actor: learner, activityId: 'a1', parentId: null, body: 'x' }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 
-  it('refuses to post when comments are locked', async () => {
-    const { service } = makeService();
-    await enabled(service);
-    await setCommentsState(service, 'a1', 'locked');
-    await expect(
-      service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'x' }),
-    ).rejects.toThrow(ForbiddenError);
-  });
-
-  it('refuses a reply when replies are disabled', async () => {
-    const { service } = makeService();
-    await enabled(service, { threaded: false });
-    const root = await service.postComment('o1', learner, {
+  it('refuses a reply when the course is not threaded', async () => {
+    const { service, settings } = await openCourse();
+    const root = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
       body: 'root',
     });
+    await setSettings(settings, 'c1', { threaded: false });
     await expect(
-      service.postComment('o1', learner, { activityId: 'a1', parentId: root.id, body: 'reply' }),
-    ).rejects.toThrow(ForbiddenError);
+      service.postComment('o1', {
+        actor: learner,
+        activityId: 'a1',
+        parentId: root.id,
+        body: 'reply',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 
-  it('refuses a reply to a reply — nesting is one level', async () => {
-    const { service } = makeService();
-    await enabled(service);
-    const root = await service.postComment('o1', learner, {
+  it('refuses to nest a reply below a reply', async () => {
+    const { service } = await openCourse();
+    const root = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
       body: 'root',
     });
-    const reply = await service.postComment('o1', staff, {
+    const reply = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: root.id,
       body: 'reply',
     });
     await expect(
-      service.postComment('o1', learner, { activityId: 'a1', parentId: reply.id, body: 'nested' }),
-    ).rejects.toThrow(ForbiddenError);
+      service.postComment('o1', {
+        actor: learner,
+        activityId: 'a1',
+        parentId: reply.id,
+        body: 'deeper',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 
-  it('refuses a reply to a pending comment', async () => {
-    const { service } = makeService();
-    await enabled(service, { requireReview: true });
-    const pending = await service.postComment('o1', learner, {
-      activityId: 'a1',
-      parentId: null,
-      body: 'q',
-    });
-    await expect(
-      service.postComment('o1', staff, { activityId: 'a1', parentId: pending.id, body: 'reply' }),
-    ).rejects.toThrow(ForbiddenError);
-  });
-
-  it('refuses a reply to a comment on a different activity', async () => {
-    const { service } = makeService();
-    await enabled(service);
-    const root = await service.postComment('o1', learner, {
+  it('refuses a reply to a comment on another activity', async () => {
+    const { service } = await openCourse();
+    const root = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
       body: 'root',
     });
     await expect(
-      service.postComment('o1', learner, { activityId: 'a2', parentId: root.id, body: 'reply' }),
-    ).rejects.toThrow(NotFoundError);
+      service.postComment('o1', {
+        actor: learner,
+        activityId: 'a2',
+        parentId: root.id,
+        body: 'reply',
+      }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('refuses a reply to a comment that is not published', async () => {
+    const { service, settings } = await openCourse();
+    await setSettings(settings, 'c1', { requireReview: true });
+    const pending = await service.postComment('o1', {
+      actor: learner,
+      activityId: 'a1',
+      parentId: null,
+      body: 'root',
+    });
+    await expect(
+      service.postComment('o1', {
+        actor: other,
+        activityId: 'a1',
+        parentId: pending.id,
+        body: 'reply',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 });
 
 describe('activityComments', () => {
-  it('serves a pending comment to its author but not to another learner', async () => {
-    const { service } = makeService();
-    await enabled(service, { requireReview: true });
-    const pending = await service.postComment('o1', learner, {
+  it('serves nothing at all when the activity is hidden', async () => {
+    const { service, settings } = await openCourse();
+    await setActivityState(settings, 'a1', 'hidden');
+    const { config, comments } = await service.activityComments('o1', 'a1', learner);
+    expect(config.state).toBe('hidden');
+    expect(comments).toEqual([]);
+  });
+
+  it('names the author and resolves their current role', async () => {
+    const { service } = await openCourse();
+    await service.postComment('o1', {
+      actor: staff,
       activityId: 'a1',
       parentId: null,
-      body: 'q',
+      body: 'hello',
     });
-
-    const own = await service.activityComments('o1', 'a1', learner);
-    expect(own.comments.map((c) => c.id)).toContain(pending.id);
-
-    const other: Actor = { orgUserId: 'orm_other', role: 'student' };
-    const theirs = await service.activityComments('o1', 'a1', other);
-    expect(theirs.comments).toHaveLength(0);
-
-    const moderator = await service.activityComments('o1', 'a1', staff);
-    expect(moderator.comments.map((c) => c.id)).toContain(pending.id);
+    const { comments } = await service.activityComments('o1', 'a1', learner);
+    expect(comments[0]?.author.id).toBe(staff.id);
+    expect(comments[0]?.author.role).toBe('instructor');
   });
 
-  it('resolves the author from their current role and omits their email', async () => {
-    const fake = fakeRepo();
-    fake.authors.set('orm_staff', {
-      id: 'orm_staff',
-      name: 'Sarah Chen',
-      image: null,
-      role: 'instructor',
-      email: 'sarah@example.test',
-    });
-    const { service } = makeService(fake);
-    await enabled(service);
-    await service.postComment('o1', staff, { activityId: 'a1', parentId: null, body: 'hello' });
-    const view = await service.activityComments('o1', 'a1', learner);
-    expect(view.comments[0]?.author).toEqual({
-      id: 'orm_staff',
-      name: 'Sarah Chen',
-      image: null,
-      role: 'instructor',
-    });
-  });
-
-  it('flags a comment as the reader own only for its author', async () => {
-    const { service } = makeService();
-    await enabled(service);
-    await service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'mine' });
-    expect((await service.activityComments('o1', 'a1', learner)).comments[0]?.isOwn).toBe(true);
-    expect((await service.activityComments('o1', 'a1', staff)).comments[0]?.isOwn).toBe(false);
-  });
-
-  it('serves nothing when comments are hidden', async () => {
-    const { service } = makeService();
-    await enabled(service);
-    await service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'hi' });
-    await setCommentsState(service, 'a1', 'hidden');
-    const view = await service.activityComments('o1', 'a1', learner);
-    expect(view.comments).toHaveLength(0);
-    expect(view.config.state).toBe('hidden');
-  });
-
-  it('serves a removed comment as a placeholder when its reply is visible', async () => {
-    const { service } = makeService();
-    await enabled(service);
-    const root = await service.postComment('o1', learner, {
+  it('never serves an author email', async () => {
+    const { service } = await openCourse();
+    await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
-      body: 'bad',
+      body: 'hello',
     });
-    await service.postComment('o1', staff, {
+    const { comments } = await service.activityComments('o1', 'a1', learner);
+    expect(comments[0]).not.toHaveProperty('authorEmail');
+    expect(JSON.stringify(comments[0]?.author)).not.toContain('@');
+  });
+
+  it('shows a pending comment to its author and to staff, nobody else', async () => {
+    const { service, settings } = await openCourse();
+    await setSettings(settings, 'c1', { requireReview: true });
+    await service.postComment('o1', {
+      actor: learner,
+      activityId: 'a1',
+      parentId: null,
+      body: 'held',
+    });
+    expect((await service.activityComments('o1', 'a1', learner)).comments).toHaveLength(1);
+    expect((await service.activityComments('o1', 'a1', staff)).comments).toHaveLength(1);
+    expect((await service.activityComments('o1', 'a1', other)).comments).toHaveLength(0);
+  });
+
+  it('nulls a removed comment body but still names who removed it', async () => {
+    const { service } = await openCourse();
+    const root = await service.postComment('o1', {
+      actor: learner,
+      activityId: 'a1',
+      parentId: null,
+      body: 'root',
+    });
+    await service.postComment('o1', {
+      actor: other,
       activityId: 'a1',
       parentId: root.id,
       body: 'reply',
     });
     await service.remove('o1', root.id, staff);
 
-    const view = await service.activityComments('o1', 'a1', learner);
-    const placeholder = view.comments.find((c) => c.id === root.id);
+    const { comments } = await service.activityComments('o1', 'a1', learner);
+    const placeholder = comments.find((c) => c.id === root.id);
     expect(placeholder?.body).toBeNull();
-    expect(placeholder?.status).toBe('removed');
-    expect(placeholder?.removedBy?.id).toBe(staff.orgUserId);
-    expect(view.comments).toHaveLength(2);
+    expect(placeholder?.removedBy?.id).toBe(staff.id);
   });
 
-  it('does not serve a removed comment that has no replies', async () => {
-    const { service } = makeService();
-    await enabled(service);
-    const root = await service.postComment('o1', learner, {
-      activityId: 'a1',
-      parentId: null,
-      body: 'oops',
-    });
-    await service.remove('o1', root.id, learner);
-    const view = await service.activityComments('o1', 'a1', learner);
-    expect(view.comments).toHaveLength(0);
-  });
-
-  it('hides a removed comment whose only reply this reader cannot see', async () => {
-    const { service } = makeService();
-    await enabled(service, { requireReview: true });
-    const root = await service.postComment('o1', staff, {
+  it('drops a removed root once no visible reply holds it open', async () => {
+    const { service } = await openCourse();
+    const root = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
       body: 'root',
     });
-    // The only reply is another learner's, still awaiting review.
-    await service.postComment('o1', learner, {
+    await service.remove('o1', root.id, learner);
+    expect((await service.activityComments('o1', 'a1', learner)).comments).toHaveLength(0);
+  });
+
+  it('never serves a removed reply', async () => {
+    const { service } = await openCourse();
+    const root = await service.postComment('o1', {
+      actor: learner,
+      activityId: 'a1',
+      parentId: null,
+      body: 'root',
+    });
+    const reply = await service.postComment('o1', {
+      actor: other,
+      activityId: 'a1',
+      parentId: root.id,
+      body: 'reply',
+    });
+    await service.remove('o1', reply.id, other);
+    const { comments } = await service.activityComments('o1', 'a1', learner);
+    expect(comments.map((c) => c.id)).toEqual([root.id]);
+  });
+
+  it('judges a removed root against replies THIS reader can see', async () => {
+    const { service, settings } = await openCourse();
+    await setSettings(settings, 'c1', { requireReview: true });
+    const root = await service.postComment('o1', {
+      actor: staff,
+      activityId: 'a1',
+      parentId: null,
+      body: 'root',
+    });
+    await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: root.id,
       body: 'pending reply',
     });
     await service.remove('o1', root.id, staff);
 
-    const other: Actor = { orgUserId: 'orm_other', role: 'student' };
-    const theirs = await service.activityComments('o1', 'a1', other);
-    expect(theirs.comments).toHaveLength(0);
-
-    // Its author still sees both the reply and the placeholder holding it.
-    const own = await service.activityComments('o1', 'a1', learner);
-    expect(own.comments).toHaveLength(2);
+    expect((await service.activityComments('o1', 'a1', learner)).comments).toHaveLength(2);
+    expect((await service.activityComments('o1', 'a1', other)).comments).toHaveLength(0);
   });
 
-  it('never serves a removed reply', async () => {
-    const { service } = makeService();
-    await enabled(service);
-    const root = await service.postComment('o1', staff, {
+  it('serves reaction counts with the reader own kind marked', async () => {
+    const { service } = await openCourse();
+    const c = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
-      body: 'root',
+      body: 'hello',
     });
-    const reply = await service.postComment('o1', learner, {
-      activityId: 'a1',
-      parentId: root.id,
-      body: 'reply',
-    });
-    await service.remove('o1', reply.id, learner);
-    const view = await service.activityComments('o1', 'a1', learner);
-    expect(view.comments.map((c) => c.id)).toEqual([root.id]);
+    await service.setReaction('o1', c.id, learner, 'like');
+    await service.setReaction('o1', c.id, other, 'like');
+    await service.setReaction('o1', c.id, staff, 'curious');
+
+    const mine = (await service.activityComments('o1', 'a1', learner)).comments[0];
+    expect(mine?.reactions).toEqual({ like: 2, curious: 1 });
+    expect(mine?.viewerReaction).toBe('like');
+
+    const theirs = (await service.activityComments('o1', 'a1', staff)).comments[0];
+    expect(theirs?.reactions).toEqual({ like: 2, curious: 1 });
+    expect(theirs?.viewerReaction).toBe('curious');
   });
 
-  it('groups reactions by emoji and flags the reader own', async () => {
-    const { service } = makeService();
-    await enabled(service);
-    const c = await service.postComment('o1', learner, {
+  it('leaves viewerReaction absent for a reader who has not reacted', async () => {
+    const { service } = await openCourse();
+    const c = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
-      body: 'hi',
+      body: 'hello',
     });
-    await service.createReaction('o1', c.id, learner, '👍');
-    await service.createReaction('o1', c.id, staff, '👍');
-
-    const view = await service.activityComments('o1', 'a1', learner);
-    expect(view.comments[0]?.reactions).toEqual([{ emoji: '👍', count: 2, reacted: true }]);
-
-    const other: Actor = { orgUserId: 'orm_other', role: 'student' };
-    const theirs = await service.activityComments('o1', 'a1', other);
-    expect(theirs.comments[0]?.reactions).toEqual([{ emoji: '👍', count: 2, reacted: false }]);
+    await service.setReaction('o1', c.id, other, 'like');
+    const view = (await service.activityComments('o1', 'a1', learner)).comments[0];
+    expect(view?.viewerReaction).toBeUndefined();
   });
 
-  it('throws NotFoundError rather than render an unresolved author as a student', async () => {
+  it('serves no reaction counts at all when the course disables reactions', async () => {
+    const { service, settings } = await openCourse();
+    const c = await service.postComment('o1', {
+      actor: learner,
+      activityId: 'a1',
+      parentId: null,
+      body: 'hello',
+    });
+    await service.setReaction('o1', c.id, learner, 'like');
+    await setSettings(settings, 'c1', { reactions: false });
+    const view = (await service.activityComments('o1', 'a1', learner)).comments[0];
+    expect(view?.reactions).toEqual({});
+    expect(view?.viewerReaction).toBeUndefined();
+  });
+
+  it('throws rather than serving a comment whose author has vanished', async () => {
     const fake = fakeRepo();
-    const { service } = makeService(fake);
-    await enabled(service);
-    await service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'hi' });
+    const s = makeService(fake);
+    await setSettings(s.settings, 'c1', { enabled: true });
+    await s.service.postComment('o1', {
+      actor: learner,
+      activityId: 'a1',
+      parentId: null,
+      body: 'hello',
+    });
     fake.repo.authorsOf = async () => ({});
-    await expect(service.activityComments('o1', 'a1', learner)).rejects.toThrow(NotFoundError);
+    await expect(s.service.activityComments('o1', 'a1', learner)).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
   });
 });
 
 describe('edit, remove, restore, approve', () => {
-  async function published() {
-    const ctx = makeService();
-    await enabled(ctx.service);
-    const comment = await ctx.service.postComment('o1', learner, {
+  it('lets the author revise their own comment', async () => {
+    const { service } = await openCourse();
+    const c = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
-      body: 'original',
+      body: 'first',
     });
-    return { ...ctx, comment };
-  }
-
-  it('lets an author edit their own comment', async () => {
-    const { service, comment } = await published();
-    const edited = await service.edit('o1', comment.id, learner, 'revised');
-    expect(edited.body).toBe('revised');
-    expect(edited.author.id).toBe(learner.orgUserId);
+    const edited = await service.edit('o1', c.id, learner, 'second');
+    expect(edited.body).toBe('second');
   });
 
-  it('refuses an edit by anyone else, including staff', async () => {
-    const { service, comment } = await published();
-    await expect(service.edit('o1', comment.id, staff, 'nope')).rejects.toThrow(ForbiddenError);
-  });
-
-  it('refuses an edit when comments are locked, even by the author', async () => {
-    const { service, comment } = await published();
-    await setCommentsState(service, 'a1', 'locked');
-    await expect(service.edit('o1', comment.id, learner, 'revised')).rejects.toThrow(
-      ForbiddenError,
-    );
-  });
-
-  it('lets an author remove their own comment and names them as remover', async () => {
-    const { service, comment, appended } = await published();
-    const removed = await service.remove('o1', comment.id, learner);
-    expect(removed.status).toBe('removed');
-    expect(removed.removedBy).toBe(learner.orgUserId);
-    expect(appended.at(-1)).toMatchObject({
-      type: 'comment.removed',
-      removedBy: learner.orgUserId,
-    });
-  });
-
-  it('lets staff remove another person comment', async () => {
-    const { service, comment } = await published();
-    const removed = await service.remove('o1', comment.id, staff);
-    expect(removed.removedBy).toBe(staff.orgUserId);
-  });
-
-  it('refuses removal by an unrelated learner', async () => {
-    const { service, comment } = await published();
-    const other: Actor = { orgUserId: 'orm_other', role: 'student' };
-    await expect(service.remove('o1', comment.id, other)).rejects.toThrow(ForbiddenError);
-  });
-
-  it('restores a removed comment to published, staff only', async () => {
-    const { service, comment } = await published();
-    await service.remove('o1', comment.id, staff);
-    await expect(service.restore('o1', comment.id, learner)).rejects.toThrow(ForbiddenError);
-    const restored = await service.restore('o1', comment.id, staff);
-    expect(restored.status).toBe('published');
-    expect(restored.removedBy).toBeNull();
-  });
-
-  it('approves a pending comment and emits comment.published', async () => {
-    const { service, appended } = makeService();
-    await enabled(service, { requireReview: true });
-    const pending = await service.postComment('o1', learner, {
+  it('refuses an edit by anyone else, staff included', async () => {
+    const { service } = await openCourse();
+    const c = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
-      body: 'q',
+      body: 'first',
     });
-    await expect(service.approve('o1', pending.id, learner)).rejects.toThrow(ForbiddenError);
-    const approved = await service.approve('o1', pending.id, staff);
-    expect(approved.status).toBe('published');
-    expect(appended.at(-1)?.type).toBe('comment.published');
+    await expect(service.edit('o1', c.id, staff, 'x')).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it('refuses to edit a removed comment', async () => {
+    const { service } = await openCourse();
+    const c = await service.postComment('o1', {
+      actor: learner,
+      activityId: 'a1',
+      parentId: null,
+      body: 'first',
+    });
+    await service.remove('o1', c.id, learner);
+    await expect(service.edit('o1', c.id, learner, 'x')).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it('lets the author or a moderator remove, but not a bystander', async () => {
+    const { service } = await openCourse();
+    const mine = await service.postComment('o1', {
+      actor: learner,
+      activityId: 'a1',
+      parentId: null,
+      body: 'a',
+    });
+    const theirs = await service.postComment('o1', {
+      actor: other,
+      activityId: 'a1',
+      parentId: null,
+      body: 'b',
+    });
+    expect((await service.remove('o1', mine.id, learner)).status).toBe('removed');
+    expect((await service.remove('o1', theirs.id, staff)).status).toBe('removed');
+
+    const third = await service.postComment('o1', {
+      actor: other,
+      activityId: 'a1',
+      parentId: null,
+      body: 'c',
+    });
+    await expect(service.remove('o1', third.id, learner)).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it('emits comment.removed once, and is idempotent on a second removal', async () => {
+    const { service, appended } = await openCourse();
+    const c = await service.postComment('o1', {
+      actor: learner,
+      activityId: 'a1',
+      parentId: null,
+      body: 'a',
+    });
+    await service.remove('o1', c.id, learner);
+    await service.remove('o1', c.id, learner);
+    expect(appended.filter((e) => e.type === 'comment.removed')).toHaveLength(1);
+  });
+
+  it('lets only a moderator restore or approve', async () => {
+    const { service, settings } = await openCourse();
+    await setSettings(settings, 'c1', { requireReview: true });
+    const c = await service.postComment('o1', {
+      actor: learner,
+      activityId: 'a1',
+      parentId: null,
+      body: 'a',
+    });
+    await expect(service.approve('o1', c.id, learner)).rejects.toBeInstanceOf(ForbiddenError);
+    expect((await service.approve('o1', c.id, staff)).status).toBe('published');
+
+    await service.remove('o1', c.id, staff);
+    await expect(service.restore('o1', c.id, learner)).rejects.toBeInstanceOf(ForbiddenError);
+    expect((await service.restore('o1', c.id, staff)).status).toBe('published');
   });
 
   it('refuses to approve a comment that is not pending', async () => {
-    const { service, comment } = await published();
-    await expect(service.approve('o1', comment.id, staff)).rejects.toThrow(ForbiddenError);
-  });
-
-  it('removing an already-removed comment is idempotent', async () => {
-    const { service, comment, appended } = await published();
-    await service.remove('o1', comment.id, staff);
-    const before = appended.length;
-    const again = await service.remove('o1', comment.id, staff);
-    expect(again.status).toBe('removed');
-    expect(appended).toHaveLength(before);
-  });
-
-  it('edit emits no event', async () => {
-    const { service, comment, appended } = await published();
-    const before = appended.length;
-    await service.edit('o1', comment.id, learner, 'revised');
-    expect(appended).toHaveLength(before);
-  });
-
-  it('restore emits no event', async () => {
-    const { service, comment, appended } = await published();
-    await service.remove('o1', comment.id, staff);
-    const before = appended.length;
-    await service.restore('o1', comment.id, staff);
-    expect(appended).toHaveLength(before);
-  });
-
-  it('throws NotFoundError from edit when the comment vanishes mid-write', async () => {
-    const fake = fakeRepo();
-    const { service } = makeService(fake);
-    await enabled(service);
-    const comment = await service.postComment('o1', learner, {
+    const { service } = await openCourse();
+    const c = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
-      body: 'original',
+      body: 'a',
     });
-    fake.repo.updateComment = async () => null;
-    await expect(service.edit('o1', comment.id, learner, 'revised')).rejects.toThrow(NotFoundError);
+    await expect(service.approve('o1', c.id, staff)).rejects.toBeInstanceOf(ForbiddenError);
   });
 
-  it('throws NotFoundError from restore when the comment vanishes mid-write', async () => {
-    const fake = fakeRepo();
-    const { service } = makeService(fake);
-    await enabled(service);
-    const comment = await service.postComment('o1', learner, {
+  it('clears removedBy when a comment is restored', async () => {
+    const { service } = await openCourse();
+    const c = await service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
-      body: 'original',
+      body: 'a',
     });
-    await service.remove('o1', comment.id, staff);
-    fake.repo.updateComment = async () => null;
-    await expect(service.restore('o1', comment.id, staff)).rejects.toThrow(NotFoundError);
-  });
-});
-
-describe('publish', () => {
-  async function publishedComment() {
-    const ctx = makeService();
-    await enabled(ctx.service);
-    const comment = await ctx.service.postComment('o1', learner, {
-      activityId: 'a1',
-      parentId: null,
-      body: 'original',
-    });
-    return { ...ctx, comment };
-  }
-
-  it('dispatches to approve for a pending comment and emits comment.published', async () => {
-    const { service, appended } = makeService();
-    await enabled(service, { requireReview: true });
-    const pending = await service.postComment('o1', learner, {
-      activityId: 'a1',
-      parentId: null,
-      body: 'q',
-    });
-    const result = await service.publish('o1', pending.id, staff);
-    expect(result.status).toBe('published');
-    expect(appended.at(-1)?.type).toBe('comment.published');
+    await service.remove('o1', c.id, staff);
+    expect((await service.restore('o1', c.id, staff)).removedBy).toBeNull();
   });
 
-  it('dispatches to restore for a removed comment', async () => {
-    const { service, comment } = await publishedComment();
-    await service.remove('o1', comment.id, staff);
-    const result = await service.publish('o1', comment.id, staff);
-    expect(result.status).toBe('published');
-    expect(result.removedBy).toBeNull();
-  });
-
-  it('refuses a comment that is already published', async () => {
-    const { service, comment } = await publishedComment();
-    await expect(service.publish('o1', comment.id, staff)).rejects.toThrow(ForbiddenError);
-  });
-
-  it('refuses a learner, regardless of the comment state', async () => {
-    const { service, comment } = await publishedComment();
-    await expect(service.publish('o1', comment.id, learner)).rejects.toThrow(ForbiddenError);
+  it('throws for a comment that does not exist', async () => {
+    const { service } = await openCourse();
+    await expect(service.remove('o1', 'nope', staff)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(service.edit('o1', 'nope', learner, 'x')).rejects.toBeInstanceOf(NotFoundError);
   });
 });
 
 describe('reactions', () => {
-  async function withComment(patch = {}) {
-    const ctx = makeService();
-    await enabled(ctx.service, patch);
-    const comment = await ctx.service.postComment('o1', learner, {
+  async function seeded() {
+    const s = await openCourse();
+    const c = await s.service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
-      body: 'hi',
+      body: 'hello',
     });
-    return { ...ctx, comment };
+    return { ...s, commentId: c.id };
   }
 
-  it('is idempotent for the same person and emoji', async () => {
-    const { service, comment, reactions } = await withComment();
-    await service.createReaction('o1', comment.id, learner, '👍');
-    await service.createReaction('o1', comment.id, learner, '👍');
-    expect(reactions).toHaveLength(1);
+  it('returns the whole state so the caller never recomputes a count', async () => {
+    const { service, commentId } = await seeded();
+    const state = await service.setReaction('o1', commentId, learner, 'like');
+    expect(state).toEqual({ reactions: { like: 1 }, viewerReaction: 'like' });
   });
 
-  it('removes a reaction', async () => {
-    const { service, comment, reactions } = await withComment();
-    await service.createReaction('o1', comment.id, learner, '👍');
-    await service.removeReaction('o1', comment.id, learner, '👍');
-    expect(reactions).toHaveLength(0);
+  it('replaces rather than accumulates when a reader reacts again', async () => {
+    const { service, commentId } = await seeded();
+    await service.setReaction('o1', commentId, learner, 'like');
+    const state = await service.setReaction('o1', commentId, learner, 'curious');
+    expect(state).toEqual({ reactions: { curious: 1 }, viewerReaction: 'curious' });
   });
 
-  it('emits no event', async () => {
-    const { service, comment, appended } = await withComment();
-    const before = appended.length;
-    await service.createReaction('o1', comment.id, learner, '👍');
-    expect(appended).toHaveLength(before);
+  it('is a no-op rather than a toggle when the same kind arrives twice', async () => {
+    const { service, commentId } = await seeded();
+    await service.setReaction('o1', commentId, learner, 'like');
+    const state = await service.setReaction('o1', commentId, learner, 'like');
+    expect(state).toEqual({ reactions: { like: 1 }, viewerReaction: 'like' });
   });
 
-  it('refuses when reactions are disabled', async () => {
-    const { service, comment } = await withComment({ reactions: false });
-    await expect(service.createReaction('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
+  it('clears with null, leaving everyone else counted', async () => {
+    const { service, commentId } = await seeded();
+    await service.setReaction('o1', commentId, learner, 'like');
+    await service.setReaction('o1', commentId, other, 'like');
+    const state = await service.setReaction('o1', commentId, learner, null);
+    expect(state).toEqual({ reactions: { like: 1 } });
+    expect(state.viewerReaction).toBeUndefined();
   });
 
-  it('refuses when comments are locked', async () => {
-    const { service, comment } = await withComment();
-    await setCommentsState(service, 'a1', 'locked');
-    await expect(service.createReaction('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
+  it('refuses a new reaction when the course disables reactions', async () => {
+    const { service, settings, commentId } = await seeded();
+    await setSettings(settings, 'c1', { reactions: false });
+    await expect(
+      service.setReaction('o1', commentId, learner, 'like'),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 
-  it('refuses to remove a reaction when comments are locked', async () => {
-    const { service, comment } = await withComment();
-    await service.createReaction('o1', comment.id, learner, '👍');
-    await setCommentsState(service, 'a1', 'locked');
-    await expect(service.removeReaction('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
+  it('still lets a reader withdraw one after reactions are switched off', async () => {
+    const { service, settings, commentId } = await seeded();
+    await service.setReaction('o1', commentId, learner, 'like');
+    await setSettings(settings, 'c1', { reactions: false });
+    await expect(service.setReaction('o1', commentId, learner, null)).resolves.toEqual({
+      reactions: {},
+    });
   });
 
-  it('refuses a reaction when comments are hidden', async () => {
-    const { service, comment } = await withComment();
-    await setCommentsState(service, 'a1', 'hidden');
-    await expect(service.createReaction('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
+  it('refuses when the activity is locked', async () => {
+    const { service, settings, commentId } = await seeded();
+    await setActivityState(settings, 'a1', 'locked');
+    await expect(
+      service.setReaction('o1', commentId, learner, 'like'),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 
-  it('still lets a reaction be withdrawn after reactions are disabled', async () => {
-    const { service, comment, reactions } = await withComment();
-    await service.createReaction('o1', comment.id, learner, '👍');
-    await setSettings(service, 'c1', { reactions: false });
-    await service.removeReaction('o1', comment.id, learner, '👍');
-    expect(reactions).toHaveLength(0);
+  it('refuses on a removed comment', async () => {
+    const { service, commentId } = await seeded();
+    await service.remove('o1', commentId, staff);
+    await expect(
+      service.setReaction('o1', commentId, learner, 'like'),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 });
 
 describe('reports', () => {
-  async function withComment() {
-    const ctx = makeService();
-    await enabled(ctx.service);
-    const comment = await ctx.service.postComment('o1', learner, {
+  async function seeded() {
+    const s = await openCourse();
+    const c = await s.service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
-      body: 'bad',
+      body: 'hello',
     });
-    return { ...ctx, comment };
+    return { ...s, commentId: c.id };
   }
 
-  it('does not change the comment status', async () => {
-    const { service, comment } = await withComment();
-    await service.reportComment('o1', comment.id, staff, 'abuse');
-    const after = await service.activityComments('o1', 'a1', staff);
-    expect(after.comments[0]?.status).toBe('published');
+  it('records a report and emits comment.reported', async () => {
+    const { service, appended, commentId } = await seeded();
+    const report = await service.reportComment('o1', commentId, other, 'spam');
+    expect(report.reason).toBe('spam');
+    expect(appended.filter((e) => e.type === 'comment.reported')).toHaveLength(1);
   });
 
-  it('emits comment.reported', async () => {
-    const { service, comment, appended } = await withComment();
-    await service.reportComment('o1', comment.id, staff, 'abuse');
-    expect(appended.at(-1)?.type).toBe('comment.reported');
-  });
-
-  it('is one report per person per comment and emits once', async () => {
-    const { service, comment, reports, appended } = await withComment();
-    await service.reportComment('o1', comment.id, staff, 'first');
-    const before = appended.length;
-    await service.reportComment('o1', comment.id, staff, 'second');
-    expect(reports).toHaveLength(1);
-    expect(appended).toHaveLength(before);
-  });
-
-  it('accepts a report when comments are locked', async () => {
-    const { service, comment, reports } = await withComment();
-    await setCommentsState(service, 'a1', 'locked');
-    await service.reportComment('o1', comment.id, staff, 'still bad');
-    expect(reports).toHaveLength(1);
-  });
-
-  it('refuses a report when comments are hidden', async () => {
-    const { service, comment } = await withComment();
-    await setCommentsState(service, 'a1', 'hidden');
-    await expect(service.reportComment('o1', comment.id, staff, 'x')).rejects.toThrow(ForbiddenError);
-  });
-
-  it('lists a reported comment with its author, activity and reports', async () => {
-    const fake = fakeRepo();
-    fake.authors.set('orm_learner', {
-      id: 'orm_learner',
-      name: 'Ana Diaz',
-      image: null,
-      role: 'student',
-      email: 'ana@example.test',
-    });
-    const { service, comment } = await (async () => {
-      const ctx = makeService(fake);
-      await enabled(ctx.service);
-      const c = await ctx.service.postComment('o1', learner, {
-        activityId: 'a1',
-        parentId: null,
-        body: 'bad',
-      });
-      return { ...ctx, comment: c };
-    })();
-    const other: Actor = { orgUserId: 'orm_other', role: 'student' };
-    await service.reportComment('o1', comment.id, staff, 'spam');
-    await service.reportComment('o1', comment.id, other, 'rude');
-
-    const { rows } = await service.listComments('o1', q({ reported: true, courseId: 'c1' }));
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.id).toBe(comment.id);
-    expect(rows[0]?.body).toBe('bad');
-    expect(rows[0]?.author.name).toBe('Ana Diaz');
-    expect(rows[0]?.authorEmail).toBe('ana@example.test');
-    expect(rows[0]?.activityId).toBe('a1');
-    expect(rows[0]?.activityTitle).toBe('Lesson one');
-    expect(rows[0]?.courseId).toBe('c1');
-    expect(rows[0]?.reports.map((r) => r.reason).sort()).toEqual(['rude', 'spam']);
-    expect(rows[0]?.reports.map((r) => r.reporter.id).sort()).toEqual(
-      [staff.orgUserId, other.orgUserId].sort(),
-    );
-    expect('email' in rows[0]!.reports[0]!.reporter).toBe(false);
-  });
-
-  it('drops a comment out of the reported filter once its reports resolve', async () => {
-    const { service, comment } = await withComment();
-    await service.reportComment('o1', comment.id, staff, 'a');
-    await service.resolveReports('o1', comment.id, staff);
-    const { rows } = await service.listComments('o1', q({ reported: true, courseId: 'c1' }));
-    expect(rows).toHaveLength(0);
-  });
-
-  it('resolves every open report on a comment, not just one', async () => {
-    const { service, comment, reports } = await withComment();
-    const other: Actor = { orgUserId: 'orm_other', role: 'student' };
-    await service.reportComment('o1', comment.id, staff, 'a');
-    await service.reportComment('o1', comment.id, other, 'b');
-
-    const before = await service.listComments('o1', q({ reported: true, courseId: 'c1' }));
-    expect(before.rows).toHaveLength(1);
-    expect(before.rows[0]?.reports).toHaveLength(2);
-
-    await service.resolveReports('o1', comment.id, staff);
-
-    const after = await service.listComments('o1', q({ reported: true, courseId: 'c1' }));
-    expect(after.rows).toHaveLength(0);
-    expect(reports.every((r) => r.resolvedAt !== null)).toBe(true);
-  });
-
-  it('returns the report that actually exists on a duplicate, not a fabricated one', async () => {
-    const { service, comment } = await withComment();
-    const first = await service.reportComment('o1', comment.id, staff, 'first');
-    const second = await service.reportComment('o1', comment.id, staff, 'second');
+  it('returns the existing report and emits nothing on a duplicate', async () => {
+    const { service, appended, commentId } = await seeded();
+    const first = await service.reportComment('o1', commentId, other, 'spam');
+    const second = await service.reportComment('o1', commentId, other, 'again');
     expect(second.id).toBe(first.id);
+    expect(appended.filter((e) => e.type === 'comment.reported')).toHaveLength(1);
   });
 
-  it('refuses resolution by a learner', async () => {
-    const { service, comment } = await withComment();
-    await service.reportComment('o1', comment.id, staff, 'a');
-    await expect(service.resolveReports('o1', comment.id, learner)).rejects.toThrow(ForbiddenError);
+  it('accepts a report on a locked activity', async () => {
+    const { service, settings, commentId } = await seeded();
+    await setActivityState(settings, 'a1', 'locked');
+    await expect(service.reportComment('o1', commentId, other, 'spam')).resolves.toBeDefined();
+  });
+
+  it('refuses a report on a hidden activity', async () => {
+    const { service, settings, commentId } = await seeded();
+    await setActivityState(settings, 'a1', 'hidden');
+    await expect(
+      service.reportComment('o1', commentId, other, 'spam'),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 });
 
 describe('listComments', () => {
-  /** One pending and one published comment, on activities a1 and a2. */
   async function seeded() {
-    const ctx = makeService();
-    await enabled(ctx.service, { requireReview: true });
-    const pending = await ctx.service.postComment('o1', learner, {
+    const s = await openCourse();
+    const a = await s.service.postComment('o1', {
+      actor: learner,
       activityId: 'a1',
       parentId: null,
-      body: 'needs review',
+      body: 'first post',
     });
-    const published = await ctx.service.postComment('o1', staff, {
+    const b = await s.service.postComment('o1', {
+      actor: other,
       activityId: 'a2',
       parentId: null,
-      body: 'from a moderator',
+      body: 'second post',
     });
-    return { ...ctx, pending, published };
+    return { ...s, a, b };
   }
 
-  it('lists every comment in the org when nothing is filtered', async () => {
-    const { service, pending, published } = await seeded();
-    const page = await service.listComments('o1', q());
-    expect(page.rows.map((r) => r.id).sort()).toEqual([pending.id, published.id].sort());
-    expect(page.total).toBe(2);
-  });
-
-  it('filters by status', async () => {
-    const { service, pending } = await seeded();
-    const page = await service.listComments('o1', q({ status: 'pending' }));
-    expect(page.rows.map((r) => r.id)).toEqual([pending.id]);
-  });
-
-  it('filters by course, resolved through the activity', async () => {
+  it('carries the course and activity title a moderation card needs', async () => {
     const { service } = await seeded();
-    expect((await service.listComments('o1', q({ courseId: 'c1' }))).total).toBe(2);
-    expect((await service.listComments('o1', q({ courseId: 'c2' }))).total).toBe(0);
-  });
-
-  it('filters by activity', async () => {
-    const { service, pending } = await seeded();
     const page = await service.listComments('o1', q({ activityId: 'a1' }));
-    expect(page.rows.map((r) => r.id)).toEqual([pending.id]);
+    expect(page.rows[0]?.courseId).toBe('c1');
+    expect(page.rows[0]?.activityTitle).toBe('Lesson one');
   });
 
-  it('filters by author', async () => {
-    const { service, pending } = await seeded();
-    const page = await service.listComments('o1', q({ orgUserId: learner.orgUserId }));
-    expect(page.rows.map((r) => r.id)).toEqual([pending.id]);
-  });
-
-  it('searches the body', async () => {
-    const { service, published } = await seeded();
-    const page = await service.listComments('o1', q({ search: 'moderator' }));
-    expect(page.rows.map((r) => r.id)).toEqual([published.id]);
-  });
-
-  it('separates reported from unreported', async () => {
-    const { service, published } = await seeded();
-    await service.reportComment('o1', published.id, learner, 'spam');
-    expect((await service.listComments('o1', q({ reported: true }))).rows.map((r) => r.id)).toEqual([
-      published.id,
-    ]);
-    expect((await service.listComments('o1', q({ reported: false }))).total).toBe(1);
-  });
-
-  it('combines filters rather than replacing one with another', async () => {
+  it('carries the author email, which a reader is never given', async () => {
     const { service } = await seeded();
-    const page = await service.listComments('o1', q({ status: 'pending', activityId: 'a2' }));
-    expect(page.rows).toHaveLength(0);
-  });
-
-  it('pages, reporting the unpaged total', async () => {
-    const { service } = await seeded();
-    const page = await service.listComments('o1', q({ page: 1, pageSize: 1 }));
-    expect(page.rows).toHaveLength(1);
-    expect(page.total).toBe(2);
-    expect(page.pageSize).toBe(1);
+    const page = await service.listComments('o1', q({ activityId: 'a1' }));
+    expect(page.rows[0]?.authorEmail).toBe(`${learner.id}@example.test`);
+    expect(page.rows[0]?.author.id).toBe(learner.id);
   });
 
   it('serves a removed comment with its body, which a reader is never given', async () => {
-    const { service, published } = await seeded();
-    await service.remove('o1', published.id, staff);
-    const row = (await service.listComments('o1', q({ status: 'removed' }))).rows[0];
-    expect(row?.body).toBe('from a moderator');
-    expect(row?.removedBy).toBe(staff.orgUserId);
+    const { service, a } = await seeded();
+    await service.remove('o1', a.id, staff);
+    const page = await service.listComments('o1', q({ activityId: 'a1' }));
+    expect(page.rows[0]?.body).toBe('first post');
+    expect(page.rows[0]?.status).toBe('removed');
+    expect(page.rows[0]?.removedBy).toBe(staff.id);
   });
 
-  it('throws NotFoundError rather than serving a blank id/email placeholder', async () => {
+  it('attaches open reports with the reporter named', async () => {
+    const { service, a } = await seeded();
+    await service.reportComment('o1', a.id, other, 'spam');
+    const page = await service.listComments('o1', q({ activityId: 'a1' }));
+    expect(page.rows[0]?.reports).toHaveLength(1);
+    expect(page.rows[0]?.reports[0]?.reporter.id).toBe(other.id);
+    expect(page.rows[0]?.reports[0]?.reason).toBe('spam');
+  });
+
+  it('leaves reports empty on a comment nobody has flagged', async () => {
+    const { service } = await seeded();
+    const page = await service.listComments('o1', q({ activityId: 'a2' }));
+    expect(page.rows[0]?.reports).toEqual([]);
+  });
+
+  it('narrows by author, activity and body search', async () => {
+    const { service } = await seeded();
+    expect((await service.listComments('o1', q({ orgUserId: other.id }))).rows).toHaveLength(1);
+    expect((await service.listComments('o1', q({ activityId: 'a2' }))).rows).toHaveLength(1);
+    expect((await service.listComments('o1', q({ search: 'second' }))).rows).toHaveLength(1);
+  });
+
+  it('narrows to comments carrying an open report, or to those carrying none', async () => {
+    const { service, a } = await seeded();
+    await service.reportComment('o1', a.id, other, 'spam');
+    expect((await service.listComments('o1', q({ reported: true }))).rows.map((r) => r.id)).toEqual(
+      [a.id],
+    );
+    expect((await service.listComments('o1', q({ reported: false }))).rows).toHaveLength(1);
+  });
+
+  it('returns an empty page without looking anyone up', async () => {
+    const { service } = await openCourse();
+    const page = await service.listComments('o1', q());
+    expect(page.rows).toEqual([]);
+    expect(page.total).toBe(0);
+  });
+
+  it('throws rather than serving a blank author placeholder', async () => {
     const fake = fakeRepo();
-    const { service } = makeService(fake);
-    await enabled(service, { requireReview: true });
-    await service.postComment('o1', learner, { activityId: 'a1', parentId: null, body: 'q' });
+    const s = makeService(fake);
+    await setSettings(s.settings, 'c1', { enabled: true });
+    await s.service.postComment('o1', {
+      actor: learner,
+      activityId: 'a1',
+      parentId: null,
+      body: 'hello',
+    });
     fake.repo.authorsOf = async () => ({});
-    await expect(service.listComments('o1', q())).rejects.toThrow(NotFoundError);
+    await expect(s.service.listComments('o1', q())).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe('course access', () => {
+  it('lets staff reach an activity without a course entitlement', async () => {
+    const { service, bar } = await openCourse();
+    bar(staff.id, 'c1');
+    await expect(
+      service.postComment('o1', { actor: staff, activityId: 'a1', parentId: null, body: 'x' }),
+    ).resolves.toBeDefined();
   });
 });

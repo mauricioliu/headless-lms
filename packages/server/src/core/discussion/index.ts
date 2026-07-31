@@ -8,8 +8,10 @@ export type {
   ActivityComments,
   Actor,
   AuthorRecord,
+  CommentReactions,
   CommentWithContext,
   CourseAccessReader,
+  PostCommentInput,
 } from './ports.js';
 export type {
   Comment,
@@ -21,11 +23,13 @@ export type {
   CommentsState,
 } from './model.js';
 export type {
-  PostCommentInput,
   CommentsConfig,
   CommentView,
   CommentReportSummary,
   CommentListItem,
   ListCommentsQuery,
+  ReactionCounts,
+  ReactionType,
 } from './types.js';
+export { REACTION_TYPES } from './types.js';
 export type { CommentEvent } from './events.js';

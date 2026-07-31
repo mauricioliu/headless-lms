@@ -5,7 +5,7 @@
 // only the network calls and the request-ordering guard.
 import * as React from "react";
 import { Learn } from "@headless-lms/sdk";
-import type { CommentAuthor, CommentView } from "@/lib/api/types";
+import type { CommentAuthor, CommentView, ReactionType } from "@/lib/api/types";
 
 import { ensureClientSdk } from "@/lib/api/client-sdk";
 import { initialCommentsState, commentsReducer, type CommentsPanelState } from "./comment-state";
@@ -18,7 +18,7 @@ export interface UseComments extends CommentsPanelState {
   post: (body: string, parentId: string | null) => Promise<void>;
   edit: (id: string, body: string) => Promise<void>;
   remove: (id: string, by: CommentAuthor) => Promise<void>;
-  react: (id: string, emoji: string, on: boolean) => Promise<void>;
+  react: (id: string, type: ReactionType | null) => Promise<void>;
   report: (id: string, reason: string) => Promise<void>;
 }
 
@@ -108,21 +108,20 @@ export function useComments(activityId: string): UseComments {
     [optimistic],
   );
 
-  const react = React.useCallback(
-    (id: string, emoji: string, on: boolean) =>
-      optimistic(
-        () => dispatch({ kind: "reacted", id, emoji, on }),
-        async () => {
-          ensureClientSdk();
-          if (on) {
-            await Learn.reactToComment({ commentId: id, emoji });
-          } else {
-            await Learn.unreactToComment({ commentId: id, emoji });
-          }
-        },
-      ),
-    [optimistic],
-  );
+  // Not optimistic: the server returns the authoritative counts, so guessing
+  // them here only risks disagreeing with what comes back.
+  const react = React.useCallback(async (id: string, type: ReactionType | null) => {
+    ensureClientSdk();
+    try {
+      const state = await Learn.setCommentReaction({
+        commentId: id,
+        ...(type ? { type } : {}),
+      });
+      dispatch({ kind: "reacted", id, ...state });
+    } catch (err: unknown) {
+      dispatch({ kind: "failed", message: message(err) });
+    }
+  }, []);
 
   // Not optimistic: the reader needs to know the signal was actually recorded.
   // Rethrows so a caller can tell success from failure (e.g. only toast a

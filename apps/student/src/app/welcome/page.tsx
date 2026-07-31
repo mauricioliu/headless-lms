@@ -17,6 +17,7 @@ import { AcceptInviteCard } from "@/components/welcome/accept-invite-card";
 import { getServerSession } from "@/lib/auth/server-session";
 import { authHeaders } from "@/lib/api/server-call";
 import { ApiError } from "@/lib/api/shared";
+import { fullName } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Welcome — Headless LMS" };
 
@@ -65,7 +66,7 @@ export default async function WelcomePage({
           />
         </>
       ) : (
-        <InviteAuthForm token={token} email={invite.email} name={invite.name} />
+        <InviteAuthForm token={token} email={invite.email} name={fullName(invite)} />
       )}
     </AuthShell>
   );
