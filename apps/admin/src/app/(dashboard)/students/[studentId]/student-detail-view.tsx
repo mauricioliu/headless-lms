@@ -137,7 +137,7 @@ export function StudentDetailView({
         title="Delete student?"
         description={
           <>
-            This permanently deletes <span className="font-medium text-ink">{student.name}</span>,
+            This permanently deletes <span className="font-medium text-ink">{fullName(student)}</span>,
             along with their entitlements and progress. This can&apos;t be undone.
           </>
         }
@@ -174,11 +174,11 @@ function StudentHeader({
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-4">
-          <NameAvatar name={student.name} image={student.image} className="size-12 text-sm" />
+          <NameAvatar name={fullName(student)} image={student.image} className="size-12 text-sm" />
           <div className="flex min-w-0 flex-col gap-0.5">
             <div className="flex min-w-0 items-center gap-2.5">
               <h1 className="truncate text-xl font-semibold tracking-tight text-ink text-balance">
-                {student.name}
+                {fullName(student)}
               </h1>
               {pending && <Badge variant="warning">Invite pending</Badge>}
             </div>
