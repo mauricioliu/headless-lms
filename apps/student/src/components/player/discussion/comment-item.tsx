@@ -1,35 +1,30 @@
 "use client";
 
 import * as React from "react";
-import type { CommentsConfig, CommentView, ReactionType } from "@/lib/api/types";
+import { CornerUpLeft, Flag, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import type { CommentsConfig, CommentView, ReactionEmoji } from "@/lib/api/types";
 
-import { fullName, initials } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { fullName, relativeTime } from "@/lib/format";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { permissions } from "./comment-state";
+import { CommentAvatar } from "./avatar";
 import { CommentComposer } from "./comment-composer";
-
-const REACTIONS: { type: ReactionType; glyph: string }[] = [
-  { type: "like", glyph: "👍" },
-  { type: "celebrate", glyph: "🎉" },
-  { type: "curious", glyph: "🤔" },
-];
-
-function Avatar({ name, image }: { name: string; image: string | null }) {
-  if (image) {
-    // eslint-disable-next-line @next/next/no-img-element -- avatars are remote and unsized
-    return <img src={image} alt="" className="size-7 shrink-0 rounded-full object-cover" />;
-  }
-  return (
-    <span className="grid size-7 shrink-0 place-items-center rounded-full bg-surface-warm-2 text-[11px] font-semibold text-ink-3">
-      {initials(name)}
-    </span>
-  );
-}
+import { ReactionBar } from "./reaction-bar";
 
 export function CommentItem({
   comment,
   config,
   orgUserId,
+  viewerName,
   isReply = false,
+  replies,
   onReply,
   onEdit,
   onRemove,
@@ -39,48 +34,109 @@ export function CommentItem({
   comment: CommentView;
   config: CommentsConfig;
   orgUserId: string;
+  viewerName: string;
   isReply?: boolean;
+  /** Rendered under this comment's actions — the panel owns the reply list so
+   *  each reply keeps its own handlers. */
+  replies?: React.ReactNode;
   onReply?: (body: string) => Promise<void>;
   onEdit: (body: string) => Promise<void>;
   onRemove: () => Promise<void>;
-  onReact: (type: ReactionType | null) => Promise<void>;
+  onReact: (emoji: ReactionEmoji | null) => Promise<void>;
   onReport: (reason: string) => Promise<void>;
 }) {
   const [editing, setEditing] = React.useState(false);
   const [replying, setReplying] = React.useState(false);
   const p = permissions(config, comment, orgUserId);
+  const author = fullName(comment.author);
 
   if (comment.status === "removed") {
     return (
-      <div className={isReply ? "pl-9" : ""}>
-        <p className="py-2 text-[13px] italic text-ink-3">
-          {comment.removedBy
-            ? `Comment removed by ${fullName(comment.removedBy)}`
-            : "Comment removed"}
-        </p>
-      </div>
+      <p className="py-2 text-[13px] text-ink-4 italic">
+        {comment.removedBy
+          ? `Comment removed by ${fullName(comment.removedBy)}`
+          : "Comment removed"}
+      </p>
     );
   }
 
+  const hasMenu = p.canReply || p.canEdit || p.canRemove || p.canReport;
+
   return (
-    <div className={isReply ? "pl-9" : ""}>
-      <div className="flex gap-2.5 py-2.5">
-        <Avatar name={fullName(comment.author)} image={comment.author.image} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[13.5px] font-semibold text-ink">{fullName(comment.author)}</span>
-            {comment.author.role !== "student" && (
+    <article className="flex gap-2.5">
+      <CommentAvatar name={author} image={comment.author.image} size={isReply ? "sm" : "md"} />
+
+      <div className="min-w-0 flex-1">
+        <div
+          className={cn(
+            "rounded-card rounded-tl-sm bg-surface-warm-2",
+            isReply ? "px-3 py-2" : "px-3.5 py-2.5",
+          )}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span
-                className="rounded px-1.5 py-0.5 text-[11px] font-semibold capitalize"
-                style={{ background: "var(--brand-soft)", color: "var(--brand-strong)" }}
+                className={cn(
+                  "font-semibold text-ink",
+                  isReply ? "text-[12.5px]" : "text-[13.5px]",
+                )}
               >
-                {comment.author.role}
+                {author}
               </span>
-            )}
-            {comment.status === "pending" && (
-              <span className="rounded bg-surface-warm-2 px-1.5 py-0.5 text-[11px] font-medium text-ink-3">
-                Awaiting review
-              </span>
+              {comment.author.role !== "student" && (
+                <span
+                  className="rounded px-1.5 py-0.5 text-[10.5px] font-semibold capitalize"
+                  style={{ background: "var(--brand-soft)", color: "var(--brand-strong)" }}
+                >
+                  {comment.author.role}
+                </span>
+              )}
+              {comment.status === "pending" && (
+                <span className="rounded bg-status-progress-bg px-1.5 py-0.5 text-[10.5px] font-medium text-status-progress-fg">
+                  Awaiting review
+                </span>
+              )}
+              <span className="text-[11.5px] text-ink-4">{relativeTime(comment.createdAt)}</span>
+            </div>
+
+            {hasMenu && !editing && (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="-mr-1 grid size-6 shrink-0 place-items-center rounded-md text-ink-4 transition-colors hover:bg-hover-surface hover:text-ink"
+                  aria-label="Comment actions"
+                >
+                  <MoreHorizontal className="size-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-40">
+                  {p.canReply && onReply && (
+                    <DropdownMenuItem onSelect={() => setReplying(true)}>
+                      <CornerUpLeft />
+                      Reply
+                    </DropdownMenuItem>
+                  )}
+                  {p.canEdit && (
+                    <DropdownMenuItem onSelect={() => setEditing(true)}>
+                      <Pencil />
+                      Edit
+                    </DropdownMenuItem>
+                  )}
+                  {p.canReport && (
+                    <DropdownMenuItem onSelect={() => void onReport("")}>
+                      <Flag />
+                      Report
+                    </DropdownMenuItem>
+                  )}
+                  {p.canRemove && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem variant="danger" onSelect={() => void onRemove()}>
+                        <Trash2 />
+                        Delete
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
 
@@ -90,97 +146,60 @@ export function CommentItem({
                 placeholder="Edit your comment"
                 submitLabel="Save"
                 initialValue={comment.body ?? ""}
+                rows={3}
                 autoFocus
                 onSubmit={onEdit}
                 onCancel={() => setEditing(false)}
               />
             </div>
           ) : (
-            <p className="mt-1 text-[14px] leading-relaxed whitespace-pre-wrap text-ink">
+            <p
+              className={cn(
+                "mt-1 leading-relaxed whitespace-pre-wrap text-ink",
+                isReply ? "text-[13.5px]" : "text-[14px]",
+              )}
+            >
               {comment.body}
             </p>
           )}
+        </div>
 
-          <div className="mt-1.5 flex flex-wrap items-center gap-1">
-            {REACTIONS.map(({ type, glyph }) => {
-              const count = comment.reactions[type] ?? 0;
-              const mine = comment.viewerReaction === type;
-              if (!p.canReact) {
-                return count > 0 ? (
-                  <span
-                    key={type}
-                    className="rounded-full border border-line px-2 py-0.5 text-[12px] text-ink-3"
-                  >
-                    {glyph} {count}
-                  </span>
-                ) : null;
-              }
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => void onReact(mine ? null : type)}
-                  className={`rounded-full border px-2 py-0.5 text-[12px] ${
-                    mine ? "border-brand text-ink" : "border-line text-ink-3"
-                  }`}
-                >
-                  {glyph}
-                  {count > 0 ? ` ${count}` : ""}
-                </button>
-              );
-            })}
+        <div className="mt-1.5 flex flex-wrap items-center gap-2 pl-1">
+          <ReactionBar
+            reactions={comment.reactions}
+            viewerReaction={comment.viewerReaction}
+            canReact={p.canReact}
+            onReact={onReact}
+          />
+          {p.canReply && onReply && (
+            <button
+              type="button"
+              onClick={() => setReplying((v) => !v)}
+              className="text-[12px] font-medium text-ink-3 transition-colors hover:text-ink"
+            >
+              Reply
+            </button>
+          )}
+        </div>
 
-            {p.canReply && onReply && (
-              <button
-                type="button"
-                onClick={() => setReplying((v) => !v)}
-                className="px-1.5 text-[12px] font-medium text-ink-3 hover:text-ink"
-              >
-                Reply
-              </button>
-            )}
-            {p.canEdit && (
-              <button
-                type="button"
-                onClick={() => setEditing((v) => !v)}
-                className="px-1.5 text-[12px] font-medium text-ink-3 hover:text-ink"
-              >
-                Edit
-              </button>
-            )}
-            {p.canRemove && (
-              <button
-                type="button"
-                onClick={() => void onRemove()}
-                className="px-1.5 text-[12px] font-medium text-ink-3 hover:text-ink"
-              >
-                Delete
-              </button>
-            )}
-            {p.canReport && (
-              <button
-                type="button"
-                onClick={() => void onReport("")}
-                className="px-1.5 text-[12px] font-medium text-ink-3 hover:text-ink"
-              >
-                Report
-              </button>
-            )}
-          </div>
+        {replies}
 
-          {replying && onReply && (
-            <div className="mt-2">
+        {replying && onReply && (
+          <div className="mt-3 flex gap-2.5">
+            <CommentAvatar name={viewerName} size="sm" />
+            <div className="min-w-0 flex-1">
               <CommentComposer
-                placeholder="Write a reply"
+                placeholder={`Reply to ${author}`}
                 submitLabel="Reply"
+                rows={2}
                 autoFocus
                 onSubmit={onReply}
                 onCancel={() => setReplying(false)}
               />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </div>
+    </article>
   );
 }

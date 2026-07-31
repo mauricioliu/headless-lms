@@ -343,6 +343,7 @@ export function CoursePlayer({
                   key={curLessonId}
                   activityId={curLessonId}
                   orgUserId={orgUserId}
+                  viewerName={studentName}
                 />
               )}
             </div>

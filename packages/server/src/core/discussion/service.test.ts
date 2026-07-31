@@ -806,7 +806,7 @@ describe('reactions', () => {
     expect(state).toEqual({ reactions: { like: 1 }, viewerReaction: 'like' });
   });
 
-  it('clears with null, leaving everyone else counted', async () => {
+  it('clears, leaving everyone else counted', async () => {
     const { service, commentId } = await seeded();
     await service.setReaction('o1', commentId, learner, 'like');
     await service.setReaction('o1', commentId, other, 'like');

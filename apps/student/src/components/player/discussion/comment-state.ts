@@ -7,7 +7,7 @@ import type {
   CommentsConfig,
   CommentView,
   ReactionCounts,
-  ReactionType,
+  ReactionEmoji,
 } from "@/lib/api/types";
 
 export type CommentsStatus = "loading" | "ready" | "error" | "off";
@@ -34,7 +34,7 @@ export type CommentsAction =
   | { kind: "inserted"; comment: CommentView }
   | { kind: "replaced"; id: string; comment: CommentView }
   | { kind: "removed"; id: string; by: CommentAuthor }
-  | { kind: "reacted"; id: string; reactions: ReactionCounts; viewerReaction?: ReactionType }
+  | { kind: "reacted"; id: string; reactions: ReactionCounts; viewerReaction?: ReactionEmoji }
   /** Rollback: put back the snapshot taken before an optimistic change. */
   | { kind: "restored"; comments: CommentView[] };
 

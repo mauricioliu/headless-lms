@@ -1,11 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import {
-  AssetIdParam,
-  DownloadTicket,
-  ErrorBody,
-  RequestDownload,
-} from '@headless-lms/api-contract';
+import { AssetIdParam, DownloadTicket, ErrorBody } from '@headless-lms/api-contract';
 import { NotFoundError } from '../../../core/shared/errors.js';
 import type { Container } from '@headless-lms/server';
 
@@ -24,16 +19,13 @@ export async function learnAssetsRoutes(app: FastifyInstance, container: Contain
       tags: ['Learn'],
       summary: 'Get a short-lived presigned URL to serve an asset to the student',
       params: AssetIdParam,
-      body: RequestDownload,
       response: { 200: DownloadTicket, 401: ErrorBody, 404: ErrorBody },
     },
     handler: async (req) => {
 
-      const ticket = await container.assets.requestDownload(
-        req.orgId,
-        req.params.id,
-        req.body.filename,
-      );
+      // No body: the student surface never renames a download, so the asset's
+      // own filename stands.
+      const ticket = await container.assets.requestDownload(req.orgId, req.params.id);
       if (!ticket) {
         throw new NotFoundError('Asset', req.params.id);
       }

@@ -11,7 +11,7 @@ import type {
   ListCommentsQuery,
   Page,
   ReactionCounts,
-  ReactionType,
+  ReactionEmoji,
 } from './types.js';
 
 /** An activity's comments as this reader may see them, with the config that
@@ -23,7 +23,7 @@ export interface ActivityComments {
 
 export interface CommentReactions {
   reactions: ReactionCounts;
-  viewerReaction?: ReactionType;
+  viewerReaction?: ReactionEmoji;
 }
 
 export interface CommentWithContext {
@@ -88,7 +88,7 @@ export interface DiscussionService {
     orgId: string,
     commentId: string,
     actor: Actor,
-    type: ReactionType | null,
+    emoji: ReactionEmoji | null,
   ): Promise<CommentReactions>;
 
   /** Accepted even on locked comments — a locked activity can still hold
@@ -132,7 +132,7 @@ export interface DiscussionRepository {
     orgId: string,
     commentId: string,
     orgUserId: string,
-    type: ReactionType | null,
+    emoji: ReactionEmoji | null,
   ): Promise<void>;
 
   /** Returns null when this person has already reported this comment. */

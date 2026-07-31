@@ -1294,7 +1294,7 @@ export type ListActivityCommentsResponses = {
       reactions: {
         [key: string]: number;
       };
-      viewerReaction?: "like" | "celebrate" | "curious";
+      viewerReaction?: string;
       createdAt: string;
       updatedAt: string;
     }>;
@@ -1362,7 +1362,7 @@ export type PostCommentResponses = {
     reactions: {
       [key: string]: number;
     };
-    viewerReaction?: "like" | "celebrate" | "curious";
+    viewerReaction?: string;
     createdAt: string;
     updatedAt: string;
   };
@@ -1474,7 +1474,7 @@ export type EditCommentResponses = {
     reactions: {
       [key: string]: number;
     };
-    viewerReaction?: "like" | "celebrate" | "curious";
+    viewerReaction?: string;
     createdAt: string;
     updatedAt: string;
   };
@@ -1482,9 +1482,53 @@ export type EditCommentResponses = {
 
 export type EditCommentResponse = EditCommentResponses[keyof EditCommentResponses];
 
+export type ClearCommentReactionData = {
+  body?: never;
+  path: {
+    commentId: string;
+  };
+  query?: never;
+  url: "/api/learn/comments/{commentId}/reaction";
+};
+
+export type ClearCommentReactionErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type ClearCommentReactionError =
+  ClearCommentReactionErrors[keyof ClearCommentReactionErrors];
+
+export type ClearCommentReactionResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    reactions: {
+      [key: string]: number;
+    };
+    viewerReaction?: string;
+  };
+};
+
+export type ClearCommentReactionResponse =
+  ClearCommentReactionResponses[keyof ClearCommentReactionResponses];
+
 export type SetCommentReactionData = {
   body: {
-    type?: "like" | "celebrate" | "curious";
+    emoji: string;
   };
   path: {
     commentId: string;
@@ -1520,7 +1564,7 @@ export type SetCommentReactionResponses = {
     reactions: {
       [key: string]: number;
     };
-    viewerReaction?: "like" | "celebrate" | "curious";
+    viewerReaction?: string;
   };
 };
 
@@ -1574,9 +1618,7 @@ export type ReportCommentResponses = {
 export type ReportCommentResponse = ReportCommentResponses[keyof ReportCommentResponses];
 
 export type GetAssetDownloadUrlData = {
-  body: {
-    filename?: string;
-  };
+  body?: never;
   path: {
     id: string;
   };
@@ -1892,6 +1934,71 @@ export type EditComment2Responses = {
 };
 
 export type EditComment2Response = EditComment2Responses[keyof EditComment2Responses];
+
+export type ReplyToCommentData = {
+  body: {
+    body: string;
+  };
+  path: {
+    commentId: string;
+  };
+  query?: never;
+  url: "/api/comments/{commentId}/replies";
+};
+
+export type ReplyToCommentErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type ReplyToCommentError = ReplyToCommentErrors[keyof ReplyToCommentErrors];
+
+export type ReplyToCommentResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    activityId: string;
+    parentId: string | null;
+    author: {
+      id: string;
+      firstName: string | null;
+      lastName: string | null;
+      image: string | null;
+      role: "owner" | "admin" | "instructor" | "student";
+    };
+    body: string | null;
+    status: "pending" | "published" | "removed";
+    removedBy: {
+      id: string;
+      firstName: string | null;
+      lastName: string | null;
+      image: string | null;
+      role: "owner" | "admin" | "instructor" | "student";
+    } | null;
+    reactions: {
+      [key: string]: number;
+    };
+    viewerReaction?: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+};
+
+export type ReplyToCommentResponse = ReplyToCommentResponses[keyof ReplyToCommentResponses];
 
 export type ListModulesData = {
   body?: never;

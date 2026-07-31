@@ -4,7 +4,7 @@
 // The author is the org user's profile minus its email — learners read each
 // other's comments and the list must not be a directory of the cohort's
 // addresses. The staff-facing comment list carries `authorEmail` separately.
-import { REACTION_TYPES, type CommentSettings as DomainCommentSettings } from "@headless-lms/types";
+import type { CommentSettings as DomainCommentSettings } from "@headless-lms/types";
 import { z } from "zod";
 import { ListQuery, type Matches, OrgRole, OrgUserProfileSchema, paginated } from "./shared.js";
 
@@ -19,12 +19,12 @@ export const CommentAuthor = OrgUserProfileSchema.omit({ email: true }).extend({
 });
 export type CommentAuthor = z.infer<typeof CommentAuthor>;
 
-/** A closed set of named kinds. The glyph is the client's business. */
-export const ReactionType = z.enum(REACTION_TYPES);
-export type ReactionType = z.infer<typeof ReactionType>;
+/** Any single emoji. Open, so widening the picker needs no schema change. */
+export const ReactionEmoji = z.string().min(1).max(16);
+export type ReactionEmoji = z.infer<typeof ReactionEmoji>;
 
-/** Counts by kind; unused kinds are absent, so no reactions serves `{}`. */
-export const ReactionCounts = z.partialRecord(ReactionType, z.number().int());
+/** Counts by emoji; unused ones are absent, so no reactions serves `{}`. */
+export const ReactionCounts = z.record(z.string(), z.number().int());
 export type ReactionCounts = z.infer<typeof ReactionCounts>;
 
 export const CommentView = z.object({
@@ -41,7 +41,7 @@ export const CommentView = z.object({
   reactions: ReactionCounts,
   /** This reader's own kind; absent when they have none. Ownership is not
    *  served here — compare `author.id` against `getLearnViewer`. */
-  viewerReaction: ReactionType.optional(),
+  viewerReaction: ReactionEmoji.optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -50,7 +50,7 @@ export type CommentView = z.infer<typeof CommentView>;
 /** What the reaction write returns, so the client never recomputes a count. */
 export const CommentReactions = z.object({
   reactions: ReactionCounts,
-  viewerReaction: ReactionType.optional(),
+  viewerReaction: ReactionEmoji.optional(),
 });
 export type CommentReactions = z.infer<typeof CommentReactions>;
 
@@ -103,11 +103,17 @@ export const PatchComment = z
   });
 export type PatchComment = z.infer<typeof PatchComment>;
 
-/** The reader's whole reaction state, not a delta: omitting `type` clears. */
+/** Replaces whatever the reader had. Clearing is DELETE, which carries no body. */
 export const SetCommentReaction = z.object({
-  type: ReactionType.optional(),
+  emoji: ReactionEmoji,
 });
 export type SetCommentReaction = z.infer<typeof SetCommentReaction>;
+
+/** A moderator's reply, posted from the queue against the comment it answers. */
+export const ReplyToComment = z.object({
+  body: z.string().min(1).max(10_000),
+});
+export type ReplyToComment = z.infer<typeof ReplyToComment>;
 
 export const ReportComment = z.object({
   reason: z.string().max(1_000).default(""),

@@ -1,11 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { CommentView, CommentsConfig } from "@/lib/api/types";
-import {
-  groupComments,
-  initialCommentsState,
-  permissions,
-  commentsReducer,
-} from "./comment-state";
+import { groupComments, initialCommentsState, permissions, commentsReducer } from "./comment-state";
 
 const author = {
   id: "orm_a",

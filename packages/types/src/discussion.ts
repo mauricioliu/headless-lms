@@ -17,12 +17,12 @@ export type CommentStatus = "pending" | "published" | "removed";
 /** Per-activity override of the course's discussion settings. */
 export type CommentsState = "visible" | "hidden" | "locked";
 
-/** A closed set of named kinds. The glyph a client draws is presentation. */
-export const REACTION_TYPES = ["like", "celebrate", "curious"] as const;
-export type ReactionType = (typeof REACTION_TYPES)[number];
+/** The reaction itself. Open rather than a fixed list: the picker decides what
+ *  it offers, and widening it is a UI change, never a migration. */
+export type ReactionEmoji = string;
 
-/** Counts by kind. A kind nobody has used is absent, not zero. */
-export type ReactionCounts = Partial<Record<ReactionType, number>>;
+/** Counts by emoji. One nobody has used is absent, not zero. */
+export type ReactionCounts = Record<ReactionEmoji, number>;
 
 export interface Comment {
   readonly id: string;
@@ -60,7 +60,7 @@ export interface CommentReaction {
   readonly orgId: string;
   readonly commentId: string;
   readonly orgUserId: string;
-  readonly type: ReactionType;
+  readonly emoji: ReactionEmoji;
   readonly createdAt: string;
 }
 
@@ -113,7 +113,7 @@ export interface CommentView {
   reactions: ReactionCounts;
   /** This reader's own reaction; absent when they have none. For ownership,
    *  compare `author.id` against the caller's org user id from the viewer. */
-  viewerReaction?: ReactionType;
+  viewerReaction?: ReactionEmoji;
   createdAt: string;
   updatedAt: string;
 }

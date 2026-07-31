@@ -22,7 +22,6 @@ import {
   check,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { REACTION_TYPES } from '@headless-lms/types';
 import { genId } from '../../../core/shared/id.js';
 import { organizations, orgUsers } from './organizations.js';
 import { activities } from './content.js';
@@ -90,7 +89,7 @@ export const commentReactions = pgTable(
       .references(() => organizations.id),
     commentId: text('comment_id').notNull(),
     orgUserId: text('org_user_id').notNull(),
-    type: text('type', { enum: REACTION_TYPES }).notNull(),
+    emoji: text('emoji').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({

@@ -21,7 +21,7 @@ export type ActivityComments = ListActivityCommentsResponse;
 export type CommentsConfig = ActivityComments["config"];
 export type CommentView = ActivityComments["comments"][number];
 export type CommentAuthor = CommentView["author"];
-export type ReactionType = NonNullable<CommentView["viewerReaction"]>;
+export type ReactionEmoji = NonNullable<CommentView["viewerReaction"]>;
 export type ReactionCounts = CommentView["reactions"];
 /** Who the caller is inside the session's org. */
 export type Viewer = GetLearnViewerResponse;

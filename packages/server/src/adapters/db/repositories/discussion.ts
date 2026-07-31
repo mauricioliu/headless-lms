@@ -12,7 +12,7 @@ import type {
   ListCommentsQuery,
   Logger,
   Page,
-  ReactionType,
+  ReactionEmoji,
   Role,
 } from '@headless-lms/types';
 import { commentReactions, commentReports, comments } from '../schema/index.js';
@@ -124,7 +124,7 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
     const rows = await this.db
       .select({
         commentId: commentReactions.commentId,
-        type: commentReactions.type,
+        emoji: commentReactions.emoji,
         count: sql<number>`cast(count(*) as int)`,
         mine: sql<boolean>`bool_or(${commentReactions.orgUserId} = ${viewerId})`,
       })
@@ -132,14 +132,14 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
       .where(
         and(eq(commentReactions.orgId, orgId), inArray(commentReactions.commentId, commentIds)),
       )
-      .groupBy(commentReactions.commentId, commentReactions.type);
+      .groupBy(commentReactions.commentId, commentReactions.emoji);
 
     const byComment: Record<string, CommentReactions> = {};
     for (const row of rows) {
       const entry = (byComment[row.commentId] ??= { reactions: {} });
-      entry.reactions[row.type] = row.count;
+      entry.reactions[row.emoji] = row.count;
       if (row.mine) {
-        entry.viewerReaction = row.type;
+        entry.viewerReaction = row.emoji;
       }
     }
     return byComment;
@@ -149,9 +149,9 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
     orgId: string,
     commentId: string,
     orgUserId: string,
-    type: ReactionType | null,
+    emoji: ReactionEmoji | null,
   ): Promise<void> {
-    if (type === null) {
+    if (emoji === null) {
       await this.db
         .delete(commentReactions)
         .where(
@@ -165,10 +165,10 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
     }
     await this.db
       .insert(commentReactions)
-      .values({ orgId, commentId, orgUserId, type })
+      .values({ orgId, commentId, orgUserId, emoji })
       .onConflictDoUpdate({
         target: [commentReactions.orgId, commentReactions.commentId, commentReactions.orgUserId],
-        set: { type },
+        set: { emoji },
       });
   }
 

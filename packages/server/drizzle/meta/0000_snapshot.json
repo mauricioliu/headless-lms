@@ -1,5 +1,5 @@
 {
-  "id": "5a74b9ae-95eb-4c90-8a67-9dc23b8c1407",
+  "id": "9c748d18-238c-4dca-8150-186ad418f88a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2178,8 +2178,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "type": {
-          "name": "type",
+        "emoji": {
+          "name": "emoji",
           "type": "text",
           "primaryKey": false,
           "notNull": true

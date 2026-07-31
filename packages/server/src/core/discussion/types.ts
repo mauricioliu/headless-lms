@@ -7,6 +7,5 @@ export type {
   ListCommentsQuery,
   Page,
   ReactionCounts,
-  ReactionType,
+  ReactionEmoji,
 } from '@headless-lms/types';
-export { REACTION_TYPES } from '@headless-lms/types';

@@ -7,8 +7,10 @@ import {
   CommentIdParam,
   CommentsPage,
   CommentsQuery,
+  CommentView,
   ErrorBody,
   PatchComment,
+  ReplyToComment,
 } from '@headless-lms/api-contract';
 import { NotFoundError } from '../../core/shared/errors.js';
 import type { Container } from '../../app/container.js';
@@ -68,6 +70,37 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
       const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
 
       return discussion.publish(req.orgId, req.params.commentId, orgUser!);
+    },
+  });
+
+  r.route({
+    method: 'POST',
+    url: '/api/comments/:commentId/replies',
+    preHandler: app.requireOrgSession,
+    schema: {
+      operationId: 'replyToComment',
+      tags: ['Discussion'],
+      summary: 'Reply to a comment from the moderation queue',
+      params: CommentIdParam,
+      body: ReplyToComment,
+      response: { 200: CommentView, 403: ErrorBody, 404: ErrorBody },
+    },
+    handler: async (req) => {
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
+      if (!orgUser) {
+        throw new NotFoundError('OrgUser', req.userId);
+      }
+      const parent = await discussion.getComment(req.orgId, req.params.commentId);
+      if (!parent) {
+        throw new NotFoundError('Comment', req.params.commentId);
+      }
+      // Replies nest one level: answering a reply attaches to its root.
+      return discussion.postComment(req.orgId, {
+        actor: orgUser,
+        activityId: parent.activityId,
+        parentId: parent.parentId ?? parent.id,
+        body: req.body.body,
+      });
     },
   });
 }

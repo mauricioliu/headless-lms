@@ -14,6 +14,8 @@ import type {
   AcceptInviteResponses,
   AddDownloadAssetErrors,
   AddDownloadAssetResponses,
+  ClearCommentReactionErrors,
+  ClearCommentReactionResponses,
   ConfigureConnectionErrors,
   ConfigureConnectionResponses,
   ConfirmAssetErrors,
@@ -121,6 +123,8 @@ import type {
   ReorderDownloadAssetsErrors,
   ReorderDownloadAssetsResponses,
   ReorderModulesResponses,
+  ReplyToCommentErrors,
+  ReplyToCommentResponses,
   ReportCommentErrors,
   ReportCommentResponses,
   ReportProgressErrors,
@@ -1641,12 +1645,40 @@ export class Learn {
   }
 
   /**
-   * Set or clear your reaction to a comment
+   * Withdraw your reaction from a comment
+   */
+  public static clearCommentReaction<ThrowOnError extends boolean = false>(
+    parameters: {
+      commentId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<
+    ClearCommentReactionResponses,
+    ClearCommentReactionErrors,
+    ThrowOnError,
+    "data"
+  > {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "commentId" }] }]);
+    return (options?.client ?? client).delete<
+      ClearCommentReactionResponses,
+      ClearCommentReactionErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/comments/{commentId}/reaction",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Set your reaction to a comment, replacing any you already had
    */
   public static setCommentReaction<ThrowOnError extends boolean = false>(
     parameters: {
       commentId: string;
-      type?: "like" | "celebrate" | "curious";
+      emoji: string;
     },
     options?: Options<never, ThrowOnError>,
   ): RequestResult<SetCommentReactionResponses, SetCommentReactionErrors, ThrowOnError, "data"> {
@@ -1656,7 +1688,7 @@ export class Learn {
         {
           args: [
             { in: "path", key: "commentId" },
-            { in: "body", key: "type" },
+            { in: "body", key: "emoji" },
           ],
         },
       ],
@@ -1724,21 +1756,10 @@ export class Learn {
   public static getAssetDownloadUrl<ThrowOnError extends boolean = false>(
     parameters: {
       id: string;
-      filename?: string;
     },
     options?: Options<never, ThrowOnError>,
   ): RequestResult<GetAssetDownloadUrlResponses, GetAssetDownloadUrlErrors, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "id" },
-            { in: "body", key: "filename" },
-          ],
-        },
-      ],
-    );
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
     return (options?.client ?? client).post<
       GetAssetDownloadUrlResponses,
       GetAssetDownloadUrlErrors,
@@ -1749,11 +1770,6 @@ export class Learn {
       url: "/api/learn/assets/{id}/url",
       ...options,
       ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
     });
   }
 
@@ -1936,6 +1952,45 @@ export class Discussion {
     >({
       responseStyle: "data",
       url: "/api/comments/{commentId}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * Reply to a comment from the moderation queue
+   */
+  public static replyToComment<ThrowOnError extends boolean = false>(
+    parameters: {
+      commentId: string;
+      body: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ReplyToCommentResponses, ReplyToCommentErrors, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "commentId" },
+            { in: "body", key: "body" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).post<
+      ReplyToCommentResponses,
+      ReplyToCommentErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/comments/{commentId}/replies",
       ...options,
       ...params,
       headers: {

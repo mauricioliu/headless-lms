@@ -15,7 +15,7 @@ import type {
   CommentView,
   ListCommentsQuery,
   Page,
-  ReactionType,
+  ReactionEmoji,
 } from './types.js';
 import { SettingsNamespace, type SettingsService } from '../shared/settings.js';
 import type {
@@ -388,20 +388,20 @@ export class DiscussionServiceImpl implements DiscussionService {
     orgId: string,
     commentId: string,
     actor: Actor,
-    type: ReactionType | null,
+    emoji: ReactionEmoji | null,
   ): Promise<CommentReactions> {
     const { comment, config } = await this.loadWithConfig(orgId, commentId, actor);
     // Writing to comments — locked and hidden both refuse.
     if (config.state !== 'visible') {
       throw new ForbiddenError('discussion is not open on this activity');
     }
-    if (!config.reactions && type !== null) {
+    if (!config.reactions && emoji !== null) {
       throw new ForbiddenError('reactions are disabled on this course');
     }
     if (comment.status === 'removed') {
       throw new ForbiddenError('a removed comment cannot be reacted to');
     }
-    await this.repo.setReaction(orgId, commentId, actor.id, type);
+    await this.repo.setReaction(orgId, commentId, actor.id, emoji);
     const stored = await this.repo.reactionsOf(orgId, [commentId], actor.id);
     return stored[commentId] ?? EMPTY_REACTIONS;
   }

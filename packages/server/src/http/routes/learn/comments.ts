@@ -122,7 +122,7 @@ export async function learnCommentsRoutes(
     schema: {
       operationId: 'setCommentReaction',
       tags: ['Learn'],
-      summary: "Set or clear your reaction to a comment",
+      summary: 'Set your reaction to a comment, replacing any you already had',
       params: CommentIdParam,
       body: SetCommentReaction,
       response: { 200: CommentReactions, 403: ErrorBody, 404: ErrorBody },
@@ -133,7 +133,28 @@ export async function learnCommentsRoutes(
       if (!orgUser) {
         throw new UnauthorizedError();
       }
-      return discussion.setReaction(orgId, req.params.commentId, orgUser, req.body.type ?? null);
+      return discussion.setReaction(orgId, req.params.commentId, orgUser, req.body.emoji);
+    },
+  });
+
+  r.route({
+    method: 'DELETE',
+    url: '/api/learn/comments/:commentId/reaction',
+    preHandler: app.requireOrgSession,
+    schema: {
+      operationId: 'clearCommentReaction',
+      tags: ['Learn'],
+      summary: 'Withdraw your reaction from a comment',
+      params: CommentIdParam,
+      response: { 200: CommentReactions, 403: ErrorBody, 404: ErrorBody },
+    },
+    handler: async (req) => {
+      const orgId = req.orgId;
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      return discussion.setReaction(orgId, req.params.commentId, orgUser, null);
     },
   });
 

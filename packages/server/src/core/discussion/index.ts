@@ -29,7 +29,6 @@ export type {
   CommentListItem,
   ListCommentsQuery,
   ReactionCounts,
-  ReactionType,
+  ReactionEmoji,
 } from './types.js';
-export { REACTION_TYPES } from './types.js';
 export type { CommentEvent } from './events.js';

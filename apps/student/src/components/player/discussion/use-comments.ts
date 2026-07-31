@@ -5,7 +5,7 @@
 // only the network calls and the request-ordering guard.
 import * as React from "react";
 import { Learn } from "@headless-lms/sdk";
-import type { CommentAuthor, CommentView, ReactionType } from "@/lib/api/types";
+import type { CommentAuthor, CommentView, ReactionEmoji } from "@/lib/api/types";
 
 import { ensureClientSdk } from "@/lib/api/client-sdk";
 import { initialCommentsState, commentsReducer, type CommentsPanelState } from "./comment-state";
@@ -18,7 +18,7 @@ export interface UseComments extends CommentsPanelState {
   post: (body: string, parentId: string | null) => Promise<void>;
   edit: (id: string, body: string) => Promise<void>;
   remove: (id: string, by: CommentAuthor) => Promise<void>;
-  react: (id: string, type: ReactionType | null) => Promise<void>;
+  react: (id: string, emoji: ReactionEmoji | null) => Promise<void>;
   report: (id: string, reason: string) => Promise<void>;
 }
 
@@ -110,13 +110,12 @@ export function useComments(activityId: string): UseComments {
 
   // Not optimistic: the server returns the authoritative counts, so guessing
   // them here only risks disagreeing with what comes back.
-  const react = React.useCallback(async (id: string, type: ReactionType | null) => {
+  const react = React.useCallback(async (id: string, emoji: ReactionEmoji | null) => {
     ensureClientSdk();
     try {
-      const state = await Learn.setCommentReaction({
-        commentId: id,
-        ...(type ? { type } : {}),
-      });
+      const state = emoji
+        ? await Learn.setCommentReaction({ commentId: id, emoji })
+        : await Learn.clearCommentReaction({ commentId: id });
       dispatch({ kind: "reacted", id, ...state });
     } catch (err: unknown) {
       dispatch({ kind: "failed", message: message(err) });
