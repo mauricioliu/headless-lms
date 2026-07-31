@@ -51,7 +51,8 @@ export type UserProfileSchema = z.infer<typeof UserProfileSchema>;
 /** Mirrors OrgUserProfile in @headless-lms/types — keyed on org_users.id. */
 export const OrgUserProfileSchema = z.object({
   id: z.string(),
-  name: z.string(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
   email: z.string(),
   image: z.string().nullable(),
 });

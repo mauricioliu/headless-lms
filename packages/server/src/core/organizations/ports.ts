@@ -38,9 +38,6 @@ export interface OrganizationProvisioner {
   /** Every org this person belongs to, oldest first. */
   getOrgUsersForUser(userId: string): Promise<OrgUser[]>;
   getById(id: string): Promise<Organization | null>;
-  /** A person provisioned before they had an account just got one. Announces
-   *  `student.linked` — the moment they can actually sign in. */
-  markStudentLinked(userId: string, userExternalId: string): Promise<void>;
 }
 
 // Inbound port (use cases the service exposes).
@@ -160,23 +157,10 @@ export interface MembersRepository {
 export interface PersonRecord {
   id: string;
   email: string;
-  displayName: string;
   firstName: string | null;
   lastName: string | null;
 }
 
-/** Narrow identity-context slice the invite lifecycle needs: resolving the
- *  accepting auth account to its domain person, naming someone who has no
- *  account at all yet, and correcting the person behind a student row.
- *  Declared here (not imported from identity) so the contexts stay coupled
- *  only at composition. */
-export interface PersonResolver {
-  getUserByExternalId(externalId: string): Promise<{ id: string; displayName: string } | null>;
-  getUserById(id: string): Promise<PersonRecord | null>;
-  provisionUser(input: ProvisionUserInput): Promise<{ id: string; displayName: string }>;
-  /** Throws ConflictError when the address already belongs to someone else. */
-  updateUser(id: string, input: UpdatePersonInput): Promise<PersonRecord>;
-}
 
 /** Context for a write: domain org (reads/rules) + auth org & session (writes). */
 export interface MemberWriteContext {

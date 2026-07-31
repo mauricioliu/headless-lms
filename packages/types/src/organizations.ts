@@ -42,13 +42,14 @@ export interface OrgUser {
 export type OrgUserStatus = "invited" | "active";
 
 /**
- * One org user, as displayed. `id` is `org_users.id`;
- * `name` and `email` come from the identity USER, `image` from the auth engine's
- * user record.
+ * One org user, as displayed. `id` is `org_users.id`; the names and `email`
+ * come from the identity USER, `image` from the auth engine's user record.
+ * Both names are null for anyone who has not filled in their profile.
  */
 export interface OrgUserProfile {
   readonly id: string;
-  name: string;
+  firstName: string | null;
+  lastName: string | null;
   email: string;
   image: string | null;
 }

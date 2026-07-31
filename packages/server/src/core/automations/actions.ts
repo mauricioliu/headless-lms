@@ -41,7 +41,7 @@ export const SEND_EMAIL_DERIVATIONS: SendEmailDerivations = {
         return undefined;
       }
       return {
-        to: event.entitlement.studentEmail,
+        to: event.entitlement.email,
         params: { contentTitle: event.entitlement.content.title, contentId: event.entitlement.content.id },
       };
     },
@@ -53,7 +53,7 @@ export const SEND_EMAIL_DERIVATIONS: SendEmailDerivations = {
         return undefined;
       }
       return {
-        to: event.entitlement.studentEmail,
+        to: event.entitlement.email,
         params: { contentTitle: event.entitlement.content.title },
       };
     },

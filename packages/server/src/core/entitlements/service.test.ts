@@ -9,7 +9,7 @@ const SAMPLE: Entitlement = {
   orgUserId: 's1',
   firstName: 'Bob',
   lastName: 'Smith',
-  studentEmail: 'bob@example.com',
+  email: 'bob@example.com',
   content: { id: 'c1', type: 'course', title: 'Intro' },
   status: 'active',
   grantedAt: '2026-01-01T00:00:00Z',

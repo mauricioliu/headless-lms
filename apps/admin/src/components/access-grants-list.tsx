@@ -3,7 +3,7 @@ import { KeyRound } from "lucide-react";
 
 import { EntitlementStatusBadge } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
-import { formatDate, relativeTime } from "@/lib/format";
+import { formatDate, fullName, relativeTime } from "@/lib/format";
 import type { Entitlement } from "@/lib/api/types";
 
 const SOURCE_LABEL: Record<string, string> = { manual: "Manual", import: "Import" };

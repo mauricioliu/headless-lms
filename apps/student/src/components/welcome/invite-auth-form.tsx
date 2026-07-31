@@ -4,7 +4,8 @@ import { Info } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthHeading } from "@/components/auth/auth-shell";
-import { acceptAndRefreshSession } from "./enter-portal";
+import { authClient } from "@/lib/auth/client";
+import { acceptInvite } from "@/app/welcome/actions";
 import { CreateAccountForm, type CreateAccountOutcome } from "./create-account-form";
 import { SignInForm } from "./sign-in-form";
 import { useCallback, useState } from "react";
@@ -35,8 +36,10 @@ export function InviteAuthForm({
 
   /** Returns an error message, or null once the portal has been entered. */
   const accept = useCallback(async () => {
-    const error = await acceptAndRefreshSession(token);
-    if (error) return error;
+    const failure = await acceptInvite(token);
+    if (failure) return failure.error;
+    // The cached session predates the org the accept just stamped.
+    await authClient.getSession({ query: { disableCookieCache: true } });
     router.replace("/");
     return null;
   }, [token, router]);

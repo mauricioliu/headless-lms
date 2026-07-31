@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { FILTER_PREFIX } from "@/lib/table/parse-list-params";
-import { relativeTime } from "@/lib/format";
+import { fullName, relativeTime } from "@/lib/format";
 import {
   approveCommentAction,
   moderateRemoveCommentAction,

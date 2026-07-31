@@ -24,7 +24,6 @@ const avgProgressExpr = sql<number>`0`;
 
 interface StudentRow {
   id: string;
-  name: string;
   email: string;
   image: string | null;
   firstName: string | null;
@@ -38,7 +37,6 @@ interface StudentRow {
 function toStudent(row: StudentRow): Student {
   return {
     id: row.id,
-    name: row.name,
     email: row.email,
     image: row.image ?? null,
     firstName: row.firstName,
@@ -64,7 +62,13 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
     const q = query.search?.trim();
     if (q) {
       const like = `%${q}%`;
-      filters.push(or(ilike(users.displayName, like), ilike(users.email, like))!);
+      filters.push(
+        or(
+          ilike(users.firstName, like),
+          ilike(users.lastName, like),
+          ilike(users.email, like),
+        )!,
+      );
     }
     const where = and(...filters);
 
@@ -77,8 +81,6 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
     const rows = await this.db
       .select({
         ...orgUserProfileColumns,
-        firstName: users.firstName,
-        lastName: users.lastName,
         status: orgUsers.status,
         createdAt: orgUsers.createdAt,
         entitlementCount: entitlementCountExpr,
@@ -98,7 +100,6 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
         orgUsers.orgId,
         orgUsers.id,
         orgUsers.status,
-        users.displayName,
         users.email,
         users.firstName,
         users.lastName,
@@ -120,8 +121,6 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
     const [row] = await this.db
       .select({
         ...orgUserProfileColumns,
-        firstName: users.firstName,
-        lastName: users.lastName,
         status: orgUsers.status,
         createdAt: orgUsers.createdAt,
         entitlementCount: entitlementCountExpr,
@@ -139,7 +138,6 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
         orgUsers.orgId,
         orgUsers.id,
         orgUsers.status,
-        users.displayName,
         users.email,
         users.firstName,
         users.lastName,
@@ -151,7 +149,7 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
 
   private resolveOrder(sort?: string): SQL[] {
     const descending = sort?.startsWith('-') ?? false;
-    const field = sort ? (descending ? sort.slice(1) : sort) : 'name';
+    const field = sort ? (descending ? sort.slice(1) : sort) : 'firstName';
     const dir = descending ? desc : asc;
     switch (field) {
       case 'email':
@@ -162,9 +160,11 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
         return [dir(avgProgressExpr)];
       case 'joinedAt':
         return [dir(orgUsers.createdAt)];
-      case 'name':
+      case 'lastName':
+        return [dir(users.lastName), dir(users.firstName)];
+      case 'firstName':
       default:
-        return [dir(users.displayName)];
+        return [dir(users.firstName), dir(users.lastName)];
     }
   }
 }

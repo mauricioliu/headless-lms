@@ -8,7 +8,6 @@ import type {
   OrganizationService,
   OrganizationsRepository,
   OrganizationsUnitOfWork,
-  PersonResolver,
 } from './ports.js';
 import type { Invite, Organization, OrgUser } from './model.js';
 import { type Role, STUDENT_ROLE } from './roles.js';
@@ -22,10 +21,10 @@ import {
 import type {
   AcceptInviteInput,
   AddOrgUserInput,
-  RemoveOrgUserInput,
   CreateInviteInput,
   CreateOrganizationInput,
   NewOrganizationInput,
+  RemoveOrgUserInput,
   ResendStudentInviteInput,
   UpdateOrganizationInput,
   UpdateStudentInput,
@@ -36,6 +35,7 @@ import { noopLogger } from '../shared/logger.js';
 import type { Mailer } from '../shared/mailer.js';
 import { generateInviteToken, hashInviteToken } from '../shared/invite-token.js';
 import { NotFoundError } from '../shared/errors.js';
+import type { IdentityService } from '../identity/index.js';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -56,7 +56,8 @@ export interface InviteUrls {
 function toMember(r: MemberRecord): Member {
   return {
     id: r.id,
-    name: r.name,
+    firstName: r.firstName,
+    lastName: r.lastName,
     email: r.email,
     image: r.image,
     role: r.role,
@@ -77,7 +78,7 @@ export class OrganizationServiceImpl implements OrganizationService {
     private readonly repo: OrganizationsRepository,
     private readonly membersRepo: MembersRepository,
     private readonly orgAdmin: () => OrgAdmin,
-    private readonly people: PersonResolver,
+    private readonly people: IdentityService,
     uow?: OrganizationsUnitOfWork,
     private readonly logger: Logger = noopLogger,
     private readonly mailer?: Pick<Mailer, 'send'>,
@@ -157,7 +158,7 @@ export class OrganizationServiceImpl implements OrganizationService {
     // provider's member record, which does not exist until they join.
     const person =
       role === STUDENT_ROLE
-        ? await this.people.provisionUser({
+        ? await this.people.createUser({
             email,
             ...(firstName !== undefined && { firstName }),
             ...(lastName !== undefined && { lastName }),
@@ -257,23 +258,10 @@ export class OrganizationServiceImpl implements OrganizationService {
     this.logger.info('student invite resent', { orgId, orgUserId });
   }
 
-  async markStudentLinked(userId: string, userExternalId: string): Promise<void> {
-    const orgUsers = await this.repo.findStudentOrgUsers(userId);
-    if (orgUsers.length === 0) {
-      return;
-    }
-    await this.uow.run(async ({ outbox }) => {
-      await outbox.append(
-        orgUsers.map((orgUser) => ({
-          type: 'student.linked' as const,
-          orgId: orgUser.orgId,
-          userId,
-          userExternalId,
-        })),
-      );
-    });
-    this.logger.info('student linked', { userId, externalId: userExternalId });
-  }
+
+
+
+
 
   async peekInvite(token: string): Promise<Invite | null> {
     const invite = await this.repo.findInviteByTokenHash(hashInviteToken(token));

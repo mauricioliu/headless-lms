@@ -154,10 +154,6 @@ export function createAuth(opts: CreateAuthOptions): Auth {
             });
           },
           afterAddMember: async ({ member, user, organization: org }) => {
-            // During org creation better-auth adds the creator and may fire this
-            // hook before afterCreateOrganization has mirrored the org. In that
-            // case skip — the creator's orgUser is mirrored by
-            // afterCreateOrganization. For genuine later adds the org exists.
             const mirrored = await opts.organizations.getByExternalId(org.id);
             if (!mirrored) {
               return;
@@ -240,27 +236,12 @@ export function createAuth(opts: CreateAuthOptions): Auth {
     databaseHooks: {
       user: {
         create: {
-          after: async (user) => {
-            // The person may already be here: an admin who adds a student
-            // creates them before they have an account, so signing up links
-            // that record rather than minting a second one. Their name stays
-            // as the admin entered it — a self-chosen signup name is not more
-            // authoritative, and the person can edit it in the portal.
-            const existing = await opts.identity.getUserByEmail(user.email);
-            if (existing) {
-              if (existing.externalId === null) {
-                await opts.identity.linkUser(existing.id, user.id);
-                await opts.organizations.markStudentLinked(existing.id, user.id);
-              }
-              return;
-            }
-            // Nobody knew them yet — mirror better-auth's user as a new
-            // person, reusing its id so the two sides read alike.
-            await opts.identity.createUser({
-              id: user.id,
-              externalId: user.id,
-              email: user.email,
-              displayName: user.name,
+          after: async ({ id, email, name }) => {
+            await opts.identity.handleExternalUserCreated({
+              email,
+              externalId: id,
+              firstName: name,
+              lastName: name,
             });
           },
         },

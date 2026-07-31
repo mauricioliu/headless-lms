@@ -251,7 +251,12 @@
                           "id": {
                             "type": "string"
                           },
-                          "name": {
+                          "firstName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "lastName": {
+                            "nullable": true,
                             "type": "string"
                           },
                           "email": {
@@ -287,7 +292,8 @@
                         },
                         "required": [
                           "id",
-                          "name",
+                          "firstName",
+                          "lastName",
                           "email",
                           "image",
                           "role",
@@ -379,7 +385,12 @@
                     "id": {
                       "type": "string"
                     },
-                    "name": {
+                    "firstName": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "nullable": true,
                       "type": "string"
                     },
                     "email": {
@@ -415,7 +426,8 @@
                   },
                   "required": [
                     "id",
-                    "name",
+                    "firstName",
+                    "lastName",
                     "email",
                     "image",
                     "role",
@@ -698,13 +710,19 @@
                     "email": {
                       "type": "string"
                     },
-                    "name": {
+                    "firstName": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "nullable": true,
                       "type": "string"
                     }
                   },
                   "required": [
                     "email",
-                    "name"
+                    "firstName",
+                    "lastName"
                   ],
                   "additionalProperties": false
                 }
@@ -3555,7 +3573,12 @@
                               "id": {
                                 "type": "string"
                               },
-                              "name": {
+                              "firstName": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "lastName": {
+                                "nullable": true,
                                 "type": "string"
                               },
                               "image": {
@@ -3574,7 +3597,8 @@
                             },
                             "required": [
                               "id",
-                              "name",
+                              "firstName",
+                              "lastName",
                               "image",
                               "role"
                             ],
@@ -3602,7 +3626,12 @@
                               "id": {
                                 "type": "string"
                               },
-                              "name": {
+                              "firstName": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "lastName": {
+                                "nullable": true,
                                 "type": "string"
                               },
                               "image": {
@@ -3621,7 +3650,8 @@
                             },
                             "required": [
                               "id",
-                              "name",
+                              "firstName",
+                              "lastName",
                               "image",
                               "role"
                             ],
@@ -3772,7 +3802,12 @@
                         "id": {
                           "type": "string"
                         },
-                        "name": {
+                        "firstName": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastName": {
+                          "nullable": true,
                           "type": "string"
                         },
                         "image": {
@@ -3791,7 +3826,8 @@
                       },
                       "required": [
                         "id",
-                        "name",
+                        "firstName",
+                        "lastName",
                         "image",
                         "role"
                       ],
@@ -3819,7 +3855,12 @@
                         "id": {
                           "type": "string"
                         },
-                        "name": {
+                        "firstName": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastName": {
+                          "nullable": true,
                           "type": "string"
                         },
                         "image": {
@@ -3838,7 +3879,8 @@
                       },
                       "required": [
                         "id",
-                        "name",
+                        "firstName",
+                        "lastName",
                         "image",
                         "role"
                       ],
@@ -4000,7 +4042,12 @@
                         "id": {
                           "type": "string"
                         },
-                        "name": {
+                        "firstName": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastName": {
+                          "nullable": true,
                           "type": "string"
                         },
                         "image": {
@@ -4019,7 +4066,8 @@
                       },
                       "required": [
                         "id",
-                        "name",
+                        "firstName",
+                        "lastName",
                         "image",
                         "role"
                       ],
@@ -4047,7 +4095,12 @@
                         "id": {
                           "type": "string"
                         },
-                        "name": {
+                        "firstName": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastName": {
+                          "nullable": true,
                           "type": "string"
                         },
                         "image": {
@@ -4066,7 +4119,8 @@
                       },
                       "required": [
                         "id",
-                        "name",
+                        "firstName",
+                        "lastName",
                         "image",
                         "role"
                       ],
@@ -5187,7 +5241,12 @@
                               "id": {
                                 "type": "string"
                               },
-                              "name": {
+                              "firstName": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "lastName": {
+                                "nullable": true,
                                 "type": "string"
                               },
                               "image": {
@@ -5206,7 +5265,8 @@
                             },
                             "required": [
                               "id",
-                              "name",
+                              "firstName",
+                              "lastName",
                               "image",
                               "role"
                             ],
@@ -5230,7 +5290,12 @@
                                     "id": {
                                       "type": "string"
                                     },
-                                    "name": {
+                                    "firstName": {
+                                      "nullable": true,
+                                      "type": "string"
+                                    },
+                                    "lastName": {
+                                      "nullable": true,
                                       "type": "string"
                                     },
                                     "image": {
@@ -5249,7 +5314,8 @@
                                   },
                                   "required": [
                                     "id",
-                                    "name",
+                                    "firstName",
+                                    "lastName",
                                     "image",
                                     "role"
                                   ],
@@ -6699,21 +6765,18 @@
                           "id": {
                             "type": "string"
                           },
-                          "name": {
+                          "firstName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "lastName": {
+                            "nullable": true,
                             "type": "string"
                           },
                           "email": {
                             "type": "string"
                           },
                           "image": {
-                            "nullable": true,
-                            "type": "string"
-                          },
-                          "firstName": {
-                            "nullable": true,
-                            "type": "string"
-                          },
-                          "lastName": {
                             "nullable": true,
                             "type": "string"
                           },
@@ -6744,11 +6807,10 @@
                         },
                         "required": [
                           "id",
-                          "name",
-                          "email",
-                          "image",
                           "firstName",
                           "lastName",
+                          "email",
+                          "image",
                           "entitlementCount",
                           "avgProgress",
                           "status",
@@ -6816,21 +6878,18 @@
                     "id": {
                       "type": "string"
                     },
-                    "name": {
+                    "firstName": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "nullable": true,
                       "type": "string"
                     },
                     "email": {
                       "type": "string"
                     },
                     "image": {
-                      "nullable": true,
-                      "type": "string"
-                    },
-                    "firstName": {
-                      "nullable": true,
-                      "type": "string"
-                    },
-                    "lastName": {
                       "nullable": true,
                       "type": "string"
                     },
@@ -6861,11 +6920,10 @@
                   },
                   "required": [
                     "id",
-                    "name",
-                    "email",
-                    "image",
                     "firstName",
                     "lastName",
+                    "email",
+                    "image",
                     "entitlementCount",
                     "avgProgress",
                     "status",
@@ -6958,21 +7016,18 @@
                     "id": {
                       "type": "string"
                     },
-                    "name": {
+                    "firstName": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "nullable": true,
                       "type": "string"
                     },
                     "email": {
                       "type": "string"
                     },
                     "image": {
-                      "nullable": true,
-                      "type": "string"
-                    },
-                    "firstName": {
-                      "nullable": true,
-                      "type": "string"
-                    },
-                    "lastName": {
                       "nullable": true,
                       "type": "string"
                     },
@@ -7003,11 +7058,10 @@
                   },
                   "required": [
                     "id",
-                    "name",
-                    "email",
-                    "image",
                     "firstName",
                     "lastName",
+                    "email",
+                    "image",
                     "entitlementCount",
                     "avgProgress",
                     "status",
@@ -7303,10 +7357,15 @@
                           "orgUserId": {
                             "type": "string"
                           },
-                          "studentName": {
+                          "firstName": {
+                            "nullable": true,
                             "type": "string"
                           },
-                          "studentEmail": {
+                          "lastName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "email": {
                             "type": "string"
                           },
                           "content": {
@@ -7355,8 +7414,9 @@
                         "required": [
                           "id",
                           "orgUserId",
-                          "studentName",
-                          "studentEmail",
+                          "firstName",
+                          "lastName",
+                          "email",
                           "content",
                           "status",
                           "grantedAt",
@@ -7442,10 +7502,15 @@
                     "orgUserId": {
                       "type": "string"
                     },
-                    "studentName": {
+                    "firstName": {
+                      "nullable": true,
                       "type": "string"
                     },
-                    "studentEmail": {
+                    "lastName": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "email": {
                       "type": "string"
                     },
                     "content": {
@@ -7494,8 +7559,9 @@
                   "required": [
                     "id",
                     "orgUserId",
-                    "studentName",
-                    "studentEmail",
+                    "firstName",
+                    "lastName",
+                    "email",
                     "content",
                     "status",
                     "grantedAt",
@@ -7563,10 +7629,15 @@
                     "orgUserId": {
                       "type": "string"
                     },
-                    "studentName": {
+                    "firstName": {
+                      "nullable": true,
                       "type": "string"
                     },
-                    "studentEmail": {
+                    "lastName": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "email": {
                       "type": "string"
                     },
                     "content": {
@@ -7615,8 +7686,9 @@
                   "required": [
                     "id",
                     "orgUserId",
-                    "studentName",
-                    "studentEmail",
+                    "firstName",
+                    "lastName",
+                    "email",
                     "content",
                     "status",
                     "grantedAt",

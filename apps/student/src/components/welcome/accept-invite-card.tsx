@@ -5,8 +5,8 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { signOut } from "@/lib/auth/client";
-import { acceptAndRefreshSession } from "./enter-portal";
+import { authClient, signOut } from "@/lib/auth/client";
+import { acceptInvite } from "@/app/welcome/actions";
 import { useRouter } from "next/navigation";
 
 /**
@@ -31,11 +31,13 @@ export function AcceptInviteCard({
   function onAccept() {
     setError(null);
     startTransition(async () => {
-      const failure = await acceptAndRefreshSession(token);
+      const failure = await acceptInvite(token);
       if (failure) {
-        setError(failure);
+        setError(failure.error);
         return;
       }
+      // The cached session predates the org the accept just stamped.
+      await authClient.getSession({ query: { disableCookieCache: true } });
       router.replace("/");
     });
   }

@@ -222,7 +222,11 @@ export async function organizationsRoutes(
       // instead: a duplicate signup comes back 422 and the page flips to
       // sign-in.
       const person = await container.identity.getUserByEmail(invite.email);
-      return { email: invite.email, name: person?.displayName ?? '' };
+      return {
+        email: invite.email,
+        firstName: person?.firstName ?? null,
+        lastName: person?.lastName ?? null,
+      };
     },
   });
 

@@ -32,8 +32,9 @@ const contentTitle = sql<string>`coalesce(${courses.title}, ${downloads.title})`
 // expression so the ordering matches the displayed value; `contentTitle` on the
 // coalesced join expression.
 const sortColumns = {
-  studentName: users.displayName,
-  studentEmail: users.email,
+  firstName: users.firstName,
+  lastName: users.lastName,
+  email: users.email,
   contentTitle,
   status: derivedStatus,
   grantedAt: entitlements.grantedAt,
@@ -44,8 +45,9 @@ const sortColumns = {
 const selection = {
   id: entitlements.id,
   orgUserId: entitlements.orgUserId,
-  studentName: users.displayName,
-  studentEmail: users.email,
+  firstName: users.firstName,
+  lastName: users.lastName,
+  email: users.email,
   contentId: entitlements.contentId,
   contentType: contentItems.type,
   contentTitle,
@@ -58,8 +60,9 @@ const selection = {
 interface Row {
   id: string;
   orgUserId: string;
-  studentName: string;
-  studentEmail: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
   contentId: string;
   contentType: ContentRef['type'];
   contentTitle: string;
@@ -73,8 +76,9 @@ function toEntitlement(row: Row): Entitlement {
   return {
     id: row.id,
     orgUserId: row.orgUserId,
-    studentName: row.studentName,
-    studentEmail: row.studentEmail,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    email: row.email,
     content: { id: row.contentId, type: row.contentType, title: row.contentTitle },
     status: row.status,
     grantedAt: row.grantedAt.toISOString(),
@@ -136,7 +140,8 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
       const pattern = `%${query.search}%`;
       conditions.push(
         or(
-          ilike(users.displayName, pattern),
+          ilike(users.firstName, pattern),
+          ilike(users.lastName, pattern),
           ilike(users.email, pattern),
           ilike(contentTitle, pattern),
         ) as SQL,

@@ -5,6 +5,8 @@
 // learner there — is the organizations context's OrgUser, not a second
 // identity. See ./organizations.ts.
 
+import type { DomainEvent } from "./shared";
+
 export interface User {
   readonly id: string;
   // The auth engine's user id (e.g. better-auth). The mirror link.
@@ -12,7 +14,6 @@ export interface User {
   // known to the org before any account exists.
   readonly externalId: string | null;
   readonly email: string;
-  readonly displayName: string;
   readonly firstName: string | null;
   readonly lastName: string | null;
   readonly createdAt: Date;
@@ -32,7 +33,6 @@ export type CreateUserInput = {
   id?: string;
   externalId?: string;
   email: string;
-  displayName: string;
   firstName?: string;
   lastName?: string;
 };
@@ -44,10 +44,27 @@ export type ProvisionUserInput = {
   lastName?: string;
 };
 
-/** The person fields an admin can correct. Omitted keys are left alone;
- *  `displayName` is not among them — it is recomposed from the names. */
 export type UpdateUserInput = {
+  externalId?: string;
   firstName?: string;
   lastName?: string;
   email?: string;
 };
+
+
+export interface UserCreated extends DomainEvent {
+  type: "user.created";
+  user: User;
+}
+
+export interface UserUpdated extends DomainEvent {
+  type: "user.updated";
+  user: User;
+}
+
+export interface UserDeleted extends DomainEvent {
+  type: "user.deleted";
+  user: User;
+}
+
+export type UserEvent = UserCreated | UserUpdated | UserDeleted;

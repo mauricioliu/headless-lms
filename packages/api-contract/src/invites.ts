@@ -46,12 +46,13 @@ export const InviteTokenParam = z.object({ token: z.string().min(1) });
 export type InviteTokenParam = z.infer<typeof InviteTokenParam>;
 
 /** Everything the invite landing page needs to render: who the invitation is
- *  for, and the name the admin entered, which prefills sign-up. Whether the
+ *  for, and the names the admin entered, which prefill sign-up. Whether the
  *  address already has a login is not reported — the sign-up form discovers
  *  that from a duplicate-signup rejection and switches to sign-in. */
 export const GetInviteResult = z.object({
   email: z.string(),
-  name: z.string(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
 });
 export type GetInviteResult = z.infer<typeof GetInviteResult>;
 

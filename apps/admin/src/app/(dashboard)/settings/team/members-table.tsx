@@ -13,6 +13,7 @@ import { useDataTable } from "@/components/data-table/use-data-table";
 import { useCurrentUser } from "@/lib/auth/session-context";
 import { isManager, can } from "@/lib/roles";
 import type { Member, Role, ListParams } from "@/lib/api/types";
+import { fullName } from "@/lib/format";
 
 import { memberColumns } from "./members-columns";
 import { InviteDialog } from "./_components/invite-dialog";
@@ -158,7 +159,7 @@ function MembersTableInner({
         title="Remove member"
         description={
           removeTarget
-            ? `${removeTarget.name} will lose access to this organization. This can't be undone, but they can be invited again.`
+            ? `${fullName(removeTarget)} will lose access to this organization. This can't be undone, but they can be invited again.`
             : ""
         }
         confirmLabel="Remove member"

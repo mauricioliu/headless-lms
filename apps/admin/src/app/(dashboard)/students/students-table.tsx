@@ -14,6 +14,7 @@ import { useDataTable } from "@/components/data-table/use-data-table";
 import { useCurrentUser } from "@/lib/auth/session-context";
 import { isManager } from "@/lib/roles";
 import type { ListParams, Student } from "@/lib/api/types";
+import { fullName } from "@/lib/format";
 
 import { studentColumns } from "./_components/student-columns";
 import { AddStudentDialog } from "./_components/add-student-dialog";
@@ -105,7 +106,7 @@ function StudentsTableInner({
           toDelete ? (
             <>
               This permanently deletes{" "}
-              <span className="font-medium text-ink">{toDelete.name}</span>, along with their
+              <span className="font-medium text-ink">{fullName(toDelete)}</span>, along with their
               entitlements and progress. This can&apos;t be undone.
             </>
           ) : null

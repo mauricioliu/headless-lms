@@ -5,10 +5,10 @@
 import { eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { IdentityRepository } from '../../../core/identity/ports.js';
-import type { User } from '../../../core/identity/model.js';
+import type { User } from '@headless-lms/types';
 import type { CreateUserInput, UpdateUserInput } from '@headless-lms/types';
 import { users } from '../schema/identity.js';
-import type { Logger } from '../../../core/shared/ports.js';
+import type { Logger } from '@headless-lms/types';
 import { noopLogger } from '../../../core/shared/logger.js';
 
 export class DrizzleIdentityRepository implements IdentityRepository {
@@ -24,7 +24,6 @@ export class DrizzleIdentityRepository implements IdentityRepository {
         id: input.id,
         externalId: input.externalId ?? null,
         email: input.email,
-        displayName: input.displayName,
         firstName: input.firstName ?? null,
         lastName: input.lastName ?? null,
       })
@@ -37,21 +36,15 @@ export class DrizzleIdentityRepository implements IdentityRepository {
 
   async updateUser(
     id: string,
-    input: UpdateUserInput & { displayName?: string },
+    input: UpdateUserInput,
   ): Promise<User | null> {
     // An empty patch would be an UPDATE with no SET — read the row back instead.
     if (Object.keys(input).length === 0) {
       return this.findUserById(id);
     }
-    const [row] = await this.db.update(users).set(input).where(eq(users.id, id)).returning();
-    return row ?? null;
-  }
-
-  async setExternalId(userId: string, externalId: string): Promise<User | null> {
-    const [row] = await this.db
-      .update(users)
-      .set({ externalId })
-      .where(eq(users.id, userId))
+    const [row] = await this.db.update(users)
+      .set(input)
+      .where(eq(users.id, id))
       .returning();
     return row ?? null;
   }

@@ -14,7 +14,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { MemberStatusBadge, RoleBadge } from "@/components/status-badge";
 import { ColumnHeader } from "@/components/data-table/column-header";
 import { RowActions } from "@/components/data-table/row-actions";
-import { relativeTime } from "@/lib/format";
+import { fullName, relativeTime } from "@/lib/format";
 import type { Member, Role } from "@/lib/api/types";
 
 /** Roles a manager may assign to an existing member — never owner (that's fixed). */
@@ -46,7 +46,7 @@ function RoleCell({
       value={member.role}
       onValueChange={(role) => onChange(member.id, role as Role)}
     >
-      <SelectTrigger size="sm" className="w-[9.5rem]" aria-label={`Change role for ${member.name}`}>
+      <SelectTrigger size="sm" className="w-[9.5rem]" aria-label={`Change role for ${fullName(member)}`}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -84,9 +84,9 @@ export function memberColumns({
         const m = row.original;
         return (
           <div className="flex items-center gap-3">
-            <NameAvatar name={m.name} image={m.image} />
+            <NameAvatar name={fullName(m)} image={m.image} />
             <div className="flex min-w-0 flex-col">
-              <span className="truncate font-medium text-ink">{m.name}</span>
+              <span className="truncate font-medium text-ink">{fullName(m)}</span>
               <span className="truncate text-xs text-ink-3">{m.email}</span>
             </div>
           </div>
@@ -137,7 +137,7 @@ export function memberColumns({
         // Owners are fixed and can never be removed; nor can you remove yourself.
         const disabledRemove = isOwner || isSelf;
         return (
-          <RowActions label={`Actions for ${m.name}`}>
+          <RowActions label={`Actions for ${fullName(m)}`}>
             <DropdownMenuItem
               variant="danger"
               disabled={disabledRemove}

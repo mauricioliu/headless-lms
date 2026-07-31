@@ -21,7 +21,8 @@ const roleOf = (t: string): StaffRole => (isStaffRole(t) ? t : 'instructor');
 function toMember(r: MemberRecord): Member {
   return {
     id: r.id,
-    name: r.name,
+    firstName: r.firstName,
+    lastName: r.lastName,
     email: r.email,
     image: r.image,
     role: r.role,
@@ -72,7 +73,8 @@ export class DrizzleMembersRepository implements MembersRepository {
 
     const members: MemberRecord[] = memberRows.map((m) => ({
       id: m.id,
-      name: m.name,
+      firstName: m.firstName,
+      lastName: m.lastName,
       email: m.email,
       image: m.image ?? null,
       role: roleOf(m.role),
@@ -83,9 +85,12 @@ export class DrizzleMembersRepository implements MembersRepository {
       userExternalId: m.userExternalId,
       inviteId: null,
     }));
+    // A pending invite is an address and nothing else — the invites table
+    // carries no names, so there is nobody to name until they accept.
     const invited: MemberRecord[] = inviteRows.map((i) => ({
       id: i.id,
-      name: i.email,
+      firstName: null,
+      lastName: null,
       email: i.email,
       image: null,
       role: roleOf(i.role),
@@ -109,21 +114,26 @@ export class DrizzleMembersRepository implements MembersRepository {
     }
     const q = query.search?.trim().toLowerCase();
     if (q) {
-      rows = rows.filter(
-        (r) => r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q),
+      rows = rows.filter((r) =>
+        [r.firstName, r.lastName, r.email].some((v) => v?.toLowerCase().includes(q)),
       );
     }
 
     const sort = query.sort;
     const desc = sort?.startsWith('-') ?? false;
     const key = (desc ? sort!.slice(1) : sort) as keyof Member | undefined;
+    // Nulls last whichever way the column is sorted — an unaccepted invite has
+    // no name and belongs at the bottom, not interleaved.
+    const byName = (a: string | null, b: string | null): number =>
+      a === b ? 0 : a === null ? 1 : b === null ? -1 : a.localeCompare(b);
     rows.sort((a, b) => {
-      const cmp =
-        key === 'email'
-          ? a.email.localeCompare(b.email)
-          : key === 'role'
-            ? a.role.localeCompare(b.role)
-            : a.name.localeCompare(b.name);
+      if (key === 'email') return desc ? -a.email.localeCompare(b.email) : a.email.localeCompare(b.email);
+      if (key === 'role') return desc ? -a.role.localeCompare(b.role) : a.role.localeCompare(b.role);
+      if (key === 'lastName') {
+        const cmp = byName(a.lastName, b.lastName) || byName(a.firstName, b.firstName);
+        return desc ? -cmp : cmp;
+      }
+      const cmp = byName(a.firstName, b.firstName) || byName(a.lastName, b.lastName);
       return desc ? -cmp : cmp;
     });
 

@@ -17,7 +17,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrentUser } from "@/lib/auth/session-context";
 import { isManager } from "@/lib/roles";
-import { formatDate, relativeTime } from "@/lib/format";
+import { formatDate, fullName, relativeTime } from "@/lib/format";
 import type { Entitlement, Student } from "@/lib/api/types";
 
 import { GrantAccessDialog, type LiteContent } from "../_components/grant-access-dialog";

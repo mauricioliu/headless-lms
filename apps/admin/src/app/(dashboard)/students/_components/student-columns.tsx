@@ -6,7 +6,7 @@ import { ColumnHeader } from "@/components/data-table/column-header";
 import { RowActions } from "@/components/data-table/row-actions";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { NameAvatar } from "@/components/ui/avatar";
-import { relativeTime } from "@/lib/format";
+import { fullName, relativeTime } from "@/lib/format";
 import type { Student } from "@/lib/api/types";
 
 import { ProgressCell } from "./progress-meter";
@@ -27,9 +27,9 @@ export function studentColumns(
         const s = row.original;
         return (
           <div className="flex items-center gap-3">
-            <NameAvatar name={s.name} image={s.image} />
+            <NameAvatar name={fullName(s)} image={s.image} />
             <div className="flex min-w-0 flex-col">
-              <span className="truncate font-medium text-ink">{s.name}</span>
+              <span className="truncate font-medium text-ink">{fullName(s)}</span>
               <span className="truncate text-xs text-ink-3">{s.email}</span>
             </div>
           </div>

@@ -8,7 +8,7 @@ import { NameAvatar } from "@/components/ui/avatar";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { ColumnHeader } from "@/components/data-table/column-header";
 import { RowActions } from "@/components/data-table/row-actions";
-import { relativeTime } from "@/lib/format";
+import { fullName, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Entitlement } from "@/lib/api/types";
 

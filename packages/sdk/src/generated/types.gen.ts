@@ -87,7 +87,8 @@ export type ListMembersResponses = {
   200: {
     rows: Array<{
       id: string;
-      name: string;
+      firstName: string | null;
+      lastName: string | null;
       email: string;
       image: string | null;
       role: "owner" | "admin" | "instructor";
@@ -139,7 +140,8 @@ export type UpdateMemberRoleResponses = {
    */
   200: {
     id: string;
-    name: string;
+    firstName: string | null;
+    lastName: string | null;
     email: string;
     image: string | null;
     role: "owner" | "admin" | "instructor";
@@ -254,7 +256,8 @@ export type GetInviteResponses = {
    */
   200: {
     email: string;
-    name: string;
+    firstName: string | null;
+    lastName: string | null;
   };
 };
 
@@ -1254,7 +1257,8 @@ export type ListActivityCommentsResponses = {
       parentId: string | null;
       author: {
         id: string;
-        name: string;
+        firstName: string | null;
+        lastName: string | null;
         image: string | null;
         role: "owner" | "admin" | "instructor" | "student";
       };
@@ -1263,7 +1267,8 @@ export type ListActivityCommentsResponses = {
       status: "pending" | "published" | "removed";
       removedBy: {
         id: string;
-        name: string;
+        firstName: string | null;
+        lastName: string | null;
         image: string | null;
         role: "owner" | "admin" | "instructor" | "student";
       } | null;
@@ -1321,7 +1326,8 @@ export type PostCommentResponses = {
     parentId: string | null;
     author: {
       id: string;
-      name: string;
+      firstName: string | null;
+      lastName: string | null;
       image: string | null;
       role: "owner" | "admin" | "instructor" | "student";
     };
@@ -1330,7 +1336,8 @@ export type PostCommentResponses = {
     status: "pending" | "published" | "removed";
     removedBy: {
       id: string;
-      name: string;
+      firstName: string | null;
+      lastName: string | null;
       image: string | null;
       role: "owner" | "admin" | "instructor" | "student";
     } | null;
@@ -1432,7 +1439,8 @@ export type EditCommentResponses = {
     parentId: string | null;
     author: {
       id: string;
-      name: string;
+      firstName: string | null;
+      lastName: string | null;
       image: string | null;
       role: "owner" | "admin" | "instructor" | "student";
     };
@@ -1441,7 +1449,8 @@ export type EditCommentResponses = {
     status: "pending" | "published" | "removed";
     removedBy: {
       id: string;
-      name: string;
+      firstName: string | null;
+      lastName: string | null;
       image: string | null;
       role: "owner" | "admin" | "instructor" | "student";
     } | null;
@@ -1767,7 +1776,8 @@ export type ListCommentsResponses = {
       status: "pending" | "published" | "removed";
       author: {
         id: string;
-        name: string;
+        firstName: string | null;
+        lastName: string | null;
         image: string | null;
         role: "owner" | "admin" | "instructor" | "student";
       };
@@ -1776,7 +1786,8 @@ export type ListCommentsResponses = {
       reports: Array<{
         reporter: {
           id: string;
-          name: string;
+          firstName: string | null;
+          lastName: string | null;
           image: string | null;
           role: "owner" | "admin" | "instructor" | "student";
         };
@@ -2214,11 +2225,10 @@ export type ListStudentsResponses = {
   200: {
     rows: Array<{
       id: string;
-      name: string;
-      email: string;
-      image: string | null;
       firstName: string | null;
       lastName: string | null;
+      email: string;
+      image: string | null;
       entitlementCount: number;
       avgProgress: number;
       status: "invited" | "active";
@@ -2288,11 +2298,10 @@ export type GetStudentResponses = {
    */
   200: {
     id: string;
-    name: string;
-    email: string;
-    image: string | null;
     firstName: string | null;
     lastName: string | null;
+    email: string;
+    image: string | null;
     entitlementCount: number;
     avgProgress: number;
     status: "invited" | "active";
@@ -2341,11 +2350,10 @@ export type UpdateStudentResponses = {
    */
   200: {
     id: string;
-    name: string;
-    email: string;
-    image: string | null;
     firstName: string | null;
     lastName: string | null;
+    email: string;
+    image: string | null;
     entitlementCount: number;
     avgProgress: number;
     status: "invited" | "active";
@@ -2416,8 +2424,9 @@ export type ListEntitlementsResponses = {
     rows: Array<{
       id: string;
       orgUserId: string;
-      studentName: string;
-      studentEmail: string;
+      firstName: string | null;
+      lastName: string | null;
+      email: string;
       content: {
         id: string;
         type: "course" | "download";
@@ -2454,8 +2463,9 @@ export type GrantEntitlementResponses = {
   201: {
     id: string;
     orgUserId: string;
-    studentName: string;
-    studentEmail: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
     content: {
       id: string;
       type: "course" | "download";
@@ -2501,8 +2511,9 @@ export type SetEntitlementStatusResponses = {
   200: {
     id: string;
     orgUserId: string;
-    studentName: string;
-    studentEmail: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
     content: {
       id: string;
       type: "course" | "download";

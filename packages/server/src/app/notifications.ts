@@ -9,7 +9,7 @@ import type { EntitlementCreated, EntitlementDeleted } from '@headless-lms/types
 export function registerNotificationSubscribers(bus: EventBus, mailer: Pick<Mailer, 'send'>): void {
   bus.subscribe('entitlement.created', async (event) => {
     const { entitlement } = event as EntitlementCreated;
-    await mailer.send(entitlement.studentEmail, 'accessGranted', {
+    await mailer.send(entitlement.email, 'accessGranted', {
       contentTitle: entitlement.content.title,
       contentId: entitlement.content.id,
     });
@@ -17,7 +17,7 @@ export function registerNotificationSubscribers(bus: EventBus, mailer: Pick<Mail
 
   bus.subscribe('entitlement.deleted', async (event) => {
     const { entitlement } = event as EntitlementDeleted;
-    await mailer.send(entitlement.studentEmail, 'accessRevoked', {
+    await mailer.send(entitlement.email, 'accessRevoked', {
       contentTitle: entitlement.content.title,
     });
   });

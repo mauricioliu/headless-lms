@@ -6,7 +6,6 @@ export type {
   AuthAccountWriter,
   UserProvisioner,
   UserResolver,
-  UserLinker,
   UserEditor,
 } from './ports.js';
 export type { User } from './model.js';

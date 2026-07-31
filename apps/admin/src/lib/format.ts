@@ -1,5 +1,16 @@
 /** Small, dependency-free formatters. Numbers stay tabular for tidy tables. */
 
+/** Renders a person for the screen. Purely presentational — the API sends the
+ *  names as typed and never a composed one, so joining them is the UI's job.
+ *  Falls back to the address, which every person has. */
+export function fullName(p: {
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string;
+}): string {
+  return [p.firstName, p.lastName].filter(Boolean).join(" ") || (p.email ?? "");
+}
+
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";

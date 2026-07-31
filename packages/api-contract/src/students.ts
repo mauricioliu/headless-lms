@@ -6,10 +6,6 @@ export const OrgUserStatus = z.enum(["invited", "active"]);
 export type OrgUserStatus = z.infer<typeof OrgUserStatus>;
 
 export const Student = OrgUserProfileSchema.extend({
-  /** As typed on the invite form. `name` is the composed rendering name; these
-   *  are the fields the admin edits. Null for anyone who self-signed-up. */
-  firstName: z.string().nullable(),
-  lastName: z.string().nullable(),
   entitlementCount: z.number().int(),
   /** 0–100, averaged across active entitlements. */
   avgProgress: z.number().int(),

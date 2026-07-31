@@ -38,7 +38,7 @@ const ENTITLEMENT: Entitlement = {
   orgUserId: 'student-1',
   firstName: 'Bob',
   lastName: 'Smith',
-  studentEmail: 'bob@example.com',
+  email: 'bob@example.com',
   content: { id: 'course-1', type: 'course', title: 'Intro to TypeScript' },
   status: 'active',
   grantedAt: '2026-01-01T00:00:00Z',

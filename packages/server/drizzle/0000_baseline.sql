@@ -155,7 +155,6 @@ CREATE TABLE "users" (
 	"id" text PRIMARY KEY NOT NULL,
 	"external_id" text,
 	"email" text NOT NULL,
-	"display_name" text NOT NULL,
 	"first_name" text,
 	"last_name" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,

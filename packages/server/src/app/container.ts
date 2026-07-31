@@ -2,7 +2,10 @@
 import { createDb } from '../adapters/db/index.js';
 import { DrizzleUnitOfWork } from '../adapters/db/unit-of-work.js';
 import { InMemoryEventBus } from '../adapters/events/index.js';
-import { PollingOutboxRelay, type PollingOutboxRelayConfig, } from '../adapters/events/outbox-relay.js';
+import {
+  PollingOutboxRelay,
+  type PollingOutboxRelayConfig,
+} from '../adapters/events/outbox-relay.js';
 import { InlineAutomationEngine } from '../adapters/workflows/index.js';
 import { DrizzleOutboxAppender, DrizzleOutboxStore } from '../adapters/db/repositories/outbox.js';
 import { EmailAdapter, StubTemplateRenderer } from '../adapters/email/index.js';
@@ -18,13 +21,20 @@ import { type Auth, createAuth } from '../adapters/auth/index.js';
 import { createOrgAdmin } from '../adapters/auth/org-admin.js';
 import { stampSessionActiveOrg } from '../adapters/auth/session-stamp.js';
 import { DrizzleAuthAccountWriter } from '../adapters/auth/account-writer.js';
-import { type ConnectedAppsRepo, createConnectedAppsRepo, } from '../adapters/auth/connected-apps.js';
+import {
+  type ConnectedAppsRepo,
+  createConnectedAppsRepo,
+} from '../adapters/auth/connected-apps.js';
 
 import { ContentServiceImpl } from '../core/content/index.js';
 import { EntitlementsServiceImpl } from '../core/entitlements/index.js';
 import { ProgressServiceImpl } from '../core/progress/index.js';
 import { DiscussionServiceImpl } from '../core/discussion/index.js';
-import { IdentityServiceImpl } from '../core/identity/index.js';
+import {
+  type AuthAccountWriter,
+  type IdentityRepository,
+  IdentityServiceImpl,
+} from '../core/identity/index.js';
 import { type OrgAdmin, OrganizationServiceImpl } from '../core/organizations/index.js';
 import { AssetsServiceImpl } from '../core/assets/index.js';
 import { IntegrationsServiceImpl } from '../core/integrations/index.js';
@@ -66,6 +76,7 @@ import type {
   TemplateRenderer,
 } from '../core/shared/ports.js';
 import type { AutomationEngine } from '@headless-lms/types';
+import type { IdentityUnitOfWork } from '../core/identity/ports.js';
 
 /** Installation-supplied ports; an absent slot falls back to a fail-loudly stub. */
 export interface AdapterOverrides {
@@ -248,15 +259,16 @@ export async function buildContainer(
     return orgAdminRef.current;
   };
 
-  // Services (inject repos + peer services in dependency order)
-  // Identity owns only the person row — no events, so no unit of work.
-  // The account writer goes straight at better-auth's table, so it needs no
-  // `auth` instance — no lazy ref, unlike orgAdmin.
-  const identity = new IdentityServiceImpl(
-    new DrizzleIdentityRepository(db, identityLogger),
-    identityLogger,
-    new DrizzleAuthAccountWriter(db, identityLogger),
-  );
+  const identityUoW = new DrizzleUnitOfWork(db, (tx) => ({
+    identity: new DrizzleIdentityRepository(tx, organizationsLogger),
+    outbox: new DrizzleOutboxAppender(tx, organizationsLogger),
+  }));
+  const identity = new IdentityServiceImpl({
+    repo: new DrizzleIdentityRepository(db, identityLogger),
+    logger: identityLogger,
+    authAccounts: new DrizzleAuthAccountWriter(db, identityLogger),
+    uow: identityUoW,
+  });
   const organizationsUow = new DrizzleUnitOfWork(db, (tx) => ({
     organizations: new DrizzleOrganizationsRepository(tx, organizationsLogger),
     outbox: new DrizzleOutboxAppender(tx, organizationsLogger),
@@ -265,7 +277,6 @@ export async function buildContainer(
     new DrizzleOrganizationsRepository(db, organizationsLogger),
     new DrizzleMembersRepository(db, organizationsLogger),
     orgAdminProvider,
-    // Identity slice: invite acceptance resolves the accepting account to its person.
     identity,
     organizationsUow,
     organizationsLogger,

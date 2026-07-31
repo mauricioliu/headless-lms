@@ -1,9 +1,9 @@
 // The one display join for an org user's profile.
 //
-// Name and email live on the identity `users` row the org_users row links to;
-// the avatar lives on the auth engine's mirrored `user` table, reached through
-// that same identity row. The identity join is INNER (user_id is NOT NULL); the
-// auth join is LEFT, since only the avatar depends on it.
+// The names and email live on the identity `users` row the org_users row links
+// to; the avatar lives on the auth engine's mirrored `user` table, reached
+// through that same identity row. The identity join is INNER (user_id is NOT
+// NULL); the auth join is LEFT, since only the avatar depends on it.
 //
 // Sanctioned by .eslintrc.cjs — "db repositories read the auth adapter's
 // mirrored `user` table for display joins".
@@ -19,7 +19,8 @@ import { user } from '../../auth/schema.js';
 /** Spread into a `.select({ ... })` to get the profile columns. */
 export const orgUserProfileColumns = {
   id: orgUsers.id,
-  name: users.displayName,
+  firstName: users.firstName,
+  lastName: users.lastName,
   email: users.email,
   image: user.image,
 };
