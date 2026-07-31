@@ -27,7 +27,7 @@ function StatusBadge({
   children: React.ReactNode;
 }) {
   return (
-    <Badge variant={variant} className="pl-1.5">
+    <Badge variant={variant} className="px-2.5">
       {dot && <Dot className={cn(DOT[variant])} />}
       {children}
     </Badge>
@@ -36,11 +36,11 @@ function StatusBadge({
 
 export function CourseStatusBadge({ status }: { status: CourseStatus }) {
   return status === "published" ? (
-    <StatusBadge variant="success" dot>
+    <StatusBadge variant="success">
       Published
     </StatusBadge>
   ) : (
-    <StatusBadge variant="neutral" dot>
+    <StatusBadge variant="neutral">
       Draft
     </StatusBadge>
   );

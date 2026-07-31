@@ -71,9 +71,9 @@ export function AccessGrantsList({
                   <td className="px-3 py-3.5">
                     <div className="flex flex-col">
                       <span className="font-medium text-ink">
-                        {g.studentName}
+                        {fullName(g)}
                       </span>
-                      <span className="text-ink-4">{g.studentEmail}</span>
+                      <span className="text-ink-4">{g.email}</span>
                     </div>
                   </td>
                   <td className="px-3 py-3.5">

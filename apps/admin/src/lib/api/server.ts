@@ -33,6 +33,7 @@ import {
 } from "@headless-lms/sdk";
 
 import { toQuery } from "./shared";
+import { fullName } from "@/lib/format";
 import { authHeaders } from "./server-call";
 import type {
   Asset,
@@ -125,7 +126,7 @@ export const serverApi = {
       { pageSize: 100, search: search || undefined, sort: "name" },
       await authHeaders(),
     );
-    return page.rows.map((s) => ({ id: s.id, name: s.name, email: s.email }));
+    return page.rows.map((s) => ({ id: s.id, name: fullName(s), email: s.email }));
   },
 
   // entitlements
@@ -170,7 +171,7 @@ export const serverApi = {
     const page = await Organizations.listMembers({ pageSize: 100 }, await authHeaders());
     return page.rows
       .filter((m) => m.role === "owner" || m.role === "admin" || m.role === "instructor")
-      .map((m) => ({ id: m.id, name: m.name }));
+      .map((m) => ({ id: m.id, name: fullName(m) }));
   },
 
   // media library (assets) — list only; presigned URL/upload stay client-side
