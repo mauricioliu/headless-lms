@@ -2,12 +2,8 @@ import { requireAuth } from "@/lib/auth/server-session";
 import { isManager } from "@/lib/roles";
 import { serverApi } from "@/lib/api/server";
 import { ForbiddenView } from "@/components/full-page-states";
-
 import { CourseHeader } from "./_components/course-header";
 
-// Shared shell for a single course: back link, header, and the tab nav. Each tab
-// is its own route segment (content / details / analytics / access) rendered as
-// `children`. Managers only — instructor course scoping isn't wired yet.
 export default async function CourseLayout({
   params,
   children,

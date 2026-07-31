@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { FormDialog } from "@/components/forms/form-dialog";
 import { Field } from "@/components/forms/field";
 import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Select,
   SelectContent,
@@ -70,6 +71,11 @@ export function GrantCourseAccessDialog({
 
   const expiryMode = useWatch({ control, name: "expiryMode" });
 
+  const studentOptions = React.useMemo(
+    () => students.map((s) => ({ value: s.id, label: s.name, description: s.email })),
+    [students],
+  );
+
   const onSubmit = handleSubmit((values) => {
     const input = {
       orgUserId: values.studentId,
@@ -115,22 +121,17 @@ export function GrantCourseAccessDialog({
               error={errors.studentId?.message}
               hint={students.length === 0 ? "Every student already has access." : undefined}
             >
-              <Select
+              <Combobox
+                id="studentId"
                 value={field.value}
                 onValueChange={field.onChange}
+                options={studentOptions}
+                placeholder="Select a student"
+                searchPlaceholder="Search by name or email…"
+                emptyText="No students match"
                 disabled={students.length === 0}
-              >
-                <SelectTrigger id="studentId" aria-invalid={!!errors.studentId}>
-                  <SelectValue placeholder="Select a student" />
-                </SelectTrigger>
-                <SelectContent>
-                  {students.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name} · {s.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                aria-invalid={!!errors.studentId}
+              />
             </Field>
           )}
         />

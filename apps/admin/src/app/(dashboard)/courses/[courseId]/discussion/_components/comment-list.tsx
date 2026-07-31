@@ -135,7 +135,7 @@ export function CommentList({
           {rows.map((row) => (
             <Card key={row.id} className="p-4">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-ink-3">
-                <span className="text-sm font-semibold text-ink">{row.author.name}</span>
+                <span className="text-sm font-semibold text-ink">{fullName(row.author)}</span>
                 <span>{row.authorEmail}</span>
                 <span>·</span>
                 <span>{row.activityTitle}</span>
@@ -155,7 +155,7 @@ export function CommentList({
                 <ul className="mt-3 space-y-1 border-l-2 border-line pl-3">
                   {row.reports.map((report, i) => (
                     <li key={i} className="text-xs text-ink-3">
-                      <span className="font-medium text-ink">{report.reporter.name}</span>
+                      <span className="font-medium text-ink">{fullName(report.reporter)}</span>
                       {report.reason ? ` — ${report.reason}` : " flagged this"}
                     </li>
                   ))}

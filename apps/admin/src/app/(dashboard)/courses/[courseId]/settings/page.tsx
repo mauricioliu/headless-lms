@@ -17,17 +17,14 @@ export default async function CourseSettingsTab({
 
   const course = await serverApi.getCourse(courseId);
 
-  // The stored reference is the asset id; the URL is signed fresh per render.
-  // A missing or deleted asset just renders the empty cover.
   const thumbnailUrl = course.thumbnailAssetId
     ? await getAssetUrlAction(course.thumbnailAssetId).catch(() => null)
     : null;
-console.log(course);
+
   return (
     <div className="max-w-4xl divide-y divide-line">
       <SettingsSection
-        title="Basics"
-        description="The name, category, and summary learners see on the course card."
+        title="Details"
       >
         <BasicsForm course={course} />
       </SettingsSection>
