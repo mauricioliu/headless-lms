@@ -18,8 +18,16 @@ declare module 'fastify' {
   }
   interface FastifyRequest {
     authUser: AuthUser;
-    /** Active organization id from the session; guaranteed set by
-     *  `requireOrgSession`, absent under `requireSession` when there is none. */
+    /** Domain `organizations.id` for the session's active org — what every
+     *  domain read keys off. Guaranteed set by `requireOrgSession`; absent under
+     *  `requireSession` when the session has no active org. */
     orgId: string;
+    /** The same org as better-auth knows it (`organizations.external_id`), for
+     *  writes that go back through the auth provider. */
+    authOrgId: string;
+    /** Domain `users.id` for the session's account — what `org_users.user_id`
+     *  and every other domain row references. Not `authUser.id`: the two match
+     *  only for a self-signup, never for a person an admin provisioned first. */
+    userId: string;
   }
 }

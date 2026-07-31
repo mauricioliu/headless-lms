@@ -7,27 +7,30 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 
-import { FormSheet } from "@/components/forms/form-sheet";
+import { FormDialog } from "@/components/forms/form-dialog";
 import { Field } from "@/components/forms/field";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api/http";
 
-import { createStudentAction } from "../actions";
+import { addStudentAction } from "../actions";
 
 const FORM_ID = "add-student-form";
 
+// The name columns are nullable for people who arrive by self-signup, not so an
+// admin can skip them — someone adding a student knows who they are.
 const schema = z.object({
-  name: z.string().min(1, "First name is required"),
+  firstName: z.string().trim().min(1, "Enter a first name"),
+  lastName: z.string().trim().min(1, "Enter a last name"),
   email: z.email("Enter a valid email"),
-  sendInvite: z.boolean(),
+  sendEmail: z.boolean(),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-const DEFAULTS: FormValues = { name: "", email: "", sendInvite: true };
+const DEFAULTS: FormValues = { firstName: "", lastName: "", email: "", sendEmail: true };
 
-export function AddStudentSheet({
+export function AddStudentDialog({
   open,
   onOpenChange,
 }: {
@@ -45,7 +48,7 @@ export function AddStudentSheet({
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: DEFAULTS });
 
-  // Reset to a clean slate every time the sheet opens.
+  // Reset to a clean slate every time the dialog opens.
   React.useEffect(() => {
     if (open) reset(DEFAULTS);
   }, [open, reset]);
@@ -53,50 +56,61 @@ export function AddStudentSheet({
   const onSubmit = handleSubmit((values) => {
     startTransition(async () => {
       try {
-        const student = await createStudentAction(values);
-        toast.success(values.sendInvite ? "Student added — invitation sent" : "Student added");
+        await addStudentAction(values);
+        toast.success(values.sendEmail ? "Invite sent" : "Student added", {
+          description: values.email,
+        });
         onOpenChange(false);
-        router.push(`/students/${student.id}`);
+        router.refresh();
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
-          setError("email", { message: "A student with this email already exists" });
+          setError("email", { message: "This person is already in your organization" });
           return;
         }
-        toast.error("Couldn't add student", { description: (err as Error).message });
+        toast.error("Couldn't add the student", { description: (err as Error).message });
       }
     });
   });
 
   return (
-    <FormSheet
+    <FormDialog
       open={open}
       onOpenChange={onOpenChange}
       title="Add student"
-      description="Create a student record. Send an invitation so they can set up their portal account."
+      description="The student is added to your organization straight away. The invite emails them a single-use link to create their account."
       formId={FORM_ID}
       submitLabel="Add student"
       pending={pending}
     >
       <form id={FORM_ID} onSubmit={onSubmit} className="flex flex-col gap-5">
-        <div className="grid grid-cols-2 gap-4">
-          <Field id="name" label="First name" required error={errors.name?.message}>
-            <Input id="name" aria-invalid={!!errors.name} {...register("name")} />
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Field id="firstName" label="First name" required error={errors.firstName?.message}>
+            <Input
+              id="firstName"
+              autoComplete="given-name"
+              aria-invalid={!!errors.firstName}
+              {...register("firstName")}
+            />
+          </Field>
+          <Field id="lastName" label="Last name" required error={errors.lastName?.message}>
+            <Input
+              id="lastName"
+              autoComplete="family-name"
+              aria-invalid={!!errors.lastName}
+              {...register("lastName")}
+            />
           </Field>
         </div>
+
         <Field id="email" label="Email" required error={errors.email?.message}>
           <Input id="email" type="email" aria-invalid={!!errors.email} {...register("email")} />
         </Field>
-        <Field
-          id="sendInvite"
-          label="Invitation"
-          hint="Email a single-use link to the student portal where they create their account."
-        >
-          <label className="flex items-center gap-2 text-sm text-ink">
-            <Checkbox id="sendInvite" {...register("sendInvite")} />
-            Send invite email
-          </label>
-        </Field>
+
+        <label htmlFor="sendEmail" className="flex items-center gap-2.5 text-sm text-ink-2">
+          <Checkbox id="sendEmail" {...register("sendEmail")} />
+          Send invite email
+        </label>
       </form>
-    </FormSheet>
+    </FormDialog>
   );
 }

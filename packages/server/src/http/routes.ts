@@ -1,10 +1,5 @@
-// Mounts every route on the server, grouped by auth model:
-//   - /health
-//   - back-office routes: guarded by a session on EVERY route (see below)
-//   - MCP: guarded by OAuth bearer tokens, so it sits outside the session plugin
 import type { FastifyInstance } from 'fastify';
 import type { Container } from '../app/container.js';
-import type { ServerConfig } from './config.js';
 import { coursesRoutes } from './routes/courses.js';
 import { downloadsRoutes } from './routes/downloads.js';
 import { learnRoutes } from './routes/learn/index.js';
@@ -23,7 +18,6 @@ import { mcpRoutes } from './mcp/route.js';
 export function registerRoutes(
   app: FastifyInstance,
   container: Container,
-  config: ServerConfig,
 ): void {
   app.get('/health', async () => ({ status: 'ok' }));
 

@@ -37,7 +37,7 @@ export async function learnCommentsRoutes(
     },
     handler: async (req) => {
       const orgId = req.orgId;
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }
@@ -59,7 +59,7 @@ export async function learnCommentsRoutes(
     },
     handler: async (req) => {
       const orgId = req.orgId;
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }
@@ -86,7 +86,7 @@ export async function learnCommentsRoutes(
     },
     handler: async (req) => {
       const orgId = req.orgId;
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }
@@ -107,7 +107,7 @@ export async function learnCommentsRoutes(
     },
     handler: async (req) => {
       const orgId = req.orgId;
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }
@@ -128,11 +128,11 @@ export async function learnCommentsRoutes(
     },
     handler: async (req, reply) => {
       const orgId = req.orgId;
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }
-      await discussion.react(orgId, req.params.commentId, orgUser, req.params.emoji);
+      await discussion.createReaction(orgId, req.params.commentId, orgUser, req.params.emoji);
       return reply.code(204).send();
     },
   });
@@ -150,11 +150,11 @@ export async function learnCommentsRoutes(
     },
     handler: async (req, reply) => {
       const orgId = req.orgId;
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }
-      await discussion.unreact(orgId, req.params.commentId, orgUser, req.params.emoji);
+      await discussion.removeReaction(orgId, req.params.commentId, orgUser, req.params.emoji);
       return reply.code(204).send();
     },
   });
@@ -173,7 +173,7 @@ export async function learnCommentsRoutes(
     },
     handler: async (req) => {
       const orgId = req.orgId;
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }

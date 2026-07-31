@@ -7,7 +7,8 @@ import "server-only";
  *
  * A 404 means the student isn't enrolled in (or can't see) the course — the
  * reads return `null` so the RSC page can `notFound()`. A 401 never reaches
- * here: the SDK's error mapping redirects to /login?reset=1.
+ * here: the SDK's error mapping redirects to /session/reset, which revokes the
+ * rejected session before handing over to /login.
  */
 import { unstable_rethrow } from "next/navigation";
 import { Learn } from "@headless-lms/sdk";

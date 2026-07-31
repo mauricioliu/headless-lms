@@ -1,4 +1,4 @@
-// Invites resource schemas — domain-owned invitations (staff + student).
+// Invites resource schemas — domain-owned invites (staff + student).
 import { z } from "zod";
 
 /** Roles an invitation can carry. Never owner. */
@@ -13,11 +13,18 @@ export const Invite = z.object({
   expiresAt: z.date().nullable(),
   createdAt: z.date(),
 });
-export type Invitation = z.infer<typeof Invite>;
+export type Invite = z.infer<typeof Invite>;
 
+/** A student is created by this call, not by the acceptance that follows it, so
+ *  the admin names them here. `sendEmail: false` still creates everything —
+ *  only delivery is skipped. Both are ignored for staff roles, whose org user
+ *  is mirrored from the auth provider when they join. */
 export const CreateInvite = z.object({
   email: z.email(),
   role: InviteRole,
+  firstName: z.string().trim().min(1).optional(),
+  lastName: z.string().trim().min(1).optional(),
+  sendEmail: z.boolean().default(true),
 });
 export type CreateInvite = z.infer<typeof CreateInvite>;
 
@@ -35,17 +42,18 @@ export const ActivateInviteResult = z.object({
 });
 export type ActivateInviteResult = z.infer<typeof ActivateInviteResult>;
 
-export const ResolveInvite = z.object({ token: z.string().min(1) });
-export type ResolveInvite = z.infer<typeof ResolveInvite>;
+export const InviteTokenParam = z.object({ token: z.string().min(1) });
+export type InviteTokenParam = z.infer<typeof InviteTokenParam>;
 
-/** Everything the invite landing page needs to decide what to render, resolved
- *  before it renders. `accountExists` never reaches the browser — the app's
- *  server component uses it to pick the form, then discards it. */
-export const ResolveInviteResult = z.object({
+/** Everything the invite landing page needs to render: who the invitation is
+ *  for, and the name the admin entered, which prefills sign-up. Whether the
+ *  address already has a login is not reported — the sign-up form discovers
+ *  that from a duplicate-signup rejection and switches to sign-in. */
+export const GetInviteResult = z.object({
   email: z.string(),
-  accountExists: z.boolean(),
+  name: z.string(),
 });
-export type ResolveInviteResult = z.infer<typeof ResolveInviteResult>;
+export type GetInviteResult = z.infer<typeof GetInviteResult>;
 
 /** Redeem: mints the session and accepts the invite in one request. `name` is
  *  required only when no account exists yet (the sign-up branch). The email is

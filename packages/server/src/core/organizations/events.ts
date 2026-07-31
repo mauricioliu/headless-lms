@@ -1,10 +1,9 @@
 // organizations context — domain events, owned by @headless-lms/types.
 export type {
   OrganizationEvent,
-  InvitationCreated,
-  InvitationCanceled,
-  InvitationAccepted,
+  InviteCreated,
+  InviteCanceled,
+  InviteAccepted,
   StudentCreated,
   StudentDeleted,
-  StudentLinked,
 } from '@headless-lms/types';

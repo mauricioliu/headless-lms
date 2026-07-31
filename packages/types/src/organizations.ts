@@ -31,11 +31,15 @@ export interface OrgUser {
   /** The identity USER this row links to the org. */
   readonly userId: string;
   readonly role: Role;
-  /** better-auth member record id — staff only; NULL for students. */
-  readonly externalId: string | null;
+  /** `invited` until the person accepts; `active` from then on. */
+  readonly status: OrgUserStatus;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
+
+/** A student exists in the org from the moment they are invited, so the row
+ *  outlives the invite that produced it and carries its own state. */
+export type OrgUserStatus = "invited" | "active";
 
 /**
  * One org user, as displayed. `id` is `org_users.id`;
@@ -96,11 +100,16 @@ export interface UpdateOrganizationInput {
 export interface AddOrgUserInput {
   // The owning org's better-auth id (used to locate the domain org).
   orgExternalId: string;
-  // The org user's own better-auth member id.
-  externalId: string;
   // The identity USER this org user links to the org.
   userId: string;
   role: string;
+}
+
+/** The mirror of an auth-side member removal. Keyed the same way as the add:
+ *  the auth org plus the identity USER, not a mirrored member id. */
+export interface RemoveOrgUserInput {
+  orgExternalId: string;
+  userId: string;
 }
 
 
@@ -108,6 +117,8 @@ export interface CreateOrgUserInput {
   orgId: string;
   userId: string;
   role: Role;
+  /** Defaults to `active` — staff paths create rows that are already joined. */
+  status?: OrgUserStatus;
 }
 
 /** A request to mint an invite: domain-owned token, emailed to the invitee. */
@@ -117,6 +128,12 @@ export interface CreateInviteInput {
   role: InviteRole;
   // The identity USER issuing the invite.
   inviterUserId: string;
+  /** Student invites provision the person up front, so the admin's entry
+   *  becomes their name. Ignored for staff. */
+  firstName?: string;
+  lastName?: string;
+  /** False creates every record as normal and skips only the email. */
+  sendEmail?: boolean;
 }
 
 /** A token-carrying acceptance: the logged-in account claiming an invite. */
@@ -164,10 +181,21 @@ export interface StudentDeleted extends DomainEvent {
   student: OrgUser;
 }
 
+/** A student provisioned at invite time attached an auth account. This, not
+ *  `student.created`, is the moment they can sign in. */
+export interface StudentLinked extends DomainEvent {
+  type: "student.linked";
+  /** The identity USER now linked. */
+  userId: string;
+  /** The auth account it was linked to. */
+  userExternalId: string;
+}
+
 /** Domain events the organizations context emits. */
 export type OrganizationEvent =
   | InviteCreated
   | InviteCanceled
   | InviteAccepted
   | StudentCreated
-  | StudentDeleted;
+  | StudentDeleted
+  | StudentLinked;

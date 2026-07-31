@@ -11,7 +11,9 @@ function container(opts: {
 }): Container {
   return {
     organizations: {
-      getByExternalId: async () => opts.org ?? null,
+      // The session guard resolves the org before resolveScope runs, so the
+      // lookup here is by domain id.
+      getById: async () => opts.org ?? null,
       getOrgUser: async (orgId: string, userId: string) =>
         opts.orgUsers?.[`${orgId}:${userId}`] ?? null,
     },
@@ -24,14 +26,16 @@ function container(opts: {
   } as unknown as Container;
 }
 
-const req = (authUser: unknown, orgId: string | null = 'ext_org_1') =>
-  ({ authUser, orgId }) as unknown as FastifyRequest;
+// Both ids as the session guard leaves them: `authOrgId` is better-auth's,
+// `orgId` the domain organizations.id it was translated to.
+const req = (authUser: unknown, authOrgId: string | null = 'ext_org_1') =>
+  ({ authUser, authOrgId, orgId: authOrgId ? 'org_1' : undefined }) as unknown as FastifyRequest;
 
 const acme = { id: 'org_1', name: 'Acme', slug: 'acme' };
 const owner = { 'org_1:usr_1': { id: 'orm_1', orgId: 'org_1', role: 'owner' } };
 
 describe('resolveScope', () => {
-  it('resolves the acting participation for the session active org', async () => {
+  it('resolves the acting org user for the session active org', async () => {
     const scope = await resolveScope(
       container({ org: acme, user: { id: 'usr_1' }, orgUsers: owner }),
       req({ id: 'ext_1' }),
@@ -61,7 +65,7 @@ describe('resolveScope', () => {
     expect(scope.role).toBe('instructor');
   });
 
-  it('rejects a student participation — the back office is staff-only', async () => {
+  it('rejects a student org user — the back office is staff-only', async () => {
     await expect(
       resolveScope(
         container({
@@ -74,13 +78,13 @@ describe('resolveScope', () => {
     ).rejects.toBeInstanceOf(NoActiveOrgError);
   });
 
-  it('throws when the session user participates in no org', async () => {
+  it('throws when the session user belongs to no org', async () => {
     await expect(
       resolveScope(container({ org: acme, user: { id: 'usr_1' }, orgUsers: {} }), req({ id: 'ext_1' })),
     ).rejects.toBeInstanceOf(NoActiveOrgError);
   });
 
-  it('throws when the person participates only in a different org', async () => {
+  it('throws when the person belongs only to a different org', async () => {
     await expect(
       resolveScope(
         container({

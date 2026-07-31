@@ -8,98 +8,6 @@
     "schemas": {}
   },
   "paths": {
-    "/api/organizations/invites/activate": {
-      "post": {
-        "operationId": "activateInvite",
-        "summary": "Validate an invite token and stage it for signup",
-        "tags": [
-          "Organizations"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "token": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "required": [
-                  "token"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "accepted",
-                        "auth-required"
-                      ]
-                    },
-                    "email": {
-                      "type": "string"
-                    },
-                    "role": {
-                      "type": "string",
-                      "enum": [
-                        "admin",
-                        "instructor",
-                        "student"
-                      ]
-                    },
-                    "accountExists": {
-                      "type": "boolean"
-                    }
-                  },
-                  "required": [
-                    "status",
-                    "email",
-                    "role",
-                    "accountExists"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/organizations": {
       "post": {
         "operationId": "createOrganization",
@@ -666,6 +574,18 @@
                       "instructor",
                       "student"
                     ]
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sendEmail": {
+                    "default": true,
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -703,10 +623,12 @@
                     },
                     "expiresAt": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -747,10 +669,77 @@
         }
       }
     },
+    "/api/organizations/invites/{token}": {
+      "get": {
+        "operationId": "getInvite",
+        "summary": "Read an invite by its token",
+        "tags": [
+          "Organizations"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "token",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "email",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/organizations/invites/accept": {
       "post": {
         "operationId": "acceptInvite",
-        "summary": "Accept an invitation with the logged-in account",
+        "summary": "Accept an invite with the logged-in account",
         "tags": [
           "Organizations"
         ],
@@ -780,17 +769,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "accepted"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "status"
-                  ],
+                  "properties": {},
                   "additionalProperties": false
                 }
               }
@@ -6730,6 +6709,14 @@
                             "nullable": true,
                             "type": "string"
                           },
+                          "firstName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "lastName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
                           "entitlementCount": {
                             "type": "integer",
                             "minimum": -9007199254740991,
@@ -6740,15 +6727,19 @@
                             "minimum": -9007199254740991,
                             "maximum": 9007199254740991
                           },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "invited",
+                              "active"
+                            ]
+                          },
                           "joinedAt": {
                             "type": "string"
                           },
                           "lastActiveAt": {
                             "nullable": true,
                             "type": "string"
-                          },
-                          "hasAccount": {
-                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -6756,11 +6747,13 @@
                           "name",
                           "email",
                           "image",
+                          "firstName",
+                          "lastName",
                           "entitlementCount",
                           "avgProgress",
+                          "status",
                           "joinedAt",
-                          "lastActiveAt",
-                          "hasAccount"
+                          "lastActiveAt"
                         ],
                         "additionalProperties": false
                       }
@@ -6786,124 +6779,6 @@
                     "total",
                     "page",
                     "pageSize"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "createStudent",
-        "summary": "Create a student from the admin portal",
-        "tags": [
-          "Students"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "firstName": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "lastName": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-                  }
-                },
-                "required": [
-                  "firstName",
-                  "lastName",
-                  "email"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "email": {
-                      "type": "string"
-                    },
-                    "image": {
-                      "nullable": true,
-                      "type": "string"
-                    },
-                    "entitlementCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "avgProgress": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "joinedAt": {
-                      "type": "string"
-                    },
-                    "lastActiveAt": {
-                      "nullable": true,
-                      "type": "string"
-                    },
-                    "hasAccount": {
-                      "type": "boolean"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name",
-                    "email",
-                    "image",
-                    "entitlementCount",
-                    "avgProgress",
-                    "joinedAt",
-                    "lastActiveAt",
-                    "hasAccount"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
                   ],
                   "additionalProperties": false
                 }
@@ -6951,6 +6826,14 @@
                       "nullable": true,
                       "type": "string"
                     },
+                    "firstName": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "nullable": true,
+                      "type": "string"
+                    },
                     "entitlementCount": {
                       "type": "integer",
                       "minimum": -9007199254740991,
@@ -6961,15 +6844,19 @@
                       "minimum": -9007199254740991,
                       "maximum": 9007199254740991
                     },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "invited",
+                        "active"
+                      ]
+                    },
                     "joinedAt": {
                       "type": "string"
                     },
                     "lastActiveAt": {
                       "nullable": true,
                       "type": "string"
-                    },
-                    "hasAccount": {
-                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -6977,11 +6864,13 @@
                     "name",
                     "email",
                     "image",
+                    "firstName",
+                    "lastName",
                     "entitlementCount",
                     "avgProgress",
+                    "status",
                     "joinedAt",
-                    "lastActiveAt",
-                    "hasAccount"
+                    "lastActiveAt"
                   ],
                   "additionalProperties": false
                 }
@@ -6989,6 +6878,170 @@
             }
           },
           "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateStudent",
+        "summary": "Update a student's profile",
+        "tags": [
+          "Students"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                  }
+                },
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "image": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "firstName": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "entitlementCount": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "avgProgress": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "invited",
+                        "active"
+                      ]
+                    },
+                    "joinedAt": {
+                      "type": "string"
+                    },
+                    "lastActiveAt": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "email",
+                    "image",
+                    "firstName",
+                    "lastName",
+                    "entitlementCount",
+                    "avgProgress",
+                    "status",
+                    "joinedAt",
+                    "lastActiveAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -7038,6 +7091,79 @@
             }
           },
           "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/students/{id}/invite/resend": {
+      "post": {
+        "operationId": "resendStudentInvite",
+        "summary": "Re-send a pending student's invite email",
+        "tags": [
+          "Students"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -7177,10 +7303,7 @@
                           "orgUserId": {
                             "type": "string"
                           },
-                          "firstName": {
-                            "type": "string"
-                          },
-                          "lastName": {
+                          "studentName": {
                             "type": "string"
                           },
                           "studentEmail": {
@@ -7232,8 +7355,7 @@
                         "required": [
                           "id",
                           "orgUserId",
-                          "firstName",
-                          "lastName",
+                          "studentName",
                           "studentEmail",
                           "content",
                           "status",
@@ -7320,10 +7442,7 @@
                     "orgUserId": {
                       "type": "string"
                     },
-                    "firstName": {
-                      "type": "string"
-                    },
-                    "lastName": {
+                    "studentName": {
                       "type": "string"
                     },
                     "studentEmail": {
@@ -7375,8 +7494,7 @@
                   "required": [
                     "id",
                     "orgUserId",
-                    "firstName",
-                    "lastName",
+                    "studentName",
                     "studentEmail",
                     "content",
                     "status",
@@ -7445,10 +7563,7 @@
                     "orgUserId": {
                       "type": "string"
                     },
-                    "firstName": {
-                      "type": "string"
-                    },
-                    "lastName": {
+                    "studentName": {
                       "type": "string"
                     },
                     "studentEmail": {
@@ -7500,8 +7615,7 @@
                   "required": [
                     "id",
                     "orgUserId",
-                    "firstName",
-                    "lastName",
+                    "studentName",
                     "studentEmail",
                     "content",
                     "status",

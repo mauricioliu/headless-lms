@@ -17,6 +17,7 @@ import { StorageAdapter } from '../adapters/storage/index.js';
 import { type Auth, createAuth } from '../adapters/auth/index.js';
 import { createOrgAdmin } from '../adapters/auth/org-admin.js';
 import { stampSessionActiveOrg } from '../adapters/auth/session-stamp.js';
+import { DrizzleAuthAccountWriter } from '../adapters/auth/account-writer.js';
 import { type ConnectedAppsRepo, createConnectedAppsRepo, } from '../adapters/auth/connected-apps.js';
 
 import { ContentServiceImpl } from '../core/content/index.js';
@@ -249,9 +250,12 @@ export async function buildContainer(
 
   // Services (inject repos + peer services in dependency order)
   // Identity owns only the person row — no events, so no unit of work.
+  // The account writer goes straight at better-auth's table, so it needs no
+  // `auth` instance — no lazy ref, unlike orgAdmin.
   const identity = new IdentityServiceImpl(
     new DrizzleIdentityRepository(db, identityLogger),
     identityLogger,
+    new DrizzleAuthAccountWriter(db, identityLogger),
   );
   const organizationsUow = new DrizzleUnitOfWork(db, (tx) => ({
     organizations: new DrizzleOrganizationsRepository(tx, organizationsLogger),
@@ -418,7 +422,6 @@ export async function buildContainer(
     logger: logger.child({ name: 'auth' }),
     cookieDomain: config.cookieDomain,
     secureCookies: config.secureCookies,
-    adminAppUrl: config.adminAppUrl,
   });
 
   // Resolve the lazy OrgAdmin now that auth exists — organizations' member-write

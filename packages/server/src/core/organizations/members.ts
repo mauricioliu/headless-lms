@@ -1,5 +1,5 @@
 // organizations context — member-management types (invite / change-role / remove).
-// The operational surface over the org's members and pending invitations. Roles
+// The operational surface over the org's members and pending invites. Roles
 // come from ./roles.ts (the single role model); writes go through Better Auth.
 import type { StaffRole } from './roles.js';
 import type { OrgUserProfile } from '@headless-lms/types';

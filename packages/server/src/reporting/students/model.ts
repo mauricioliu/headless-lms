@@ -1,9 +1,16 @@
 // reporting/students — read model over identity + entitlements + progress. Framework-free.
-import type { OrgUserProfile } from '@headless-lms/types';
+import type { OrgUserProfile, OrgUserStatus } from '@headless-lms/types';
 
 export interface Student extends OrgUserProfile {
+  /** As typed on the invite form. `name` is the composed rendering name and
+   *  drifts once the person edits their own profile; these are what the admin
+   *  edits. Null for anyone who arrived by self-signup. */
+  firstName: string | null;
+  lastName: string | null;
   entitlementCount: number;
   avgProgress: number;
+  /** `invited` until they accept — the admin added them, they have not arrived. */
+  status: OrgUserStatus;
   joinedAt: string;
   lastActiveAt: string | null;
 }

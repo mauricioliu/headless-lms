@@ -1,6 +1,6 @@
 // discussion context — DTOs, owned by @headless-lms/types.
-export type {   CommentsConfig,
-  CommentView,
+export type {
+  CommentsConfig,
   CommentReportSummary,
   CommentListItem,
   ListCommentsQuery,

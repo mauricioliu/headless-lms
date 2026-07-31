@@ -1,4 +1,4 @@
-CREATE TABLE "invitations" (
+CREATE TABLE "invites" (
 	"org_id" text NOT NULL,
 	"id" text NOT NULL,
 	"email" text NOT NULL,
@@ -8,20 +8,19 @@ CREATE TABLE "invitations" (
 	"token_hash" text,
 	"expires_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "invitations_org_id_id_pk" PRIMARY KEY("org_id","id"),
-	CONSTRAINT "invitations_token_hash_unique" UNIQUE("token_hash")
+	CONSTRAINT "invites_org_id_id_pk" PRIMARY KEY("org_id","id"),
+	CONSTRAINT "invites_token_hash_unique" UNIQUE("token_hash")
 );
 --> statement-breakpoint
 CREATE TABLE "org_users" (
 	"org_id" text NOT NULL,
 	"id" text NOT NULL,
-	"user_id" text,
+	"user_id" text NOT NULL,
 	"role" text NOT NULL,
-	"external_id" text,
+	"status" text DEFAULT 'active' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "org_users_org_id_id_pk" PRIMARY KEY("org_id","id"),
-	CONSTRAINT "org_users_external_id_unique" UNIQUE("external_id"),
 	CONSTRAINT "org_users_org_id_user_id_unique" UNIQUE("org_id","user_id")
 );
 --> statement-breakpoint
@@ -154,9 +153,11 @@ CREATE TABLE "progress_records" (
 --> statement-breakpoint
 CREATE TABLE "users" (
 	"id" text PRIMARY KEY NOT NULL,
-	"external_id" text NOT NULL,
+	"external_id" text,
 	"email" text NOT NULL,
 	"display_name" text NOT NULL,
+	"first_name" text,
+	"last_name" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "users_external_id_unique" UNIQUE("external_id"),
@@ -444,8 +445,8 @@ CREATE TABLE "ba_verification" (
 	"updated_at" timestamp with time zone
 );
 --> statement-breakpoint
-ALTER TABLE "invitations" ADD CONSTRAINT "invitations_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "invitations" ADD CONSTRAINT "invitations_invited_by_users_id_fk" FOREIGN KEY ("invited_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invites" ADD CONSTRAINT "invites_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invites" ADD CONSTRAINT "invites_invited_by_users_id_fk" FOREIGN KEY ("invited_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "org_users" ADD CONSTRAINT "org_users_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "org_users" ADD CONSTRAINT "org_users_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -505,7 +506,7 @@ ALTER TABLE "ba_oauth_refresh_token" ADD CONSTRAINT "ba_oauth_refresh_token_clie
 ALTER TABLE "ba_oauth_refresh_token" ADD CONSTRAINT "ba_oauth_refresh_token_session_id_ba_session_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."ba_session"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "ba_oauth_refresh_token" ADD CONSTRAINT "ba_oauth_refresh_token_user_id_ba_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."ba_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "ba_session" ADD CONSTRAINT "ba_session_user_id_ba_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."ba_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE UNIQUE INDEX "invitations_pending_email_uq" ON "invitations" USING btree ("org_id","email") WHERE "invitations"."status" = 'pending';--> statement-breakpoint
+CREATE UNIQUE INDEX "invites_pending_email_uq" ON "invites" USING btree ("org_id","email") WHERE "invites"."status" = 'pending';--> statement-breakpoint
 CREATE INDEX "event_outbox_pending_idx" ON "event_outbox" USING btree ("id") WHERE "event_outbox"."processed_at" is null;--> statement-breakpoint
 CREATE INDEX "automation_runs_org_automation_idx" ON "automation_runs" USING btree ("org_id","automation_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "automation_runs_org_automation_event_idx" ON "automation_runs" USING btree ("org_id","automation_id","event_id");--> statement-breakpoint

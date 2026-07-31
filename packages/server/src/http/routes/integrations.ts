@@ -28,18 +28,12 @@ function toApi(connection: DomainConnection): Connection {
 async function resolveOrgId(
   req: FastifyRequest,
   reply: FastifyReply,
-  container: Container,
 ): Promise<string | null> {
   if (!req.orgId) {
     await reply.code(400).send({ error: 'no_active_org', message: 'No active organization' });
     return null;
   }
-  const org = await container.organizations.getByExternalId(req.orgId);
-  if (!org) {
-    await reply.code(400).send({ error: 'no_active_org', message: 'Organization not provisioned' });
-    return null;
-  }
-  return org.id;
+  return req.orgId;
 }
 
 export async function integrationsRoutes(
@@ -74,7 +68,7 @@ export async function integrationsRoutes(
       response: { 200: ConnectionsList, 400: ErrorBody, 401: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgId = await resolveOrgId(req, reply, container);
+      const orgId = await resolveOrgId(req, reply);
       if (!orgId) {
         return;
       }
@@ -94,7 +88,7 @@ export async function integrationsRoutes(
       response: { 201: Connection, 400: ErrorBody, 401: ErrorBody, 409: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgId = await resolveOrgId(req, reply, container);
+      const orgId = await resolveOrgId(req, reply);
       if (!orgId) {
         return;
       }
@@ -115,7 +109,7 @@ export async function integrationsRoutes(
       response: { 200: Connection, 400: ErrorBody, 401: ErrorBody, 404: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgId = await resolveOrgId(req, reply, container);
+      const orgId = await resolveOrgId(req, reply);
       if (!orgId) {
         return;
       }
@@ -140,7 +134,7 @@ export async function integrationsRoutes(
       response: { 200: Connection, 400: ErrorBody, 401: ErrorBody, 404: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgId = await resolveOrgId(req, reply, container);
+      const orgId = await resolveOrgId(req, reply);
       if (!orgId) {
         return;
       }
@@ -165,7 +159,7 @@ export async function integrationsRoutes(
       response: { 200: Connection, 400: ErrorBody, 401: ErrorBody, 404: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgId = await resolveOrgId(req, reply, container);
+      const orgId = await resolveOrgId(req, reply);
       if (!orgId) {
         return;
       }
@@ -189,7 +183,7 @@ export async function integrationsRoutes(
       response: { 204: z.void(), 400: ErrorBody, 401: ErrorBody, 404: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgId = await resolveOrgId(req, reply, container);
+      const orgId = await resolveOrgId(req, reply);
       if (!orgId) {
         return;
       }

@@ -2,9 +2,8 @@
 // session with an active organization; assets are stored under the org's
 // private prefix and served only through short-lived presigned URLs.
 //
-// The session carries the better-auth (active) organization id; org-scoped
-// tables key on the domain organization id, so each handler resolves one to the
-// other (same pattern the auth adapter uses for user → student).
+// `req.orgId` is already the domain organization id these tables key on — the
+// session guard translates it from better-auth's id once per request.
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -26,18 +25,12 @@ import type { Container } from '../../app/container.js';
 async function resolveOrgId(
   req: FastifyRequest,
   reply: FastifyReply,
-  container: Container,
 ): Promise<string | null> {
   if (!req.orgId) {
     await reply.code(400).send({ error: 'no_active_org', message: 'No active organization' });
     return null;
   }
-  const org = await container.organizations.getByExternalId(req.orgId);
-  if (!org) {
-    await reply.code(400).send({ error: 'no_active_org', message: 'Organization not provisioned' });
-    return null;
-  }
-  return org.id;
+  return req.orgId;
 }
 
 export async function assetsRoutes(app: FastifyInstance, container: Container): Promise<void> {
@@ -59,12 +52,13 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
       response: { 201: UploadTicket, 400: ErrorBody, 401: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgId = await resolveOrgId(req, reply, container);
+      const orgId = await resolveOrgId(req, reply);
       if (!orgId) {
         return;
       }
       const ticket = await assets.requestUpload(orgId, {
-        uploadedBy: req.authUser?.id ?? '',
+        // Domain `users.id`, like every other org-scoped row — not the auth id.
+        uploadedBy: req.userId,
         ...req.body,
       });
       return reply.code(201).send(ticket);
@@ -83,7 +77,7 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
       response: { 200: Asset, 400: ErrorBody, 401: ErrorBody, 404: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgId = await resolveOrgId(req, reply, container);
+      const orgId = await resolveOrgId(req, reply);
       if (!orgId) {
         return;
       }
@@ -107,7 +101,7 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
       response: { 200: AssetsPage, 400: ErrorBody, 401: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgId = await resolveOrgId(req, reply, container);
+      const orgId = await resolveOrgId(req, reply);
       if (!orgId) {
         return;
       }
@@ -127,7 +121,7 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
       response: { 200: Asset, 400: ErrorBody, 401: ErrorBody, 404: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgId = await resolveOrgId(req, reply, container);
+      const orgId = await resolveOrgId(req, reply);
       if (!orgId) {
         return;
       }
@@ -152,7 +146,7 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
       response: { 200: DownloadTicket, 400: ErrorBody, 401: ErrorBody, 404: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgId = await resolveOrgId(req, reply, container);
+      const orgId = await resolveOrgId(req, reply);
       if (!orgId) {
         return;
       }
@@ -176,7 +170,7 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
       response: { 204: z.void(), 400: ErrorBody, 401: ErrorBody, 404: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgId = await resolveOrgId(req, reply, container);
+      const orgId = await resolveOrgId(req, reply);
       if (!orgId) {
         return;
       }

@@ -11,15 +11,18 @@ import { RowActions } from "@/components/data-table/row-actions";
 import { ForbiddenView } from "@/components/full-page-states";
 import { EntitlementStatusBadge } from "@/components/status-badge";
 import { NameAvatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrentUser } from "@/lib/auth/session-context";
 import { isManager } from "@/lib/roles";
 import { formatDate, relativeTime } from "@/lib/format";
 import type { Entitlement, Student } from "@/lib/api/types";
 
-import { GrantAccessSheet, type LiteContent } from "../_components/grant-access-sheet";
+import { GrantAccessDialog, type LiteContent } from "../_components/grant-access-dialog";
 import { deleteStudentAction, resendStudentInviteAction } from "../actions";
+import { StudentDetailsForm } from "./student-details-form";
 
 /**
  * Student detail client view (option 2). The student and their entitlements
@@ -40,18 +43,19 @@ export function StudentDetailView({
   const router = useRouter();
   const [grantOpen, setGrantOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
-  const [resending, startResend] = React.useTransition();
   const [deleting, startDelete] = React.useTransition();
+  const [resending, startResend] = React.useTransition();
 
   if (!isManager(user.role)) return <ForbiddenView />;
 
   const onResendInvite = () =>
     startResend(async () => {
       try {
-        await resendStudentInviteAction(student.email);
-        toast.success("Invitation sent");
+        await resendStudentInviteAction(student.id);
+        toast.success("Invite sent", { description: student.email });
+        router.refresh();
       } catch (err) {
-        toast.error("Couldn't resend invite", { description: (err as Error).message });
+        toast.error("Couldn't send the invite", { description: (err as Error).message });
       }
     });
 
@@ -80,36 +84,47 @@ export function StudentDetailView({
 
       <StudentHeader
         student={student}
-        onResendInvite={onResendInvite}
         resending={resending}
+        onResendInvite={onResendInvite}
         onDelete={() => setConfirmDelete(true)}
       />
 
-      <section className="flex flex-col gap-4">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="text-lg font-semibold tracking-tight text-ink">Entitlements</h2>
-          <div className="flex items-center gap-3">
-            {entitlements.length > 0 ? (
-              <span className="text-sm text-ink-3">{entitlements.length} total</span>
-            ) : null}
-            <Button variant="primary" size="sm" onClick={() => setGrantOpen(true)}>
-              Grant access
-            </Button>
+      <Tabs defaultValue="details" className="flex flex-col gap-6">
+        <TabsList>
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="access">Access</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="details">
+          <StudentDetailsForm student={student} />
+        </TabsContent>
+
+        <TabsContent value="access" className="flex flex-col gap-4">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="text-lg font-semibold tracking-tight text-ink">Entitlements</h2>
+            <div className="flex items-center gap-3">
+              {entitlements.length > 0 ? (
+                <span className="text-sm text-ink-3">{entitlements.length} total</span>
+              ) : null}
+              <Button variant="primary" size="sm" onClick={() => setGrantOpen(true)}>
+                Grant access
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {entitlements.length === 0 ? (
-          <EmptyEntitlements />
-        ) : (
-          <ul className="divide-y divide-line rounded-card border border-line bg-surface px-4 sm:px-5">
-            {entitlements.map((e) => (
-              <EntitlementRow key={e.id} entitlement={e} />
-            ))}
-          </ul>
-        )}
-      </section>
+          {entitlements.length === 0 ? (
+            <EmptyEntitlements />
+          ) : (
+            <ul className="divide-y divide-line rounded-card border border-line bg-surface px-4 sm:px-5">
+              {entitlements.map((e) => (
+                <EntitlementRow key={e.id} entitlement={e} />
+              ))}
+            </ul>
+          )}
+        </TabsContent>
+      </Tabs>
 
-      <GrantAccessSheet
+      <GrantAccessDialog
         open={grantOpen}
         onOpenChange={setGrantOpen}
         studentId={student.id}
@@ -137,15 +152,18 @@ export function StudentDetailView({
 
 function StudentHeader({
   student,
-  onResendInvite,
   resending,
+  onResendInvite,
   onDelete,
 }: {
   student: Student;
-  onResendInvite: () => void;
   resending: boolean;
+  onResendInvite: () => void;
   onDelete: () => void;
 }) {
+  // A student exists from the moment an admin adds them, so the page has to say
+  // whether they have actually arrived.
+  const pending = student.status === "invited";
   const stats: { label: string; value: string }[] = [
     { label: "Entitlements", value: String(student.entitlementCount) },
     { label: "Avg. progress", value: `${Math.round(student.avgProgress)}%` },
@@ -158,34 +176,31 @@ function StudentHeader({
         <div className="flex min-w-0 items-center gap-4">
           <NameAvatar name={student.name} image={student.image} className="size-12 text-sm" />
           <div className="flex min-w-0 flex-col gap-0.5">
-            <h1 className="truncate text-xl font-semibold tracking-tight text-ink text-balance">
-              {student.name}
-            </h1>
+            <div className="flex min-w-0 items-center gap-2.5">
+              <h1 className="truncate text-xl font-semibold tracking-tight text-ink text-balance">
+                {student.name}
+              </h1>
+              {pending && <Badge variant="warning">Invite pending</Badge>}
+            </div>
             <p className="truncate text-sm text-ink-3">{student.email}</p>
-            <p className="text-xs text-ink-4">Joined {formatDate(student.joinedAt)}</p>
-            {!student.hasAccount ? (
-              <p className="flex items-center gap-2 text-xs text-ink-4">
-                <span className="inline-flex items-center rounded-full border border-line px-2 py-0.5 font-medium text-ink-3">
-                  Invite pending
-                </span>
-              </p>
-            ) : null}
+            <p className="text-xs text-ink-4">
+              {pending ? "Added" : "Joined"} {formatDate(student.joinedAt)}
+            </p>
           </div>
         </div>
 
-        <RowActions label="Student actions">
-          {!student.hasAccount ? (
-            <>
-              <DropdownMenuItem disabled={resending} onClick={onResendInvite}>
-                Resend invite
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-            </>
-          ) : null}
-          <DropdownMenuItem variant="danger" onClick={onDelete}>
-            Delete student
-          </DropdownMenuItem>
-        </RowActions>
+        <div className="flex shrink-0 items-center gap-2">
+          {pending && (
+            <Button variant="secondary" size="sm" onClick={onResendInvite} disabled={resending}>
+              Resend invite
+            </Button>
+          )}
+          <RowActions label="Student actions">
+            <DropdownMenuItem variant="danger" onClick={onDelete}>
+              Delete student
+            </DropdownMenuItem>
+          </RowActions>
+        </div>
       </div>
 
       <div className="@container">

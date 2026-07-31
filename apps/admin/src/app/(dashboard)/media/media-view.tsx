@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Pagination } from "@/components/data-table/pagination";
 import { AssetCard } from "./_components/asset-card";
-import { AssetPreviewSheet } from "./_components/asset-preview-sheet";
+import { AssetPreviewDialog } from "./_components/asset-preview-dialog";
 import {
   confirmAssetAction,
   deleteAssetAction,
@@ -260,7 +260,7 @@ function MediaViewInner({
         onDismiss={(id) => setUploads((l) => l.filter((u) => u.id !== id))}
       />
 
-      <AssetPreviewSheet
+      <AssetPreviewDialog
         asset={preview}
         open={previewOpen}
         onOpenChange={setPreviewOpen}

@@ -4,19 +4,14 @@
 import type { Activity, Role } from '@headless-lms/types';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 import type { Comment, CommentAuthor, CommentReaction, CommentReport } from './model.js';
-import type {
-  PostCommentInput,
-  CommentsConfig,
-  CommentView,
-  CommentListItem,
-  ListCommentsQuery,
-  Page,
-} from './types.js';
+import type { CommentsConfig, CommentListItem, ListCommentsQuery, Page } from './types.js';
 
-/** Everything a reader needs to render one activity's comments. */
+/** An activity's comments as this reader may see them, with the config that
+ *  decided it. Domain rows — who wrote them and what they carry is the
+ *  caller's to resolve. */
 export interface ActivityComments {
   config: CommentsConfig;
-  comments: CommentView[];
+  comments: Comment[];
 }
 
 /**
@@ -24,8 +19,7 @@ export interface ActivityComments {
  *
  * The role is resolved at the HTTP edge from the session's active-org
  * org user and handed in — read fresh on every request, never stored on a
- * comment. Core does not look a role up to authorise; it reads roles back only
- * to render an author, which is presentation.
+ * comment. Core does not look a role up to authorise.
  */
 export interface Actor {
   id: string;
@@ -47,9 +41,9 @@ export interface AuthorRecord extends CommentAuthor {
 export interface DiscussionService {
   /** Post a root comment or a reply. Lands pending where review is required and
    *  the poster is not staff. */
-  postComment(orgId: string, input: PostCommentInput): Promise<CommentView>;
+  postComment(orgId: string, input: PostCommentInput): Promise<Comment>;
   /** Author-only. Throws ForbiddenError for anyone else, staff included. */
-  edit(orgId: string, commentId: string, actor: Actor, body: string): Promise<CommentView>;
+  edit(orgId: string, commentId: string, actor: Actor, body: string): Promise<Comment>;
   /** The author, or anyone whose role is staff. */
   remove(orgId: string, commentId: string, actor: Actor): Promise<Comment>;
   /** Staff only. Returns the comment to published. */
@@ -67,13 +61,16 @@ export interface DiscussionService {
    * and a removed comment's body, neither of which a learner may see, so the
    * edge admits only staff.
    *
-   * No rule is applied beyond the filters — this is the moderator's view of
-   * what exists, not a rendering of what someone is allowed to read.
+   * No rule is applied beyond the filters — this is what exists, not what
+   * someone is allowed to read.
    */
-  listComments(orgId: string, query: ListCommentsQuery): Promise<Page<CommentListItem>>;
+  listComments(orgId: string, query: ListCommentsQuery): Promise<Page<Comment>>;
 
-  react(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void>;
-  unreact(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void>;
+  /** Plain read: every reaction on the given comments. Ungrouped. */
+  listReactions(orgId: string, commentIds: string[]): Promise<CommentReaction[]>;
+
+  createReaction(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void>;
+  removeReaction(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void>;
 
   /** Accepted even on locked comments — a locked activity can still hold
    *  something a moderator needs to see. */
@@ -121,15 +118,7 @@ export interface DiscussionRepository {
   /** Every unresolved report against the given comments. */
   listOpenReports(orgId: string, commentIds: string[]): Promise<CommentReport[]>;
 
-  /** One page of the org's comments matching the filters, each with its course
-   *  and activity title resolved. Authors and reports are hydrated by the
-   *  service against the page it gets back, not joined per row here. */
   listComments(orgId: string, query: ListCommentsQuery): Promise<Page<Comment>>;
-
-  /** Profiles and current roles of the given org users, keyed by
-   *  org_users.id. One join covers the author badge, the moderation card and
-   *  the removal placeholder. */
-  authorsOf(orgId: string, orgUserIds: string[]): Promise<Record<string, AuthorRecord>>;
 }
 
 /** Writes that emit events run through this scope so the row and the outbox

@@ -9,7 +9,7 @@ export type {
   OrgAdmin,
   AuthHeaders,
 } from './ports.js';
-export type { Organization, OrgUser, Invitation } from './model.js';
+export type { Organization, OrgUser, Invite } from './model.js';
 export { OrganizationRuleError } from './members.js';
 export type { Member, MemberStatus, MembersQuery, Page } from './members.js';
 export {
@@ -26,13 +26,18 @@ export type { Role, StaffRole, Permission, Capability } from './roles.js';
 export type {
   OrganizationId,
   OrgUserId,
-  InvitationId,
+  InviteId,
   CreateOrganizationInput,
   NewOrganizationInput,
   UpdateOrganizationInput,
   AddOrgUserInput,
+  RemoveOrgUserInput,
   CreateInviteInput,
   AcceptInviteInput,
   InviteRole,
   CreateOrgUserInput,
+  OrgUserStatus,
+  ResendStudentInviteInput,
+  UpdatePersonInput,
+  UpdateStudentInput,
 } from './types.js';

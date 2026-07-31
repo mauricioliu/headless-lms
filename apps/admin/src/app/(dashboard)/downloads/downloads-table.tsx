@@ -14,7 +14,7 @@ import { can } from "@/lib/roles";
 import type { Download, ListParams } from "@/lib/api/types";
 
 import { downloadsColumns } from "./downloads-columns";
-import { DownloadFormSheet } from "./_components/download-form-sheet";
+import { DownloadFormDialog } from "./_components/download-form-dialog";
 import { setDownloadPublishedAction, deleteDownloadAction } from "./actions";
 
 /** Deep-equal on the small, JSON-safe `ListParams` shape (both sides built by
@@ -51,8 +51,8 @@ function DownloadsTableInner({
 
   const [isPending, startTransition] = React.useTransition();
 
-  // Sheet state: undefined download = create, a download = edit.
-  const [sheetOpen, setSheetOpen] = React.useState(false);
+  // Dialog state: undefined download = create, a download = edit.
+  const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Download | undefined>(undefined);
 
   // Delete confirmation target.
@@ -62,12 +62,12 @@ function DownloadsTableInner({
 
   const openCreate = React.useCallback(() => {
     setEditing(undefined);
-    setSheetOpen(true);
+    setDialogOpen(true);
   }, []);
 
   const openEdit = React.useCallback((download: Download) => {
     setEditing(download);
-    setSheetOpen(true);
+    setDialogOpen(true);
   }, []);
 
   const goToDetail = React.useCallback(
@@ -169,7 +169,7 @@ function DownloadsTableInner({
       />
 
       {/* Opened only via gated triggers (create button / Edit menu item). */}
-      <DownloadFormSheet open={sheetOpen} onOpenChange={setSheetOpen} download={editing} />
+      <DownloadFormDialog open={dialogOpen} onOpenChange={setDialogOpen} download={editing} />
 
       <ConfirmDialog
         open={toDelete !== null}

@@ -22,8 +22,7 @@ export type ContentRef = z.infer<typeof ContentRef>;
 export const Entitlement = z.object({
   id: z.string(),
   orgUserId: z.string(),
-  firstName: z.string(),
-  lastName: z.string(),
+  studentName: z.string(),
   studentEmail: z.string(),
   content: ContentRef,
   status: EntitlementStatus,

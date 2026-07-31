@@ -30,7 +30,7 @@ export async function learnDownloadsRoutes(
       response: { 200: LearnDownloads },
     },
     handler: async (req) => {
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }
@@ -50,7 +50,7 @@ export async function learnDownloadsRoutes(
       response: { 200: LearnDownload, 404: ErrorBody },
     },
     handler: async (req) => {
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }
@@ -77,7 +77,7 @@ export async function learnDownloadsRoutes(
       response: { 302: z.void(), 404: ErrorBody },
     },
     handler: async (req, reply) => {
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }

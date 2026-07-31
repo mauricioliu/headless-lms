@@ -51,11 +51,13 @@ const STUDENT: Student = {
   name: 'Bob',
   email: 'bob@example.com',
   image: null,
+  firstName: 'Bob',
+  lastName: 'Smith',
   entitlementCount: 3,
   avgProgress: 65,
+  status: 'active',
   joinedAt: '2026-01-01T00:00:00Z',
   lastActiveAt: '2026-06-01T00:00:00Z',
-  hasAccount: true,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

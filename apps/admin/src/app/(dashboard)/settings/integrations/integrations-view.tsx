@@ -17,9 +17,9 @@ import type { AvailableIntegration, IntegrationConnection } from "@/lib/api/type
 import { formatDate } from "@/lib/format";
 
 import { disconnectIntegrationAction } from "./actions";
-import { ConnectSheet } from "./_components/connect-sheet";
-import { ConfigureSheet } from "./_components/configure-sheet";
-import { ReconnectSheet } from "./_components/reconnect-sheet";
+import { ConnectDialog } from "./_components/connect-dialog";
+import { ConfigureDialog } from "./_components/configure-dialog";
+import { ReconnectDialog } from "./_components/reconnect-dialog";
 
 export interface IntegrationRow {
   integration: AvailableIntegration;
@@ -140,17 +140,17 @@ export function IntegrationsView({ rows }: { rows: IntegrationRow[] }) {
         </div>
       )}
 
-      <ConnectSheet
+      <ConnectDialog
         row={connectTarget}
         open={!!connectTarget}
         onOpenChange={(o) => !o && setConnectTarget(null)}
       />
-      <ConfigureSheet
+      <ConfigureDialog
         row={configureTarget}
         open={!!configureTarget}
         onOpenChange={(o) => !o && setConfigureTarget(null)}
       />
-      <ReconnectSheet
+      <ReconnectDialog
         row={reconnectTarget}
         open={!!reconnectTarget}
         onOpenChange={(o) => !o && setReconnectTarget(null)}

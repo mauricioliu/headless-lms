@@ -1,11 +1,11 @@
 {
-  "id": "7061d658-e8c9-4312-a0eb-99fae7877f5a",
+  "id": "8e937870-eeaf-42d8-94a8-252e0090942b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.invitations": {
-      "name": "invitations",
+    "public.invites": {
+      "name": "invites",
       "schema": "",
       "columns": {
         "org_id": {
@@ -65,8 +65,8 @@
         }
       },
       "indexes": {
-        "invitations_pending_email_uq": {
-          "name": "invitations_pending_email_uq",
+        "invites_pending_email_uq": {
+          "name": "invites_pending_email_uq",
           "columns": [
             {
               "expression": "org_id",
@@ -82,16 +82,16 @@
             }
           ],
           "isUnique": true,
-          "where": "\"invitations\".\"status\" = 'pending'",
+          "where": "\"invites\".\"status\" = 'pending'",
           "concurrently": false,
           "method": "btree",
           "with": {}
         }
       },
       "foreignKeys": {
-        "invitations_org_id_organizations_id_fk": {
-          "name": "invitations_org_id_organizations_id_fk",
-          "tableFrom": "invitations",
+        "invites_org_id_organizations_id_fk": {
+          "name": "invites_org_id_organizations_id_fk",
+          "tableFrom": "invites",
           "tableTo": "organizations",
           "columnsFrom": [
             "org_id"
@@ -102,9 +102,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "invitations_invited_by_users_id_fk": {
-          "name": "invitations_invited_by_users_id_fk",
-          "tableFrom": "invitations",
+        "invites_invited_by_users_id_fk": {
+          "name": "invites_invited_by_users_id_fk",
+          "tableFrom": "invites",
           "tableTo": "users",
           "columnsFrom": [
             "invited_by"
@@ -117,8 +117,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "invitations_org_id_id_pk": {
-          "name": "invitations_org_id_id_pk",
+        "invites_org_id_id_pk": {
+          "name": "invites_org_id_id_pk",
           "columns": [
             "org_id",
             "id"
@@ -126,8 +126,8 @@
         }
       },
       "uniqueConstraints": {
-        "invitations_token_hash_unique": {
-          "name": "invitations_token_hash_unique",
+        "invites_token_hash_unique": {
+          "name": "invites_token_hash_unique",
           "nullsNotDistinct": false,
           "columns": [
             "token_hash"
@@ -158,7 +158,7 @@
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "role": {
           "name": "role",
@@ -166,11 +166,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "external_id": {
-          "name": "external_id",
+        "status": {
+          "name": "status",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'active'"
         },
         "created_at": {
           "name": "created_at",
@@ -226,13 +227,6 @@
         }
       },
       "uniqueConstraints": {
-        "org_users_external_id_unique": {
-          "name": "org_users_external_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "external_id"
-          ]
-        },
         "org_users_org_id_user_id_unique": {
           "name": "org_users_org_id_user_id_unique",
           "nullsNotDistinct": false,
@@ -1400,7 +1394,7 @@
           "name": "external_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "email": {
           "name": "email",
@@ -1413,6 +1407,18 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

@@ -20,14 +20,15 @@ export class NoActiveOrgError extends Error {}
 
 export async function resolveScope(container: Container, req: FastifyRequest): Promise<OrgScope> {
   const authUser = req.authUser;
-  const authOrgId = req.orgId ?? null;
+  const authOrgId = req.authOrgId ?? null;
   if (!authUser) {
     throw new NoActiveOrgError('no authenticated user');
   }
-  if (!authOrgId) {
+  if (!authOrgId || !req.orgId) {
     throw new NoActiveOrgError('no active organization in session');
   }
-  const org = await container.organizations.getByExternalId(authOrgId);
+  // The session guard already translated the auth org id to the domain org.
+  const org = await container.organizations.getById(req.orgId);
   if (!org) {
     throw new NoActiveOrgError('active organization not found');
   }

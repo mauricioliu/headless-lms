@@ -39,9 +39,13 @@ export const orgUsers = pgTable(
       .notNull()
       .references(() => users.id),
     role: text('role', { enum: ['owner', 'admin', 'instructor', 'student'] }).notNull(),
+    // 'invited' from the moment an admin adds a student until they accept.
+    // Staff rows are mirrored from an auth member record that only exists once
+    // they have joined, so they are created 'active'.
+    status: text('status', { enum: ['invited', 'active'] })
+      .notNull()
+      .default('active'),
 
-    // optional auth system's member record id.
-    externalId: text('external_id').unique(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()

@@ -16,7 +16,7 @@ import { isManager } from "@/lib/roles";
 import type { ListParams, Student } from "@/lib/api/types";
 
 import { studentColumns } from "./_components/student-columns";
-import { AddStudentSheet } from "./_components/add-student-sheet";
+import { AddStudentDialog } from "./_components/add-student-dialog";
 import { deleteStudentAction } from "./actions";
 
 // Students table (client): rows come in as props.
@@ -77,7 +77,7 @@ function StudentsTableInner({
           </Button>
         }
       />
-      <AddStudentSheet open={addOpen} onOpenChange={setAddOpen} />
+      <AddStudentDialog open={addOpen} onOpenChange={setAddOpen} />
 
       <DataTable<Student>
         columns={columns}

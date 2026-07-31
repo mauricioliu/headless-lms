@@ -15,7 +15,7 @@ import { isManager } from "@/lib/roles";
 import type { Entitlement, ListParams } from "@/lib/api/types";
 
 import { entitlementColumns } from "./entitlements-columns";
-import { GrantAccessSheet, type LiteContent, type LiteStudent } from "./_components/grant-access-sheet";
+import { GrantAccessDialog, type LiteContent, type LiteStudent } from "./_components/grant-access-dialog";
 import { setEntitlementStatusAction } from "./actions";
 
 /** Deep-equal on the small, JSON-safe `ListParams` shape (both sides built by
@@ -148,7 +148,7 @@ function EntitlementsTableInner({
         }
       />
 
-      <GrantAccessSheet
+      <GrantAccessDialog
         open={grantOpen}
         onOpenChange={setGrantOpen}
         students={students}
@@ -161,7 +161,7 @@ function EntitlementsTableInner({
         title="Revoke access?"
         description={
           revokeTarget
-            ? `${revokeTarget.firstName} ${revokeTarget.lastName} will immediately lose access to ${revokeTarget.content.title}. You can reinstate it later.`
+            ? `${revokeTarget.studentName} will immediately lose access to ${revokeTarget.content.title}. You can reinstate it later.`
             : ""
         }
         confirmLabel="Revoke access"

@@ -1,5 +1,5 @@
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
-import { APIError, createAuthMiddleware } from 'better-auth/api';
+import { APIError } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { magicLink, organization, jwt } from 'better-auth/plugins';
 import { oauthProvider } from '@better-auth/oauth-provider';
@@ -11,20 +11,8 @@ import type { Logger } from '../../core/shared/ports.js';
 import type { IdentityService } from '../../core/identity/index.js';
 import type { OrganizationProvisioner } from '../../core/organizations/index.js';
 import { ID_PREFIXES, prefixId } from '../../core/shared/id.js';
-import { splitName } from '../../core/shared/name.js';
-import { INVITE_COOKIE_NAME } from '../../core/shared/invite-token.js';
 import * as authSchema from './schema.js';
 import { ac, roles } from './access.js';
-
-function readCookie(header: string, name: string): string | null {
-  for (const part of header.split(';')) {
-    const [key, ...rest] = part.trim().split('=');
-    if (key === name) {
-      return decodeURIComponent(rest.join('='));
-    }
-  }
-  return null;
-}
 
 // Prefixes for better-auth's own tables. This is a distinct id space from the
 // mirrored domain rows (auth `user.id` → `users.external_id`, etc.), but we reuse
@@ -63,26 +51,19 @@ export interface CreateAuthOptions {
   /** Consent page URL the MCP OAuth flow redirects to (?consent_code&client_id&scope). */
   mcpConsentPage: string;
   /** Org-selection page: shown between login and consent when the person
-   *  participates in more than one org, so the token binds to a chosen org. */
+   *  belongs to more than one org, so the token binds to a chosen org. */
   mcpSelectOrgPage: string;
   /** Parent domain for cross-subdomain session cookies (e.g. ".example.com"); undefined → host-only cookie. */
   cookieDomain?: string;
   /** Mark session cookies Secure (set behind HTTPS / in production). */
   secureCookies?: boolean;
-  /** Admin app origin — the only origin whose signups are not invite-gated. */
-  adminAppUrl: string;
-}
-
-/** The person row carries one display name; a participation carries first/last. */
-function splitParticipantName(displayName: string): { firstName: string; lastName: string } {
-  const { first, last } = splitName(displayName);
-  return { firstName: first, lastName: last };
 }
 
 export function createAuth(opts: CreateAuthOptions): Auth {
+  const logger = opts.logger;
   // Resolve a better-auth user id to its mirrored domain staff User. The User is
   // provisioned on user creation, so it exists by the time org hooks fire.
-  const requireUser = async (externalId: string) => {
+  const getUserById = async (externalId: string) => {
     const user = await opts.identity.getUserByExternalId(externalId);
     if (!user) {
       throw new Error(`no domain user for auth user ${externalId}`);
@@ -149,17 +130,17 @@ export function createAuth(opts: CreateAuthOptions): Auth {
         roles,
         creatorRole: 'owner',
         organizationHooks: {
-          // Invitations are domain-owned (core organizations + /api/invites).
-          // Block the org plugin's native invitation endpoint so it cannot
-          // silently create invitations the domain never learns about.
+          // Invites are domain-owned (core organizations + /api/invites).
+          // Block the org plugin's native invite endpoint so it cannot
+          // silently create invites the domain never learns about.
           beforeCreateInvitation: async () => {
             throw new APIError('BAD_REQUEST', {
-              message: 'Invitations are managed by the invite system',
+              message: 'Invites are managed by the invite system',
             });
           },
           // New org → mirror it plus the creator's owner orgUser.
           afterCreateOrganization: async ({ organization: org, member, user }) => {
-            const owner = await requireUser(user.id);
+            const owner = await getUserById(user.id);
             await opts.organizations.createOrg({
               externalId: org.id,
               name: org.name,
@@ -168,11 +149,8 @@ export function createAuth(opts: CreateAuthOptions): Auth {
             });
             await opts.organizations.addOrgUser({
               orgExternalId: org.id,
-              externalId: member.id,
               userId: owner.id,
               role: member.role,
-              email: owner.email,
-              ...splitParticipantName(owner.displayName),
             });
           },
           afterAddMember: async ({ member, user, organization: org }) => {
@@ -184,18 +162,19 @@ export function createAuth(opts: CreateAuthOptions): Auth {
             if (!mirrored) {
               return;
             }
-            const user_ = await requireUser(user.id);
+            const user_ = await getUserById(user.id);
             await opts.organizations.addOrgUser({
               orgExternalId: org.id,
-              externalId: member.id,
               userId: user_.id,
               role: member.role,
-              email: user_.email,
-              ...splitParticipantName(user_.displayName),
             });
           },
-          afterRemoveMember: async ({ member }) => {
-            await opts.organizations.removeOrgUser(member.id);
+          afterRemoveMember: async ({ user, organization: org }) => {
+            const removedDomainUser = await getUserById(user.id);
+            await opts.organizations.removeOrgUser({
+              orgExternalId: org.id,
+              userId: removedDomainUser.id,
+            });
           },
         },
       }),
@@ -227,16 +206,16 @@ export function createAuth(opts: CreateAuthOptions): Auth {
         // later joins a second org does not change what an issued token can do.
         postLogin: {
           page: opts.mcpSelectOrgPage,
-          // Only interrupt when the choice is genuinely ambiguous. One
-          // participation is already stamped onto the session at login (see the
+          // Only interrupt when the choice is genuinely ambiguous. A single
+          // org is already stamped onto the session at login (see the
           // session.create hook below), so there is nothing to ask.
           shouldRedirect: async ({ session }) => {
             const person = await opts.identity.getUserByExternalId(session.userId as string);
             if (!person) {
               return false;
             }
-            const participations = await opts.organizations.getOrgUsersForUser(person.id);
-            return participations.length > 1;
+            const orgUsers = await opts.organizations.getOrgUsersForUser(person.id);
+            return orgUsers.length > 1;
           },
           // Fail closed: no active org means no org to bind, and a token that
           // named no organization would be a token with ambient authority.
@@ -258,31 +237,25 @@ export function createAuth(opts: CreateAuthOptions): Auth {
         customAccessTokenClaims: ({ referenceId }) => ({ org: referenceId }),
       }),
     ],
-    hooks: {
-      before: createAuthMiddleware(async (ctx) => {
-        if (ctx.path !== '/sign-up/email') {
-          return;
-        }
-        // Fail closed: signup is invite-only everywhere except the admin app's
-        // create-your-org funnel. Missing/unknown Origin (scripted clients) is gated —
-        // better-auth's CSRF origin check skips cookie-less requests, so it is no backstop.
-        const origin = ctx.headers?.get('origin') ?? '';
-        if (origin === new URL(opts.adminAppUrl).origin) {
-          return;
-        }
-
-        const token = readCookie(ctx.headers?.get('cookie') ?? '', INVITE_COOKIE_NAME);
-        const email = (ctx.body as { email?: string } | undefined)?.email ?? '';
-        if (!token || !(await opts.organizations.inviteAllowsSignup(token, email))) {
-          throw new APIError('FORBIDDEN', { message: 'The student portal is invite-only' });
-        }
-      }),
-    },
     databaseHooks: {
       user: {
         create: {
           after: async (user) => {
-            // Translate better-auth's user into the our User. Use the same ID.
+            // The person may already be here: an admin who adds a student
+            // creates them before they have an account, so signing up links
+            // that record rather than minting a second one. Their name stays
+            // as the admin entered it — a self-chosen signup name is not more
+            // authoritative, and the person can edit it in the portal.
+            const existing = await opts.identity.getUserByEmail(user.email);
+            if (existing) {
+              if (existing.externalId === null) {
+                await opts.identity.linkUser(existing.id, user.id);
+                await opts.organizations.markStudentLinked(existing.id, user.id);
+              }
+              return;
+            }
+            // Nobody knew them yet — mirror better-auth's user as a new
+            // person, reusing its id so the two sides read alike.
             await opts.identity.createUser({
               id: user.id,
               externalId: user.id,
@@ -295,20 +268,17 @@ export function createAuth(opts: CreateAuthOptions): Auth {
       session: {
         create: {
           before: async (session) => {
-            // Stamp the active org at login when the person participates in
-            // exactly one — students always, and staff who belong to a single
-            // org. With several, leave it alone: the organization plugin's
-            // active-org selection owns that case, which is what lets a staff
-            // user switch between orgs.
+            logger.debug('session.create.before', { session });
             const person = await opts.identity.getUserByExternalId(session.userId);
             if (!person) {
               return;
             }
-            const participations = await opts.organizations.getOrgUsersForUser(person.id);
-            if (participations.length !== 1) {
+            const orgUsers = await opts.organizations.getOrgUsersForUser(person.id);
+            if (orgUsers.length !== 1) {
               return;
             }
-            const org = await opts.organizations.getById(participations[0]!.orgId);
+
+            const org = await opts.organizations.getById(orgUsers[0]!.orgId);
             if (!org) {
               return;
             }
@@ -340,7 +310,7 @@ export interface Auth {
   api: {
     getSession: (input: { headers: Headers }) => Promise<{
       user: AuthUser;
-      session: {activeOrganizationId?: string};
+      session: { activeOrganizationId?: string };
     } | null>;
     // Consumed structurally by the oauth provider's discovery helper
     // (oauthProviderAuthServerMetadata).
@@ -363,6 +333,11 @@ export interface Auth {
       headers: Headers;
     }) => Promise<unknown>;
     removeMember: (input: { body: Record<string, unknown>; headers: Headers }) => Promise<unknown>;
+    // Resolves an auth member record from the org + auth user id (see org-admin.ts).
+    listMembers: (input: {
+      query: Record<string, unknown>;
+      headers: Headers;
+    }) => Promise<{ members: { id: string }[] } | null>;
     // Grants a orgUser on an accepted staff invitation (server-side, no session).
     addMember: (input: {
       body: { userId: string; organizationId: string; role: string };

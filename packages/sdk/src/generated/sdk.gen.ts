@@ -12,8 +12,6 @@ import { client } from "./client.gen";
 import type {
   AcceptInviteErrors,
   AcceptInviteResponses,
-  ActivateInviteErrors,
-  ActivateInviteResponses,
   AddDownloadAssetErrors,
   AddDownloadAssetResponses,
   ConfigureConnectionErrors,
@@ -30,8 +28,6 @@ import type {
   CreateInviteResponses,
   CreateModuleResponses,
   CreateOrganizationResponses,
-  CreateStudentErrors,
-  CreateStudentResponses,
   DeleteActivityResponses,
   DeleteAssetErrors,
   DeleteAssetResponses,
@@ -65,6 +61,8 @@ import type {
   GetCourseResponses,
   GetDownloadErrors,
   GetDownloadResponses,
+  GetInviteErrors,
+  GetInviteResponses,
   GetLearnCourseErrors,
   GetLearnCourseProgressErrors,
   GetLearnCourseProgressResponses,
@@ -132,6 +130,8 @@ import type {
   RequestAssetDownloadResponses,
   RequestUploadErrors,
   RequestUploadResponses,
+  ResendStudentInviteErrors,
+  ResendStudentInviteResponses,
   RevokeConnectedAppErrors,
   RevokeConnectedAppResponses,
   SetEntitlementStatusErrors,
@@ -152,6 +152,8 @@ import type {
   UpdateModuleResponses,
   UpdateOrganizationErrors,
   UpdateOrganizationResponses,
+  UpdateStudentErrors,
+  UpdateStudentResponses,
 } from "./types.gen";
 
 export type Options<
@@ -173,34 +175,6 @@ export type Options<
 };
 
 export class Organizations {
-  /**
-   * Validate an invite token and stage it for signup
-   */
-  public static activateInvite<ThrowOnError extends boolean = false>(
-    parameters: {
-      token: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ActivateInviteResponses, ActivateInviteErrors, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "body", key: "token" }] }]);
-    return (options?.client ?? client).post<
-      ActivateInviteResponses,
-      ActivateInviteErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/organizations/invites/activate",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    });
-  }
-
   /**
    * Update the active organization
    */
@@ -385,6 +359,9 @@ export class Organizations {
     parameters: {
       email: string;
       role: "admin" | "instructor" | "student";
+      firstName?: string;
+      lastName?: string;
+      sendEmail?: boolean;
     },
     options?: Options<never, ThrowOnError>,
   ): RequestResult<CreateInviteResponses, CreateInviteErrors, ThrowOnError, "data"> {
@@ -395,6 +372,9 @@ export class Organizations {
           args: [
             { in: "body", key: "email" },
             { in: "body", key: "role" },
+            { in: "body", key: "firstName" },
+            { in: "body", key: "lastName" },
+            { in: "body", key: "sendEmail" },
           ],
         },
       ],
@@ -418,7 +398,30 @@ export class Organizations {
   }
 
   /**
-   * Accept an invitation with the logged-in account
+   * Read an invite by its token
+   */
+  public static getInvite<ThrowOnError extends boolean = false>(
+    parameters: {
+      token: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetInviteResponses, GetInviteErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "token" }] }]);
+    return (options?.client ?? client).get<
+      GetInviteResponses,
+      GetInviteErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/organizations/invites/{token}",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Accept an invite with the logged-in account
    */
   public static acceptInvite<ThrowOnError extends boolean = false>(
     parameters: {
@@ -1996,47 +1999,6 @@ export class Students {
   }
 
   /**
-   * Create a student from the admin portal
-   */
-  public static createStudent<ThrowOnError extends boolean = false>(
-    parameters: {
-      firstName: string;
-      lastName: string;
-      email: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<CreateStudentResponses, CreateStudentErrors, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "body", key: "firstName" },
-            { in: "body", key: "lastName" },
-            { in: "body", key: "email" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).post<
-      CreateStudentResponses,
-      CreateStudentErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/students",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    });
-  }
-
-  /**
    * Delete a student
    */
   public static deleteStudent<ThrowOnError extends boolean = false>(
@@ -2077,6 +2039,72 @@ export class Students {
     >({
       responseStyle: "data",
       url: "/api/students/{id}",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Update a student's profile
+   */
+  public static updateStudent<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<UpdateStudentResponses, UpdateStudentErrors, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "body", key: "firstName" },
+            { in: "body", key: "lastName" },
+            { in: "body", key: "email" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).patch<
+      UpdateStudentResponses,
+      UpdateStudentErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/students/{id}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * Re-send a pending student's invite email
+   */
+  public static resendStudentInvite<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ResendStudentInviteResponses, ResendStudentInviteErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).post<
+      ResendStudentInviteResponses,
+      ResendStudentInviteErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/students/{id}/invite/resend",
       ...options,
       ...params,
     });

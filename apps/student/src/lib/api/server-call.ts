@@ -27,10 +27,16 @@ export const API_URL =
 // error: the session is stale/unlinked, so drop it and send the user back to
 // sign in. `redirect` throws, which leaves the SDK's error path the same way a
 // returned error would.
+//
+// It goes to `/session/reset`, not straight to `/login`. The cookie the API
+// just rejected is still a *valid* better-auth session, so a login page would
+// see a signed-in user and bounce right back to the page that 401'd. Disposing
+// of the dead session is this failure's business, not the login page's, and a
+// render cannot clear cookies — the route handler can.
 configureSdk({
   baseUrl: API_URL,
   onError: (error, response) => {
-    if (response?.status === 401) redirect("/login");
+    if (response?.status === 401) redirect("/session/reset");
     return new ApiError(responseStatus(response), responseMessage(error, response));
   },
 });

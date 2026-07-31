@@ -62,12 +62,14 @@ function RoleCell({
 
 export function memberColumns({
   canManageRoles,
-  currentUserId,
+  currentUserEmail,
   onRemove,
   onChangeRole,
 }: {
   canManageRoles: boolean;
-  currentUserId: string;
+  /** Matched on rather than an id: `Member.id` is the org_users row, while the
+   *  session carries the auth account id — the two never compare equal. */
+  currentUserEmail: string;
   onRemove: (member: Member) => void;
   onChangeRole: (id: string, role: Role) => void;
 }): ColumnDef<Member, unknown>[] {
@@ -131,7 +133,7 @@ export function memberColumns({
       cell: ({ row }) => {
         const m = row.original;
         const isOwner = m.role === "owner";
-        const isSelf = m.id === currentUserId;
+        const isSelf = m.email.toLowerCase() === currentUserEmail.toLowerCase();
         // Owners are fixed and can never be removed; nor can you remove yourself.
         const disabledRemove = isOwner || isSelf;
         return (

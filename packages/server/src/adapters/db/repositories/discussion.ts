@@ -1,18 +1,16 @@
 import { and, asc, desc, eq, ilike, inArray, isNull, sql, type SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { DiscussionRepository } from '../../../core/discussion/ports.js';
 import type {
-  AuthorRecord,
-  DiscussionRepository,
-} from '../../../core/discussion/ports.js';
-import type { Comment, CommentReaction, CommentReport } from '@headless-lms/types';
-import type { ListCommentsQuery, Page } from '@headless-lms/types';
+  Comment,
+  CommentReaction,
+  CommentReport,
+  ListCommentsQuery,
+  Logger,
+  Page,
+} from '@headless-lms/types';
 import { commentReactions, commentReports, comments } from '../schema/index.js';
 import { activities } from '../schema/content.js';
-import { orgUsers } from '../schema/index.js';
-import { users } from '../schema/identity.js';
-import { user } from '../../auth/schema.js';
-import { orgUserProfileColumns } from './org-user-profile.js';
-import type { Logger } from '@headless-lms/types';
 import { noopLogger } from '../../../core/shared/logger.js';
 
 type CommentRow = typeof comments.$inferSelect;
@@ -54,8 +52,6 @@ function toReaction(row: typeof commentReactions.$inferSelect): CommentReaction 
     createdAt: row.createdAt.toISOString(),
   };
 }
-
-
 
 export class DrizzleDiscussionRepository implements DiscussionRepository {
   constructor(
@@ -211,7 +207,6 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
     return rows;
   }
 
-
   /** The list's one join: comments to their activity, which carries both the
    *  course (denormalised, so the module never enters the query) and the title.
    *  The course filter and the row's activity title come out of that same pass,
@@ -299,24 +294,5 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
       page: query.page,
       pageSize: query.pageSize,
     };
-  }
-
-  async authorsOf(orgId: string, orgUserIds: string[]): Promise<Record<string, AuthorRecord>> {
-    if (orgUserIds.length === 0) {
-      return {};
-    }
-
-    const rows = await this.db
-      .select({ ...orgUserProfileColumns, role: orgUsers.role })
-      .from(orgUsers)
-      .leftJoin(users, eq(users.id, orgUsers.userId))
-      .leftJoin(user, eq(user.id, users.externalId))
-      .where(and(eq(orgUsers.orgId, orgId), inArray(orgUsers.id, orgUserIds)));
-    return Object.fromEntries(
-      rows.map((r) => [
-        r.id,
-        { id: r.id, name: r.name, image: r.image ?? null, role: r.role, email: r.email },
-      ]),
-    );
   }
 }

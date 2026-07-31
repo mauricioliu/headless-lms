@@ -30,7 +30,7 @@ export async function learnProgressRoutes(
       response: { 200: ProgressStatus, 404: ErrorBody },
     },
     handler: async (req) => {
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }
@@ -65,7 +65,7 @@ export async function learnProgressRoutes(
       response: { 200: CourseProgress, 404: ErrorBody },
     },
     handler: async (req) => {
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }

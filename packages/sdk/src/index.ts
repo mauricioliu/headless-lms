@@ -75,7 +75,7 @@ export function configureSdk({
   credentials = "include",
   onError,
 }: ConfigureSdkOptions): void {
-  client.setConfig({ baseUrl, credentials, throwOnError: true });
+  client.setConfig({ baseUrl, credentials, throwOnError: false });
   if (onError) {
     client.interceptors.error.use((error, response) => onError(error, response));
   }

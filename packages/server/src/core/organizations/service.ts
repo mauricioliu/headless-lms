@@ -10,7 +10,7 @@ import type {
   OrganizationsUnitOfWork,
   PersonResolver,
 } from './ports.js';
-import type { Invitation, Organization, OrgUser } from './model.js';
+import type { Invite, Organization, OrgUser } from './model.js';
 import { type Role, STUDENT_ROLE } from './roles.js';
 import {
   InviteError,
@@ -22,11 +22,15 @@ import {
 import type {
   AcceptInviteInput,
   AddOrgUserInput,
+  RemoveOrgUserInput,
   CreateInviteInput,
   CreateOrganizationInput,
   NewOrganizationInput,
+  ResendStudentInviteInput,
   UpdateOrganizationInput,
+  UpdateStudentInput,
 } from './types.js';
+import type { DomainEvent, NewDomainEvent, OrganizationEvent } from '@headless-lms/types';
 import type { Logger, OutboxAppender } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 import type { Mailer } from '../shared/mailer.js';
@@ -34,6 +38,15 @@ import { generateInviteToken, hashInviteToken } from '../shared/invite-token.js'
 import { NotFoundError } from '../shared/errors.js';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Outbox-shaped organizations event — `id` and `createdAt` are stamped on
+// append. Distributed member by member: a bare `Omit<OrganizationEvent, ...>`
+// would collapse the union to the keys its members share.
+type NewOrganizationEvent = OrganizationEvent extends infer E
+  ? E extends DomainEvent
+    ? NewDomainEvent<E>
+    : never
+  : never;
 
 export interface InviteUrls {
   studentPortalUrl: string;
@@ -117,103 +130,221 @@ export class OrganizationServiceImpl implements OrganizationService {
   }
 
   async addOrgUser(input: AddOrgUserInput): Promise<OrgUser> {
-    const org = await this.requireOrg(input.orgExternalId);
+    const org = await this.getOrgByExternalId(input.orgExternalId);
     const orgUser = await this.repo.upsertOrgUser(org.id, input);
     this.logger.info('orgUser added', { orgId: org.id });
     return orgUser;
   }
 
-  async removeOrgUser(externalId: string): Promise<void> {
-    await this.repo.deleteOrgUserByExternalId(externalId);
-    this.logger.info('orgUser removed', { externalId });
+  async removeOrgUser(input: RemoveOrgUserInput): Promise<void> {
+    const org = await this.getOrgByExternalId(input.orgExternalId);
+    const orgUser = await this.repo.findOrgUser(org.id, input.userId);
+    if (!orgUser) {
+      return;
+    }
+    return this.deleteOrgUser(org.id, orgUser.id);
   }
 
-
-  async createInvite(input: CreateInviteInput): Promise<Invitation> {
-    const { orgId, email, role, inviterUserId } = input;
+  async createInvite(input: CreateInviteInput): Promise<Invite> {
+    const { orgId, email, role, inviterUserId, firstName, lastName } = input;
+    const sendEmail = input.sendEmail ?? true;
     const { token, tokenHash } = generateInviteToken();
     const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
 
-    const invitation = await this.uow.run(async ({ organizations, outbox }) => {
-      const row = await organizations.upsertPendingInvitation(orgId, {
+    // A student belongs to the org from the moment an admin adds them, not from
+    // the moment they click a link — so the person exists before the invite
+    // does. Staff are excluded: their org_users row is mirrored from the auth
+    // provider's member record, which does not exist until they join.
+    const person =
+      role === STUDENT_ROLE
+        ? await this.people.provisionUser({
+            email,
+            ...(firstName !== undefined && { firstName }),
+            ...(lastName !== undefined && { lastName }),
+          })
+        : null;
+
+    const invite = await this.uow.run(async ({ organizations, outbox }) => {
+      const row = await organizations.upsertPendingInvite(orgId, {
         email,
         role,
         invitedBy: inviterUserId,
         tokenHash,
         expiresAt,
       });
-      await outbox.append([{ type: 'invite.created', orgId, invite: row }]);
+      const events: NewOrganizationEvent[] = [{ type: 'invite.created', orgId, invite: row }];
+      if (person) {
+        // Idempotent: re-inviting an address rotates the token without
+        // producing a second org user or a second student.created.
+        const { orgUser, created } = await organizations.ensureOrgUser({
+          orgId,
+          userId: person.id,
+          role: STUDENT_ROLE,
+          status: 'invited',
+        });
+        if (created) {
+          events.push({ type: 'student.created', orgId, student: orgUser });
+        }
+      }
+      await outbox.append(events);
       return row;
     });
 
-    // TODO make this workflow durable
-    await this.sendInviteEmail(invitation, token);
+    if (sendEmail) {
+      // TODO make this workflow durable
+      await this.sendInviteEmail(invite, token);
+    }
 
-    this.logger.info('invite created', { orgId, invitationId: invitation.id, role });
-    return invitation;
+    this.logger.info('invite created', { orgId, inviteId: invite.id, role, sendEmail });
+    return invite;
   }
 
-  async peekInvite(token: string): Promise<Invitation | null> {
-    const invitation = await this.repo.findInvitationByTokenHash(hashInviteToken(token));
-    if (!invitation || invitation.status !== 'pending') {
+  async updateStudent(input: UpdateStudentInput): Promise<OrgUser> {
+    const { orgId, orgUserId, firstName, lastName, email } = input;
+    const orgUser = await this.repo.findOrgUserById(orgId, orgUserId);
+    if (!orgUser || orgUser.role !== STUDENT_ROLE) {
+      throw new NotFoundError('Student', orgUserId);
+    }
+    const person = await this.people.getUserById(orgUser.userId);
+    if (!person) {
+      throw new NotFoundError('User', orgUser.userId);
+    }
+
+    const previousEmail = person.email;
+    await this.people.updateUser(person.id, {
+      ...(firstName !== undefined && { firstName }),
+      ...(lastName !== undefined && { lastName }),
+      ...(email !== undefined && { email }),
+    });
+
+    // The pending invite carries its own copy of the address and a token minted
+    // against it. Once the address is corrected that invite points at the wrong
+    // person, so it is cancelled rather than left live — the admin re-sends,
+    // which mints a fresh one for the new address. A student who has already
+    // accepted has no pending invite to worry about.
+    const emailChanged = email !== undefined && email.toLowerCase() !== previousEmail.toLowerCase();
+    if (emailChanged && orgUser.status !== 'active') {
+      await this.repo.cancelPendingInvite(orgId, previousEmail);
+    }
+
+    this.logger.info('student updated', { orgId, orgUserId, emailChanged });
+    return orgUser;
+  }
+
+  async resendStudentInvite(input: ResendStudentInviteInput): Promise<void> {
+    const { orgId, orgUserId, inviterUserId } = input;
+    const orgUser = await this.repo.findOrgUserById(orgId, orgUserId);
+    if (!orgUser || orgUser.role !== STUDENT_ROLE) {
+      throw new NotFoundError('Student', orgUserId);
+    }
+    if (orgUser.status === 'active') {
+      throw new OrganizationRuleError('That student has already accepted their invitation');
+    }
+    const person = await this.people.getUserById(orgUser.userId);
+    if (!person) {
+      throw new NotFoundError('User', orgUser.userId);
+    }
+    // Straight back through createInvite: it rotates the token on the pending
+    // row and finds the existing org user, so a resend is an invite that
+    // happens to be the second one.
+    await this.createInvite({
+      orgId,
+      email: person.email,
+      role: STUDENT_ROLE,
+      inviterUserId,
+      sendEmail: true,
+    });
+    this.logger.info('student invite resent', { orgId, orgUserId });
+  }
+
+  async markStudentLinked(userId: string, userExternalId: string): Promise<void> {
+    const orgUsers = await this.repo.findStudentOrgUsers(userId);
+    if (orgUsers.length === 0) {
+      return;
+    }
+    await this.uow.run(async ({ outbox }) => {
+      await outbox.append(
+        orgUsers.map((orgUser) => ({
+          type: 'student.linked' as const,
+          orgId: orgUser.orgId,
+          userId,
+          userExternalId,
+        })),
+      );
+    });
+    this.logger.info('student linked', { userId, externalId: userExternalId });
+  }
+
+  async peekInvite(token: string): Promise<Invite | null> {
+    const invite = await this.repo.findInviteByTokenHash(hashInviteToken(token));
+    if (!invite || invite.status !== 'pending') {
       return null;
     }
-    if (invitation.expiresAt && invitation.expiresAt < new Date()) {
+    if (invite.expiresAt && invite.expiresAt < new Date()) {
       return null;
     }
-    return invitation;
+    return invite;
   }
 
-  async inviteAllowsSignup(token: string, email: string): Promise<boolean> {
-    const invitation = await this.peekInvite(token);
-    return invitation !== null && invitation.email.toLowerCase() === email.toLowerCase();
-  }
-
-  async acceptInvite(
-    input: AcceptInviteInput,
-  ): Promise<OrgUser> {
+  async acceptInvite(input: AcceptInviteInput): Promise<OrgUser> {
     const invite = await this.peekInvite(input.token);
     if (!invite) {
       this.logger.warn('invite accept refused: token invalid or expired');
       throw new InviteError('invalid invite');
     }
-
+    if (invite.email.toLowerCase() !== input.email.toLowerCase()) {
+      this.logger.warn('invite accept refused: email mismatch', {
+        orgId: invite.orgId,
+        inviteId: invite.id,
+      });
+      throw new InviteError('emails must match');
+    }
     const org = await this.repo.findById(invite.orgId);
     if (!org) {
       throw new InviteError('Org not found');
     }
 
-    this.logger.info('invite accepted', {
-      orgId: invite.orgId,
-      userId: input.userId,
+    const orgUser = await this.uow.run(async ({ organizations, outbox }) => {
+      // A student provisioned at invite time already has a row — acceptance
+      // activates it. Staff have none yet, so this inserts one.
+      const { orgUser: row, created } = await organizations.ensureOrgUser({
+        orgId: invite.orgId,
+        userId: input.userId,
+        role: invite.role,
+        status: 'active',
+      });
+      await organizations.setInviteStatus(invite.orgId, invite.id, 'accepted');
+      if (created) {
+        await outbox.append([{ type: 'student.created', orgId: invite.orgId, student: row }]);
+      }
+      return row;
     });
-    const orgUser = await this.repo.createOrgUser({
-      orgId: invite.orgId,
-      userId: input.userId,
-      role: invite.role,
-    });
+    this.logger.info('invite accepted', { orgId: invite.orgId, userId: input.userId });
     return orgUser;
   }
 
-
-  async getOrgUser(orgId: string, id: string): Promise<OrgUser | null> {
-    return this.repo.findOrgUserById(orgId, id);
+  // By identity USER id — `(org_id, user_id)` is unique. Every caller (scope
+  // resolution, the MCP principal, the learn routes) asks "what is this person
+  // in this org", never "what is this org_users row".
+  async getOrgUser(orgId: string, userId: string): Promise<OrgUser | null> {
+    return this.repo.findOrgUser(orgId, userId);
   }
 
-  async deleteParticipant(orgId: string, id: string): Promise<void> {
+  async deleteOrgUser(orgId: string, id: string): Promise<void> {
     await this.uow.run(async ({ organizations, outbox }) => {
       // Snapshot before the delete — the event carries the last known state.
-      const participant = await organizations.findOrgUserById(orgId, id);
-      if (!participant) {
-        throw new NotFoundError('Participant', id);
+      const orgUser = await organizations.findOrgUserById(orgId, id);
+      if (!orgUser) {
+        throw new NotFoundError('OrgUser', id);
       }
       const ok = await organizations.deleteOrgUser(orgId, id);
       if (!ok) {
-        throw new NotFoundError('Participant', id);
+        throw new NotFoundError('OrgUser', id);
       }
-      await outbox.append([{ type: 'student.deleted', orgId, student: participant }]);
+      const events: NewOrganizationEvent[] = [{ type: 'student.deleted', orgId, student: orgUser }];
+      await outbox.append(events);
     });
-    this.logger.info('participant deleted', { orgId, orgUserId: id });
+    this.logger.info('org user deleted', { orgId, orgUserId: id });
   }
 
   async getOrgUsersForUser(userId: string): Promise<OrgUser[]> {
@@ -224,16 +355,20 @@ export class OrganizationServiceImpl implements OrganizationService {
     return this.repo.findById(id);
   }
 
-  private async sendInviteEmail(invitation: Invitation, token: string): Promise<void> {
+  private async sendInviteEmail(invite: Invite, token: string): Promise<void> {
     if (!this.mailer || !this.inviteUrls) {
       throw new Error('invite delivery is not configured (mailer / invite urls missing)');
     }
-    const { email, role } = invitation;
-    const base =
-      role === STUDENT_ROLE
-        ? `${this.inviteUrls.studentPortalUrl}/welcome`
-        : `${this.inviteUrls.adminAppUrl}/invite`;
-    const query = new URLSearchParams({ token, email });
+    const { email, role } = invite;
+    const isStudent = role === STUDENT_ROLE;
+    const base = isStudent
+      ? `${this.inviteUrls.studentPortalUrl}/welcome`
+      : `${this.inviteUrls.adminAppUrl}/invite`;
+    // The portal resolves the token to the invited email, so the link carries
+    // only the token. The admin app still reads it from the query.
+    const query = isStudent
+      ? new URLSearchParams({ token })
+      : new URLSearchParams({ token, email });
     const inviteUrl = `${base}?${query.toString()}`;
     try {
       if (role === STUDENT_ROLE) {
@@ -264,11 +399,9 @@ export class OrganizationServiceImpl implements OrganizationService {
     return this.repo.findBySlug(slug);
   }
 
-
   listMembers(orgId: string, query: MembersQuery): Promise<Page<Member>> {
     return this.membersRepo.list(orgId, query);
   }
-
 
   async updateMemberRole(ctx: MemberWriteContext, id: string, role: Role): Promise<Member | null> {
     const member = await this.membersRepo.findById(ctx.orgId, id);
@@ -282,14 +415,14 @@ export class OrganizationServiceImpl implements OrganizationService {
       });
       throw new OrganizationRuleError('The owner role cannot be reassigned');
     }
-    if (member.kind !== 'member' || !member.memberExternalId) {
+    if (member.kind !== 'member' || !member.userExternalId) {
       this.logger.warn('role change rejected: not an active member', {
         orgId: ctx.orgId,
         memberId: id,
       });
       throw new OrganizationRuleError('Only active members can have their role changed');
     }
-    await this.orgAdmin().updateRole(ctx, member.memberExternalId, role);
+    await this.orgAdmin().updateRole(ctx, member.userExternalId, role);
     const updated = await this.membersRepo.findById(ctx.orgId, id);
     this.logger.info('member role updated', { orgId: ctx.orgId, memberId: id, role });
     return updated ? toMember(updated) : null;
@@ -307,20 +440,20 @@ export class OrganizationServiceImpl implements OrganizationService {
       });
       throw new OrganizationRuleError('The owner cannot be removed');
     }
-    if (member.kind === 'member' && member.memberExternalId) {
-      await this.orgAdmin().removeMember(ctx, member.memberExternalId);
-    } else if (member.kind === 'invitation' && member.invitationId) {
-      const invitationId = member.invitationId;
+    if (member.kind === 'member' && member.userExternalId) {
+      await this.orgAdmin().removeMember(ctx, member.userExternalId);
+    } else if (member.kind === 'invite' && member.inviteId) {
+      const inviteId = member.inviteId;
       await this.uow.run(async ({ organizations, outbox }) => {
-        await organizations.setInvitationStatus(ctx.orgId, invitationId, 'canceled');
-        await outbox.append([{ type: 'invitation.canceled', orgId: ctx.orgId, invitationId }]);
+        await organizations.setInviteStatus(ctx.orgId, inviteId, 'canceled');
+        await outbox.append([{ type: 'invite.canceled', orgId: ctx.orgId, inviteId }]);
       });
     }
     this.logger.info('member removed', { orgId: ctx.orgId, memberId: id });
     return true;
   }
 
-  private async requireOrg(externalId: string): Promise<Organization> {
+  private async getOrgByExternalId(externalId: string): Promise<Organization> {
     const org = await this.repo.findByExternalId(externalId);
     if (!org) {
       throw new Error(`unknown organization for externalId ${externalId}`);

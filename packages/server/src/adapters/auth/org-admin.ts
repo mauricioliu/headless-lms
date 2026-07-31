@@ -17,6 +17,30 @@ import type { Auth } from './index.js';
 
 export function createOrgAdmin(auth: Auth): OrgAdmin {
   const headersOf = (ctx: MemberWriteContext) => fromNodeHeaders(ctx.headers);
+
+  // Better Auth's member endpoints key on its own member id, which the domain
+  // deliberately does not store — `(org, user)` already identifies the record,
+  // so it is looked up here instead of mirrored into org_users.
+  const resolveMemberId = async (
+    ctx: MemberWriteContext,
+    userExternalId: string,
+  ): Promise<string> => {
+    const res = await auth.api.listMembers({
+      query: {
+        organizationId: ctx.authOrgId,
+        filterField: 'userId',
+        filterValue: userExternalId,
+        limit: 1,
+      },
+      headers: headersOf(ctx),
+    });
+    const memberId = res?.members?.[0]?.id;
+    if (!memberId) {
+      throw new OrganizationRuleError('That person is no longer a member of this organization');
+    }
+    return memberId;
+  };
+
   return {
     async createOrganization(
       headers: AuthHeaders,
@@ -66,15 +90,18 @@ export function createOrgAdmin(auth: Auth): OrgAdmin {
         body: { userId: userExternalId, organizationId: orgExternalId, role },
       });
     },
-    async updateRole(ctx: MemberWriteContext, authMemberId: string, role: Role): Promise<void> {
+    async updateRole(ctx: MemberWriteContext, userExternalId: string, role: Role): Promise<void> {
       await auth.api.updateMemberRole({
-        body: { memberId: authMemberId, role, organizationId: ctx.authOrgId },
+        body: { memberId: await resolveMemberId(ctx, userExternalId), role, organizationId: ctx.authOrgId },
         headers: headersOf(ctx),
       });
     },
-    async removeMember(ctx: MemberWriteContext, authMemberId: string): Promise<void> {
+    async removeMember(ctx: MemberWriteContext, userExternalId: string): Promise<void> {
       await auth.api.removeMember({
-        body: { memberIdOrEmail: authMemberId, organizationId: ctx.authOrgId },
+        body: {
+          memberIdOrEmail: await resolveMemberId(ctx, userExternalId),
+          organizationId: ctx.authOrgId,
+        },
         headers: headersOf(ctx),
       });
     },

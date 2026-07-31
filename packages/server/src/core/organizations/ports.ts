@@ -1,5 +1,5 @@
 // organizations context — ports.
-import type { Organization, OrgUser, Invitation } from './model.js';
+import type { Organization, OrgUser, Invite } from './model.js';
 import type { Member, MembersQuery, Page } from './members.js';
 import type { Role } from './roles.js';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
@@ -8,46 +8,51 @@ import type {
   NewOrganizationInput,
   UpdateOrganizationInput,
   AddOrgUserInput,
+  RemoveOrgUserInput,
   CreateInviteInput,
   AcceptInviteInput,
   InviteRole,
   CreateOrgUserInput,
+  ProvisionUserInput,
+  ResendStudentInviteInput,
+  UpdatePersonInput,
+  UpdateStudentInput,
 } from './types.js';
 
 /** Inbound HTTP headers carrying the session, forwarded to the auth provider. */
 export type AuthHeaders = Record<string, string | string[] | undefined>;
 
 // Capability used by the auth adapter to mirror the organization plugin's
-// records (org, members, invitations) into the domain. A narrow slice of the
+// records (org, members, invites) into the domain. A narrow slice of the
 // organization service. The adapter resolves auth user ids to domain USER ids
 // before calling, so core stays decoupled from the auth schema.
 export interface OrganizationProvisioner {
   createOrg(input: CreateOrganizationInput): Promise<Organization>;
   addOrgUser(input: AddOrgUserInput): Promise<OrgUser>;
-  removeOrgUser(externalId: string): Promise<void>;
-  // Signup gate: whether this invite token entitles this email to sign up.
-  inviteAllowsSignup(token: string, email: string): Promise<boolean>;
+  removeOrgUser(input: RemoveOrgUserInput): Promise<void>;
   // Lets the adapter detect whether an org is already mirrored (used to make
   // the creator's orgUser hook resilient to firing before provisioning).
   getByExternalId(externalId: string): Promise<Organization | null>;
-  /** The caller's participation in a specific org. Null when they hold none. */
+  /** The caller's org_users row in a specific org. Null when they hold none. */
   getOrgUser(orgId: string, userId: string): Promise<OrgUser | null>;
-  /** Every org this person participates in, oldest first. */
+  /** Every org this person belongs to, oldest first. */
   getOrgUsersForUser(userId: string): Promise<OrgUser[]>;
   getById(id: string): Promise<Organization | null>;
+  /** A person provisioned before they had an account just got one. Announces
+   *  `student.linked` — the moment they can actually sign in. */
+  markStudentLinked(userId: string, userExternalId: string): Promise<void>;
 }
 
 // Inbound port (use cases the service exposes).
 export interface OrganizationService extends OrganizationProvisioner {
-  // Mints a domain-owned invitation (token + row + event, one transaction) and
-  // emails the invite link. A pending invitation for the same email is re-issued
+  // Mints a domain-owned invite (token + row + event, one transaction) and
+  // emails the invite link. A pending invite for the same email is re-issued
   // with a fresh token. Throws OrganizationRuleError on rule violations.
-  createInvite(input: CreateInviteInput): Promise<Invitation>;
-  // The invitation a valid (pending, unexpired) token points at; null otherwise.
-  peekInvite(token: string): Promise<Invitation | null>;
-  // Token-based acceptance by the logged-in account: student → links the pending
-  // student row (via identity), staff → grants the orgUser. Returns the org
-  // the account should act in, for session stamping; null when refused.
+  createInvite(input: CreateInviteInput): Promise<Invite>;
+  // The invite a valid (pending, unexpired) token points at; null otherwise.
+  peekInvite(token: string): Promise<Invite | null>;
+  // Token-based acceptance by the logged-in account: links the account to the
+  // invite's org under the invited role and returns the new org user.
   acceptInvite(input: AcceptInviteInput): Promise<OrgUser>;
   // Creates a new organization on the caller's behalf and makes it the session's
   // active org. Drives Better Auth (via OrgAdmin); its hooks mirror the org into
@@ -61,8 +66,17 @@ export interface OrganizationService extends OrganizationProvisioner {
     input: UpdateOrganizationInput,
   ): Promise<Organization>;
 
-  getOrgUser(orgId: string, id: string): Promise<OrgUser | null>;
-  deleteParticipant(orgId: string, id: string): Promise<void>;
+  deleteOrgUser(orgId: string, id: string): Promise<void>;
+  // Re-issues the pending student invite for an existing org user, rotating the
+  // token and emailing it. Throws NotFoundError when the org user is unknown,
+  // OrganizationRuleError when they have already joined.
+  resendStudentInvite(input: ResendStudentInviteInput): Promise<void>;
+  // Corrects the person behind a student row — the names and the address an
+  // admin typed on the invite form. Throws NotFoundError when the org user is
+  // unknown, ConflictError when the address is taken. Changing the address of a
+  // student who has not accepted kills their pending invite, since the token
+  // was minted against the old one.
+  updateStudent(input: UpdateStudentInput): Promise<OrgUser>;
   // Resolve an org by its public slug — used by the student portal boundary to
   // map the portal org slug to the tenant org id.
   getBySlug(slug: string): Promise<Organization | null>;
@@ -80,8 +94,8 @@ export interface OrganizationsWriteScope {
 }
 export type OrganizationsUnitOfWork = UnitOfWork<OrganizationsWriteScope>;
 
-/** Repo-facing write shape for a freshly minted invitation. */
-export interface NewInvitationRow {
+/** Repo-facing write shape for a freshly minted invite. */
+export interface NewInviteRow {
   email: string;
   role: InviteRole;
   invitedBy: string;
@@ -100,44 +114,68 @@ export interface OrganizationsRepository {
   findByExternalId(externalId: string): Promise<Organization | null>;
   findBySlug(slug: string): Promise<Organization | null>;
   upsertOrgUser(orgId: string, input: AddOrgUserInput): Promise<OrgUser>;
-  deleteOrgUserByExternalId(externalId: string): Promise<void>;
-  /** Inserts a pending invitation, or re-issues the org's existing pending one
+  /** Inserts a pending invite, or re-issues the org's existing pending one
    *  for this email (fresh token/expiry/role) — atomic upsert. */
-  upsertPendingInvitation(orgId: string, input: NewInvitationRow): Promise<Invitation>;
-  setInvitationStatus(orgId: string, id: string, status: string): Promise<void>;
-  findInvitationByTokenHash(tokenHash: string): Promise<Invitation | null>;
-  /** The person's participation in one org. `(org_id, user_id)` is unique. */
+  upsertPendingInvite(orgId: string, input: NewInviteRow): Promise<Invite>;
+  setInviteStatus(orgId: string, id: string, status: string): Promise<void>;
+  findInviteByTokenHash(tokenHash: string): Promise<Invite | null>;
+  /** The person's row in one org. `(org_id, user_id)` is unique. */
   findOrgUser(orgId: string, userId: string): Promise<OrgUser | null>;
-  /** Every org this person participates in, oldest first. */
+  /** Every org this person belongs to, oldest first. */
   findOrgUsersByUser(userId: string): Promise<OrgUser[]>;
   findOrgUserById(orgId: string, id: string): Promise<OrgUser | null>;
-  /** Roster entry with no person behind it yet (`user_id` NULL). */
+  /** Links a user to the org under a role. Throws ConflictError when they
+   *  already hold a row there. */
   createOrgUser(input: CreateOrgUserInput): Promise<OrgUser>;
-  /** Deletes the participation and its dependent rows; false when none matched. */
+  /** createOrgUser, but idempotent on `(org_id, user_id)`: an existing row is
+   *  promoted to the requested status rather than refused. `created` says
+   *  whether a row appeared, so `student.created` fires exactly once. */
+  ensureOrgUser(input: CreateOrgUserInput): Promise<{ orgUser: OrgUser; created: boolean }>;
+  /** Every org this person is a student in — the scope of `student.linked`. */
+  findStudentOrgUsers(userId: string): Promise<OrgUser[]>;
+  /** Kills the org's pending invite for an address, if any. */
+  cancelPendingInvite(orgId: string, email: string): Promise<Invite | null>;
+  /** Deletes the org user and its dependent rows; false when none matched. */
   deleteOrgUser(orgId: string, id: string): Promise<boolean>;
 }
 
 /** A member row enriched with the ids needed to drive writes. */
 export interface MemberRecord extends Member {
-  kind: 'member' | 'invitation';
-  // better-auth member id (orgUser writes still go through the auth provider).
-  memberExternalId: string | null;
-  // Domain invitation id (invitations are domain-owned).
-  invitationId: string | null;
+  kind: 'member' | 'invite';
+  // The person's better-auth user id. Member writes go through the auth
+  // provider, which locates its own member record from this plus the auth org.
+  userExternalId: string | null;
+  // Domain invite id (invites are domain-owned).
+  inviteId: string | null;
 }
 
-// Outbound: reads the org's members + pending invitations from the domain mirror.
+// Outbound: reads the org's members + pending invites from the domain mirror.
 export interface MembersRepository {
   list(orgId: string, query: MembersQuery): Promise<Page<Member>>;
   findByEmail(orgId: string, email: string): Promise<MemberRecord | null>;
   findById(orgId: string, id: string): Promise<MemberRecord | null>;
 }
 
+/** The person as this context reads them back after a correction. */
+export interface PersonRecord {
+  id: string;
+  email: string;
+  displayName: string;
+  firstName: string | null;
+  lastName: string | null;
+}
+
 /** Narrow identity-context slice the invite lifecycle needs: resolving the
- *  accepting auth account to its domain person. Declared here (not imported
- *  from identity) so the contexts stay coupled only at composition. */
+ *  accepting auth account to its domain person, naming someone who has no
+ *  account at all yet, and correcting the person behind a student row.
+ *  Declared here (not imported from identity) so the contexts stay coupled
+ *  only at composition. */
 export interface PersonResolver {
   getUserByExternalId(externalId: string): Promise<{ id: string; displayName: string } | null>;
+  getUserById(id: string): Promise<PersonRecord | null>;
+  provisionUser(input: ProvisionUserInput): Promise<{ id: string; displayName: string }>;
+  /** Throws ConflictError when the address already belongs to someone else. */
+  updateUser(id: string, input: UpdatePersonInput): Promise<PersonRecord>;
 }
 
 /** Context for a write: domain org (reads/rules) + auth org & session (writes). */
@@ -166,6 +204,8 @@ export interface OrgAdmin {
   // Grants a orgUser server-side when an accepted invitation is honoured
   // (no acting session — the invitee's acceptance IS the authorisation).
   grantMembership(orgExternalId: string, userExternalId: string, role: string): Promise<void>;
-  updateRole(ctx: MemberWriteContext, memberExternalId: string, role: Role): Promise<void>;
-  removeMember(ctx: MemberWriteContext, memberExternalId: string): Promise<void>;
+  // Both take the person's auth USER id; the adapter resolves the auth member
+  // record from it, so nothing about auth's member ids leaks into the domain.
+  updateRole(ctx: MemberWriteContext, userExternalId: string, role: Role): Promise<void>;
+  removeMember(ctx: MemberWriteContext, userExternalId: string): Promise<void>;
 }

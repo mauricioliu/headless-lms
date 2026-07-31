@@ -47,7 +47,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
       response: { 200: Comment, 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req) => {
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       return discussion.remove(req.orgId, req.params.commentId, orgUser!);
     },
   });
@@ -65,7 +65,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
       response: { 200: Comment, 403: ErrorBody, 404: ErrorBody },
     },
     handler: async (req) => {
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
 
       return discussion.publish(req.orgId, req.params.commentId, orgUser!);
     },

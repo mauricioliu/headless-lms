@@ -1,19 +1,19 @@
 // organizations members — Drizzle read repository. Reads the domain mirror of the
-// org's members (orgUsers) and pending invitations, joined to the identity user
-// for display. Writes go through the auth provider (see adapters/auth/org-admin.ts).
+// org's members (orgUsers) and pending invites, joined to the identity user for
+// display. Writes go through the auth provider (see adapters/auth/org-admin.ts).
 import { and, eq, ne } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { MembersRepository, MemberRecord } from '../../../core/organizations/index.js';
 import type { Member, MembersQuery, Page, StaffRole } from '../../../core/organizations/index.js';
 import { isStaffRole, STUDENT_ROLE } from '../../../core/organizations/index.js';
-import { orgUsers, invitations } from '../schema/organizations.js';
+import { orgUsers, invites } from '../schema/organizations.js';
 import { users } from '../schema/identity.js';
 import { user } from '../../auth/schema.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
 import { orgUserProfileColumns } from './org-user-profile.js';
 
-// The member surface is staff-only; a student participation never reaches here
+// The member surface is staff-only; a student org user never reaches here
 // (the queries below exclude it), so an unrecognized role falls back to the
 // least-privileged staff role rather than widening to the full Role union.
 const roleOf = (t: string): StaffRole => (isStaffRole(t) ? t : 'instructor');
@@ -39,35 +39,34 @@ export class DrizzleMembersRepository implements MembersRepository {
 
   private async loadAll(orgId: string): Promise<MemberRecord[]> {
     // Learners share this table now, so the role filter is what keeps them off
-    // the staff list. Name/email come from the participation rather than the
-    // person: a roster entry has no person row until its invite is accepted.
+    // the staff list. Name/email come from the identity user the row links to.
     const memberRows = await this.db
       .select({
         ...orgUserProfileColumns,
         role: orgUsers.role,
         joinedAt: orgUsers.createdAt,
-        memberExternalId: orgUsers.externalId,
+        userExternalId: users.externalId,
       })
       .from(orgUsers)
-      .leftJoin(users, eq(users.id, orgUsers.userId))
+      .innerJoin(users, eq(users.id, orgUsers.userId))
       .leftJoin(user, eq(user.id, users.externalId))
       .where(and(eq(orgUsers.orgId, orgId), ne(orgUsers.role, STUDENT_ROLE)));
 
-    // Student invitations live in the same table but belong to the students
+    // Student invites live in the same table but belong to the students
     // surface, not the members list.
     const inviteRows = await this.db
       .select({
-        id: invitations.id,
-        email: invitations.email,
-        role: invitations.role,
-        invitedAt: invitations.createdAt,
+        id: invites.id,
+        email: invites.email,
+        role: invites.role,
+        invitedAt: invites.createdAt,
       })
-      .from(invitations)
+      .from(invites)
       .where(
         and(
-          eq(invitations.orgId, orgId),
-          eq(invitations.status, 'pending'),
-          ne(invitations.role, STUDENT_ROLE),
+          eq(invites.orgId, orgId),
+          eq(invites.status, 'pending'),
+          ne(invites.role, STUDENT_ROLE),
         ),
       );
 
@@ -81,8 +80,8 @@ export class DrizzleMembersRepository implements MembersRepository {
       joinedAt: m.joinedAt.toISOString(),
       invitedAt: null,
       kind: 'member',
-      memberExternalId: m.memberExternalId,
-      invitationId: null,
+      userExternalId: m.userExternalId,
+      inviteId: null,
     }));
     const invited: MemberRecord[] = inviteRows.map((i) => ({
       id: i.id,
@@ -93,9 +92,9 @@ export class DrizzleMembersRepository implements MembersRepository {
       status: 'invited',
       joinedAt: null,
       invitedAt: i.invitedAt.toISOString(),
-      kind: 'invitation',
-      memberExternalId: null,
-      invitationId: i.id,
+      kind: 'invite',
+      userExternalId: null,
+      inviteId: i.id,
     }));
     return [...members, ...invited];
   }

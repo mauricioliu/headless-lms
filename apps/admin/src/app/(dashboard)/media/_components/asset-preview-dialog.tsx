@@ -8,14 +8,13 @@ import type { Asset } from "@/lib/api/types";
 import { formatBytes, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetBody,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { getAssetUrlAction } from "../actions";
 
@@ -26,8 +25,8 @@ function isVideo(a: Asset) {
   return a.contentType.startsWith("video/");
 }
 
-/** Slide-over preview: large media, metadata, and serve/download/delete actions. */
-export function AssetPreviewSheet({
+/** Modal preview: large media, metadata, and serve/download/delete actions. */
+export function AssetPreviewDialog({
   asset,
   open,
   onOpenChange,
@@ -38,7 +37,7 @@ export function AssetPreviewSheet({
   onOpenChange: (open: boolean) => void;
   onDelete: (asset: Asset) => void;
 }) {
-  // Presigned URLs are short-lived, so fetch on demand when the sheet opens
+  // Presigned URLs are short-lived, so fetch on demand when the dialog opens
   // (via a Server Action) rather than caching long-term.
   const [url, setUrl] = React.useState<string | null>(null);
   const [isLoading, startTransition] = React.useTransition();
@@ -70,16 +69,16 @@ export function AssetPreviewSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-xl">
-        <SheetHeader>
-          <SheetTitle className="truncate">{asset?.filename ?? "Media"}</SheetTitle>
-          <SheetDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85dvh] grid-rows-[auto_minmax(0,1fr)_auto] sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="truncate">{asset?.filename ?? "Media"}</DialogTitle>
+          <DialogDescription>
             {asset ? `${asset.contentType} · ${formatBytes(asset.size)}` : null}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <SheetBody className="flex flex-col gap-5">
+        <div className="-mr-1 flex min-h-0 flex-col gap-5 overflow-y-auto pr-1">
           {asset && (
             <>
               <div className="grid min-h-56 place-items-center overflow-hidden rounded-lg bg-surface-2 p-2 outline-1 -outline-offset-1 outline-ink/5">
@@ -87,9 +86,13 @@ export function AssetPreviewSheet({
                   <Loader2 className="size-5 animate-spin text-ink-4" />
                 ) : isImage(asset) && url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={url} alt="" className="max-h-[60vh] w-auto rounded-md object-contain" />
+                  <img
+                    src={url}
+                    alt=""
+                    className="max-h-[45dvh] w-auto rounded-md object-contain"
+                  />
                 ) : isVideo(asset) && url ? (
-                  <video src={url} controls className="max-h-[60vh] w-full rounded-md" />
+                  <video src={url} controls className="max-h-[45dvh] w-full rounded-md" />
                 ) : (
                   <div className="flex flex-col items-center gap-2 py-10 text-ink-3">
                     <FileText className="size-8" />
@@ -116,9 +119,9 @@ export function AssetPreviewSheet({
               </dl>
             </>
           )}
-        </SheetBody>
+        </div>
 
-        <SheetFooter className="justify-between">
+        <DialogFooter className="sm:justify-between">
           {asset && (
             <Button variant="destructive" size="sm" onClick={() => onDelete(asset)}>
               <Trash2 />
@@ -144,8 +147,8 @@ export function AssetPreviewSheet({
               )}
             </Button>
           </div>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

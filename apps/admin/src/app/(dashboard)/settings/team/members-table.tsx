@@ -15,7 +15,7 @@ import { isManager, can } from "@/lib/roles";
 import type { Member, Role, ListParams } from "@/lib/api/types";
 
 import { memberColumns } from "./members-columns";
-import { InviteSheet } from "./_components/invite-sheet";
+import { InviteDialog } from "./_components/invite-dialog";
 import { updateMemberRoleAction, removeMemberAction } from "./actions";
 
 const ROLE_FACETS = [
@@ -102,11 +102,11 @@ function MembersTableInner({
     () =>
       memberColumns({
         canManageRoles,
-        currentUserId: user.id,
+        currentUserEmail: user.email,
         onRemove: setRemoveTarget,
         onChangeRole,
       }),
-    [canManageRoles, user.id, onChangeRole],
+    [canManageRoles, user.email, onChangeRole],
   );
 
   // Guard deep-links even though nav hides this for non-managers (defense in
@@ -150,7 +150,7 @@ function MembersTableInner({
         }
       />
 
-      {canInvite ? <InviteSheet open={inviteOpen} onOpenChange={setInviteOpen} /> : null}
+      {canInvite ? <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} /> : null}
 
       <ConfirmDialog
         open={!!removeTarget}

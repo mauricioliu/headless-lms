@@ -4,19 +4,15 @@ import type {
   OrganizationsRepository,
   MembersRepository,
   MemberRecord,
-  NewInvitationRow,
+  NewInviteRow,
   OrgAdmin,
   PersonResolver,
 } from './ports.js';
-import type { Organization, OrgUser, Invitation } from './model.js';
+import type { Organization, OrgUser, Invite } from './model.js';
 import { normalizeRole } from './roles.js';
-import { OrganizationRuleError } from './members.js';
-import { ConflictError } from '../shared/errors.js';
-import type {
-  CreateOrganizationInput,
-  AddOrgUserInput,
-  CreateOrgUserInput,
-} from './types.js';
+import { InviteError, OrganizationRuleError } from './members.js';
+import { ConflictError, NotFoundError } from '../shared/errors.js';
+import type { CreateOrganizationInput, AddOrgUserInput, CreateOrgUserInput } from './types.js';
 
 // Member-management stubs for tests that only exercise the provisioning/course
 // surface. Member-op tests below build their own configurable stubs.
@@ -33,11 +29,37 @@ const stubMembersRepo: MembersRepository = {
 };
 // Every accepting account has a person row by the time acceptInvite runs — the
 // auth adapter provisions one on user creation.
-const stubPeople = (displayName = 'Jane Doe'): PersonResolver => ({
-  async getUserByExternalId(externalId: string) {
-    return { id: `usr_for_${externalId}`, displayName };
-  },
-});
+// One address is one person, and a provisioned person is findable by id
+// afterwards — resending an invite reads the address back off the org user.
+const stubPeople = (displayName = 'Jane Doe'): PersonResolver => {
+  const byId = new Map<string, string>();
+  const idFor = (email: string) => `usr_for_${email}`;
+  const record = (id: string, email: string) => ({
+    id,
+    email,
+    displayName,
+    firstName: null,
+    lastName: null,
+  });
+  return {
+    async getUserByExternalId(externalId: string) {
+      return { id: `usr_for_${externalId}`, displayName };
+    },
+    async getUserById(id: string) {
+      const email = byId.get(id);
+      return email ? record(id, email) : null;
+    },
+    async provisionUser(input) {
+      byId.set(idFor(input.email), input.email);
+      return { id: idFor(input.email), displayName };
+    },
+    async updateUser(id, input) {
+      const email = input.email ?? byId.get(id)!;
+      byId.set(id, email);
+      return record(id, email);
+    },
+  };
+};
 const stubOrgAdmin = (): OrgAdmin => ({
   async createOrganization() {
     return { externalId: 'org_stub' };
@@ -52,7 +74,7 @@ const stubOrgAdmin = (): OrgAdmin => ({
 function fakeRepo() {
   const orgs: Organization[] = [];
   const members: OrgUser[] = [];
-  const invitations: Invitation[] = [];
+  const invites: Invite[] = [];
   const tokenHashes = new Map<string, string>();
   let n = 0;
   const repo: OrganizationsRepository = {
@@ -84,7 +106,6 @@ function fakeRepo() {
       if (i >= 0) {
         const updated: OrgUser = {
           ...members[i]!,
-          externalId: input.externalId,
           role: normalizeRole(input.role),
         };
         members[i] = updated;
@@ -95,24 +116,15 @@ function fakeRepo() {
         orgId,
         userId: input.userId,
         role: normalizeRole(input.role),
-        email: input.email,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        externalId: input.externalId,
+        status: 'active',
         createdAt: new Date(0),
         updatedAt: new Date(0),
       };
       members.push(row);
       return row;
     },
-    async deleteOrgUserByExternalId(externalId: string) {
-      const i = members.findIndex((m) => m.externalId === externalId);
-      if (i >= 0) {
-        members.splice(i, 1);
-      }
-    },
-    async upsertPendingInvitation(orgId: string, input: NewInvitationRow) {
-      const existing = invitations.find(
+    async upsertPendingInvite(orgId: string, input: NewInviteRow) {
+      const existing = invites.find(
         (x) => x.orgId === orgId && x.email === input.email && x.status === 'pending',
       );
       if (existing) {
@@ -121,7 +133,7 @@ function fakeRepo() {
         tokenHashes.set(existing.id, input.tokenHash);
         return existing;
       }
-      const row: Invitation = {
+      const row: Invite = {
         id: `i${++n}`,
         orgId,
         email: input.email,
@@ -131,20 +143,20 @@ function fakeRepo() {
         expiresAt: input.expiresAt,
         createdAt: new Date(0),
       };
-      invitations.push(row);
+      invites.push(row);
       tokenHashes.set(row.id, input.tokenHash);
       return row;
     },
-    async setInvitationStatus(orgId: string, id: string, status: string) {
-      const inv = invitations.find((x) => x.orgId === orgId && x.id === id);
+    async setInviteStatus(orgId: string, id: string, status: string) {
+      const inv = invites.find((x) => x.orgId === orgId && x.id === id);
       if (inv) {
         (inv as { status: string }).status = status;
       }
     },
-    async findInvitationByTokenHash(tokenHash: string) {
+    async findInviteByTokenHash(tokenHash: string) {
       for (const [id, hash] of tokenHashes) {
         if (hash === tokenHash) {
-          return invitations.find((x) => x.id === id) ?? null;
+          return invites.find((x) => x.id === id) ?? null;
         }
       }
       return null;
@@ -158,24 +170,63 @@ function fakeRepo() {
     async findOrgUserById(orgId: string, id: string) {
       return members.find((m) => m.orgId === orgId && m.id === id) ?? null;
     },
-    async findOrgUserByEmail(orgId: string, email: string) {
-      return members.find((m) => m.orgId === orgId && m.email === email) ?? null;
-    },
     async createOrgUser(input: CreateOrgUserInput) {
+      // Mirrors the `(org_id, user_id)` unique in Postgres — the repository
+      // translates that violation into ConflictError, so the fake does too.
+      if (members.some((m) => m.orgId === input.orgId && m.userId === input.userId)) {
+        throw new ConflictError('That account already belongs to this organization');
+      }
       const row: OrgUser = {
         id: `m${++n}`,
         orgId: input.orgId,
-        userId: null,
+        userId: input.userId,
         role: input.role,
-        email: input.email,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        externalId: null,
+        status: input.status ?? 'active',
         createdAt: new Date(0),
         updatedAt: new Date(0),
       };
       members.push(row);
       return row;
+    },
+    // Insert-or-promote, mirroring the repository's upsert on (org_id, user_id).
+    async ensureOrgUser(input: CreateOrgUserInput) {
+      const i = members.findIndex((m) => m.orgId === input.orgId && m.userId === input.userId);
+      if (i < 0) {
+        const row: OrgUser = {
+          id: `m${++n}`,
+          orgId: input.orgId,
+          userId: input.userId,
+          role: input.role,
+          status: input.status ?? 'active',
+          createdAt: new Date(0),
+          updatedAt: new Date(0),
+        };
+        members.push(row);
+        return { orgUser: row, created: true };
+      }
+      // Promotion is one-way — a re-invite never demotes someone who joined.
+      const promoted: OrgUser =
+        (input.status ?? 'active') === 'active'
+          ? { ...members[i]!, status: 'active' }
+          : members[i]!;
+      members[i] = promoted;
+      return { orgUser: promoted, created: false };
+    },
+    async findStudentOrgUsers(userId: string) {
+      return members.filter((m) => m.userId === userId && m.role === 'student');
+    },
+    async cancelPendingInvite(orgId: string, email: string) {
+      const inv = invites.find(
+        (x) =>
+          x.orgId === orgId &&
+          x.email.toLowerCase() === email.toLowerCase() &&
+          x.status === 'pending',
+      );
+      if (!inv) {
+        return null;
+      }
+      (inv as { status: string }).status = 'canceled';
+      return inv;
     },
     async deleteOrgUser(orgId: string, id: string) {
       const i = members.findIndex((m) => m.orgId === orgId && m.id === id);
@@ -185,25 +236,8 @@ function fakeRepo() {
       members.splice(i, 1);
       return true;
     },
-    async claimOrgUser(orgId: string, email: string, userId: string) {
-      // Mirrors the `(org_id, user_id)` unique in Postgres: one person holds at
-      // most one participation per org. The repository translates that
-      // violation into ConflictError, so the fake raises the same thing.
-      if (members.some((m) => m.orgId === orgId && m.userId === userId)) {
-        throw new ConflictError('That account already belongs to this organization');
-      }
-      let count = 0;
-      for (let i = 0; i < members.length; i++) {
-        const row = members[i];
-        if (row && row.orgId === orgId && row.email === email && row.userId === null) {
-          members[i] = { ...row, userId };
-          count += 1;
-        }
-      }
-      return count;
-    },
   };
-  return { repo, orgs, members, invitations };
+  return { repo, orgs, members, invites };
 }
 
 const orgInput: CreateOrganizationInput = {
@@ -229,12 +263,8 @@ describe('OrganizationService', () => {
     const org = await svc.createOrg(orgInput);
     const m = await svc.addOrgUser({
       orgExternalId: 'org_1',
-      externalId: 'mem_1',
       userId: 's2',
       role: 'member',
-      email: 'member@example.com',
-      firstName: 'Mem',
-      lastName: 'Ber',
     });
     expect(m.orgId).toBe(org.id);
     expect(members).toHaveLength(1);
@@ -246,12 +276,8 @@ describe('OrganizationService', () => {
     await expect(
       svc.addOrgUser({
         orgExternalId: 'missing',
-        externalId: 'mem_1',
         userId: 's2',
         role: 'member',
-      email: 'member@example.com',
-      firstName: 'Mem',
-      lastName: 'Ber',
       }),
     ).rejects.toThrow(/unknown organization/);
   });
@@ -262,12 +288,8 @@ describe('OrganizationService', () => {
     await svc.createOrg(orgInput);
     const m = await svc.addOrgUser({
       orgExternalId: 'org_1',
-      externalId: 'mem_1',
       userId: 's2',
       role: 'instructor',
-      email: 'member@example.com',
-      firstName: 'Mem',
-      lastName: 'Ber',
     });
     expect(m.role).toBe('instructor');
   });
@@ -278,12 +300,8 @@ describe('OrganizationService', () => {
     await svc.createOrg(orgInput);
     const m = await svc.addOrgUser({
       orgExternalId: 'org_1',
-      externalId: 'mem_x',
       userId: 's3',
       role: 'member',
-      email: 'member@example.com',
-      firstName: 'Mem',
-      lastName: 'Ber',
     });
     expect(m.role).toBe('instructor');
   });
@@ -294,12 +312,8 @@ describe('OrganizationService', () => {
     await svc.createOrg(orgInput);
     const m = await svc.addOrgUser({
       orgExternalId: 'org_1',
-      externalId: 'mem_y',
       userId: 's4',
       role: 'admin,instructor',
-      email: 'member@example.com',
-      firstName: 'Mem',
-      lastName: 'Ber',
     });
     expect(m.role).toBe('admin');
   });
@@ -310,12 +324,8 @@ describe('OrganizationService', () => {
     const org = await svc.createOrg(orgInput);
     await svc.addOrgUser({
       orgExternalId: 'org_1',
-      externalId: 'mem_1',
       userId: 's2',
       role: 'instructor',
-      email: 'member@example.com',
-      firstName: 'Mem',
-      lastName: 'Ber',
     });
     const m = await svc.getOrgUser(org.id, 's2');
     expect(m).not.toBeNull();
@@ -342,28 +352,23 @@ describe('OrganizationService', () => {
     });
     await svc.addOrgUser({
       orgExternalId: 'org_1',
-      externalId: 'mem_a',
       userId: 's2',
       role: 'owner',
-      email: 'both@example.com',
-      firstName: 'Both',
-      lastName: 'Orgs',
     });
     await svc.addOrgUser({
       orgExternalId: 'org_2',
-      externalId: 'mem_b',
       userId: 's2',
       role: 'instructor',
-      email: 'both@example.com',
-      firstName: 'Both',
-      lastName: 'Orgs',
     });
     expect((await svc.getOrgUser(a.id, 's2'))!.role).toBe('owner');
     expect((await svc.getOrgUser(b.id, 's2'))!.role).toBe('instructor');
     expect(await svc.getOrgUsersForUser('s2')).toHaveLength(2);
   });
 
-  const inviteUrls = { studentPortalUrl: 'http://localhost:8002', adminAppUrl: 'http://localhost:8001' };
+  const inviteUrls = {
+    studentPortalUrl: 'http://localhost:8002',
+    adminAppUrl: 'http://localhost:8001',
+  };
 
   function capturingMailer() {
     const sent: Array<{ to: string; id: string; payload: Record<string, unknown> }> = [];
@@ -409,7 +414,7 @@ describe('OrganizationService', () => {
       inviterUserId: 'usr_1',
     });
     expect(invitation.status).toBe('pending');
-    expect(h.invitations).toHaveLength(1);
+    expect(h.invites).toHaveLength(1);
     expect(h.sent[0]?.id).toBe('memberInvite');
     const url = h.sent[0]?.payload.inviteUrl as string;
     expect(url.startsWith('http://localhost:8001/invite?token=')).toBe(true);
@@ -433,44 +438,76 @@ describe('OrganizationService', () => {
       inviterUserId: 'usr_1',
     });
     expect(second.id).toBe(first.id);
-    expect(h.invitations).toHaveLength(1);
+    expect(h.invites).toHaveLength(1);
     expect(h.lastToken()).not.toBe(firstToken);
     expect(await h.svc.peekInvite(firstToken)).toBeNull();
     expect(await h.svc.peekInvite(h.lastToken())).not.toBeNull();
   });
 
-  it('createInvite creates no participation — the token carries everything', async () => {
+  it('createInvite provisions the student and their invited org user', async () => {
     const h = inviteHarness();
     const org = await h.svc.createOrg(orgInput);
     await h.svc.createInvite({
       orgId: org.id,
-      email: 'nobody@example.com',
+      email: 'jane@example.com',
       role: 'student',
+      inviterUserId: 'usr_1',
+      firstName: 'Jane',
+      lastName: 'Doe',
+    });
+    // The student is on the record before they ever click the link.
+    expect(h.members).toHaveLength(1);
+    expect(h.members[0]).toMatchObject({
+      orgId: org.id,
+      userId: 'usr_for_jane@example.com',
+      role: 'student',
+      status: 'invited',
+    });
+  });
+
+  it('createInvite re-issued for the same student leaves one org user', async () => {
+    const h = inviteHarness();
+    const org = await h.svc.createOrg(orgInput);
+    const invite = {
+      orgId: org.id,
+      email: 'jane@example.com',
+      role: 'student' as const,
+      inviterUserId: 'usr_1',
+    };
+    await h.svc.createInvite(invite);
+    await h.svc.createInvite(invite);
+    expect(h.members).toHaveLength(1);
+    expect(h.members[0]?.status).toBe('invited');
+  });
+
+  it('createInvite provisions nothing for a staff invitation', async () => {
+    // Staff org users are mirrored from the auth provider's member record,
+    // which does not exist until they join — creating one here would collide.
+    const h = inviteHarness();
+    const org = await h.svc.createOrg(orgInput);
+    await h.svc.createInvite({
+      orgId: org.id,
+      email: 'sam@example.com',
+      role: 'instructor',
       inviterUserId: 'usr_1',
     });
     expect(h.members).toHaveLength(0);
   });
 
-  it('createInvite refuses an email that already participates', async () => {
+  it('createInvite with sendEmail false records everything and mails nothing', async () => {
     const h = inviteHarness();
     const org = await h.svc.createOrg(orgInput);
-    await h.svc.addOrgUser({
-      orgExternalId: 'org_1',
-      externalId: 'mem_1',
-      userId: 'usr_9',
-      role: 'instructor',
-      email: 'taken@example.com',
-      firstName: 'Taken',
-      lastName: 'Seat',
+    const invite = await h.svc.createInvite({
+      orgId: org.id,
+      email: 'quiet@example.com',
+      role: 'student',
+      inviterUserId: 'usr_1',
+      sendEmail: false,
     });
-    await expect(
-      h.svc.createInvite({
-        orgId: org.id,
-        email: 'taken@example.com',
-        role: 'instructor',
-        inviterUserId: 'usr_1',
-      }),
-    ).rejects.toBeInstanceOf(OrganizationRuleError);
+    expect(invite.status).toBe('pending');
+    expect(h.invites).toHaveLength(1);
+    expect(h.members).toHaveLength(1);
+    expect(h.sent).toHaveLength(0);
   });
 
   it('createInvite mails the student template with the portal welcome link', async () => {
@@ -487,98 +524,7 @@ describe('OrganizationService', () => {
     expect(url.startsWith('http://localhost:8002/welcome?token=')).toBe(true);
   });
 
-  it('acceptInvite grants the orgUser for a pending staff invitation', async () => {
-    const grants: Array<{ org: string; user: string; role: string }> = [];
-    const orgAdmin: OrgAdmin = {
-      ...stubOrgAdmin(),
-      async grantMembership(orgExternalId, userExternalId, role) {
-        grants.push({ org: orgExternalId, user: userExternalId, role });
-      },
-    };
-    const h = inviteHarness({ orgAdmin });
-    const org = await h.svc.createOrg(orgInput);
-    await h.svc.createInvite({ orgId: org.id, email: 'sam@example.com', role: 'instructor', inviterUserId: 'usr_1' });
-    const result = await h.svc.acceptInvite({
-      token: h.lastToken(),
-      email: 'sam@example.com',
-      userExternalId: 'usr_ext_1',
-    });
-    expect(grants).toEqual([{ org: 'org_1', user: 'usr_ext_1', role: 'instructor' }]);
-    expect(result?.orgExternalId).toBe('org_1');
-    expect(h.invitations[0]?.status).toBe('accepted');
-  });
-
-  it('acceptInvite refuses a canceled invitation — no grant', async () => {
-    const grants: string[] = [];
-    const orgAdmin: OrgAdmin = {
-      ...stubOrgAdmin(),
-      async grantMembership(orgExternalId) {
-        grants.push(orgExternalId);
-      },
-    };
-    const h = inviteHarness({ orgAdmin });
-    const org = await h.svc.createOrg(orgInput);
-    const invitation = await h.svc.createInvite({
-      orgId: org.id,
-      email: 'sam@example.com',
-      role: 'instructor',
-      inviterUserId: 'usr_1',
-    });
-    await h.repo.setInvitationStatus(org.id, invitation.id, 'canceled');
-    const result = await h.svc.acceptInvite({
-      token: h.lastToken(),
-      email: 'sam@example.com',
-      userExternalId: 'usr_ext_1',
-    });
-    expect(grants).toEqual([]);
-    expect(result).toBeNull();
-    expect(h.invitations[0]?.status).toBe('canceled');
-  });
-
-  it('acceptInvite refuses an email mismatch', async () => {
-    const h = inviteHarness();
-    const org = await h.svc.createOrg(orgInput);
-    await h.svc.createInvite({ orgId: org.id, email: 'sam@example.com', role: 'instructor', inviterUserId: 'usr_1' });
-    const result = await h.svc.acceptInvite({
-      token: h.lastToken(),
-      email: 'other@example.com',
-      userExternalId: 'usr_ext_1',
-    });
-    expect(result).toBeNull();
-    expect(h.invitations[0]?.status).toBe('pending');
-  });
-
-  it('acceptInvite claims the admin-built roster entry, keeping its id', async () => {
-    const h = inviteHarness();
-    const org = await h.svc.createOrg(orgInput);
-    const roster = await h.svc.createParticipant({
-      orgId: org.id,
-      email: 'jane@example.com',
-      firstName: 'Jane',
-      lastName: 'Doe',
-      role: 'student',
-    });
-    expect(roster.userId).toBeNull();
-    await h.svc.createInvite({
-      orgId: org.id,
-      email: 'jane@example.com',
-      role: 'student',
-      inviterUserId: 'usr_1',
-    });
-    const result = await h.svc.acceptInvite({
-      token: h.lastToken(),
-      email: 'jane@example.com',
-      userExternalId: 'usr_ext_9',
-    });
-    expect(result?.orgExternalId).toBe(org.externalId);
-    expect(h.invitations[0]?.status).toBe('accepted');
-    // Same row, now claimed — entitlements granted against it survive.
-    expect(h.members).toHaveLength(1);
-    expect(h.members[0]!.id).toBe(roster.id);
-    expect(h.members[0]!.userId).toBe('usr_for_usr_ext_9');
-  });
-
-  it('acceptInvite creates the participation when no roster entry exists', async () => {
+  it('acceptInvite creates the org user for a staff invitation', async () => {
     const h = inviteHarness({ people: stubPeople('Ada Lovelace') });
     const org = await h.svc.createOrg(orgInput);
     await h.svc.createInvite({
@@ -590,144 +536,212 @@ describe('OrganizationService', () => {
     const result = await h.svc.acceptInvite({
       token: h.lastToken(),
       email: 'ada@example.com',
-      userExternalId: 'usr_ext_3',
+      userId: 'usr_ada',
     });
-    expect(result?.role).toBe('instructor');
+    expect(result.role).toBe('instructor');
+    expect(result.status).toBe('active');
     expect(h.members).toHaveLength(1);
-    expect(h.members[0]).toMatchObject({
-      email: 'ada@example.com',
-      firstName: 'Ada',
-      lastName: 'Lovelace',
-      role: 'instructor',
-      userId: 'usr_for_usr_ext_3',
-    });
+    expect(h.invites[0]?.status).toBe('accepted');
   });
 
-  it('acceptInvite refuses when the person already participates in that org', async () => {
-    // Bob is staff under his work address; someone invites his personal one.
-    // One person holds at most one participation per org, so this must be a
-    // clean refusal rather than a unique-constraint blow-up.
+  it('acceptInvite activates the student provisioned at invite time, same row', async () => {
     const h = inviteHarness();
     const org = await h.svc.createOrg(orgInput);
-    await h.svc.addOrgUser({
-      orgExternalId: 'org_1',
-      externalId: 'mem_bob',
-      userId: 'usr_for_auth_bob',
-      role: 'instructor',
-      email: 'bob@work.com',
-      firstName: 'Bob',
-      lastName: 'Stone',
-    });
     await h.svc.createInvite({
       orgId: org.id,
-      email: 'bob@personal.com',
+      email: 'jane@example.com',
       role: 'student',
       inviterUserId: 'usr_1',
     });
+    const provisioned = h.members[0]!;
     const result = await h.svc.acceptInvite({
       token: h.lastToken(),
-      email: 'bob@personal.com',
-      userExternalId: 'auth_bob',
+      email: 'jane@example.com',
+      userId: 'usr_for_jane@example.com',
     });
-    expect(result).toBeNull();
-    expect(h.invitations[0]?.status).toBe('pending');
-    // No second participation, and the original is untouched.
+    // Same row — entitlements granted against it while pending survive.
     expect(h.members).toHaveLength(1);
-    expect(h.members[0]).toMatchObject({ email: 'bob@work.com', role: 'instructor' });
+    expect(result.id).toBe(provisioned.id);
+    expect(result.status).toBe('active');
+    expect(h.invites[0]?.status).toBe('accepted');
   });
 
-  it('acceptInvite refuses rather than throwing when the claim races another accept', async () => {
-    // The pre-check passed, but a concurrent accept took the participation
-    // between the check and the write. The unique constraint is the real
-    // guard, so a violation here must still surface as a refusal, not a 500.
-    const fake = fakeRepo();
-    const racing: OrganizationsRepository = {
-      ...fake.repo,
-      async findOrgUser() {
-        return null; // check sees nothing…
-      },
-      async claimOrgUser() {
-        // …but the write loses the race.
-        throw new ConflictError('That account already belongs to this organization');
-      },
-    };
-    const { mailer, lastToken } = capturingMailer();
-    const svc = new OrganizationServiceImpl(
-      racing,
-      stubMembersRepo,
-      () => stubOrgAdmin(),
-      stubPeople(),
-      undefined,
-      undefined,
-      mailer,
-      inviteUrls,
-    );
-    const org = await svc.createOrg(orgInput);
-    await svc.createInvite({
+  it('acceptInvite refuses a canceled invitation', async () => {
+    const h = inviteHarness();
+    const org = await h.svc.createOrg(orgInput);
+    const invite = await h.svc.createInvite({
       orgId: org.id,
-      email: 'racer@example.com',
-      role: 'student',
+      email: 'sam@example.com',
+      role: 'instructor',
       inviterUserId: 'usr_1',
     });
-    const result = await svc.acceptInvite({
-      token: lastToken(),
-      email: 'racer@example.com',
-      userExternalId: 'auth_racer',
-    });
-    expect(result).toBeNull();
-    expect(fake.invitations[0]?.status).toBe('pending');
+    await h.repo.setInviteStatus(org.id, invite.id, 'canceled');
+    await expect(
+      h.svc.acceptInvite({ token: h.lastToken(), email: 'sam@example.com', userId: 'usr_sam' }),
+    ).rejects.toBeInstanceOf(InviteError);
+    expect(h.invites[0]?.status).toBe('canceled');
   });
 
-  it('acceptInvite refuses when the account has no domain person', async () => {
-    const people: PersonResolver = {
-      async getUserByExternalId() {
-        return null;
-      },
-    };
-    const h = inviteHarness({ people });
+  it('acceptInvite refuses an email mismatch', async () => {
+    const h = inviteHarness();
     const org = await h.svc.createOrg(orgInput);
     await h.svc.createInvite({
       orgId: org.id,
-      email: 'jane@example.com',
-      role: 'student',
+      email: 'sam@example.com',
+      role: 'instructor',
       inviterUserId: 'usr_1',
     });
-    const result = await h.svc.acceptInvite({
-      token: h.lastToken(),
-      email: 'jane@example.com',
-      userExternalId: 'usr_ext_9',
-    });
-    expect(result).toBeNull();
-    expect(h.invitations[0]?.status).toBe('pending');
+    await expect(
+      h.svc.acceptInvite({ token: h.lastToken(), email: 'other@example.com', userId: 'usr_x' }),
+    ).rejects.toBeInstanceOf(InviteError);
+    expect(h.invites[0]?.status).toBe('pending');
   });
 
   it('acceptInvite of an unknown token grants nothing', async () => {
     const h = inviteHarness();
     await h.svc.createOrg(orgInput);
-    const result = await h.svc.acceptInvite({
-      token: 'nope',
-      email: 'x@example.com',
-      userExternalId: 'usr_x',
+    await expect(
+      h.svc.acceptInvite({ token: 'nope', email: 'x@example.com', userId: 'usr_x' }),
+    ).rejects.toBeInstanceOf(InviteError);
+    expect(h.members).toHaveLength(0);
+  });
+
+  it('resendStudentInvite rotates the token and re-mails a pending student', async () => {
+    const h = inviteHarness();
+    const org = await h.svc.createOrg(orgInput);
+    await h.svc.createInvite({
+      orgId: org.id,
+      email: 'jane@example.com',
+      role: 'student',
+      inviterUserId: 'usr_1',
+      sendEmail: false,
     });
-    expect(result).toBeNull();
+    const student = h.members[0]!;
+    await h.svc.resendStudentInvite({
+      orgId: org.id,
+      orgUserId: student.id,
+      inviterUserId: 'usr_1',
+    });
+    expect(h.sent).toHaveLength(1);
+    expect(h.sent[0]?.id).toBe('studentInvite');
+    expect(await h.svc.peekInvite(h.lastToken())).not.toBeNull();
+    // Still one invitation and one student.
+    expect(h.invites).toHaveLength(1);
+    expect(h.members).toHaveLength(1);
+  });
+
+  it('updateStudent corrects the person behind the row', async () => {
+    const h = inviteHarness();
+    const org = await h.svc.createOrg(orgInput);
+    await h.svc.createInvite({
+      orgId: org.id,
+      email: 'jane@example.com',
+      role: 'student',
+      inviterUserId: 'usr_1',
+      sendEmail: false,
+    });
+    const student = h.members[0]!;
+
+    await h.svc.updateStudent({
+      orgId: org.id,
+      orgUserId: student.id,
+      firstName: 'Jane',
+      lastName: 'Roe',
+    });
+
+    // Names alone leave the invitation untouched — the token still reaches them.
+    expect(h.invites[0]?.status).toBe('pending');
+  });
+
+  it('updateStudent retires the pending invite when the address moves', async () => {
+    // The emailed token was minted against the old address; leaving it live
+    // would let whoever holds that inbox join as this student.
+    const h = inviteHarness();
+    const org = await h.svc.createOrg(orgInput);
+    await h.svc.createInvite({
+      orgId: org.id,
+      email: 'typo@example.com',
+      role: 'student',
+      inviterUserId: 'usr_1',
+      sendEmail: false,
+    });
+    const student = h.members[0]!;
+
+    await h.svc.updateStudent({
+      orgId: org.id,
+      orgUserId: student.id,
+      email: 'jane@example.com',
+    });
+
+    expect(h.invites[0]).toMatchObject({ email: 'typo@example.com', status: 'canceled' });
+  });
+
+  it('updateStudent refuses an org user who is not a student here', async () => {
+    // The students screen must not become a back door onto staff records.
+    const h = inviteHarness();
+    const org = await h.svc.createOrg(orgInput);
+    const staff = await h.repo.createOrgUser({
+      orgId: org.id,
+      userId: 'usr_sam',
+      role: 'instructor',
+    });
+    await expect(
+      h.svc.updateStudent({ orgId: org.id, orgUserId: staff.id, firstName: 'X' }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(
+      h.svc.updateStudent({ orgId: org.id, orgUserId: 'nobody', firstName: 'X' }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('resendStudentInvite refuses a student who has already accepted', async () => {
+    const h = inviteHarness();
+    const org = await h.svc.createOrg(orgInput);
+    await h.svc.createInvite({
+      orgId: org.id,
+      email: 'jane@example.com',
+      role: 'student',
+      inviterUserId: 'usr_1',
+    });
+    const student = h.members[0]!;
+    await h.svc.acceptInvite({
+      token: h.lastToken(),
+      email: 'jane@example.com',
+      userId: 'usr_for_jane@example.com',
+    });
+    await expect(
+      h.svc.resendStudentInvite({ orgId: org.id, orgUserId: student.id, inviterUserId: 'usr_1' }),
+    ).rejects.toBeInstanceOf(OrganizationRuleError);
+  });
+
+  it('deleting a pending student cancels the invitation with them', async () => {
+    // The emailed token must not outlive the record it was minted for.
+    const h = inviteHarness();
+    const org = await h.svc.createOrg(orgInput);
+    await h.svc.createInvite({
+      orgId: org.id,
+      email: 'jane@example.com',
+      role: 'student',
+      inviterUserId: 'usr_1',
+    });
+    const token = h.lastToken();
+    await h.svc.deleteOrgUser(org.id, h.members[0]!.id);
+    expect(h.members).toHaveLength(0);
+    expect(h.invites[0]?.status).toBe('canceled');
+    expect(await h.svc.peekInvite(token)).toBeNull();
   });
 
   it('peekInvite treats an expired invitation as invalid', async () => {
     const h = inviteHarness();
     const org = await h.svc.createOrg(orgInput);
-    await h.svc.createInvite({ orgId: org.id, email: 'sam@example.com', role: 'instructor', inviterUserId: 'usr_1' });
+    await h.svc.createInvite({
+      orgId: org.id,
+      email: 'sam@example.com',
+      role: 'instructor',
+      inviterUserId: 'usr_1',
+    });
     const token = h.lastToken();
-    (h.invitations[0] as { expiresAt: Date | null }).expiresAt = new Date(0);
+    (h.invites[0] as { expiresAt: Date | null }).expiresAt = new Date(0);
     expect(await h.svc.peekInvite(token)).toBeNull();
-    expect(await h.svc.inviteAllowsSignup(token, 'sam@example.com')).toBe(false);
-  });
-
-  it('inviteAllowsSignup matches the invited email case-insensitively', async () => {
-    const h = inviteHarness();
-    const org = await h.svc.createOrg(orgInput);
-    await h.svc.createInvite({ orgId: org.id, email: 'Jane@Example.com', role: 'student', inviterUserId: 'usr_1' });
-    expect(await h.svc.inviteAllowsSignup(h.lastToken(), 'jane@example.com')).toBe(true);
-    expect(await h.svc.inviteAllowsSignup(h.lastToken(), 'other@example.com')).toBe(false);
   });
 
   it('creates an org via OrgAdmin, sets it active, then returns the mirrored org', async () => {
@@ -814,8 +828,8 @@ describe('OrganizationService — member management', () => {
       joinedAt: '2026-01-01T00:00:00Z',
       invitedAt: null,
       kind: 'member',
-      memberExternalId: `auth-${over.id}`,
-      invitationId: null,
+      userExternalId: `auth-${over.id}`,
+      inviteId: null,
       ...over,
     };
   }
@@ -852,9 +866,9 @@ describe('OrganizationService — member management', () => {
         calls.push('removeMember');
       },
     };
-    const { repo, invitations } = fakeRepo();
+    const { repo, invites } = fakeRepo();
     const svc = new OrganizationServiceImpl(repo, membersRepo, () => orgAdmin, stubPeople());
-    return { svc, calls, repo, invitations };
+    return { svc, calls, repo, invites };
   }
 
   it('refuses to reassign the owner role', async () => {
@@ -877,8 +891,8 @@ describe('OrganizationService — member management', () => {
 
   it('removeMember cancels a pending invitation without touching the auth provider', async () => {
     const records: MemberRecord[] = [];
-    const { svc, calls, repo, invitations } = harness(records);
-    const invitation = await repo.upsertPendingInvitation('o1', {
+    const { svc, calls, repo, invites } = harness(records);
+    const invite = await repo.upsertPendingInvite('o1', {
       email: 'x@example.com',
       role: 'instructor',
       invitedBy: 'user_1',
@@ -887,17 +901,17 @@ describe('OrganizationService — member management', () => {
     });
     records.push(
       memberRecord({
-        id: invitation.id,
+        id: invite.id,
         role: 'instructor',
-        kind: 'invitation',
+        kind: 'invite',
         status: 'invited',
-        memberExternalId: null,
-        invitationId: invitation.id,
+        userExternalId: null,
+        inviteId: invite.id,
       }),
     );
-    const removed = await svc.removeMember(ctx, invitation.id);
+    const removed = await svc.removeMember(ctx, invite.id);
     expect(removed).toBe(true);
-    expect(invitations[0]?.status).toBe('canceled');
+    expect(invites[0]?.status).toBe('canceled');
     expect(calls).not.toContain('removeMember');
   });
 
@@ -912,7 +926,14 @@ describe('logging', () => {
     const { createCapturingLogger } = await import('../shared/logger.js');
     const { logger, entries } = createCapturingLogger();
     const { repo } = fakeRepo();
-    const svc = new OrganizationServiceImpl(repo, stubMembersRepo, stubOrgAdmin, stubPeople(), undefined, logger);
+    const svc = new OrganizationServiceImpl(
+      repo,
+      stubMembersRepo,
+      stubOrgAdmin,
+      stubPeople(),
+      undefined,
+      logger,
+    );
 
     const org = await svc.createOrg(orgInput);
     await svc.createOrg(orgInput);

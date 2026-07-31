@@ -2,31 +2,18 @@ import { genId } from '../shared/id.js';
 import { ForbiddenError, NotFoundError } from '../shared/errors.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
-import type {
-  Comment,
-  CommentAuthor,
-  CommentReport,
-  CommentSettings,
-  CommentsState,
-} from './model.js';
-import type {
-  CommentListItem,
-  CommentsConfig,
-  CommentView,
-  ListCommentsQuery,
-  Page,
-} from './types.js';
+import type { Comment, CommentReaction, CommentReport, CommentSettings, CommentsState, } from './model.js';
+import type { CommentsConfig, ListCommentsQuery, Page } from './types.js';
 import { SettingsNamespace, type SettingsService } from '../shared/settings.js';
 import type {
   ActivityComments,
   ActivityGetter,
   Actor,
-  AuthorRecord,
   CourseAccessReader,
   DiscussionRepository,
   DiscussionService,
-  PostCommentInput,
   DiscussionUnitOfWork,
+  PostCommentInput,
 } from './ports.js';
 
 /** A course with no stored settings. Discussion is opt-in, so the common case
@@ -96,10 +83,6 @@ export class DiscussionServiceImpl implements DiscussionService {
     };
   }
 
-  private toAuthor(record: AuthorRecord): CommentAuthor {
-    return { id: record.id, name: record.name, image: record.image, role: record.role };
-  }
-
   /** Any org user that is not a learner moderates. The role arrives from
    *  the edge already resolved; core never looks one up to authorise. */
   private isStaff(actor: Actor): boolean {
@@ -116,35 +99,10 @@ export class DiscussionServiceImpl implements DiscussionService {
     );
   }
 
-  /** Render one comment with no reaction context. Used by post and edit, where
-   *  the caller has just written the row and needs it back in the same shape
-   *  comments are served. */
-  private async renderOne(orgId: string, comment: Comment, actor: Actor): Promise<CommentView> {
-    const ids = [comment.orgUserId, ...(comment.removedBy ? [comment.removedBy] : [])];
-    const records = await this.repo.authorsOf(orgId, [...new Set(ids)]);
-    const author = records[comment.orgUserId];
-    if (!author) {
-      throw new NotFoundError('OrgUser', comment.orgUserId);
-    }
-    const remover = comment.removedBy ? records[comment.removedBy] : undefined;
-    return {
-      id: comment.id,
-      parentId: comment.parentId,
-      author: this.toAuthor(author),
-      isOwn: comment.orgUserId === actor.id,
-      body: comment.status === 'removed' ? null : comment.body,
-      status: comment.status,
-      removedBy: remover ? this.toAuthor(remover) : null,
-      reactions: [],
-      createdAt: comment.createdAt,
-      updatedAt: comment.updatedAt,
-    };
-  }
-
   async postComment(
     orgId: string,
     { activityId, actor, parentId, body }: PostCommentInput,
-  ): Promise<CommentView> {
+  ): Promise<Comment> {
     await this.hasAccess(orgId, activityId, actor);
     const config = await this.resolveConfig(orgId, activityId);
 
@@ -173,7 +131,6 @@ export class DiscussionServiceImpl implements DiscussionService {
     const status: Comment['status'] =
       config.requireReview && !this.isStaff(actor) ? 'pending' : 'published';
 
-    const at = new Date().toISOString();
     const comment: Comment = {
       id: genId('comment'),
       orgId,
@@ -186,13 +143,12 @@ export class DiscussionServiceImpl implements DiscussionService {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    const saved = await this.uow.run(async (scope) => {
+    return this.uow.run(async (scope) => {
       const row = await scope.discussion.insertComment(orgId, comment);
       await scope.outbox.append([{ type: 'comment.created', orgId, comment: row }]);
       this.logger.info('comment created', { orgId, commentId: row.id, status });
       return row;
     });
-    return this.renderOne(orgId, saved, actor);
   }
 
   async activityComments(
@@ -226,56 +182,10 @@ export class DiscussionServiceImpl implements DiscussionService {
       (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
     );
 
-    const ids = served.map((c) => c.id);
-    const people = new Set<string>();
-    for (const c of served) {
-      people.add(c.orgUserId);
-      if (c.removedBy) {
-        people.add(c.removedBy);
-      }
-    }
-    const [reactions, authors] = await Promise.all([
-      config.reactions ? this.repo.listReactions(orgId, ids) : Promise.resolve([]),
-      this.repo.authorsOf(orgId, [...people]),
-    ]);
-
-    const comments = served.map((c) => {
-      const own = reactions.filter((r) => r.commentId === c.id);
-      const byEmoji = new Map<string, { emoji: string; count: number; reacted: boolean }>();
-      for (const r of own) {
-        const entry = byEmoji.get(r.emoji) ?? { emoji: r.emoji, count: 0, reacted: false };
-        entry.count += 1;
-        entry.reacted ||= r.orgUserId === actor.id;
-        byEmoji.set(r.emoji, entry);
-      }
-      const author = authors[c.orgUserId];
-      if (!author) {
-        throw new NotFoundError('OrgUser', c.orgUserId);
-      }
-      // An ABSENT removedBy is normal — the comment was never removed. A
-      // removedBy id that does not resolve means the remover's profile
-      // vanished, which must throw rather than render a fake remover.
-      if (c.removedBy && !authors[c.removedBy]) {
-        throw new NotFoundError('OrgUser', c.removedBy);
-      }
-      const remover = c.removedBy ? authors[c.removedBy] : undefined;
-      return {
-        id: c.id,
-        parentId: c.parentId,
-        author: this.toAuthor(author),
-        isOwn: c.orgUserId === actor.id,
-        body: c.status === 'removed' ? null : c.body,
-        status: c.status,
-        removedBy: remover ? this.toAuthor(remover) : null,
-        reactions: [...byEmoji.values()].sort((a, b) => a.emoji.localeCompare(b.emoji)),
-        createdAt: c.createdAt,
-        updatedAt: c.updatedAt,
-      };
-    });
-    return { config, comments };
+    return { config, comments: served };
   }
 
-  async edit(orgId: string, commentId: string, actor: Actor, body: string): Promise<CommentView> {
+  async edit(orgId: string, commentId: string, actor: Actor, body: string): Promise<Comment> {
     const { comment, config } = await this.loadWithConfig(orgId, commentId, actor);
     if (config.state !== 'visible') {
       throw new ForbiddenError('discussion is not open on this activity');
@@ -296,7 +206,7 @@ export class DiscussionServiceImpl implements DiscussionService {
       // the old body.
       throw new NotFoundError('Comment', commentId);
     }
-    return this.renderOne(orgId, updated, actor);
+    return updated;
   }
 
   async remove(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
@@ -373,7 +283,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     return { comment, config };
   }
 
-  async react(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void> {
+  async createReaction(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void> {
     const { config } = await this.loadWithConfig(orgId, commentId, actor);
     // Writing to comments — locked and hidden both refuse.
     if (config.state !== 'visible') {
@@ -390,7 +300,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     });
   }
 
-  async unreact(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void> {
+  async removeReaction(orgId: string, commentId: string, actor: Actor, emoji: string): Promise<void> {
     const { config } = await this.loadWithConfig(orgId, commentId, actor);
     if (config.state !== 'visible') {
       throw new ForbiddenError('discussion is not open on this activity');
@@ -481,11 +391,15 @@ export class DiscussionServiceImpl implements DiscussionService {
     });
   }
 
-  async listComments(orgId: string, query: ListCommentsQuery): Promise<Page<CommentListItem>> {
+  async listComments(orgId: string, query: ListCommentsQuery): Promise<Page<Comment>> {
     return this.repo.listComments(orgId, query);
   }
 
   getComment(orgId: string, commentId: string): Promise<Comment | null> {
     return this.repo.findComment(orgId, commentId);
+  }
+
+  listReactions(orgId: string, commentIds: string[]): Promise<CommentReaction[]> {
+    return this.repo.listReactions(orgId, commentIds);
   }
 }

@@ -29,7 +29,7 @@ export async function learnCoursesRoutes(
       response: { 200: LearnCourses },
     },
     handler: async (req) => {
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }
@@ -49,7 +49,7 @@ export async function learnCoursesRoutes(
       response: { 200: Course, 404: ErrorBody },
     },
     handler: async (req) => {
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }
@@ -73,7 +73,7 @@ export async function learnCoursesRoutes(
       response: { 200: LearnModules, 404: ErrorBody },
     },
     handler: async (req) => {
-      const orgUser = await container.organizations.getOrgUser(req.orgId, req.authUser.id);
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
       if (!orgUser) {
         throw new UnauthorizedError();
       }

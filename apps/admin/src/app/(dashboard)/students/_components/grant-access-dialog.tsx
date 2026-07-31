@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 
-import { FormSheet } from "@/components/forms/form-sheet";
+import { FormDialog } from "@/components/forms/form-dialog";
 import { Field } from "@/components/forms/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,17 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { grantEntitlementAction } from "../actions";
+import { grantEntitlementAction } from "../../entitlements/actions";
 
-const FORM_ID = "grant-access-form";
+const FORM_ID = "student-grant-access-form";
 
-/** Static lookup option sources fetched by the Server Component and passed in. */
-export type LiteStudent = { id: string; name: string; email: string };
 export type LiteContent = { id: string; title: string; type: "course" | "download" };
 
 const schema = z
   .object({
-    studentId: z.string().min(1, "Select a student"),
     contentId: z.string().min(1, "Select a course or download"),
     expiryMode: z.enum(["never", "date"]),
     expiresAt: z.string().optional(),
@@ -41,15 +38,15 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 
-export function GrantAccessSheet({
+export function GrantAccessDialog({
   open,
   onOpenChange,
-  students,
+  studentId,
   content,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  students: LiteStudent[];
+  studentId: string;
   content: LiteContent[];
 }) {
   const [pending, startTransition] = React.useTransition();
@@ -62,12 +59,11 @@ export function GrantAccessSheet({
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { studentId: "", contentId: "", expiryMode: "never", expiresAt: "" },
+    defaultValues: { contentId: "", expiryMode: "never", expiresAt: "" },
   });
 
-  // Reset to a clean slate every time the sheet opens.
   React.useEffect(() => {
-    if (open) reset({ studentId: "", contentId: "", expiryMode: "never", expiresAt: "" });
+    if (open) reset({ contentId: "", expiryMode: "never", expiresAt: "" });
   }, [open, reset]);
 
   const expiryMode = useWatch({ control, name: "expiryMode" });
@@ -77,7 +73,7 @@ export function GrantAccessSheet({
 
   const onSubmit = handleSubmit((values) => {
     const input = {
-      orgUserId: values.studentId,
+      orgUserId: studentId,
       contentId: values.contentId,
       expiresAt:
         values.expiryMode === "never" || !values.expiresAt
@@ -96,37 +92,16 @@ export function GrantAccessSheet({
   });
 
   return (
-    <FormSheet
+    <FormDialog
       open={open}
       onOpenChange={onOpenChange}
       title="Grant access"
-      description="Grant a student access to a course or download manually. They'll get immediate access."
+      description="Grant this student access to a course or download. They'll get immediate access."
       formId={FORM_ID}
       submitLabel="Grant access"
       pending={pending}
     >
       <form id={FORM_ID} onSubmit={onSubmit} className="flex flex-col gap-5">
-        <Controller
-          control={control}
-          name="studentId"
-          render={({ field }) => (
-            <Field id="studentId" label="Student" required error={errors.studentId?.message}>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="studentId" aria-invalid={!!errors.studentId}>
-                  <SelectValue placeholder="Select a student" />
-                </SelectTrigger>
-                <SelectContent>
-                  {students.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name} · {s.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          )}
-        />
-
         <Controller
           control={control}
           name="contentId"
@@ -192,6 +167,6 @@ export function GrantAccessSheet({
           </Field>
         ) : null}
       </form>
-    </FormSheet>
+    </FormDialog>
   );
 }

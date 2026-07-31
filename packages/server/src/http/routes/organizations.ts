@@ -1,10 +1,12 @@
 // HTTP routes for the organizations resource: creating an org, managing its
 // members (/api/organizations/members) and its invites
-// (/api/organizations/invites — mint, activate, accept). Member reads come
-// from the domain mirror; org/member writes go through Better Auth (the org
-// provider). Invite activation is the one route an invitee reaches without a
-// session, exported separately (`organizationsPublicRoutes`) so it registers
-// outside the session guard; the activation cookie lives and dies here.
+// (/api/organizations/invites — mint, accept). Member reads come from the
+// domain mirror; org/member writes go through Better Auth (the org provider).
+//
+// The invitee makes two calls, both keyed only by the emailed token: `resolve`
+// (unguarded — they have no session yet) turns the token into the invited email,
+// then `accept` links the account they just signed up or in with. The token is
+// never persisted browser-side.
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -19,6 +21,8 @@ import {
   MemberIdParam,
   MembersPage,
   MembersQuery,
+  GetInviteResult,
+  InviteTokenParam,
   Organization,
   UpdateMemberRole,
   UpdateOrganization,
@@ -171,15 +175,54 @@ export async function organizationsRoutes(
       response: { 201: Invite, 409: ErrorBody },
     },
     handler: async (req) => {
+      // Domain ids, not the session's auth ids: invites FK to organizations.id
+      // and users.id.
+      const scope = await resolveScope(container, req);
       const invite = await organizations.createInvite({
-        orgId: req.orgId,
-        inviterUserId: req.authUser.id,
+        orgId: scope.orgId,
+        inviterUserId: scope.userId,
         email: req.body.email,
         role: req.body.role,
+        ...(req.body.firstName !== undefined && { firstName: req.body.firstName }),
+        ...(req.body.lastName !== undefined && { lastName: req.body.lastName }),
+        sendEmail: req.body.sendEmail,
       });
 
       req.log.debug({ invite }, 'created invite');
       return invite;
+    },
+  });
+
+  // The invite landing page's first call, made before the invitee has any
+  // session — so no guard. It turns the emailed token into the two facts the
+  // page needs: who the invitation is for, and whether that address already has
+  // an account. The email comes from the invitation row rather than the URL, so
+  // it cannot be steered by editing the link.
+  r.route({
+    method: 'GET',
+    url: '/api/organizations/invites/:token',
+    schema: {
+      operationId: 'getInvite',
+      tags,
+      summary: 'Read an invite by its token',
+      params: InviteTokenParam,
+      response: { 200: GetInviteResult, 404: ErrorBody },
+    },
+    handler: async (req) => {
+      const invite = await organizations.peekInvite(req.params.token);
+      if (!invite) {
+        // Same answer for forged, expired, and already-accepted tokens: a
+        // probe learns nothing about which invitations exist.
+        throw new NotFoundError('Invite', 'token');
+      }
+      // Whether the address already has a login is deliberately not answered
+      // here. The mirror cannot say — an admin's student is a person long
+      // before they are an account — and asking the auth engine would mean
+      // reading its tables for one boolean. The sign-up form discovers it
+      // instead: a duplicate signup comes back 422 and the page flips to
+      // sign-in.
+      const person = await container.identity.getUserByEmail(invite.email);
+      return { email: invite.email, name: person?.displayName ?? '' };
     },
   });
 
@@ -190,18 +233,33 @@ export async function organizationsRoutes(
     schema: {
       operationId: 'acceptInvite',
       tags,
-      summary: 'Accept an invitation with the logged-in account',
+      summary: 'Accept an invite with the logged-in account',
       body: AcceptInvite,
       response: { 200: AcceptInviteResult, 400: ErrorBody },
     },
     handler: async (req) => {
+      // No active org yet, so no resolveScope — but acceptInvite links a domain
+      // users.id, never the auth account id.
+      const user = await container.identity.getUserByExternalId(req.authUser.id);
+      if (!user) {
+        throw new NotFoundError('User', req.authUser.id);
+      }
       const accepted = await container.organizations.acceptInvite({
         token: req.body.token,
-        userId: req.authUser.id,
+        userId: user.id,
         email: req.authUser.email,
       });
 
-      req.log.info({ accepted }, 'accepted invite');
+      // The session predates this grant, so it carries no active org and every
+      // org-scoped read would 401. Students are never org members, so the org
+      // plugin's set-active cannot do it — stamp the session row directly.
+      const org = await container.organizations.getById(accepted.orgId);
+      if (!org) {
+        throw new NotFoundError('Organization', accepted.orgId);
+      }
+      const stamped = await container.stampSessionActiveOrg(req.headers, org.externalId);
+
+      req.log.info({ accepted, stamped }, 'accepted invite');
       return {};
     },
   });

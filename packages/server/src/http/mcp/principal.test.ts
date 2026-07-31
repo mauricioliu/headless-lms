@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildPrincipal, PrincipalError, type AccessTokenClaims } from './principal.js';
 import type { Container } from '../../app/container.js';
 
-// A person who participates in two organizations — the case that used to be
+// A person who belongs to two organizations — the case that used to be
 // either guessed at (oldest membership wins) or refused outright.
 const PERSON = { id: 'usr_1', email: 'sam@example.com', displayName: 'Sam' };
 
@@ -11,13 +11,13 @@ const ORGS: Record<string, { id: string; externalId: string }> = {
   org_globex: { id: 'o_globex', externalId: 'org_globex' },
 };
 
-const PARTICIPATIONS: Record<string, { id: string; orgId: string; role: string }> = {
+const ORG_USERS: Record<string, { id: string; orgId: string; role: string }> = {
   o_acme: { id: 'ou_acme', orgId: 'o_acme', role: 'owner' },
   o_globex: { id: 'ou_globex', orgId: 'o_globex', role: 'instructor' },
 };
 
-function container(overrides: { participations?: typeof PARTICIPATIONS } = {}): Container {
-  const participations = overrides.participations ?? PARTICIPATIONS;
+function container(overrides: { orgUsers?: typeof ORG_USERS } = {}): Container {
+  const orgUsers = overrides.orgUsers ?? ORG_USERS;
   return {
     identity: {
       getUserByExternalId: async (externalId: string) =>
@@ -25,7 +25,7 @@ function container(overrides: { participations?: typeof PARTICIPATIONS } = {}): 
     },
     organizations: {
       getByExternalId: async (externalId: string) => ORGS[externalId] ?? null,
-      getOrgUser: async (orgId: string) => participations[orgId] ?? null,
+      getOrgUser: async (orgId: string) => orgUsers[orgId] ?? null,
     },
   } as unknown as Container;
 }
@@ -65,15 +65,15 @@ describe('buildPrincipal', () => {
     ).rejects.toBeInstanceOf(PrincipalError);
   });
 
-  it('refuses when the person does not participate in the org the token names', async () => {
-    // The token was minted for acme, but this person's participation there is gone.
-    const withoutAcme = { o_globex: PARTICIPATIONS.o_globex! };
+  it('refuses when the person does not belong to the org the token names', async () => {
+    // The token was minted for acme, but this person's org user there is gone.
+    const withoutAcme = { o_globex: ORG_USERS.o_globex! };
 
     await expect(
-      buildPrincipal(token({ org: 'org_acme' }), container({ participations: withoutAcme })),
+      buildPrincipal(token({ org: 'org_acme' }), container({ orgUsers: withoutAcme })),
     ).rejects.toMatchObject({
       status: 403,
-      message: 'user does not participate in this organization',
+      message: 'user does not belong to this organization',
     });
   });
 

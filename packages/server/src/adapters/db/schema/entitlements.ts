@@ -37,12 +37,12 @@ export const entitlements = pgTable(
       foreignColumns: [contentItems.orgId, contentItems.id],
     }).onDelete('cascade'),
     // org_users is org-scoped (composite PK) — the FK must match both columns.
-    // Grants die with their participant: deleting the org_users row cascades here.
+    // Grants die with their org user: deleting the org_users row cascades here.
     orgUserFk: foreignKey({
       columns: [t.orgId, t.orgUserId],
       foreignColumns: [orgUsers.orgId, orgUsers.id],
     }).onDelete('cascade'),
-    // One grant per (org, participant, content).
+    // One grant per (org, org user, content).
     orgUserContentUq: unique().on(t.orgId, t.orgUserId, t.contentId),
   }),
 );

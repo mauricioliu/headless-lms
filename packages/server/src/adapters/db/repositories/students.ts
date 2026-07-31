@@ -12,6 +12,7 @@ import type { Page, Student, StudentsQuery } from '../../../reporting/students/i
 import { orgUsers, users, entitlements } from '../schema/index.js';
 import { STUDENT_ROLE } from '../../../core/organizations/index.js';
 import { user } from '../../auth/schema.js';
+import type { OrgUserStatus } from '@headless-lms/types';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
 import { orgUserProfileColumns } from './org-user-profile.js';
@@ -26,6 +27,9 @@ interface StudentRow {
   name: string;
   email: string;
   image: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  status: OrgUserStatus;
   createdAt: Date;
   entitlementCount: number;
   avgProgress: number;
@@ -37,6 +41,9 @@ function toStudent(row: StudentRow): Student {
     name: row.name,
     email: row.email,
     image: row.image ?? null,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    status: row.status,
     entitlementCount: Number(row.entitlementCount),
     avgProgress: Number(row.avgProgress),
     joinedAt: row.createdAt.toISOString(),
@@ -70,6 +77,9 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
     const rows = await this.db
       .select({
         ...orgUserProfileColumns,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        status: orgUsers.status,
         createdAt: orgUsers.createdAt,
         entitlementCount: entitlementCountExpr,
         avgProgress: avgProgressExpr,
@@ -84,7 +94,16 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
       .where(where)
       // Group by the full composite PK (orgId, id): grouping by id alone gives
       // Postgres no functional dependency for the other students columns.
-      .groupBy(orgUsers.orgId, orgUsers.id, users.displayName, users.email, user.image)
+      .groupBy(
+        orgUsers.orgId,
+        orgUsers.id,
+        orgUsers.status,
+        users.displayName,
+        users.email,
+        users.firstName,
+        users.lastName,
+        user.image,
+      )
       .orderBy(...this.resolveOrder(query.sort))
       .limit(query.pageSize)
       .offset((query.page - 1) * query.pageSize);
@@ -101,6 +120,9 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
     const [row] = await this.db
       .select({
         ...orgUserProfileColumns,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        status: orgUsers.status,
         createdAt: orgUsers.createdAt,
         entitlementCount: entitlementCountExpr,
         avgProgress: avgProgressExpr,
@@ -113,7 +135,16 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
       .innerJoin(users, eq(users.id, orgUsers.userId))
       .leftJoin(user, eq(user.id, users.externalId))
       .where(and(eq(orgUsers.orgId, orgId), eq(orgUsers.id, id), eq(orgUsers.role, STUDENT_ROLE)))
-      .groupBy(orgUsers.orgId, orgUsers.id, users.displayName, users.email, user.image)
+      .groupBy(
+        orgUsers.orgId,
+        orgUsers.id,
+        orgUsers.status,
+        users.displayName,
+        users.email,
+        users.firstName,
+        users.lastName,
+        user.image,
+      )
       .limit(1);
     return row ? toStudent(row) : null;
   }

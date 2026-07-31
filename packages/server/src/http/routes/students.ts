@@ -1,18 +1,19 @@
-// HTTP routes for students: the reporting-backed list/read endpoints, plus
-// identity-backed writes (manual creation). Invites live at /api/organizations/invites.
+// HTTP routes for students: the reporting-backed list/read endpoints, the
+// delete, and re-issuing a pending invite. There is no create here — adding a
+// student IS inviting one, at /api/organizations/invites, which provisions the
+// student record up front.
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
-  CreateStudent,
   ErrorBody,
   Student,
   StudentIdParam,
   StudentsPage,
   StudentsQuery,
+  UpdateStudentBody,
 } from '@headless-lms/api-contract';
 import { NotFoundError } from '../../core/shared/errors.js';
-import { STUDENT_ROLE } from '../../core/organizations/index.js';
 import type { Container } from '../../app/container.js';
 import { resolveScope } from '../scope.js';
 
@@ -58,31 +59,60 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
     },
   });
 
+  // Corrects the person behind the student row. The write lands in identity
+  // (the person is global); organizations owns the rule that this org user is
+  // a student here, and reconciles their pending invite when the address moves.
   r.route({
-    method: 'POST',
-    url: '/api/students',
+    method: 'PATCH',
+    url: '/api/students/:id',
     preHandler: app.requireOrgSession,
     schema: {
-      operationId: 'createStudent',
+      operationId: 'updateStudent',
       tags: ['Students'],
-      summary: 'Create a student from the admin portal',
-      body: CreateStudent,
-      response: { 201: Student, 409: ErrorBody },
+      summary: "Update a student's profile",
+      params: StudentIdParam,
+      body: UpdateStudentBody,
+      response: { 200: Student, 404: ErrorBody, 409: ErrorBody },
+    },
+    handler: async (req) => {
+      const scope = await resolveScope(container, req);
+      await container.organizations.updateStudent({
+        orgId: scope.orgId,
+        orgUserId: req.params.id,
+        ...req.body,
+      });
+      // Re-read through the report so the response is the same shape the list
+      // and detail GETs return, aggregates included.
+      const student = await students.get(scope.orgId, req.params.id);
+      if (!student) {
+        throw new NotFoundError('Student', req.params.id);
+      }
+      return student;
+    },
+  });
+
+  // Re-mints the token on the student's pending invite and emails it. Lives
+  // here rather than under invites because the admin app knows the student,
+  // not the invitation.
+  r.route({
+    method: 'POST',
+    url: '/api/students/:id/invite/resend',
+    preHandler: app.requireOrgSession,
+    schema: {
+      operationId: 'resendStudentInvite',
+      tags: ['Students'],
+      summary: "Re-send a pending student's invite email",
+      params: StudentIdParam,
+      response: { 204: z.void(), 404: ErrorBody, 409: ErrorBody },
     },
     handler: async (req, reply) => {
       const scope = await resolveScope(container, req);
-      const created = await container.organizations.createParticipant({
+      await container.organizations.resendStudentInvite({
         orgId: scope.orgId,
-        role: STUDENT_ROLE,
-        email: req.body.email,
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
+        orgUserId: req.params.id,
+        inviterUserId: scope.userId,
       });
-      const student = await students.get(scope.orgId, created.id);
-      if (!student) {
-        throw new Error('created student missing from report');
-      }
-      return reply.code(201).send(student);
+      return reply.code(204).send();
     },
   });
 
@@ -99,7 +129,7 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
     },
     handler: async (req, reply) => {
       const scope = await resolveScope(container, req);
-      await container.organizations.deleteParticipant(scope.orgId, req.params.id);
+      await container.organizations.deleteOrgUser(scope.orgId, req.params.id);
       return reply.code(204).send();
     },
   });

@@ -31,7 +31,7 @@ Entitlements owns the grant and its access start. To resolve what a student can 
 
 ## Boundaries
 
-1. **entitlements ↔ organizations** — entitlements references the *participation* it grants access to, not the person: a grant is access within one organization. That reference resolves even before the learner has an account, so a roster entry can be entitled ahead of their first login. Organizations owns that record.
+1. **entitlements ↔ organizations** — entitlements references the *org user* it grants access to, not the person: a grant is access within one organization, and the same person entitled in two organizations holds two independent grants. Organizations owns that record.
 2. **entitlements ↔ content** — entitlements references the content it grants and reads its gating rules during access resolution; content owns the content and those rules. Deleting content removes the grants to it.
 3. **entitlements ↔ progress** — entitlements reads completion during access resolution but never owns or stores it; progress owns completion.
 

@@ -4,7 +4,7 @@ import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { FormSheet } from "@/components/forms/form-sheet";
+import { FormDialog } from "@/components/forms/form-dialog";
 import { Field } from "@/components/forms/field";
 import { Switch } from "@/components/ui/switch";
 import { SchemaFields, schemaDefaults } from "@/components/forms/schema-fields";
@@ -20,7 +20,7 @@ interface FormValues {
 }
 
 /** Configure flow: the connection's config fields (schema-rendered) + active flag. */
-export function ConfigureSheet({
+export function ConfigureDialog({
   row,
   open,
   onOpenChange,
@@ -67,7 +67,7 @@ export function ConfigureSheet({
   if (!integration || !connection) return null;
 
   return (
-    <FormSheet
+    <FormDialog
       open={open}
       onOpenChange={onOpenChange}
       title={`Configure ${name}`}
@@ -91,6 +91,6 @@ export function ConfigureSheet({
           )}
         />
       </form>
-    </FormSheet>
+    </FormDialog>
   );
 }

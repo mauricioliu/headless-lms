@@ -73,8 +73,17 @@ export function registerAuth(app: FastifyInstance, container: Container): void {
       throw new UnauthorizedError();
     }
     request.authUser = sessionData.user;
-    if (sessionData.session.activeOrganizationId) {
-      request.orgId = sessionData.session.activeOrganizationId;
+    const person = await container.identity.getUserByExternalId(sessionData.user.id);
+    if (person) {
+      request.userId = person.id;
+    }
+    const authOrgId = sessionData.session.activeOrganizationId;
+    if (authOrgId) {
+      request.authOrgId = authOrgId;
+      const org = await container.organizations.getByExternalId(authOrgId);
+      if (org) {
+        request.orgId = org.id;
+      }
     }
   });
 
@@ -86,10 +95,27 @@ export function registerAuth(app: FastifyInstance, container: Container): void {
     if (!sessionData) {
       throw new UnauthorizedError();
     }
-    if (!sessionData.session.activeOrganizationId) {
+    const authOrgId = sessionData.session.activeOrganizationId;
+    if (!authOrgId) {
       throw new UnauthorizedError('no active organization on the session');
     }
+    // The session stores better-auth's organization id; every domain read keys
+    // off `organizations.id`. Translate once here so routes never hold the auth
+    // id by mistake — `authOrgId` stays available for writes that go back
+    // through the auth provider.
+    const [org, person] = await Promise.all([
+      container.organizations.getByExternalId(authOrgId),
+      container.identity.getUserByExternalId(sessionData.user.id),
+    ]);
+    if (!org) {
+      throw new UnauthorizedError('session organization not found');
+    }
+    if (!person) {
+      throw new UnauthorizedError('no person for the session account');
+    }
     request.authUser = sessionData.user;
-    request.orgId = sessionData.session.activeOrganizationId;
+    request.authOrgId = authOrgId;
+    request.orgId = org.id;
+    request.userId = person.id;
   });
 }

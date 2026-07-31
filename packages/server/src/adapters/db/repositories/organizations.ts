@@ -1,11 +1,8 @@
 // organizations — Drizzle repository (implements the core outbound port).
 import { and, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type {
-  NewInvitationRow,
-  OrganizationsRepository,
-} from '../../../core/organizations/ports.js';
-import type { Invitation, Organization, OrgUser } from '../../../core/organizations/model.js';
+import type { NewInviteRow, OrganizationsRepository } from '../../../core/organizations/ports.js';
+import type { Invite, Organization, OrgUser } from '../../../core/organizations/model.js';
 import { normalizeRole, parseRole } from '../../../core/organizations/index.js';
 import type {
   AddOrgUserInput,
@@ -13,19 +10,21 @@ import type {
   CreateOrgUserInput,
   UpdateOrganizationInput,
 } from '../../../core/organizations/types.js';
-import { invitations, organizations, orgUsers } from '../schema/organizations.js';
+import { invites, organizations, orgUsers } from '../schema/organizations.js';
 import { progressRecords } from '../schema/progress.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
+import { ConflictError } from '../../../core/shared/errors.js';
+import { isUniqueViolation } from './pg-errors.js';
 
-const INVITATION_STATUSES = ['pending', 'accepted', 'rejected', 'canceled'] as const;
-type InvitationStatus = (typeof INVITATION_STATUSES)[number];
-const toStatus = (s: string): InvitationStatus =>
-  (INVITATION_STATUSES as readonly string[]).includes(s) ? (s as InvitationStatus) : 'pending';
+const INVITE_STATUSES = ['pending', 'accepted', 'rejected', 'canceled'] as const;
+type InviteStatus = (typeof INVITE_STATUSES)[number];
+const toStatus = (s: string): InviteStatus =>
+  (INVITE_STATUSES as readonly string[]).includes(s) ? (s as InviteStatus) : 'pending';
 
-// The Invitation DTO deliberately omits token_hash — the row shape flows into
+// The Invite DTO deliberately omits token_hash — the row shape flows into
 // domain events, and the hash must never leave the persistence layer.
-function toInvitation(row: typeof invitations.$inferSelect): Invitation {
+function toInvite(row: typeof invites.$inferSelect): Invite {
   return {
     id: row.id,
     orgId: row.orgId,
@@ -99,53 +98,26 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row ?? null;
   }
 
-  // Mirrors better-auth's member record onto the participation. The row usually
-  // already exists — invite acceptance claims or creates it, and only then does
-  // the auth-side member get added — so this stamps `external_id` onto it
-  // rather than inserting a second participation for the same person.
+  // Mirrors better-auth's member record onto the org user. The row usually
+  // already exists — invite acceptance creates it, and only then does the
+  // auth-side member get added — so this reconciles the role on `(org, user)`,
+  // which is also what makes a re-fired hook idempotent.
   async upsertOrgUser(orgId: string, input: AddOrgUserInput): Promise<OrgUser> {
-    const [claimed] = await this.db
-      .update(orgUsers)
-      .set({ externalId: input.externalId, role: normalizeRole(input.role) })
-      .where(and(eq(orgUsers.orgId, orgId), eq(orgUsers.userId, input.userId)))
-      .returning();
-    if (claimed) {
-      return { ...claimed, role: parseRole(claimed.role) };
-    }
-    // No participation yet: org creation mirrors the creator's membership
-    // before any invite flow has run.
-    const [inserted] = await this.db
+    const role = normalizeRole(input.role);
+    const [row] = await this.db
       .insert(orgUsers)
-      .values({
-        orgId,
-        userId: input.userId,
-        role: normalizeRole(input.role),
-        externalId: input.externalId,
-      })
-      .onConflictDoNothing({ target: orgUsers.externalId })
+      .values({ orgId, userId: input.userId, role })
+      .onConflictDoUpdate({ target: [orgUsers.orgId, orgUsers.userId], set: { role } })
       .returning();
-    if (inserted) {
-      return { ...inserted, role: parseRole(inserted.role) };
-    }
-    // Already mirrored (hook fired more than once) — return the existing row.
-    const [existing] = await this.db
-      .select()
-      .from(orgUsers)
-      .where(eq(orgUsers.externalId, input.externalId))
-      .limit(1);
-    if (!existing) {
+    if (!row) {
       throw new Error('failed to upsert orgUser');
     }
-    return { ...existing, role: parseRole(existing.role) };
+    return { ...row, role: parseRole(row.role) };
   }
 
-  async deleteOrgUserByExternalId(externalId: string): Promise<void> {
-    await this.db.delete(orgUsers).where(eq(orgUsers.externalId, externalId));
-  }
-
-  async upsertPendingInvitation(orgId: string, input: NewInvitationRow): Promise<Invitation> {
+  async upsertPendingInvite(orgId: string, input: NewInviteRow): Promise<Invite> {
     const [row] = await this.db
-      .insert(invitations)
+      .insert(invites)
       .values({
         orgId,
         email: input.email,
@@ -156,8 +128,8 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
         expiresAt: input.expiresAt,
       })
       .onConflictDoUpdate({
-        target: [invitations.orgId, invitations.email],
-        targetWhere: sql`${invitations.status} = 'pending'`,
+        target: [invites.orgId, invites.email],
+        targetWhere: sql`${invites.status} = 'pending'`,
         set: {
           role: input.role,
           invitedBy: input.invitedBy,
@@ -167,25 +139,25 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
       })
       .returning();
     if (!row) {
-      throw new Error('failed to upsert invitation');
+      throw new Error('failed to upsert invite');
     }
-    return toInvitation(row);
+    return toInvite(row);
   }
 
-  async setInvitationStatus(orgId: string, id: string, status: string): Promise<void> {
+  async setInviteStatus(orgId: string, id: string, status: string): Promise<void> {
     await this.db
-      .update(invitations)
+      .update(invites)
       .set({ status: toStatus(status) })
-      .where(and(eq(invitations.orgId, orgId), eq(invitations.id, id)));
+      .where(and(eq(invites.orgId, orgId), eq(invites.id, id)));
   }
 
-  async findInvitationByTokenHash(tokenHash: string): Promise<Invitation | null> {
+  async findInviteByTokenHash(tokenHash: string): Promise<Invite | null> {
     const [row] = await this.db
       .select()
-      .from(invitations)
-      .where(eq(invitations.tokenHash, tokenHash))
+      .from(invites)
+      .where(eq(invites.tokenHash, tokenHash))
       .limit(1);
-    return row ? toInvitation(row) : null;
+    return row ? toInvite(row) : null;
   }
 
   async findOrgUser(orgId: string, userId: string): Promise<OrgUser | null> {
@@ -197,9 +169,9 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row ? { ...row, role: parseRole(row.role) } : null;
   }
 
-  // Every organization this person participates in. What the org switcher
-  // lists; callers with no active org decide for themselves what to do when
-  // there is more than one.
+  // Every organization this person belongs to. What the org switcher lists;
+  // callers with no active org decide for themselves what to do when there is
+  // more than one.
   async findOrgUsersByUser(userId: string): Promise<OrgUser[]> {
     const rows = await this.db
       .select()
@@ -218,20 +190,91 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row ? { ...row, role: parseRole(row.role) } : null;
   }
 
+  // Throws ConflictError when the person already holds a row in this org —
+  // `(org_id, user_id)` is unique. Translating here keeps core free of Postgres
+  // error codes; the service treats it as a refusal.
   async createOrgUser(input: CreateOrgUserInput): Promise<OrgUser> {
+    try {
       const [row] = await this.db
         .insert(orgUsers)
         .values({
           orgId: input.orgId,
+          userId: input.userId,
           role: input.role,
+          status: input.status ?? 'active',
         })
         .returning();
+      if (!row) {
+        throw new Error('failed to insert org user');
+      }
+      return { ...row, role: parseRole(row.role) };
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictError('That account already belongs to this organization');
+      }
+      throw err;
+    }
+  }
 
-      return row!;
+  // Insert-or-promote on `(org_id, user_id)`. `created` is what the caller
+  // needs to fire student.created exactly once across an invite and the
+  // acceptance that follows it. Promotion is one-way — an 'active' row is
+  // never demoted back to 'invited' by a re-invite.
+  async ensureOrgUser(input: CreateOrgUserInput): Promise<{ orgUser: OrgUser; created: boolean }> {
+    const status = input.status ?? 'active';
+    const [inserted] = await this.db
+      .insert(orgUsers)
+      .values({
+        orgId: input.orgId,
+        userId: input.userId,
+        role: input.role,
+        status,
+      })
+      .onConflictDoNothing({ target: [orgUsers.orgId, orgUsers.userId] })
+      .returning();
+    if (inserted) {
+      return { orgUser: { ...inserted, role: parseRole(inserted.role) }, created: true };
+    }
+
+    const where = and(eq(orgUsers.orgId, input.orgId), eq(orgUsers.userId, input.userId));
+    // Only an acceptance writes. A re-invite asks for 'invited' against a row
+    // that already exists, and has nothing to say about it.
+    const [existing] =
+      status === 'active'
+        ? await this.db.update(orgUsers).set({ status }).where(where).returning()
+        : await this.db.select().from(orgUsers).where(where).limit(1);
+    if (!existing) {
+      throw new Error('failed to ensure org user');
+    }
+    return { orgUser: { ...existing, role: parseRole(existing.role) }, created: false };
+  }
+
+  async findStudentOrgUsers(userId: string): Promise<OrgUser[]> {
+    const rows = await this.db
+      .select()
+      .from(orgUsers)
+      .where(and(eq(orgUsers.userId, userId), eq(orgUsers.role, 'student')))
+      .orderBy(orgUsers.createdAt);
+    return rows.map((row) => ({ ...row, role: parseRole(row.role) }));
+  }
+
+  async cancelPendingInvite(orgId: string, email: string): Promise<Invite | null> {
+    const [row] = await this.db
+      .update(invites)
+      .set({ status: 'canceled' })
+      .where(
+        and(
+          eq(invites.orgId, orgId),
+          sql`lower(${invites.email}) = lower(${email})`,
+          eq(invites.status, 'pending'),
+        ),
+      )
+      .returning();
+    return row ? toInvite(row) : null;
   }
 
   async deleteOrgUser(orgId: string, id: string): Promise<boolean> {
-    // progress_records is deleted first so the participation's FK has nothing
+    // progress_records is deleted first so the org user's FK has nothing
     // pointing at it when the row goes.
     await this.db
       .delete(progressRecords)

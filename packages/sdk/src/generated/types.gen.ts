@@ -4,41 +4,6 @@ export type ClientOptions = {
   baseUrl: "http://localhost:8000" | (string & {});
 };
 
-export type ActivateInviteData = {
-  body: {
-    token: string;
-  };
-  path?: never;
-  query?: never;
-  url: "/api/organizations/invites/activate";
-};
-
-export type ActivateInviteErrors = {
-  /**
-   * Default Response
-   */
-  400: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type ActivateInviteError = ActivateInviteErrors[keyof ActivateInviteErrors];
-
-export type ActivateInviteResponses = {
-  /**
-   * Default Response
-   */
-  200: {
-    status: "accepted" | "auth-required";
-    email: string;
-    role: "admin" | "instructor" | "student";
-    accountExists: boolean;
-  };
-};
-
-export type ActivateInviteResponse = ActivateInviteResponses[keyof ActivateInviteResponses];
-
 export type UpdateOrganizationData = {
   body: {
     name: string;
@@ -225,6 +190,9 @@ export type CreateInviteData = {
   body: {
     email: string;
     role: "admin" | "instructor" | "student";
+    firstName?: string;
+    lastName?: string;
+    sendEmail?: boolean;
   };
   path?: never;
   query?: never;
@@ -259,6 +227,39 @@ export type CreateInviteResponses = {
 
 export type CreateInviteResponse = CreateInviteResponses[keyof CreateInviteResponses];
 
+export type GetInviteData = {
+  body?: never;
+  path: {
+    token: string;
+  };
+  query?: never;
+  url: "/api/organizations/invites/{token}";
+};
+
+export type GetInviteErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type GetInviteError = GetInviteErrors[keyof GetInviteErrors];
+
+export type GetInviteResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    email: string;
+    name: string;
+  };
+};
+
+export type GetInviteResponse = GetInviteResponses[keyof GetInviteResponses];
+
 export type AcceptInviteData = {
   body: {
     token: string;
@@ -285,7 +286,7 @@ export type AcceptInviteResponses = {
    * Default Response
    */
   200: {
-    status: "accepted";
+    [key: string]: never;
   };
 };
 
@@ -2216,11 +2217,13 @@ export type ListStudentsResponses = {
       name: string;
       email: string;
       image: string | null;
+      firstName: string | null;
+      lastName: string | null;
       entitlementCount: number;
       avgProgress: number;
+      status: "invited" | "active";
       joinedAt: string;
       lastActiveAt: string | null;
-      hasAccount: boolean;
     }>;
     total: number;
     page: number;
@@ -2229,48 +2232,6 @@ export type ListStudentsResponses = {
 };
 
 export type ListStudentsResponse = ListStudentsResponses[keyof ListStudentsResponses];
-
-export type CreateStudentData = {
-  body: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  path?: never;
-  query?: never;
-  url: "/api/students";
-};
-
-export type CreateStudentErrors = {
-  /**
-   * Default Response
-   */
-  409: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type CreateStudentError = CreateStudentErrors[keyof CreateStudentErrors];
-
-export type CreateStudentResponses = {
-  /**
-   * Default Response
-   */
-  201: {
-    id: string;
-    name: string;
-    email: string;
-    image: string | null;
-    entitlementCount: number;
-    avgProgress: number;
-    joinedAt: string;
-    lastActiveAt: string | null;
-    hasAccount: boolean;
-  };
-};
-
-export type CreateStudentResponse = CreateStudentResponses[keyof CreateStudentResponses];
 
 export type DeleteStudentData = {
   body?: never;
@@ -2330,15 +2291,105 @@ export type GetStudentResponses = {
     name: string;
     email: string;
     image: string | null;
+    firstName: string | null;
+    lastName: string | null;
     entitlementCount: number;
     avgProgress: number;
+    status: "invited" | "active";
     joinedAt: string;
     lastActiveAt: string | null;
-    hasAccount: boolean;
   };
 };
 
 export type GetStudentResponse = GetStudentResponses[keyof GetStudentResponses];
+
+export type UpdateStudentData = {
+  body: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/students/{id}";
+};
+
+export type UpdateStudentErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  409: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type UpdateStudentError = UpdateStudentErrors[keyof UpdateStudentErrors];
+
+export type UpdateStudentResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    entitlementCount: number;
+    avgProgress: number;
+    status: "invited" | "active";
+    joinedAt: string;
+    lastActiveAt: string | null;
+  };
+};
+
+export type UpdateStudentResponse = UpdateStudentResponses[keyof UpdateStudentResponses];
+
+export type ResendStudentInviteData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/students/{id}/invite/resend";
+};
+
+export type ResendStudentInviteErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  409: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type ResendStudentInviteError = ResendStudentInviteErrors[keyof ResendStudentInviteErrors];
+
+export type ResendStudentInviteResponses = {
+  /**
+   * Default Response
+   */
+  204: unknown;
+};
 
 export type ListEntitlementsData = {
   body?: never;
@@ -2365,8 +2416,7 @@ export type ListEntitlementsResponses = {
     rows: Array<{
       id: string;
       orgUserId: string;
-      firstName: string;
-      lastName: string;
+      studentName: string;
       studentEmail: string;
       content: {
         id: string;
@@ -2404,8 +2454,7 @@ export type GrantEntitlementResponses = {
   201: {
     id: string;
     orgUserId: string;
-    firstName: string;
-    lastName: string;
+    studentName: string;
     studentEmail: string;
     content: {
       id: string;
@@ -2452,8 +2501,7 @@ export type SetEntitlementStatusResponses = {
   200: {
     id: string;
     orgUserId: string;
-    firstName: string;
-    lastName: string;
+    studentName: string;
     studentEmail: string;
     content: {
       id: string;

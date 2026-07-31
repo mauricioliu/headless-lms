@@ -387,7 +387,7 @@ describe('course access', () => {
     // Their own comment, and it is still there — reach is what they lost.
     await expect(service.edit('o1', comment.id, learner, 'edited')).rejects.toThrow(NotFoundError);
     await expect(service.remove('o1', comment.id, learner)).rejects.toThrow(NotFoundError);
-    await expect(service.react('o1', comment.id, learner, '👍')).rejects.toThrow(NotFoundError);
+    await expect(service.createReaction('o1', comment.id, learner, '👍')).rejects.toThrow(NotFoundError);
     await expect(service.reportComment('o1', comment.id, learner, 'spam')).rejects.toThrow(NotFoundError);
   });
 
@@ -691,8 +691,8 @@ describe('activityComments', () => {
       parentId: null,
       body: 'hi',
     });
-    await service.react('o1', c.id, learner, '👍');
-    await service.react('o1', c.id, staff, '👍');
+    await service.createReaction('o1', c.id, learner, '👍');
+    await service.createReaction('o1', c.id, staff, '👍');
 
     const view = await service.activityComments('o1', 'a1', learner);
     expect(view.comments[0]?.reactions).toEqual([{ emoji: '👍', count: 2, reacted: true }]);
@@ -905,54 +905,54 @@ describe('reactions', () => {
 
   it('is idempotent for the same person and emoji', async () => {
     const { service, comment, reactions } = await withComment();
-    await service.react('o1', comment.id, learner, '👍');
-    await service.react('o1', comment.id, learner, '👍');
+    await service.createReaction('o1', comment.id, learner, '👍');
+    await service.createReaction('o1', comment.id, learner, '👍');
     expect(reactions).toHaveLength(1);
   });
 
   it('removes a reaction', async () => {
     const { service, comment, reactions } = await withComment();
-    await service.react('o1', comment.id, learner, '👍');
-    await service.unreact('o1', comment.id, learner, '👍');
+    await service.createReaction('o1', comment.id, learner, '👍');
+    await service.removeReaction('o1', comment.id, learner, '👍');
     expect(reactions).toHaveLength(0);
   });
 
   it('emits no event', async () => {
     const { service, comment, appended } = await withComment();
     const before = appended.length;
-    await service.react('o1', comment.id, learner, '👍');
+    await service.createReaction('o1', comment.id, learner, '👍');
     expect(appended).toHaveLength(before);
   });
 
   it('refuses when reactions are disabled', async () => {
     const { service, comment } = await withComment({ reactions: false });
-    await expect(service.react('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
+    await expect(service.createReaction('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
   });
 
   it('refuses when comments are locked', async () => {
     const { service, comment } = await withComment();
     await setCommentsState(service, 'a1', 'locked');
-    await expect(service.react('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
+    await expect(service.createReaction('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
   });
 
   it('refuses to remove a reaction when comments are locked', async () => {
     const { service, comment } = await withComment();
-    await service.react('o1', comment.id, learner, '👍');
+    await service.createReaction('o1', comment.id, learner, '👍');
     await setCommentsState(service, 'a1', 'locked');
-    await expect(service.unreact('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
+    await expect(service.removeReaction('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
   });
 
   it('refuses a reaction when comments are hidden', async () => {
     const { service, comment } = await withComment();
     await setCommentsState(service, 'a1', 'hidden');
-    await expect(service.react('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
+    await expect(service.createReaction('o1', comment.id, learner, '👍')).rejects.toThrow(ForbiddenError);
   });
 
   it('still lets a reaction be withdrawn after reactions are disabled', async () => {
     const { service, comment, reactions } = await withComment();
-    await service.react('o1', comment.id, learner, '👍');
+    await service.createReaction('o1', comment.id, learner, '👍');
     await setSettings(service, 'c1', { reactions: false });
-    await service.unreact('o1', comment.id, learner, '👍');
+    await service.removeReaction('o1', comment.id, learner, '👍');
     expect(reactions).toHaveLength(0);
   });
 });

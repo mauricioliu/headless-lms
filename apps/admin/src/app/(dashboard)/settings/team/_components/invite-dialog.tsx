@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 
-import { FormSheet } from "@/components/forms/form-sheet";
+import { FormDialog } from "@/components/forms/form-dialog";
 import { Field } from "@/components/forms/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,7 +33,7 @@ const schema = z.object({
 
 type InviteValues = z.infer<typeof schema>;
 
-export function InviteSheet({
+export function InviteDialog({
   open,
   onOpenChange,
 }: {
@@ -70,7 +70,7 @@ export function InviteSheet({
   });
 
   return (
-    <FormSheet
+    <FormDialog
       open={open}
       onOpenChange={onOpenChange}
       title="Invite member"
@@ -124,6 +124,6 @@ export function InviteSheet({
           />
         </Field>
       </form>
-    </FormSheet>
+    </FormDialog>
   );
 }

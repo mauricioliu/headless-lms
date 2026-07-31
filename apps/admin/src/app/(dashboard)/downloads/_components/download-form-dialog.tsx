@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { FormSheet } from "@/components/forms/form-sheet";
+import { FormDialog } from "@/components/forms/form-dialog";
 import { Field } from "@/components/forms/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,7 +24,7 @@ type FormValues = z.infer<typeof schema>;
 
 const FORM_ID = "download-form";
 
-export function DownloadFormSheet({
+export function DownloadFormDialog({
   open,
   onOpenChange,
   download,
@@ -87,7 +87,7 @@ export function DownloadFormSheet({
   });
 
   return (
-    <FormSheet
+    <FormDialog
       open={open}
       onOpenChange={onOpenChange}
       title={isEdit ? "Edit download" : "New download"}
@@ -134,6 +134,6 @@ export function DownloadFormSheet({
           />
         </Field>
       </form>
-    </FormSheet>
+    </FormDialog>
   );
 }

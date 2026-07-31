@@ -4,20 +4,21 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { FormSheet } from "@/components/forms/form-sheet";
+import { FormDialog } from "@/components/forms/form-dialog";
 import { SchemaFields, schemaDefaults } from "@/components/forms/schema-fields";
 
-import { reconnectIntegrationAction } from "../actions";
+import { connectIntegrationAction } from "../actions";
 import type { IntegrationRow } from "../integrations-view";
 
-const FORM_ID = "reconnect-integration-form";
+const FORM_ID = "connect-integration-form";
 
 interface FormValues {
   secrets: Record<string, unknown>;
+  config: Record<string, unknown>;
 }
 
-/** Reconnect flow: replace the connection's stored secrets (re-authenticate). */
-export function ReconnectSheet({
+/** Connect flow: secrets + config fields rendered from the integration's schemas. */
+export function ConnectDialog({
   row,
   open,
   onOpenChange,
@@ -28,48 +29,55 @@ export function ReconnectSheet({
 }) {
   const [pending, startTransition] = React.useTransition();
   const { control, handleSubmit, reset } = useForm<FormValues>({
-    defaultValues: { secrets: {} },
+    defaultValues: { secrets: {}, config: {} },
   });
 
   const integration = row?.integration;
-  const connection = row?.connection;
   const name = integration ? integration.id.charAt(0).toUpperCase() + integration.id.slice(1) : "";
 
-  // Always starts blank — stored secrets are never echoed back.
+  // Seed schema-implied defaults whenever the sheet opens for an integration.
   React.useEffect(() => {
     if (open && integration) {
-      reset({ secrets: schemaDefaults(integration.secretsSchema) });
+      reset({
+        secrets: schemaDefaults(integration.secretsSchema),
+        config: schemaDefaults(integration.configSchema),
+      });
     }
   }, [open, integration, reset]);
 
   const onSubmit = handleSubmit((values) => {
-    if (!connection) return;
+    if (!integration) return;
     startTransition(async () => {
       try {
-        await reconnectIntegrationAction(connection.id, values.secrets);
-        toast.success(`${name} reconnected`);
+        await connectIntegrationAction({
+          integrationId: integration.id,
+          secrets: values.secrets,
+          config: values.config,
+        });
+        toast.success(`${name} connected`);
         onOpenChange(false);
       } catch (err) {
-        toast.error(`Couldn't reconnect ${name}`, { description: (err as Error).message });
+        toast.error(`Couldn't connect ${name}`, { description: (err as Error).message });
       }
     });
   });
 
-  if (!integration || !connection) return null;
+  if (!integration) return null;
 
   return (
-    <FormSheet
+    <FormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={`Reconnect ${name}`}
-      description="Enter new credentials; they replace the stored ones immediately."
+      title={`Connect ${name}`}
+      description="Credentials are encrypted at rest and never shown again after saving."
       formId={FORM_ID}
-      submitLabel="Reconnect"
+      submitLabel="Connect"
       pending={pending}
     >
       <form id={FORM_ID} onSubmit={onSubmit} className="flex flex-col gap-5">
         <SchemaFields schema={integration.secretsSchema} control={control} namePrefix="secrets" secret />
+        <SchemaFields schema={integration.configSchema} control={control} namePrefix="config" />
       </form>
-    </FormSheet>
+    </FormDialog>
   );
 }

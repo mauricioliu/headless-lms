@@ -88,7 +88,7 @@ same way, and the domain records which person, not what kind of person.
 Whether an author is staff is resolved from their current role in the org each
 time comments are read, and is never recorded on the comment. The same role
 decides three things: who carries an instructor badge, who bypasses review, and
-who may moderate. Any staff participation — owner, admin or instructor —
+who may moderate. Any staff org user — owner, admin or instructor —
 moderates; there is no narrower moderator role.
 
 An author has full control of their own comments: read, revise, remove, with no
@@ -134,9 +134,9 @@ is read rather than copied onto every comment.
    an activity sits in is content's fact — discussion resolves it when scoping
    settings or a queue and never stores a copy. Removing an activity removes
    its comments, reactions, reports and comments state.
-2. **discussion → identity** — discussion references the person's participation
+2. **discussion → identity** — discussion references the person's org user
    in the org on every comment, reaction and report, and reads their role from
-   it. Identity owns the participation and the role; discussion stores neither.
+   it. Identity owns the org user and the role; discussion stores neither.
 3. **discussion → entitlements** — an activity's comments are gated by access to
    the content it attaches to. Entitlements resolves access; discussion serves
    and accepts nothing for content a person cannot open. Entitlements decides
