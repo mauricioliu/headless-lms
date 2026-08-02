@@ -39,19 +39,36 @@ function isEnabledOnlyUpdate(input: UpdateAutomationInput): input is { enabled: 
   return Object.values(rest).every((v) => v === undefined);
 }
 
+export type AutomationsServiceParams = {
+  /** Read-only access (list/get/available) — runs outside any transaction. */
+  repo: AutomationsRepository;
+  runsRepo: AutomationRunsRepository;
+  /** Atomic write scope: tx-bound repos + outbox appender. */
+  uow: AutomationsUnitOfWork;
+  engine: AutomationEngine;
+  mailer: Pick<Mailer, 'send'>;
+  integrations: Pick<IntegrationsService, 'available'>;
+  logger?: Logger;
+};
+
 export class AutomationsServiceImpl implements AutomationsService, AutomationExecutor {
-  constructor(
-    /** Read-only access (list/get/available) — runs outside any transaction. */
-    private readonly repo: AutomationsRepository,
-    private readonly runsRepo: AutomationRunsRepository,
-    /** Atomic write scope: tx-bound repos + outbox appender. */
-    private readonly uow: AutomationsUnitOfWork,
-    private readonly engine: AutomationEngine,
-    private readonly mailer: Pick<Mailer, 'send'>,
-    private readonly integrations: Pick<IntegrationsService, 'available'>,
-    private readonly now: () => string,
-    private readonly logger: Logger = noopLogger,
-  ) {}
+  private readonly repo: AutomationsRepository;
+  private readonly runsRepo: AutomationRunsRepository;
+  private readonly uow: AutomationsUnitOfWork;
+  private readonly engine: AutomationEngine;
+  private readonly mailer: Pick<Mailer, 'send'>;
+  private readonly integrations: Pick<IntegrationsService, 'available'>;
+  private readonly logger: Logger;
+
+  constructor(params: AutomationsServiceParams) {
+    this.repo = params.repo;
+    this.runsRepo = params.runsRepo;
+    this.uow = params.uow;
+    this.engine = params.engine;
+    this.mailer = params.mailer;
+    this.integrations = params.integrations;
+    this.logger = params.logger ?? noopLogger;
+  }
 
   async handle(event: DomainEvent): Promise<void> {
     // automation.* events are this service's own output — matching one as a trigger would self-loop.
@@ -88,14 +105,16 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
           event,
           status: 'running',
           actionResults: [],
-          startedAt: this.now(),
+          startedAt: new Date().toISOString(),
           finishedAt: null,
         });
         if (!inserted) {
           // At-least-once redelivery of a trigger event already run for this automation — no-op.
           return null;
         }
-        await outbox.append([{ type: 'automation.run.started', orgId: event.orgId, run: inserted }]);
+        await outbox.append([
+          { type: 'automation.run.started', orgId: event.orgId, run: inserted },
+        ]);
         return inserted;
       });
       if (!run) {
@@ -129,7 +148,7 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
         const failed = await runs.recordOutcome(run.orgId, run.id, {
           status: 'failed',
           actionResults: run.actionResults,
-          finishedAt: this.now(),
+          finishedAt: new Date().toISOString(),
         });
         if (failed) {
           await outbox.append([{ type: 'automation.run.failed', orgId: run.orgId, run: failed }]);
@@ -163,13 +182,15 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
       const run = await runs.recordOutcome(d.orgId, d.runId, {
         status,
         actionResults: results,
-        finishedAt: this.now(),
+        finishedAt: new Date().toISOString(),
       });
       if (!run) {
         return;
       }
       const runEventType =
-        status === 'completed' ? ('automation.run.completed' as const) : ('automation.run.failed' as const);
+        status === 'completed'
+          ? ('automation.run.completed' as const)
+          : ('automation.run.failed' as const);
       const runEvent = { type: runEventType, orgId: d.orgId, run };
       const actionFailedEvents = results
         .filter((r) => r.status === 'failed')
@@ -197,7 +218,11 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
     return automation;
   }
 
-  async update(orgId: string, id: string, input: UpdateAutomationInput): Promise<Automation | null> {
+  async update(
+    orgId: string,
+    id: string,
+    input: UpdateAutomationInput,
+  ): Promise<Automation | null> {
     if (input.trigger !== undefined && input.trigger.startsWith('automation.')) {
       throw new InvalidTriggerError(input.trigger);
     }

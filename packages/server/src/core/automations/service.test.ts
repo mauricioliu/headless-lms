@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { AutomationsServiceImpl } from './service.js';
 import { InvalidTriggerError } from './model.js';
 import type { Automation, AutomationActionResult, AutomationRun } from './model.js';
@@ -82,7 +82,9 @@ function fakeRepo(over?: Partial<AutomationsRepository>): AutomationsRepository 
 function fakeRunsRepo(over?: Partial<AutomationRunsRepository>): AutomationRunsRepository {
   return {
     insert: vi.fn().mockResolvedValue(RUN),
-    recordOutcome: vi.fn().mockResolvedValue({ ...RUN, status: 'completed', finishedAt: '2026-01-02T00:00:05Z' }),
+    recordOutcome: vi
+      .fn()
+      .mockResolvedValue({ ...RUN, status: 'completed', finishedAt: '2026-01-02T00:00:05Z' }),
     list: vi.fn().mockResolvedValue({ rows: [RUN], total: 1, page: 1, pageSize: 20 }),
     ...over,
   };
@@ -134,12 +136,26 @@ function build(
   engine = fakeEngine(),
   mailer = fakeMailer(),
   integrations = fakeIntegrations(),
-  now: () => string = () => '2026-01-02T00:00:00Z',
 ) {
   const { uow, append, appended } = fakeUow(repo, runsRepo);
-  const svc = new AutomationsServiceImpl(repo, runsRepo, uow, engine, mailer, integrations, now);
+  const svc = new AutomationsServiceImpl({
+    repo,
+    runsRepo,
+    uow,
+    engine,
+    mailer,
+    integrations,
+  });
   return { svc, repo, runsRepo, engine, mailer, integrations, append, appended };
 }
+
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-01-02T00:00:00Z'));
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 describe('AutomationsService.handle', () => {
   it("matches an enabled automation's trigger, opens a run, and dispatches it", async () => {
@@ -155,7 +171,7 @@ describe('AutomationsService.handle', () => {
         trigger: 'entitlement.created',
         status: 'running',
         actionResults: [],
-        startedAt: '2026-01-02T00:00:00Z',
+        startedAt: '2026-01-02T00:00:00.000Z',
         finishedAt: null,
         event: ENTITLEMENT_CREATED_EVENT,
       }),
@@ -204,7 +220,7 @@ describe('AutomationsService.handle', () => {
     expect(runsRepo.recordOutcome).toHaveBeenCalledWith('org-1', 'run_1', {
       status: 'failed',
       actionResults: [],
-      finishedAt: '2026-01-02T00:00:00Z',
+      finishedAt: '2026-01-02T00:00:00.000Z',
     });
     expect(appended).toEqual([
       expect.objectContaining({ type: 'automation.run.started' }),
@@ -222,7 +238,11 @@ describe('AutomationsService.handle', () => {
   });
 
   it('ignores an automation.run.started event even when a matching enabled automation exists', async () => {
-    const selfTriggering: Automation = { ...AUTOMATION, id: 'atm_loop', trigger: 'automation.run.started' };
+    const selfTriggering: Automation = {
+      ...AUTOMATION,
+      id: 'atm_loop',
+      trigger: 'automation.run.started',
+    };
     const { svc, repo, runsRepo, engine } = build(
       fakeRepo({ listByTrigger: vi.fn().mockResolvedValue([selfTriggering]) }),
     );
@@ -269,7 +289,10 @@ describe('AutomationsService.runAction', () => {
     const mailer = fakeMailer();
     const { svc } = build(fakeRepo(), fakeRunsRepo(), fakeEngine(), mailer);
     const result = await svc.runAction(
-      dispatch({ type: 'sendEmail', input: { template: 'accessGranted' } }, ENTITLEMENT_CREATED_EVENT),
+      dispatch(
+        { type: 'sendEmail', input: { template: 'accessGranted' } },
+        ENTITLEMENT_CREATED_EVENT,
+      ),
       0,
     );
     expect(result).toEqual({ index: 0, type: 'sendEmail', status: 'completed' });
@@ -283,7 +306,10 @@ describe('AutomationsService.runAction', () => {
     const mailer = fakeMailer();
     const { svc } = build(fakeRepo(), fakeRunsRepo(), fakeEngine(), mailer);
     const result = await svc.runAction(
-      dispatch({ type: 'sendEmail', input: { template: 'accessRevoked' } }, ENTITLEMENT_DELETED_EVENT),
+      dispatch(
+        { type: 'sendEmail', input: { template: 'accessRevoked' } },
+        ENTITLEMENT_DELETED_EVENT,
+      ),
       0,
     );
     expect(result.status).toBe('completed');
@@ -296,7 +322,13 @@ describe('AutomationsService.runAction', () => {
     const mailer = fakeMailer({ send: vi.fn().mockRejectedValue(new Error('smtp down')) });
     const { svc } = build(fakeRepo(), fakeRunsRepo(), fakeEngine(), mailer);
     await expect(
-      svc.runAction(dispatch({ type: 'sendEmail', input: { template: 'accessGranted' } }, ENTITLEMENT_CREATED_EVENT), 0),
+      svc.runAction(
+        dispatch(
+          { type: 'sendEmail', input: { template: 'accessGranted' } },
+          ENTITLEMENT_CREATED_EVENT,
+        ),
+        0,
+      ),
     ).rejects.toThrow('smtp down');
   });
 
@@ -304,7 +336,13 @@ describe('AutomationsService.runAction', () => {
     const mailer = fakeMailer();
     const { svc } = build(fakeRepo(), fakeRunsRepo(), fakeEngine(), mailer);
     await expect(
-      svc.runAction(dispatch({ type: 'sendEmail', input: { template: 'courseCompleted' } }, ENTITLEMENT_CREATED_EVENT), 0),
+      svc.runAction(
+        dispatch(
+          { type: 'sendEmail', input: { template: 'courseCompleted' } },
+          ENTITLEMENT_CREATED_EVENT,
+        ),
+        0,
+      ),
     ).rejects.toThrow(/courseCompleted/);
     expect(mailer.send).not.toHaveBeenCalled();
   });
@@ -313,7 +351,10 @@ describe('AutomationsService.runAction', () => {
     const mailer = fakeMailer();
     const { svc } = build(fakeRepo(), fakeRunsRepo(), fakeEngine(), mailer);
     await expect(
-      svc.runAction(dispatch({ type: 'sendEmail', input: { template: 'nope' } }, ENTITLEMENT_CREATED_EVENT), 0),
+      svc.runAction(
+        dispatch({ type: 'sendEmail', input: { template: 'nope' } }, ENTITLEMENT_CREATED_EVENT),
+        0,
+      ),
     ).rejects.toThrow(/nope/);
     expect(mailer.send).not.toHaveBeenCalled();
   });
@@ -338,20 +379,30 @@ describe('AutomationsService.finalize', () => {
   };
 
   it('records a completed run and appends automation.run.completed', async () => {
-    const completedRun = { ...RUN, status: 'completed' as const, finishedAt: '2026-01-02T00:00:05Z' };
+    const completedRun = {
+      ...RUN,
+      status: 'completed' as const,
+      finishedAt: '2026-01-02T00:00:05Z',
+    };
     const runsRepo = fakeRunsRepo({ recordOutcome: vi.fn().mockResolvedValue(completedRun) });
     const { svc, appended } = build(fakeRepo(), runsRepo);
-    const results: AutomationActionResult[] = [{ index: 0, type: 'sendEmail', status: 'completed' }];
+    const results: AutomationActionResult[] = [
+      { index: 0, type: 'sendEmail', status: 'completed' },
+    ];
 
     await svc.finalize(dispatch, results);
 
     expect(runsRepo.recordOutcome).toHaveBeenCalledWith('org-1', 'run_1', {
       status: 'completed',
       actionResults: results,
-      finishedAt: '2026-01-02T00:00:00Z',
+      finishedAt: '2026-01-02T00:00:00.000Z',
     });
     expect(appended).toEqual([
-      expect.objectContaining({ type: 'automation.run.completed', orgId: 'org-1', run: completedRun }),
+      expect.objectContaining({
+        type: 'automation.run.completed',
+        orgId: 'org-1',
+        run: completedRun,
+      }),
     ]);
   });
 
@@ -381,7 +432,13 @@ describe('AutomationsService.finalize', () => {
     const runsRepo = fakeRunsRepo();
     const { svc } = build(fakeRepo(), runsRepo);
     await svc.finalize(
-      { ...dispatch, actions: [{ type: 'sendEmail', input: { template: 'accessGranted' } }, { type: 'sendEmail', input: { template: 'accessGranted' } }] },
+      {
+        ...dispatch,
+        actions: [
+          { type: 'sendEmail', input: { template: 'accessGranted' } },
+          { type: 'sendEmail', input: { template: 'accessGranted' } },
+        ],
+      },
       [{ index: 0, type: 'sendEmail', status: 'completed' }],
     );
     expect(runsRepo.recordOutcome).toHaveBeenCalledWith(
@@ -403,7 +460,9 @@ describe('AutomationsService CRUD', () => {
     const created = await svc.create('org-1', input);
     expect(created).toEqual(AUTOMATION);
     expect(repo.insert).toHaveBeenCalledWith('org-1', input);
-    expect(appended).toEqual([{ type: 'automation.created', orgId: 'org-1', automation: AUTOMATION }]);
+    expect(appended).toEqual([
+      { type: 'automation.created', orgId: 'org-1', automation: AUTOMATION },
+    ]);
   });
 
   it('rejects creating an automation whose trigger is in the automation.* namespace', async () => {
@@ -420,9 +479,9 @@ describe('AutomationsService CRUD', () => {
 
   it('rejects updating an automation to a trigger in the automation.* namespace', async () => {
     const { svc, repo, append } = build();
-    await expect(svc.update('org-1', 'atm_1', { trigger: 'automation.run.completed' })).rejects.toThrow(
-      InvalidTriggerError,
-    );
+    await expect(
+      svc.update('org-1', 'atm_1', { trigger: 'automation.run.completed' }),
+    ).rejects.toThrow(InvalidTriggerError);
     expect(repo.update).not.toHaveBeenCalled();
     expect(append).not.toHaveBeenCalled();
   });
@@ -432,19 +491,25 @@ describe('AutomationsService CRUD', () => {
     const updated = await svc.update('org-1', 'atm_1', { name: 'New name' });
     expect(updated).toEqual(AUTOMATION);
     expect(repo.update).toHaveBeenCalledWith('org-1', 'atm_1', { name: 'New name' });
-    expect(appended).toEqual([{ type: 'automation.updated', orgId: 'org-1', automation: AUTOMATION }]);
+    expect(appended).toEqual([
+      { type: 'automation.updated', orgId: 'org-1', automation: AUTOMATION },
+    ]);
   });
 
   it('appends automation.enabled for an enabled:true-only update', async () => {
     const { svc, appended } = build();
     await svc.update('org-1', 'atm_1', { enabled: true });
-    expect(appended).toEqual([{ type: 'automation.enabled', orgId: 'org-1', automationId: 'atm_1' }]);
+    expect(appended).toEqual([
+      { type: 'automation.enabled', orgId: 'org-1', automationId: 'atm_1' },
+    ]);
   });
 
   it('appends automation.disabled for an enabled:false-only update', async () => {
     const { svc, appended } = build();
     await svc.update('org-1', 'atm_1', { enabled: false });
-    expect(appended).toEqual([{ type: 'automation.disabled', orgId: 'org-1', automationId: 'atm_1' }]);
+    expect(appended).toEqual([
+      { type: 'automation.disabled', orgId: 'org-1', automationId: 'atm_1' },
+    ]);
   });
 
   it('returns null and appends nothing when updating a missing automation', async () => {
@@ -459,7 +524,9 @@ describe('AutomationsService CRUD', () => {
     const ok = await svc.delete('org-1', 'atm_1');
     expect(ok).toBe(true);
     expect(repo.delete).toHaveBeenCalledWith('org-1', 'atm_1');
-    expect(appended).toEqual([{ type: 'automation.deleted', orgId: 'org-1', automation: AUTOMATION }]);
+    expect(appended).toEqual([
+      { type: 'automation.deleted', orgId: 'org-1', automation: AUTOMATION },
+    ]);
   });
 
   it('returns false and appends nothing when deleting a missing automation', async () => {

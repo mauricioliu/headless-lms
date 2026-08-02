@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { ProgressServiceImpl } from './service.js';
 import type { ProgressRepository, ProgressUnitOfWork } from './ports.js';
 import type { ProgressRecord } from './model.js';
@@ -83,7 +83,9 @@ function structure(overrides?: { a1Settings?: unknown }): Module[] {
       courseId: 'c1',
       title: 'Module 2',
       seq: 1,
-      activities: [{ id: 'a3', moduleId: 'm2', courseId: 'c1', seq: 0, settings: {}, assetIds: [] }],
+      activities: [
+        { id: 'a3', moduleId: 'm2', courseId: 'c1', seq: 0, settings: {}, assetIds: [] },
+      ],
     },
   ];
 }
@@ -100,7 +102,11 @@ function fakeContent(modules: Module[]): ContentService {
 function makeService(modules: Module[]) {
   const { repo, records } = fakeRepo();
   const { uow, appended } = fakeUow(repo);
-  const svc = new ProgressServiceImpl(repo, fakeContent(modules), uow, () => '2026-07-23T10:00:00Z');
+  const svc = new ProgressServiceImpl({
+    repo,
+    content: fakeContent(modules),
+    uow,
+  });
   return { svc, records, appended };
 }
 
@@ -110,6 +116,14 @@ const input = (activityId: string, reports: ProgressReportItem[]) => ({
   reports,
 });
 
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-07-23T10:00:00Z'));
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
+
 describe('ProgressService.report', () => {
   it('bare report creates the record and emits progress.started once', async () => {
     const { svc, records, appended } = makeService(structure());
@@ -117,7 +131,7 @@ describe('ProgressService.report', () => {
     const second = await svc.report('org-1', input('a1', []));
     expect(first.id).toBe(second.id);
     expect(records).toHaveLength(1);
-    expect(records[0]?.startedAt).toBe('2026-07-23T10:00:00Z');
+    expect(records[0]?.startedAt).toBe('2026-07-23T10:00:00.000Z');
     expect(appended).toHaveLength(1);
     expect(appended[0]).toMatchObject({ type: 'progress.started', orgId: 'org-1' });
     expect(appended[0]).not.toHaveProperty('courseId');
@@ -155,14 +169,14 @@ describe('ProgressService.report', () => {
       'org-1',
       input('a1', [{ asset: 'ast_v1', seconds: 612 }, { completed: true }]),
     );
-    expect(record.completedAt).toBe('2026-07-23T10:00:00Z');
+    expect(record.completedAt).toBe('2026-07-23T10:00:00.000Z');
     expect(record.position).toEqual({ ast_v1: { seconds: 612 } });
   });
 
   it('completed claim on a rule-less activity completes it and emits progress.completed', async () => {
     const { svc, appended } = makeService(structure());
     const record = await svc.report('org-1', input('a1', [{ completed: true }]));
-    expect(record.completedAt).toBe('2026-07-23T10:00:00Z');
+    expect(record.completedAt).toBe('2026-07-23T10:00:00.000Z');
     const completed = appended.filter((e) => e.type === 'progress.completed');
     expect(completed).toHaveLength(1);
     expect((completed[0] as { record: ProgressRecord }).record.targetId).toBe('a1');
@@ -191,17 +205,28 @@ describe('ProgressService.report', () => {
     await svc.report('org-1', input('a2', [{ completed: true }]));
     // m1 done, course not (a3 open)
     expect(records.find((r) => r.targetType === 'module' && r.targetId === 'm1')?.completedAt).toBe(
-      '2026-07-23T10:00:00Z',
+      '2026-07-23T10:00:00.000Z',
     );
     expect(records.find((r) => r.targetType === 'course')).toBeUndefined();
     await svc.report('org-1', input('a3', [{ completed: true }]));
-    expect(records.find((r) => r.targetType === 'module' && r.targetId === 'm2')?.completedAt).toBeTruthy();
-    expect(records.find((r) => r.targetType === 'course' && r.targetId === 'c1')?.completedAt).toBeTruthy();
+    expect(
+      records.find((r) => r.targetType === 'module' && r.targetId === 'm2')?.completedAt,
+    ).toBeTruthy();
+    expect(
+      records.find((r) => r.targetType === 'course' && r.targetId === 'c1')?.completedAt,
+    ).toBeTruthy();
     const completedTargets = appended
       .filter((e) => e.type === 'progress.completed')
       .map((e) => (e as { record: ProgressRecord }).record.targetType);
     // a1, a2+m1, a3+m2+course
-    expect(completedTargets).toEqual(['activity', 'activity', 'module', 'activity', 'module', 'course']);
+    expect(completedTargets).toEqual([
+      'activity',
+      'activity',
+      'module',
+      'activity',
+      'module',
+      'course',
+    ]);
   });
 
   it('draft activities (published: false) are excluded from the denominator', async () => {
@@ -209,7 +234,9 @@ describe('ProgressService.report', () => {
     (modules[0]!.activities[1]! as { settings: unknown }).settings = { published: false };
     const { svc, records } = makeService(modules);
     await svc.report('org-1', input('a1', [{ completed: true }]));
-    expect(records.find((r) => r.targetType === 'module' && r.targetId === 'm1')?.completedAt).toBeTruthy();
+    expect(
+      records.find((r) => r.targetType === 'module' && r.targetId === 'm1')?.completedAt,
+    ).toBeTruthy();
   });
 
   it('rejects a report for an activity not in the course', async () => {
@@ -227,7 +254,7 @@ describe('ProgressService.report', () => {
       structure({ a1Settings: { completion: { rule: 'manual' } } }),
     );
     const record = await svc.report('org-1', input('a1', [{ completed: true }]));
-    expect(record.completedAt).toBe('2026-07-23T10:00:00Z');
+    expect(record.completedAt).toBe('2026-07-23T10:00:00.000Z');
     expect(appended.filter((e) => e.type === 'progress.completed')).toHaveLength(1);
   });
 });

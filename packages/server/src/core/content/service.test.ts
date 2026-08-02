@@ -89,7 +89,7 @@ function fakeUow(repo: ContentRepository) {
 function build(repo = makeRepo(), structure = makeStructureRepo()) {
   const { uow, append, appended } = fakeUow(repo);
   const { settings, settingsRepo } = makeSettings();
-  const svc = new ContentServiceImpl(repo, structure, uow, settings);
+  const svc = new ContentServiceImpl({ repo, structureRepo: structure, uow, settings });
   return { svc, repo, structure, append, appended, settingsRepo };
 }
 
@@ -197,7 +197,9 @@ describe('ContentServiceImpl', () => {
     (repo.update as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
 
     const { svc } = build(repo);
-    const result = await svc.updateCourse('org1', 'c1', { settings: { transcriptDownloads: true } });
+    const result = await svc.updateCourse('org1', 'c1', {
+      settings: { transcriptDownloads: true },
+    });
 
     expect(repo.update).toHaveBeenCalledWith('org1', 'c1', {
       settings: { transcriptDownloads: true },
@@ -210,7 +212,9 @@ describe('ContentServiceImpl', () => {
     (repo.update as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     const { svc, append } = build(repo);
-    await expect(svc.updateCourse('org1', 'missing', { title: 'X' })).rejects.toThrow(NotFoundError);
+    await expect(svc.updateCourse('org1', 'missing', { title: 'X' })).rejects.toThrow(
+      NotFoundError,
+    );
     expect(append).not.toHaveBeenCalled();
   });
 
@@ -296,7 +300,14 @@ describe('ContentServiceImpl', () => {
 describe('hierarchy reads', () => {
   it('getActivity and getModule delegate to the structure repository', async () => {
     const structure = makeStructureRepo();
-    const activity = { id: 'a1', moduleId: 'm1', courseId: 'c1', seq: 0, settings: {}, assetIds: [] };
+    const activity = {
+      id: 'a1',
+      moduleId: 'm1',
+      courseId: 'c1',
+      seq: 0,
+      settings: {},
+      assetIds: [],
+    };
     const module = { id: 'm1', courseId: 'c1', title: 'M1', seq: 0, activities: [activity] };
     vi.mocked(structure.findActivity).mockResolvedValue(activity);
     vi.mocked(structure.findModule).mockResolvedValue(module);
@@ -328,13 +339,13 @@ describe('logging', () => {
     (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(course);
     (repo.delete as ReturnType<typeof vi.fn>).mockResolvedValue(true);
     const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl(
+    const svc = new ContentServiceImpl({
       repo,
-      makeStructureRepo(),
+      structureRepo: makeStructureRepo(),
       uow,
-      makeSettings().settings,
+      settings: makeSettings().settings,
       logger,
-    );
+    });
 
     await svc.createCourse('org-1', { title: 'Intro' });
     await svc.updateCourse('org-1', course.id, { title: 'Intro 2' });
@@ -373,7 +384,12 @@ describe('downloads', () => {
     const download = makeDownload({ title: 'My Great Workbook', slug: 'my-great-workbook' });
     vi.mocked(repo.createDownload).mockResolvedValue(download);
     const { uow, appended } = fakeUow(repo);
-    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow, makeSettings().settings);
+    const svc = new ContentServiceImpl({
+      repo,
+      structureRepo: makeStructureRepo(),
+      uow,
+      settings: makeSettings().settings,
+    });
 
     const result = await svc.createDownload('o1', { title: 'My Great Workbook' });
 
@@ -390,9 +406,16 @@ describe('downloads', () => {
     const repo = makeRepo();
     vi.mocked(repo.updateDownload).mockResolvedValue(null);
     const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow, makeSettings().settings);
+    const svc = new ContentServiceImpl({
+      repo,
+      structureRepo: makeStructureRepo(),
+      uow,
+      settings: makeSettings().settings,
+    });
 
-    await expect(svc.updateDownload('o1', 'missing', { title: 'x' })).rejects.toThrow(NotFoundError);
+    await expect(svc.updateDownload('o1', 'missing', { title: 'x' })).rejects.toThrow(
+      NotFoundError,
+    );
   });
 
   it('appends download.deleted carrying the pre-delete snapshot', async () => {
@@ -401,7 +424,12 @@ describe('downloads', () => {
     vi.mocked(repo.getDownload).mockResolvedValue(download);
     vi.mocked(repo.deleteDownload).mockResolvedValue(true);
     const { uow, appended } = fakeUow(repo);
-    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow, makeSettings().settings);
+    const svc = new ContentServiceImpl({
+      repo,
+      structureRepo: makeStructureRepo(),
+      uow,
+      settings: makeSettings().settings,
+    });
 
     await svc.removeDownload('o1', 'd1');
 
@@ -412,7 +440,12 @@ describe('downloads', () => {
     const repo = makeRepo();
     vi.mocked(repo.getDownload).mockResolvedValue(null);
     const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow, makeSettings().settings);
+    const svc = new ContentServiceImpl({
+      repo,
+      structureRepo: makeStructureRepo(),
+      uow,
+      settings: makeSettings().settings,
+    });
 
     await expect(svc.removeDownload('o1', 'missing')).rejects.toThrow(NotFoundError);
     expect(repo.deleteDownload).not.toHaveBeenCalled();
@@ -440,12 +473,15 @@ describe('download assets', () => {
       makeDownloadAsset({ id: 'da2', assetId: 'a2', seq: 1 }),
     ]);
     const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow, makeSettings().settings);
+    const svc = new ContentServiceImpl({
+      repo,
+      structureRepo: makeStructureRepo(),
+      uow,
+      settings: makeSettings().settings,
+    });
 
     // Drops a2 — a stale client must not be able to silently unlink it.
-    await expect(svc.reorderDownloadAssets('o1', 'd1', ['a1'])).rejects.toThrow(
-      /does not match/i,
-    );
+    await expect(svc.reorderDownloadAssets('o1', 'd1', ['a1'])).rejects.toThrow(/does not match/i);
     expect(repo.reorderDownloadAssets).not.toHaveBeenCalled();
   });
 
@@ -455,7 +491,12 @@ describe('download assets', () => {
       makeDownloadAsset({ id: 'da1', assetId: 'a1', seq: 0 }),
     ]);
     const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow, makeSettings().settings);
+    const svc = new ContentServiceImpl({
+      repo,
+      structureRepo: makeStructureRepo(),
+      uow,
+      settings: makeSettings().settings,
+    });
 
     await expect(svc.reorderDownloadAssets('o1', 'd1', ['a1', 'a9'])).rejects.toThrow(
       /does not match/i,
@@ -470,7 +511,12 @@ describe('download assets', () => {
       makeDownloadAsset({ id: 'da2', assetId: 'a2', seq: 1 }),
     ]);
     const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow, makeSettings().settings);
+    const svc = new ContentServiceImpl({
+      repo,
+      structureRepo: makeStructureRepo(),
+      uow,
+      settings: makeSettings().settings,
+    });
 
     await expect(svc.reorderDownloadAssets('o1', 'd1', ['a1', 'a1'])).rejects.toThrow(
       /does not match/i,
@@ -490,7 +536,12 @@ describe('download assets', () => {
     ]);
     vi.mocked(repo.reorderDownloadAssets).mockResolvedValue(reordered);
     const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow, makeSettings().settings);
+    const svc = new ContentServiceImpl({
+      repo,
+      structureRepo: makeStructureRepo(),
+      uow,
+      settings: makeSettings().settings,
+    });
 
     const result = await svc.reorderDownloadAssets('o1', 'd1', ['a2', 'a1']);
 
@@ -503,7 +554,12 @@ describe('download assets', () => {
     const list = [makeDownloadAsset()];
     vi.mocked(repo.addDownloadAsset).mockResolvedValue(list);
     const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl(repo, makeStructureRepo(), uow, makeSettings().settings);
+    const svc = new ContentServiceImpl({
+      repo,
+      structureRepo: makeStructureRepo(),
+      uow,
+      settings: makeSettings().settings,
+    });
 
     const result = await svc.addDownloadAsset('o1', 'd1', { assetId: 'a1' });
 

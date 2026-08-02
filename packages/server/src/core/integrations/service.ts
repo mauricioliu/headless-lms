@@ -22,16 +22,27 @@ import type {
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 
+export type IntegrationsServiceParams = {
+  registry: IntegrationsRegistry;
+  /** Read-only access (find/list) — runs outside any transaction. */
+  repo: ConnectionsRepository;
+  /** Atomic write scope: tx-bound connections repo + credential store + outbox. */
+  uow: IntegrationsUnitOfWork;
+  logger?: Logger;
+};
+
 export class IntegrationsServiceImpl implements IntegrationsService {
-  constructor(
-    private readonly registry: IntegrationsRegistry,
-    /** Read-only access (find/list) — runs outside any transaction. */
-    private readonly repo: ConnectionsRepository,
-    /** Atomic write scope: tx-bound connections repo + credential store + outbox. */
-    private readonly uow: IntegrationsUnitOfWork,
-    private readonly now: () => string,
-    private readonly logger: Logger = noopLogger,
-  ) {}
+  private readonly registry: IntegrationsRegistry;
+  private readonly repo: ConnectionsRepository;
+  private readonly uow: IntegrationsUnitOfWork;
+  private readonly logger: Logger;
+
+  constructor(params: IntegrationsServiceParams) {
+    this.registry = params.registry;
+    this.repo = params.repo;
+    this.uow = params.uow;
+    this.logger = params.logger ?? noopLogger;
+  }
 
   available() {
     return this.registry.list().map((integration) => ({
@@ -76,7 +87,7 @@ export class IntegrationsServiceImpl implements IntegrationsService {
     }
     const connection = await this.uow.run(async ({ connections, credentials, outbox }) => {
       const credentialRef = await credentials.store(orgId, input.secrets);
-      const at = this.now();
+      const at = new Date().toISOString();
       const created = await connections.insert(orgId, {
         id: genId('connection'),
         integrationId: input.integrationId,
@@ -115,7 +126,7 @@ export class IntegrationsServiceImpl implements IntegrationsService {
     }
     const updated = await this.uow.run(async ({ connections, credentials, outbox }) => {
       await credentials.update(orgId, connection.credentialRef, secrets);
-      const result = await connections.update(orgId, id, { updatedAt: this.now() });
+      const result = await connections.update(orgId, id, { updatedAt: new Date().toISOString() });
       await outbox.append([
         {
           type: 'connection.updated',
@@ -147,7 +158,7 @@ export class IntegrationsServiceImpl implements IntegrationsService {
       const result = await connections.update(orgId, id, {
         ...(input.config !== undefined ? { config: input.config } : {}),
         ...(input.active !== undefined ? { active: input.active } : {}),
-        updatedAt: this.now(),
+        updatedAt: new Date().toISOString(),
       });
       await outbox.append([
         {

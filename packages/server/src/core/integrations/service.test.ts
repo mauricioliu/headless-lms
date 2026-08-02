@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { IntegrationsServiceImpl } from './service.js';
 import { createIntegrationsRegistry } from './registry.js';
 import { AlreadyConnectedError, InvalidConfigError, UnknownIntegrationError } from './model.js';
@@ -80,9 +80,21 @@ function build(repo = fakeRepo(), credentials = fakeCredentials()) {
   const uow: IntegrationsUnitOfWork = {
     run: (fn) => fn({ connections: repo, credentials, outbox: { append } }),
   };
-  const svc = new IntegrationsServiceImpl(registry, repo, uow, () => '2026-01-02T00:00:00Z');
+  const svc = new IntegrationsServiceImpl({
+    registry,
+    repo,
+    uow,
+  });
   return { svc, repo, credentials, append, appended };
 }
+
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-01-02T00:00:00Z'));
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 describe('IntegrationsRegistry', () => {
   it('resolves declared integrations and rejects duplicates', () => {
@@ -194,7 +206,7 @@ describe('IntegrationsService', () => {
     await svc.configure('org-1', 'con_1', { active: false });
     expect(repo.update).toHaveBeenCalledWith('org-1', 'con_1', {
       active: false,
-      updatedAt: '2026-01-02T00:00:00Z',
+      updatedAt: '2026-01-02T00:00:00.000Z',
     });
     expect(appended).toEqual([
       expect.objectContaining({ type: 'connection.updated', changed: 'configuration' }),
@@ -250,13 +262,12 @@ describe('logging', () => {
           outbox: { append: async (e) => void appended.push(...e) },
         }),
     };
-    const svc = new IntegrationsServiceImpl(
+    const svc = new IntegrationsServiceImpl({
       registry,
       repo,
       uow,
-      () => '2026-01-02T00:00:00Z',
       logger,
-    );
+    });
 
     const connection = await svc.connect('org-1', {
       integrationId: 'slack',

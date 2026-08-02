@@ -18,10 +18,8 @@ import type {
 import type { ProgressReportItem, ProgressTarget, ReportProgressInput } from './types.js';
 import type { NewProgressEvent } from './events.js';
 import type { ContentService, Module } from '../content/index.js';
-import type { Logger, OutboxAppender } from '../shared/ports.js';
+import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
-
-const noopOutbox: OutboxAppender = { append: async () => {} };
 
 /** Mirrors reporting/learn: `settings.published === false` is the only draft signal. */
 function isActivityPublished(settings: unknown): boolean {
@@ -62,17 +60,24 @@ function completionSatisfied(settings: unknown, claimed: boolean): boolean {
   return false;
 }
 
-export class ProgressServiceImpl implements ProgressService {
-  private readonly uow: ProgressUnitOfWork;
+export type ProgressServiceParams = {
+  repo: ProgressRepository;
+  content: ContentService;
+  uow: ProgressUnitOfWork;
+  logger?: Logger;
+};
 
-  constructor(
-    private readonly repo: ProgressRepository,
-    private readonly content: ContentService,
-    uow: ProgressUnitOfWork | undefined,
-    private readonly now: () => string,
-    private readonly logger: Logger = noopLogger,
-  ) {
-    this.uow = uow ?? { run: (fn) => fn({ progress: repo, outbox: noopOutbox }) };
+export class ProgressServiceImpl implements ProgressService {
+  private readonly repo: ProgressRepository;
+  private readonly content: ContentService;
+  private readonly uow: ProgressUnitOfWork;
+  private readonly logger: Logger;
+
+  constructor(params: ProgressServiceParams) {
+    this.repo = params.repo;
+    this.content = params.content;
+    this.uow = params.uow;
+    this.logger = params.logger ?? noopLogger;
   }
 
   async report(orgId: string, input: ReportProgressInput): Promise<ProgressRecord> {
@@ -97,12 +102,13 @@ export class ProgressServiceImpl implements ProgressService {
       let record = await this.ensureActivityRecord(orgId, input, scope, events);
       const state = mergeReports(record.position, input.reports);
       if (state.changed && !record.completedAt) {
-        record =
-          (await scope.progress.update(orgId, record.id, { position: state.map })) ?? record;
+        record = (await scope.progress.update(orgId, record.id, { position: state.map })) ?? record;
       }
       if (!record.completedAt && completionSatisfied(activity.settings, state.claimed)) {
         record =
-          (await scope.progress.update(orgId, record.id, { completedAt: this.now() })) ?? record;
+          (await scope.progress.update(orgId, record.id, {
+            completedAt: new Date().toISOString(),
+          })) ?? record;
         events.push({ type: 'progress.completed', orgId, record });
         await this.completeContainers(orgId, input, courseId, modules, scope, events);
         this.logger.info('progress completed', { orgId, recordId: record.id });
@@ -135,7 +141,7 @@ export class ProgressServiceImpl implements ProgressService {
       orgUserId: input.orgUserId,
       targetType: 'activity',
       targetId: input.activityId,
-      startedAt: this.now(),
+      startedAt: new Date().toISOString(),
       position: null,
       completedAt: null,
     });
@@ -201,9 +207,9 @@ export class ProgressServiceImpl implements ProgressService {
         orgUserId: input.orgUserId,
         targetType,
         targetId,
-        startedAt: this.now(),
+        startedAt: new Date().toISOString(),
         position: null,
-        completedAt: this.now(),
+        completedAt: new Date().toISOString(),
       });
       if (inserted) {
         events.push({ type: 'progress.completed', orgId, record: inserted });
@@ -219,7 +225,9 @@ export class ProgressServiceImpl implements ProgressService {
       }
     }
     const record =
-      (await scope.progress.update(orgId, existing.id, { completedAt: this.now() })) ?? existing;
+      (await scope.progress.update(orgId, existing.id, {
+        completedAt: new Date().toISOString(),
+      })) ?? existing;
     events.push({ type: 'progress.completed', orgId, record });
   }
 

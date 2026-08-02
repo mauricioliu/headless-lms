@@ -57,7 +57,11 @@ describe('AssetsService logging', () => {
   it('logs upload request, confirm, and removal', async () => {
     const { logger, entries } = createCapturingLogger();
     const { repo } = fakeRepo();
-    const svc = new AssetsServiceImpl(fakeStorage(), repo, () => '2026-01-01T00:00:00Z', logger);
+    const svc = new AssetsServiceImpl({
+      storage: fakeStorage(),
+      repo,
+      logger,
+    });
 
     const ticket = await svc.requestUpload('org-1', {
       kind: 'video',

@@ -25,13 +25,22 @@ function sanitizeFilename(filename: string): string {
   return base.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120) || 'file';
 }
 
+export type AssetsServiceParams = {
+  storage: ObjectStorage;
+  repo: AssetsRepository;
+  logger?: Logger;
+};
+
 export class AssetsServiceImpl implements AssetsService {
-  constructor(
-    private readonly storage: ObjectStorage,
-    private readonly repo: AssetsRepository,
-    private readonly now: () => string,
-    private readonly logger: Logger = noopLogger,
-  ) {}
+  private readonly storage: ObjectStorage;
+  private readonly repo: AssetsRepository;
+  private readonly logger: Logger;
+
+  constructor(params: AssetsServiceParams) {
+    this.storage = params.storage;
+    this.repo = params.repo;
+    this.logger = params.logger ?? noopLogger;
+  }
 
   async requestUpload(orgId: string, input: RequestUploadInput): Promise<UploadTicket> {
     const id = genId('asset');
@@ -46,7 +55,7 @@ export class AssetsServiceImpl implements AssetsService {
       size: 0,
       status: 'pending',
       uploadedBy: input.uploadedBy,
-      createdAt: this.now(),
+      createdAt: new Date().toISOString(),
     });
     this.logger.info('asset upload requested', { orgId, assetId: id, kind: input.kind });
     return {

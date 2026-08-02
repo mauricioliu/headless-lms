@@ -43,7 +43,7 @@ function fakeUow(repo: EntitlementsRepository) {
 
 function build(repo = fakeRepo()) {
   const { uow, append, appended } = fakeUow(repo);
-  const svc = new EntitlementsServiceImpl(repo, uow);
+  const svc = new EntitlementsServiceImpl({ repo, uow });
   return { svc, repo, append, appended };
 }
 
@@ -70,7 +70,9 @@ describe('EntitlementsService', () => {
   it('appends entitlement.created (org + full snapshot) inside the unit of work', async () => {
     const { svc, appended } = build();
     await svc.grant('org-1', { orgUserId: 's1', contentId: 'c1', expiresAt: null });
-    expect(appended).toEqual([{ type: 'entitlement.created', orgId: 'org-1', entitlement: SAMPLE }]);
+    expect(appended).toEqual([
+      { type: 'entitlement.created', orgId: 'org-1', entitlement: SAMPLE },
+    ]);
   });
 
   it('sets status (revoke/reactivate) via the tx-bound repository', async () => {
@@ -82,13 +84,17 @@ describe('EntitlementsService', () => {
   it('appends entitlement.deleted on revoke', async () => {
     const { svc, appended } = build();
     await svc.setStatus('org-1', 'e1', 'revoked');
-    expect(appended).toEqual([{ type: 'entitlement.deleted', orgId: 'org-1', entitlement: SAMPLE }]);
+    expect(appended).toEqual([
+      { type: 'entitlement.deleted', orgId: 'org-1', entitlement: SAMPLE },
+    ]);
   });
 
   it('appends entitlement.updated on reactivation', async () => {
     const { svc, appended } = build();
     await svc.setStatus('org-1', 'e1', 'active');
-    expect(appended).toEqual([{ type: 'entitlement.updated', orgId: 'org-1', entitlement: SAMPLE }]);
+    expect(appended).toEqual([
+      { type: 'entitlement.updated', orgId: 'org-1', entitlement: SAMPLE },
+    ]);
   });
 
   it('appends nothing when setStatus finds no entitlement', async () => {
@@ -134,7 +140,7 @@ describe('logging', () => {
     const { logger, entries } = createCapturingLogger();
     const repo = fakeRepo();
     const { uow } = fakeUow(repo);
-    const svc = new EntitlementsServiceImpl(repo, uow, logger);
+    const svc = new EntitlementsServiceImpl({ repo, uow, logger });
 
     const entitlement = await svc.grant('org-1', {
       orgUserId: 's1',

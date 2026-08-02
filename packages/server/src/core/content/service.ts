@@ -36,14 +36,28 @@ function slugify(title: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
+export type ContentServiceParams = {
+  repo: ContentRepository;
+  structureRepo: CourseRepository;
+  uow: ContentUnitOfWork;
+  settings: SettingsService;
+  logger?: Logger;
+};
+
 export class ContentServiceImpl implements ContentService {
-  constructor(
-    private readonly repo: ContentRepository,
-    private readonly structureRepo: CourseRepository,
-    private readonly uow: ContentUnitOfWork,
-    private readonly settings: SettingsService,
-    private readonly logger: Logger = noopLogger,
-  ) {}
+  private readonly repo: ContentRepository;
+  private readonly structureRepo: CourseRepository;
+  private readonly uow: ContentUnitOfWork;
+  private readonly settings: SettingsService;
+  private readonly logger: Logger;
+
+  constructor(params: ContentServiceParams) {
+    this.repo = params.repo;
+    this.structureRepo = params.structureRepo;
+    this.uow = params.uow;
+    this.settings = params.settings;
+    this.logger = params.logger ?? noopLogger;
+  }
 
   list(orgId: string, query: ListCoursesQuery): Promise<Page<Course>> {
     return this.repo.list(orgId, query);

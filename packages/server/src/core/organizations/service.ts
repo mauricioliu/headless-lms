@@ -30,7 +30,7 @@ import type {
   UpdateStudentInput,
 } from './types.js';
 import type { DomainEvent, NewDomainEvent, OrganizationEvent } from '@headless-lms/types';
-import type { Logger, OutboxAppender } from '../shared/ports.js';
+import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 import type { Mailer } from '../shared/mailer.js';
 import { generateInviteToken, hashInviteToken } from '../shared/invite-token.js';
@@ -67,33 +67,50 @@ function toMember(r: MemberRecord): Member {
   };
 }
 
-const noopOutbox: OutboxAppender = { append: async () => {} };
+export type OrganizationServiceParams = {
+  repo: OrganizationsRepository;
+  membersRepo: MembersRepository;
+  orgAdmin: () => OrgAdmin;
+  people: IdentityService;
+  /** Writes that emit an event run through the UoW so the row and its outbox
+   *  entry commit in one transaction. */
+  uow: OrganizationsUnitOfWork;
+  logger?: Logger;
+  mailer?: Pick<Mailer, 'send'>;
+  inviteUrls?: InviteUrls;
+};
 
 export class OrganizationServiceImpl implements OrganizationService {
-  /** Writes that emit an event run through the UoW so the row and its outbox
-   *  entry commit in one transaction. Absent (tests) → passthrough, no events. */
+  private readonly repo: OrganizationsRepository;
+  private readonly membersRepo: MembersRepository;
+  private readonly orgAdmin: () => OrgAdmin;
+  private readonly people: IdentityService;
   private readonly uow: OrganizationsUnitOfWork;
+  private readonly logger: Logger;
+  private readonly mailer?: Pick<Mailer, 'send'>;
+  private readonly inviteUrls?: InviteUrls;
 
-  constructor(
-    private readonly repo: OrganizationsRepository,
-    private readonly membersRepo: MembersRepository,
-    private readonly orgAdmin: () => OrgAdmin,
-    private readonly people: IdentityService,
-    uow?: OrganizationsUnitOfWork,
-    private readonly logger: Logger = noopLogger,
-    private readonly mailer?: Pick<Mailer, 'send'>,
-    private readonly inviteUrls?: InviteUrls,
-  ) {
-    this.uow = uow ?? { run: (fn) => fn({ organizations: repo, outbox: noopOutbox }) };
+  constructor(params: OrganizationServiceParams) {
+    this.repo = params.repo;
+    this.membersRepo = params.membersRepo;
+    this.orgAdmin = params.orgAdmin;
+    this.people = params.people;
+    this.uow = params.uow;
+    this.logger = params.logger ?? noopLogger;
+    this.mailer = params.mailer;
+    this.inviteUrls = params.inviteUrls;
   }
 
   async createOrg(input: CreateOrganizationInput): Promise<Organization> {
-    const existing = await this.repo.findByExternalId(input.externalId);
-    if (existing) {
-      return existing;
-    }
-    const created = await this.repo.create(input);
-    this.logger.info('organization mirrored', { orgId: created.id, externalId: input.externalId });
+    const created = await this.uow.run(async ({ organizations, outbox }) => {
+      const created = await organizations.create(input);
+      await outbox.append([
+        { type: 'organization.created', orgId: created.id, organization: created },
+      ]);
+      return created;
+    });
+
+    this.logger.info('organization created', { input });
     return created;
   }
 
@@ -257,11 +274,6 @@ export class OrganizationServiceImpl implements OrganizationService {
     });
     this.logger.info('student invite resent', { orgId, orgUserId });
   }
-
-
-
-
-
 
   async peekInvite(token: string): Promise<Invite | null> {
     const invite = await this.repo.findInviteByTokenHash(hashInviteToken(token));

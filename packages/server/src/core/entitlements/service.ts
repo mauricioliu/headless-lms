@@ -13,14 +13,24 @@ import type {
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 
+export type EntitlementsServiceParams = {
+  /** Read-only access (list) — runs outside any transaction. */
+  repo: EntitlementsRepository;
+  /** Atomic write scope: tx-bound repo + outbox appender. */
+  uow: EntitlementsUnitOfWork;
+  logger?: Logger;
+};
+
 export class EntitlementsServiceImpl implements EntitlementsService {
-  constructor(
-    /** Read-only access (list) — runs outside any transaction. */
-    private readonly repo: EntitlementsRepository,
-    /** Atomic write scope: tx-bound repo + outbox appender. */
-    private readonly uow: EntitlementsUnitOfWork,
-    private readonly logger: Logger = noopLogger,
-  ) {}
+  private readonly repo: EntitlementsRepository;
+  private readonly uow: EntitlementsUnitOfWork;
+  private readonly logger: Logger;
+
+  constructor(params: EntitlementsServiceParams) {
+    this.repo = params.repo;
+    this.uow = params.uow;
+    this.logger = params.logger ?? noopLogger;
+  }
 
   list(orgId: string, query: EntitlementsQuery): Promise<Page<Entitlement>> {
     return this.repo.list(orgId, query);
