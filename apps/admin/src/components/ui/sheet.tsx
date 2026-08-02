@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import type { ComponentProps } from "react";
 import { X } from "lucide-react";
 import { Dialog as SheetPrimitive } from "radix-ui";
 import { cn } from "@/lib/utils";
@@ -9,13 +9,13 @@ import { cn } from "@/lib/utils";
  * Sheet — the slide-over used for every create/edit flow. One pattern,
  * reused across all entities so the CRUD experience is identical everywhere.
  */
-const Sheet = (props: React.ComponentProps<typeof SheetPrimitive.Root>) => (
+const Sheet = (props: ComponentProps<typeof SheetPrimitive.Root>) => (
   <SheetPrimitive.Root data-slot="sheet" {...props} />
 );
-const SheetTrigger = (props: React.ComponentProps<typeof SheetPrimitive.Trigger>) => (
+const SheetTrigger = (props: ComponentProps<typeof SheetPrimitive.Trigger>) => (
   <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
 );
-const SheetClose = (props: React.ComponentProps<typeof SheetPrimitive.Close>) => (
+const SheetClose = (props: ComponentProps<typeof SheetPrimitive.Close>) => (
   <SheetPrimitive.Close data-slot="sheet-close" {...props} />
 );
 
@@ -24,7 +24,7 @@ function SheetContent({
   children,
   side = "right",
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Content> & { side?: "right" | "left" }) {
+}: ComponentProps<typeof SheetPrimitive.Content> & { side?: "right" | "left" }) {
   return (
     <SheetPrimitive.Portal>
       <SheetPrimitive.Overlay
@@ -60,7 +60,7 @@ function SheetContent({
   );
 }
 
-function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
+function SheetHeader({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       data-slot="sheet-header"
@@ -69,7 +69,7 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
     />
   );
 }
-function SheetBody({ className, ...props }: React.ComponentProps<"div">) {
+function SheetBody({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       data-slot="sheet-body"
@@ -78,7 +78,7 @@ function SheetBody({ className, ...props }: React.ComponentProps<"div">) {
     />
   );
 }
-function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
+function SheetFooter({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       data-slot="sheet-footer"
@@ -90,7 +90,7 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
     />
   );
 }
-function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Title>) {
+function SheetTitle({ className, ...props }: ComponentProps<typeof SheetPrimitive.Title>) {
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
@@ -102,7 +102,7 @@ function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPr
 function SheetDescription({
   className,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Description>) {
+}: ComponentProps<typeof SheetPrimitive.Description>) {
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"

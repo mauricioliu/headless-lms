@@ -1,23 +1,23 @@
 "use client";
 
-import * as React from "react";
+import type { ComponentProps } from "react";
 import { Check, ChevronRight, Circle } from "lucide-react";
 import { DropdownMenu as DM } from "radix-ui";
 import { cn } from "@/lib/utils";
 
-const DropdownMenu = (p: React.ComponentProps<typeof DM.Root>) => (
+const DropdownMenu = (p: ComponentProps<typeof DM.Root>) => (
   <DM.Root data-slot="dropdown-menu" {...p} />
 );
-const DropdownMenuTrigger = (p: React.ComponentProps<typeof DM.Trigger>) => (
+const DropdownMenuTrigger = (p: ComponentProps<typeof DM.Trigger>) => (
   <DM.Trigger data-slot="dropdown-menu-trigger" {...p} />
 );
-const DropdownMenuGroup = (p: React.ComponentProps<typeof DM.Group>) => <DM.Group {...p} />;
+const DropdownMenuGroup = (p: ComponentProps<typeof DM.Group>) => <DM.Group {...p} />;
 
 function DropdownMenuContent({
   className,
   sideOffset = 6,
   ...props
-}: React.ComponentProps<typeof DM.Content>) {
+}: ComponentProps<typeof DM.Content>) {
   return (
     <DM.Portal>
       <DM.Content
@@ -40,7 +40,7 @@ function DropdownMenuItem({
   inset,
   variant = "default",
   ...props
-}: React.ComponentProps<typeof DM.Item> & { inset?: boolean; variant?: "default" | "danger" }) {
+}: ComponentProps<typeof DM.Item> & { inset?: boolean; variant?: "default" | "danger" }) {
   return (
     <DM.Item
       data-slot="dropdown-menu-item"
@@ -64,7 +64,7 @@ function DropdownMenuCheckboxItem({
   children,
   checked,
   ...props
-}: React.ComponentProps<typeof DM.CheckboxItem>) {
+}: ComponentProps<typeof DM.CheckboxItem>) {
   return (
     <DM.CheckboxItem
       className={cn(
@@ -88,7 +88,7 @@ function DropdownMenuRadioItem({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof DM.RadioItem>) {
+}: ComponentProps<typeof DM.RadioItem>) {
   return (
     <DM.RadioItem
       className={cn(
@@ -107,7 +107,7 @@ function DropdownMenuRadioItem({
   );
 }
 
-const DropdownMenuRadioGroup = (p: React.ComponentProps<typeof DM.RadioGroup>) => (
+const DropdownMenuRadioGroup = (p: ComponentProps<typeof DM.RadioGroup>) => (
   <DM.RadioGroup {...p} />
 );
 
@@ -115,7 +115,7 @@ function DropdownMenuLabel({
   className,
   inset,
   ...props
-}: React.ComponentProps<typeof DM.Label> & { inset?: boolean }) {
+}: ComponentProps<typeof DM.Label> & { inset?: boolean }) {
   return (
     <DM.Label
       className={cn("px-2 py-1.5 text-xs font-medium text-ink-3", inset && "pl-8", className)}
@@ -124,23 +124,23 @@ function DropdownMenuLabel({
   );
 }
 
-function DropdownMenuSeparator({ className, ...props }: React.ComponentProps<typeof DM.Separator>) {
+function DropdownMenuSeparator({ className, ...props }: ComponentProps<typeof DM.Separator>) {
   return <DM.Separator className={cn("-mx-1 my-1 h-px bg-line", className)} {...props} />;
 }
 
-function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<"span">) {
+function DropdownMenuShortcut({ className, ...props }: ComponentProps<"span">) {
   return (
     <span className={cn("ml-auto text-xs tracking-widest text-ink-4", className)} {...props} />
   );
 }
 
-const DropdownMenuSub = (p: React.ComponentProps<typeof DM.Sub>) => <DM.Sub {...p} />;
+const DropdownMenuSub = (p: ComponentProps<typeof DM.Sub>) => <DM.Sub {...p} />;
 const DropdownMenuSubTrigger = ({
   className,
   inset,
   children,
   ...props
-}: React.ComponentProps<typeof DM.SubTrigger> & { inset?: boolean }) => (
+}: ComponentProps<typeof DM.SubTrigger> & { inset?: boolean }) => (
   <DM.SubTrigger
     className={cn(
       "flex cursor-default items-center rounded-md px-2 py-1.5 text-sm outline-none select-none focus:bg-hover data-[state=open]:bg-hover",
@@ -156,7 +156,7 @@ const DropdownMenuSubTrigger = ({
 const DropdownMenuSubContent = ({
   className,
   ...props
-}: React.ComponentProps<typeof DM.SubContent>) => (
+}: ComponentProps<typeof DM.SubContent>) => (
   <DM.SubContent
     className={cn(
       "z-50 min-w-32 overflow-hidden rounded-lg border border-line bg-surface p-1 shadow-lg",

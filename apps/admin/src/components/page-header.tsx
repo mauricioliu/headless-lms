@@ -1,4 +1,4 @@
-import * as React from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /** Consistent page title block: heading, right actions, optional children. */
@@ -10,10 +10,10 @@ export function PageHeader({
   children,
 }: {
   title: string;
-  subtitle?: React.ReactNode;
-  actions?: React.ReactNode;
+  subtitle?: ReactNode;
+  actions?: ReactNode;
   className?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <div className={cn("flex flex-col gap-4", className)}>

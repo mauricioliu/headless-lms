@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useMemo, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -58,12 +58,12 @@ export function Combobox({
   className?: string;
   "aria-invalid"?: boolean;
 }) {
-  const [open, setOpen] = React.useState(false);
-  const [query, setQuery] = React.useState("");
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   const selected = options.find((o) => o.value === value);
 
-  const { groups, hidden } = React.useMemo(() => {
+  const { groups, hidden } = useMemo(() => {
     const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const found = terms.length === 0 ? options : options.filter((o) => matches(o, terms));
     const visible = found.slice(0, MAX_VISIBLE);

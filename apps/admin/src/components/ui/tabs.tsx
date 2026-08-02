@@ -1,12 +1,12 @@
 "use client";
 
-import * as React from "react";
+import type { ComponentProps } from "react";
 import { Tabs as Tb } from "radix-ui";
 import { cn } from "@/lib/utils";
 
-const Tabs = (p: React.ComponentProps<typeof Tb.Root>) => <Tb.Root data-slot="tabs" {...p} />;
+const Tabs = (p: ComponentProps<typeof Tb.Root>) => <Tb.Root data-slot="tabs" {...p} />;
 
-function TabsList({ className, ...props }: React.ComponentProps<typeof Tb.List>) {
+function TabsList({ className, ...props }: ComponentProps<typeof Tb.List>) {
   return (
     <Tb.List
       data-slot="tabs-list"
@@ -19,7 +19,7 @@ function TabsList({ className, ...props }: React.ComponentProps<typeof Tb.List>)
   );
 }
 
-function TabsTrigger({ className, ...props }: React.ComponentProps<typeof Tb.Trigger>) {
+function TabsTrigger({ className, ...props }: ComponentProps<typeof Tb.Trigger>) {
   return (
     <Tb.Trigger
       data-slot="tabs-trigger"
@@ -35,7 +35,7 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof Tb.Tri
   );
 }
 
-function TabsContent({ className, ...props }: React.ComponentProps<typeof Tb.Content>) {
+function TabsContent({ className, ...props }: ComponentProps<typeof Tb.Content>) {
   return (
     <Tb.Content data-slot="tabs-content" className={cn("outline-none", className)} {...props} />
   );

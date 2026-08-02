@@ -1,4 +1,4 @@
-import * as React from "react";
+import type { ReactNode } from "react";
 
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -15,8 +15,8 @@ export function SettingsSection({
 }: {
   title: string;
   description?: string;
-  footer?: React.ReactNode;
-  children: React.ReactNode;
+  footer?: ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section className="flex flex-col rounded-card border border-line bg-surface">
@@ -48,7 +48,7 @@ export function SettingRow({
   hint?: string;
   error?: string;
   controlClassName?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">

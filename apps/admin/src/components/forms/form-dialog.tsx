@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import type { ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ export function FormDialog({
   submitLabel?: string;
   pending?: boolean;
   submitDisabled?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <Dialog open={open} onOpenChange={(o) => !pending && onOpenChange(o)}>

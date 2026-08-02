@@ -1,20 +1,20 @@
 "use client";
 
-import * as React from "react";
+import type { ComponentProps } from "react";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { Select as S } from "radix-ui";
 import { cn } from "@/lib/utils";
 
-const Select = (p: React.ComponentProps<typeof S.Root>) => <S.Root data-slot="select" {...p} />;
-const SelectGroup = (p: React.ComponentProps<typeof S.Group>) => <S.Group {...p} />;
-const SelectValue = (p: React.ComponentProps<typeof S.Value>) => <S.Value {...p} />;
+const Select = (p: ComponentProps<typeof S.Root>) => <S.Root data-slot="select" {...p} />;
+const SelectGroup = (p: ComponentProps<typeof S.Group>) => <S.Group {...p} />;
+const SelectValue = (p: ComponentProps<typeof S.Value>) => <S.Value {...p} />;
 
 function SelectTrigger({
   className,
   size = "default",
   children,
   ...props
-}: React.ComponentProps<typeof S.Trigger> & { size?: "sm" | "default" }) {
+}: ComponentProps<typeof S.Trigger> & { size?: "sm" | "default" }) {
   return (
     <S.Trigger
       data-slot="select-trigger"
@@ -43,7 +43,7 @@ function SelectContent({
   children,
   position = "popper",
   ...props
-}: React.ComponentProps<typeof S.Content>) {
+}: ComponentProps<typeof S.Content>) {
   return (
     <S.Portal>
       <S.Content
@@ -79,7 +79,7 @@ function SelectContent({
   );
 }
 
-function SelectItem({ className, children, ...props }: React.ComponentProps<typeof S.Item>) {
+function SelectItem({ className, children, ...props }: ComponentProps<typeof S.Item>) {
   return (
     <S.Item
       data-slot="select-item"
@@ -100,12 +100,12 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
   );
 }
 
-function SelectLabel({ className, ...props }: React.ComponentProps<typeof S.Label>) {
+function SelectLabel({ className, ...props }: ComponentProps<typeof S.Label>) {
   return (
     <S.Label className={cn("px-2 py-1.5 text-xs font-medium text-ink-3", className)} {...props} />
   );
 }
-function SelectSeparator({ className, ...props }: React.ComponentProps<typeof S.Separator>) {
+function SelectSeparator({ className, ...props }: ComponentProps<typeof S.Separator>) {
   return <S.Separator className={cn("-mx-1 my-1 h-px bg-line", className)} {...props} />;
 }
 

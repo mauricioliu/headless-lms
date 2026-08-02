@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
 /**
@@ -25,7 +26,7 @@ function Toaster(props: ToasterProps) {
           error: "[&_[data-icon]]:text-danger",
         },
       }}
-      style={{ "--border-radius": "0.5rem" } as React.CSSProperties}
+      style={{ "--border-radius": "0.5rem" } as CSSProperties}
       {...props}
     />
   );

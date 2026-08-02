@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState, type ReactNode } from "react";
 import { Menu } from "lucide-react";
 
 import type { Organization, Role, SessionUser } from "@/lib/api/types";
@@ -27,9 +27,9 @@ export function AppShell({
   user: { id: string; name: string; email: string; image: string | null };
   organization: Organization;
   role: Role;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const items = navForRole(role);
   // Compose the SessionUser the UserMenu consumes (role + not-yet-wired scope).
   const menuUser: SessionUser = { ...user, role, scopedCourseIds: [] };

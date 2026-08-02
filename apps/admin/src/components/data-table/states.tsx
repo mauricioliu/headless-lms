@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import type { ReactNode } from "react";
 import { Ban, RotateCw, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,10 +36,10 @@ function StateRow({
   action,
 }: {
   colSpan: number;
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   description?: string;
-  action?: React.ReactNode;
+  action?: ReactNode;
 }) {
   return (
     <tbody>
@@ -71,7 +71,7 @@ export function TableEmpty({
   colSpan: number;
   title: string;
   description?: string;
-  action?: React.ReactNode;
+  action?: ReactNode;
   filtered?: boolean;
 }) {
   return (

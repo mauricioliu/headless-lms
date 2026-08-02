@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Badge, Dot } from "@/components/ui/badge";
 import { ROLE_LABEL } from "@/lib/roles";
 import type {
@@ -24,7 +25,7 @@ function StatusBadge({
 }: {
   variant: "neutral" | "brand" | "success" | "warning" | "danger";
   dot?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <Badge variant={variant} className="px-2.5">

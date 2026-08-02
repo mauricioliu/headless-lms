@@ -1,11 +1,11 @@
-import * as React from "react";
+import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 /**
  * Native checkbox styled purely with CSS state variants (no JS toggling).
  * Larger on mobile, brand fill when checked.
  */
-function Checkbox({ className, ...props }: React.ComponentProps<"input">) {
+function Checkbox({ className, ...props }: ComponentProps<"input">) {
   return (
     <span className="group inline-grid size-5 shrink-0 grid-cols-1 sm:size-4">
       <input

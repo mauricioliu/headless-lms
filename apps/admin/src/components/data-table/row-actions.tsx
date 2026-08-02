@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import type { ReactNode } from "react";
 import { MoreHorizontal } from "lucide-react";
 
 import {
@@ -14,7 +14,7 @@ export function RowActions({
   children,
   label = "Row actions",
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   label?: string;
 }) {
   return (

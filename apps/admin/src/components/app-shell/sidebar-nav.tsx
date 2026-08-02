@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
@@ -77,8 +77,8 @@ function NavSection({
 }) {
   const children = item.children ?? [];
   const childActive = children.some((child) => isActive(pathname, child.href));
-  const [open, setOpen] = React.useState(childActive);
-  const [wasChildActive, setWasChildActive] = React.useState(childActive);
+  const [open, setOpen] = useState(childActive);
+  const [wasChildActive, setWasChildActive] = useState(childActive);
   const panelId = `nav-${item.key}`;
 
   // Re-open when navigation lands on a child from outside the sidebar. Adjusted

@@ -1,10 +1,10 @@
 "use client";
 
-import * as React from "react";
+import type { ComponentProps } from "react";
 import { Switch as Sw } from "radix-ui";
 import { cn } from "@/lib/utils";
 
-function Switch({ className, ...props }: React.ComponentProps<typeof Sw.Root>) {
+function Switch({ className, ...props }: ComponentProps<typeof Sw.Root>) {
   return (
     <Sw.Root
       data-slot="switch"

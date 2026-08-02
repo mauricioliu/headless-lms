@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type {
   ColumnFiltersState,
@@ -44,7 +44,7 @@ export function useDataTable(opts?: { pageSize?: number; initialSort?: SortingSt
   const pageSizeDefault = opts?.pageSize ?? 10;
   const initialSortKey = JSON.stringify(opts?.initialSort ?? []);
 
-  const params: ListParams = React.useMemo(
+  const params: ListParams = useMemo(
     () =>
       parseListParams(searchParams, {
         pageSize: pageSizeDefault,
@@ -53,11 +53,11 @@ export function useDataTable(opts?: { pageSize?: number; initialSort?: SortingSt
     [searchParams, pageSizeDefault, initialSortKey],
   );
 
-  const filters = React.useMemo(() => params.filters ?? {}, [params.filters]);
-  const sorting = React.useMemo<SortingState>(() => params.sort ?? [], [params.sort]);
+  const filters = useMemo(() => params.filters ?? {}, [params.filters]);
+  const sorting = useMemo<SortingState>(() => params.sort ?? [], [params.sort]);
   const committedSearch = params.search ?? "";
 
-  const columnFilters: ColumnFiltersState = React.useMemo(
+  const columnFilters: ColumnFiltersState = useMemo(
     () => Object.entries(filters).map(([id, value]) => ({ id, value })),
     [filters],
   );
@@ -68,7 +68,7 @@ export function useDataTable(opts?: { pageSize?: number; initialSort?: SortingSt
    * (so it always sees the freshest URL) and pushed with `router.replace` (no
    * history spam) without scrolling.
    */
-  const writeUrl = React.useCallback(
+  const writeUrl = useCallback(
     (patch: Record<string, string | string[] | null>) => {
       const sp = new URLSearchParams(searchParams.toString());
       for (const [key, value] of Object.entries(patch)) {
@@ -84,18 +84,18 @@ export function useDataTable(opts?: { pageSize?: number; initialSort?: SortingSt
   );
 
   // --- pagination ----------------------------------------------------------
-  const setPage = React.useCallback(
+  const setPage = useCallback(
     (p: number) => writeUrl({ page: p <= 1 ? null : String(p) }),
     [writeUrl],
   );
-  const setPageSize = React.useCallback(
+  const setPageSize = useCallback(
     (s: number) =>
       writeUrl({ pageSize: s === pageSizeDefault ? null : String(s), page: null }),
     [writeUrl, pageSizeDefault],
   );
 
   // --- sorting (functional-updater-safe; sort change resets page) ----------
-  const setSorting = React.useCallback(
+  const setSorting = useCallback(
     (updater: Updater<SortingState>) => {
       const next = typeof updater === "function" ? updater(sorting) : updater;
       writeUrl({ sort: serializeSort(next), page: null });
@@ -104,7 +104,7 @@ export function useDataTable(opts?: { pageSize?: number; initialSort?: SortingSt
   );
 
   // --- faceted filters (functional-updater-safe; filter change resets page) --
-  const setColumnFilters = React.useCallback(
+  const setColumnFilters = useCallback(
     (updater: Updater<ColumnFiltersState>) => {
       const next = typeof updater === "function" ? updater(columnFilters) : updater;
       const patch: Record<string, string | string[] | null> = {};
@@ -123,18 +123,18 @@ export function useDataTable(opts?: { pageSize?: number; initialSort?: SortingSt
   );
 
   // --- search: local input for responsiveness, debounced push to URL -------
-  const [search, setSearch] = React.useState(committedSearch);
+  const [search, setSearch] = useState(committedSearch);
   // Adjust-during-render sync: when the committed (URL) value changes externally
   // (back/forward, reset), re-seed the local input. This is React's documented
   // "adjust state when a prop changes" pattern — no effect, no cascading render.
-  const [prevCommitted, setPrevCommitted] = React.useState(committedSearch);
+  const [prevCommitted, setPrevCommitted] = useState(committedSearch);
   if (committedSearch !== prevCommitted) {
     setPrevCommitted(committedSearch);
     setSearch(committedSearch);
   }
   // Debounce the local input to the URL 250ms after it settles (search change
   // resets page). Skips when already committed to avoid a write loop.
-  React.useEffect(() => {
+  useEffect(() => {
     if (search === committedSearch) return;
     const t = setTimeout(() => writeUrl({ q: search || null, page: null }), 250);
     return () => clearTimeout(t);
@@ -142,13 +142,13 @@ export function useDataTable(opts?: { pageSize?: number; initialSort?: SortingSt
 
   // --- column visibility: per-user preference in localStorage (not URL) ----
   const visKey = `dt:vis:${pathname}`;
-  const [columnVisibility, setColumnVisibilityState] = React.useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibilityState] = useState<VisibilityState>({});
 
   // Load the stored preference on the client, after hydration. SSR + the first
   // client render use `{}` (all columns visible) so the markup matches; the
   // stored visibility is applied immediately after mount. Reading a client-only
   // external store here is the intended use of an effect.
-  React.useEffect(() => {
+  useEffect(() => {
     let stored: VisibilityState = {};
     try {
       const raw = window.localStorage.getItem(visKey);
@@ -160,7 +160,7 @@ export function useDataTable(opts?: { pageSize?: number; initialSort?: SortingSt
     setColumnVisibilityState(stored);
   }, [visKey]);
 
-  const setColumnVisibility = React.useCallback(
+  const setColumnVisibility = useCallback(
     (updater: Updater<VisibilityState>) => {
       setColumnVisibilityState((old) => {
         const next = typeof updater === "function" ? updater(old) : updater;

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronsUpDown, LogOut } from "lucide-react";
 
@@ -20,7 +20,7 @@ import type { SessionUser } from "@/lib/api/types";
 /** Signed-in user control: identity, role, and sign-out. */
 export function UserMenu({ user }: { user: SessionUser }) {
   const router = useRouter();
-  const [pending, setPending] = React.useState(false);
+  const [pending, setPending] = useState(false);
 
   async function handleSignOut() {
     setPending(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import type { ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ export function ConfirmDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description: React.ReactNode;
+  description: ReactNode;
   confirmLabel?: string;
   destructive?: boolean;
   pending?: boolean;

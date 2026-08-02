@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { Check, ListFilter } from "lucide-react";
 import type { Column } from "@tanstack/react-table";
 

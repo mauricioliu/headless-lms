@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import type { ReactNode } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -51,10 +51,10 @@ export interface DataTableProps<TData> {
   searchPlaceholder?: string;
   facets?: FacetConfig[];
   /** Right-aligned toolbar slot — e.g. a "New course" primary button. */
-  toolbarActions?: React.ReactNode;
+  toolbarActions?: ReactNode;
   emptyTitle?: string;
   emptyDescription?: string;
-  emptyAction?: React.ReactNode;
+  emptyAction?: ReactNode;
   onRowClick?: (row: TData) => void;
 }
 
