@@ -1,5 +1,6 @@
 // Discussion resource schemas. Comments attach to an activity; settings are
-// per course with an optional per-activity comments state.
+// per course, with a per-activity override carried on the activity's own
+// settings blob rather than a resource of its own.
 //
 // The author is the org user's profile minus its email — learners read each
 // other's comments and the list must not be a directory of the cohort's
@@ -10,9 +11,6 @@ import { ListQuery, type Matches, OrgRole, OrgUserProfileSchema, paginated } fro
 
 export const CommentStatus = z.enum(["pending", "published", "removed"]);
 export type CommentStatus = z.infer<typeof CommentStatus>;
-
-export const CommentsState = z.enum(["visible", "hidden", "locked"]);
-export type CommentsState = z.infer<typeof CommentsState>;
 
 export const CommentAuthor = OrgUserProfileSchema.omit({ email: true }).extend({
   role: OrgRole,
@@ -66,10 +64,9 @@ export type CommentSettings = z.infer<typeof CommentSettings>;
 type _CommentSettingsMatchesDomain = Matches<DomainCommentSettings, CommentSettings> &
   Matches<CommentSettings, DomainCommentSettings>;
 
-/** The course settings with an activity's override applied. */
-export const CommentsConfig = CommentSettings.extend({
-  state: CommentsState,
-});
+/** The course settings with the activity's override applied: `enabled` is the
+ *  resolved answer for this activity, not the course switch. */
+export const CommentsConfig = CommentSettings;
 export type CommentsConfig = z.infer<typeof CommentsConfig>;
 
 export const ActivityComments = z.object({
@@ -89,18 +86,12 @@ export const EditComment = z.object({
 });
 export type EditComment = z.infer<typeof EditComment>;
 
-/** A staff PATCH is either a body edit or a status write — never both, never
- *  neither. Deliberately not a `z.union`: `@hey-api/openapi-ts` has mishandled
- *  union schemas on this branch before, so this is an object with both fields
- *  optional plus a refinement instead. */
-export const PatchComment = z
-  .object({
-    body: z.string().min(1).max(10_000).optional(),
-    status: z.literal('published').optional(),
-  })
-  .refine((v) => (v.body === undefined) !== (v.status === undefined), {
-    message: 'provide exactly one of body or status',
-  });
+/** The staff PATCH writes status and nothing else: publishing covers approving
+ *  a pending comment and restoring a removed one. Revising the text is the
+ *  author's own edit, under /api/learn. */
+export const PatchComment = z.object({
+  status: z.literal("published"),
+});
 export type PatchComment = z.infer<typeof PatchComment>;
 
 /** Replaces whatever the reader had. Clearing is DELETE, which carries no body. */
@@ -138,7 +129,7 @@ export const CommentReport = z.object({
   commentId: z.string(),
   orgUserId: z.string(),
   reason: z.string(),
-  resolvedAt: z.string().nullable(),
+  resolvedAt: z.date().nullable(),
   createdAt: z.date(),
 });
 export type CommentReport = z.infer<typeof CommentReport>;
@@ -197,6 +188,3 @@ export type DiscussionActivityParam = z.infer<typeof DiscussionActivityParam>;
 export const CommentIdParam = z.object({ commentId: z.string() });
 export type CommentIdParam = z.infer<typeof CommentIdParam>;
 
-
-export const DiscussionCourseParam = z.object({ courseId: z.string() });
-export type DiscussionCourseParam = z.infer<typeof DiscussionCourseParam>;

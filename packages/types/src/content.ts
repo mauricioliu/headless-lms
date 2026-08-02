@@ -21,10 +21,11 @@ export interface CourseSettings {
   transcriptDownloads: boolean;
   comments?: CommentSettings;
 }
+/** Per-activity override of the course's comments setting. */
+export type ActivityCommentsRule = "inherit" | "always" | "never";
+
 export interface ActivitySettings {
-  comments?: {
-    enabled: boolean;
-  };
+  comments?: ActivityCommentsRule;
 }
 
 export interface Course {

@@ -1,7 +1,7 @@
 // discussion tables — comments on an activity, their reactions and reports.
-// Configuration is not here: the course's discussion settings and an activity's
-// comments-state override are rows in the cross-cutting `settings` store under
-// the `discussion` namespace, scoped by course id and activity id.
+// Configuration is not here: the course's comment settings ride on the course's
+// `content` settings row, and an activity's override rides on the activity's
+// own settings blob.
 //
 // The author is always an org user, so one column covers both
 // learners and staff. Staff-ness is NOT stored — it is read from the author's

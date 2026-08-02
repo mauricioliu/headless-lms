@@ -1269,7 +1269,6 @@ export type ListActivityCommentsResponses = {
       threaded: boolean;
       requireReview: boolean;
       reactions: boolean;
-      state: "visible" | "hidden" | "locked";
     };
     comments: Array<{
       id: string;
@@ -1887,8 +1886,7 @@ export type ModerateRemoveCommentResponse =
 
 export type EditComment2Data = {
   body: {
-    body?: string;
-    status?: "published";
+    status: "published";
   };
   path: {
     commentId: string;
@@ -1934,6 +1932,42 @@ export type EditComment2Responses = {
 };
 
 export type EditComment2Response = EditComment2Responses[keyof EditComment2Responses];
+
+export type DismissCommentReportsData = {
+  body?: never;
+  path: {
+    commentId: string;
+  };
+  query?: never;
+  url: "/api/comments/{commentId}/reports";
+};
+
+export type DismissCommentReportsErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type DismissCommentReportsError =
+  DismissCommentReportsErrors[keyof DismissCommentReportsErrors];
+
+export type DismissCommentReportsResponses = {
+  /**
+   * Default Response
+   */
+  204: unknown;
+};
 
 export type ReplyToCommentData = {
   body: {

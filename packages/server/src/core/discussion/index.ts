@@ -20,7 +20,6 @@ export type {
   CommentReaction,
   CommentReport,
   CommentSettings,
-  CommentsState,
 } from './model.js';
 export type {
   CommentsConfig,

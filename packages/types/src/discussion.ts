@@ -14,9 +14,6 @@ import type { OrgUserProfile, Role } from "./organizations.js";
 
 export type CommentStatus = "pending" | "published" | "removed";
 
-/** Per-activity override of the course's discussion settings. */
-export type CommentsState = "visible" | "hidden" | "locked";
-
 /** The reaction itself. Open rather than a fixed list: the picker decides what
  *  it offers, and widening it is a UI change, never a migration. */
 export type ReactionEmoji = string;
@@ -75,9 +72,8 @@ export interface CommentReport {
   readonly createdAt: Date;
 }
 
-/** A course's discussion settings, stored as the value of its `discussion`
- *  settings row rather than in a table of its own. Also carried on the course
- *  payload as `settings.comments`. */
+/** A course's discussion settings, carried on the course payload as
+ *  `settings.comments`. */
 export interface CommentSettings {
   /** Comments show on this course's lessons. */
   enabled: boolean;
@@ -89,13 +85,9 @@ export interface CommentSettings {
   reactions: boolean;
 }
 
-/** The course settings with an activity's override applied. What the service
- *  actually decides against. */
-export interface CommentsConfig extends CommentSettings {
-  state: CommentsState;
-}
-
-
+/** The course settings with the activity's override applied. `enabled` is the
+ *  resolved answer for this activity, not the course switch. */
+export type CommentsConfig = CommentSettings;
 
 /** One comment as served to a reader: the row plus what the reader is allowed
  *  to see. `body` is null when the comment is removed. */

@@ -10,9 +10,9 @@ import type {
   DiscussionRepository,
   DiscussionUnitOfWork,
 } from './ports.js';
-import type { Comment, CommentReport, CommentSettings } from './model.js';
+import type { ActivityCommentsRule, Comment, CommentReport, CommentSettings } from './model.js';
 import type { NewDiscussionEvent } from './events.js';
-import type { ListCommentsQuery, ReactionType } from './types.js';
+import type { ListCommentsQuery, ReactionEmoji } from './types.js';
 import { NotFoundError, ForbiddenError } from '../shared/errors.js';
 import {
   SettingsNamespace,
@@ -32,7 +32,7 @@ const staff: Actor = { id: 'ou_staff', role: 'instructor' };
 /** Every activity belongs to course c1 unless a test says otherwise. */
 export function fakeRepo() {
   const comments: Comment[] = [];
-  const reactions: { commentId: string; orgUserId: string; type: ReactionType }[] = [];
+  const reactions: { commentId: string; orgUserId: string; type: ReactionEmoji }[] = [];
   const reports: CommentReport[] = [];
   const authors = new Map<string, AuthorRecord>();
   const activityCourse = new Map<string, string>([
@@ -102,9 +102,7 @@ export function fakeRepo() {
       return out;
     },
     async setReaction(_orgId, commentId, orgUserId, type) {
-      const i = reactions.findIndex(
-        (r) => r.commentId === commentId && r.orgUserId === orgUserId,
-      );
+      const i = reactions.findIndex((r) => r.commentId === commentId && r.orgUserId === orgUserId);
       if (i >= 0) {
         reactions.splice(i, 1);
       }
@@ -126,6 +124,13 @@ export function fakeRepo() {
       return reports
         .filter((r) => r.orgId === orgId && !r.resolvedAt && commentIds.includes(r.commentId))
         .map((r) => ({ ...r }));
+    },
+    async resolveReportsFor(orgId, commentId, resolvedAt) {
+      for (const r of reports) {
+        if (r.orgId === orgId && r.commentId === commentId && !r.resolvedAt) {
+          r.resolvedAt = resolvedAt;
+        }
+      }
     },
     async authorsOf(_orgId, orgUserIds) {
       const out: Record<string, AuthorRecord> = {};
@@ -226,11 +231,16 @@ export function fakeAccess() {
   };
 }
 
-function fakeContent(activityCourse: Map<string, string>): ActivityGetter {
+function fakeContent(
+  activityCourse: Map<string, string>,
+  activitySettings: Map<string, unknown>,
+): ActivityGetter {
   return {
     async getActivity(_orgId, activityId) {
       const courseId = activityCourse.get(activityId);
-      return courseId ? ({ id: activityId, courseId } as never) : null;
+      return courseId
+        ? ({ id: activityId, courseId, settings: activitySettings.get(activityId) ?? {} } as never)
+        : null;
     },
   };
 }
@@ -238,14 +248,23 @@ function fakeContent(activityCourse: Map<string, string>): ActivityGetter {
 export function makeService(fake = fakeRepo(), gate = fakeAccess()) {
   const { uow, appended } = fakeUow(fake.repo);
   const { settings, rows } = fakeSettings();
+  const activitySettings = new Map<string, unknown>();
   const service = new DiscussionServiceImpl({
     repo: fake.repo,
     access: gate.access,
-    content: fakeContent(fake.activityCourse),
+    content: fakeContent(fake.activityCourse, activitySettings),
     uow,
     settings,
   });
-  return { service, appended, settings, settingsRows: rows, bar: gate.bar, ...fake };
+  return {
+    service,
+    appended,
+    settings,
+    settingsRows: rows,
+    activitySettings,
+    bar: gate.bar,
+    ...fake,
+  };
 }
 
 /** Write a course's comment settings the way the content surface would: as one
@@ -266,12 +285,12 @@ async function setSettings(
   });
 }
 
-async function setActivityState(
-  settings: SettingsService,
+function setActivityComments(
+  activitySettings: Map<string, unknown>,
   activityId: string,
-  state: 'visible' | 'hidden' | 'locked',
-): Promise<void> {
-  await settings.patch('o1', SettingsNamespace.discussion, activityId, { state });
+  comments: ActivityCommentsRule,
+): void {
+  activitySettings.set(activityId, { comments });
 }
 
 /** A course with discussion switched on, ready to post into. */
@@ -286,7 +305,6 @@ describe('settings', () => {
     const { service } = makeService();
     const config = await service.resolveConfig('o1', 'a1');
     expect(config.enabled).toBe(false);
-    expect(config.state).toBe('hidden');
   });
 
   it('reads comment settings from under the course settings `comments` key', async () => {
@@ -295,7 +313,6 @@ describe('settings', () => {
     const config = await service.resolveConfig('o1', 'a1');
     expect(config.enabled).toBe(true);
     expect(config.requireReview).toBe(true);
-    expect(config.state).toBe('visible');
   });
 
   it('ignores sibling course settings that are not about comments', async () => {
@@ -309,17 +326,17 @@ describe('settings', () => {
   });
 
   it('applies an activity override on top of the course settings', async () => {
-    const { service, settings } = await openCourse();
-    await setActivityState(settings, 'a1', 'locked');
-    expect((await service.resolveConfig('o1', 'a1')).state).toBe('locked');
-    expect((await service.resolveConfig('o1', 'a2')).state).toBe('visible');
+    const { service, activitySettings } = await openCourse();
+    setActivityComments(activitySettings, 'a1', 'never');
+    expect((await service.resolveConfig('o1', 'a1')).enabled).toBe(false);
+    expect((await service.resolveConfig('o1', 'a2')).enabled).toBe(true);
   });
 
   it('cannot be turned back on for an activity once the course switches it off', async () => {
-    const { service, settings } = makeService();
+    const { service, settings, activitySettings } = makeService();
     await setSettings(settings, 'c1', { enabled: false });
-    await setActivityState(settings, 'a1', 'visible');
-    expect((await service.resolveConfig('o1', 'a1')).state).toBe('hidden');
+    setActivityComments(activitySettings, 'a1', 'always');
+    expect((await service.resolveConfig('o1', 'a1')).enabled).toBe(false);
   });
 });
 
@@ -374,9 +391,9 @@ describe('post', () => {
     expect(appended.map((e) => e.type)).toEqual(['comment.created']);
   });
 
-  it('refuses to post when the activity is locked or hidden', async () => {
-    const { service, settings } = await openCourse();
-    await setActivityState(settings, 'a1', 'locked');
+  it('refuses to post when the activity has comments switched off', async () => {
+    const { service, activitySettings } = await openCourse();
+    setActivityComments(activitySettings, 'a1', 'never');
     await expect(
       service.postComment('o1', { actor: learner, activityId: 'a1', parentId: null, body: 'x' }),
     ).rejects.toBeInstanceOf(ForbiddenError);
@@ -464,11 +481,11 @@ describe('post', () => {
 });
 
 describe('activityComments', () => {
-  it('serves nothing at all when the activity is hidden', async () => {
-    const { service, settings } = await openCourse();
-    await setActivityState(settings, 'a1', 'hidden');
+  it('serves nothing at all when the activity has comments switched off', async () => {
+    const { service, activitySettings } = await openCourse();
+    setActivityComments(activitySettings, 'a1', 'never');
     const { config, comments } = await service.activityComments('o1', 'a1', learner);
-    expect(config.state).toBe('hidden');
+    expect(config.enabled).toBe(false);
     expect(comments).toEqual([]);
   });
 
@@ -818,9 +835,9 @@ describe('reactions', () => {
   it('refuses a new reaction when the course disables reactions', async () => {
     const { service, settings, commentId } = await seeded();
     await setSettings(settings, 'c1', { reactions: false });
-    await expect(
-      service.setReaction('o1', commentId, learner, 'like'),
-    ).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(service.setReaction('o1', commentId, learner, 'like')).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
   });
 
   it('still lets a reader withdraw one after reactions are switched off', async () => {
@@ -832,20 +849,20 @@ describe('reactions', () => {
     });
   });
 
-  it('refuses when the activity is locked', async () => {
-    const { service, settings, commentId } = await seeded();
-    await setActivityState(settings, 'a1', 'locked');
-    await expect(
-      service.setReaction('o1', commentId, learner, 'like'),
-    ).rejects.toBeInstanceOf(ForbiddenError);
+  it('refuses when the activity has comments switched off', async () => {
+    const { service, activitySettings, commentId } = await seeded();
+    setActivityComments(activitySettings, 'a1', 'never');
+    await expect(service.setReaction('o1', commentId, learner, 'like')).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
   });
 
   it('refuses on a removed comment', async () => {
     const { service, commentId } = await seeded();
     await service.remove('o1', commentId, staff);
-    await expect(
-      service.setReaction('o1', commentId, learner, 'like'),
-    ).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(service.setReaction('o1', commentId, learner, 'like')).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
   });
 });
 
@@ -876,18 +893,27 @@ describe('reports', () => {
     expect(appended.filter((e) => e.type === 'comment.reported')).toHaveLength(1);
   });
 
-  it('accepts a report on a locked activity', async () => {
-    const { service, settings, commentId } = await seeded();
-    await setActivityState(settings, 'a1', 'locked');
-    await expect(service.reportComment('o1', commentId, other, 'spam')).resolves.toBeDefined();
+  it('refuses a report on an activity with comments switched off', async () => {
+    const { service, activitySettings, commentId } = await seeded();
+    setActivityComments(activitySettings, 'a1', 'never');
+    await expect(service.reportComment('o1', commentId, other, 'spam')).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
   });
 
-  it('refuses a report on a hidden activity', async () => {
-    const { service, settings, commentId } = await seeded();
-    await setActivityState(settings, 'a1', 'hidden');
-    await expect(
-      service.reportComment('o1', commentId, other, 'spam'),
-    ).rejects.toBeInstanceOf(ForbiddenError);
+  it('closes every open report on a comment', async () => {
+    const { service, reports, commentId } = await seeded();
+    await service.reportComment('o1', commentId, other, 'spam');
+    await service.resolveReports('o1', commentId, staff);
+    expect(reports.every((r) => r.resolvedAt !== null)).toBe(true);
+  });
+
+  it('refuses to close reports for a learner', async () => {
+    const { service, commentId } = await seeded();
+    await service.reportComment('o1', commentId, other, 'spam');
+    await expect(service.resolveReports('o1', commentId, learner)).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
   });
 });
 

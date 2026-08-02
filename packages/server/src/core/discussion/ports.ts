@@ -91,6 +91,8 @@ export interface DiscussionService {
     emoji: ReactionEmoji | null,
   ): Promise<CommentReactions>;
 
+  resolveReports(orgId: string, commentId: string, actor: Actor): Promise<void>;
+
   /** Accepted even on locked comments — a locked activity can still hold
    *  something a moderator needs to see. */
   reportComment(
@@ -139,6 +141,7 @@ export interface DiscussionRepository {
   insertReport(orgId: string, report: CommentReport): Promise<CommentReport | null>;
   /** Every unresolved report against the given comments. */
   listOpenReports(orgId: string, commentIds: string[]): Promise<CommentReport[]>;
+  resolveReportsFor(orgId: string, commentId: string, resolvedAt: Date): Promise<void>;
 
   authorsOf(orgId: string, orgUserIds: string[]): Promise<Record<string, AuthorRecord>>;
 

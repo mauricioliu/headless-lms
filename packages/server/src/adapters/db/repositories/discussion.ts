@@ -232,6 +232,19 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
     return rows;
   }
 
+  async resolveReportsFor(orgId: string, commentId: string, resolvedAt: Date): Promise<void> {
+    await this.db
+      .update(commentReports)
+      .set({ resolvedAt })
+      .where(
+        and(
+          eq(commentReports.orgId, orgId),
+          eq(commentReports.commentId, commentId),
+          isNull(commentReports.resolvedAt),
+        ),
+      );
+  }
+
   /** The list's one join: comments to their activity, which carries both the
    *  course (denormalised, so the module never enters the query) and the title.
    *  The course filter and the row's activity title come out of that same pass,

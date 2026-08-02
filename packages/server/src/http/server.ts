@@ -38,7 +38,7 @@ export async function buildServer(
   registerOpenApi(app, config);
   registerAuth(app, container);
 
-  registerRoutes(app, container, config);
+  registerRoutes(app, container);
 
   // Drain + stop the outbox relay and the automation engine on shutdown.
   // Harmless when neither was started (gen-openapi boots this app with

@@ -3576,22 +3576,13 @@
                         },
                         "reactions": {
                           "type": "boolean"
-                        },
-                        "state": {
-                          "type": "string",
-                          "enum": [
-                            "visible",
-                            "hidden",
-                            "locked"
-                          ]
                         }
                       },
                       "required": [
                         "enabled",
                         "threaded",
                         "requireReview",
-                        "reactions",
-                        "state"
+                        "reactions"
                       ],
                       "additionalProperties": false
                     },
@@ -4607,7 +4598,8 @@
                     },
                     "resolvedAt": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "createdAt": {
                       "type": "string",
@@ -5546,7 +5538,7 @@
       },
       "patch": {
         "operationId": "editComment",
-        "summary": "Revise your own comment, or publish it as a moderator",
+        "summary": "Publish a comment: approves a pending one, restores a removed one",
         "tags": [
           "Discussion"
         ],
@@ -5557,18 +5549,16 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "body": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 10000
-                  },
                   "status": {
                     "type": "string",
                     "enum": [
                       "published"
                     ]
                   }
-                }
+                },
+                "required": [
+                  "status"
+                ]
               }
             }
           }
@@ -5641,6 +5631,79 @@
                   ],
                   "additionalProperties": false
                 }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/comments/{commentId}/reports": {
+      "delete": {
+        "operationId": "dismissCommentReports",
+        "summary": "Dismiss every open report on a comment",
+        "tags": [
+          "Discussion"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "commentId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },

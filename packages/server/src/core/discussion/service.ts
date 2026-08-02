@@ -3,11 +3,11 @@ import { ForbiddenError, NotFoundError } from '../shared/errors.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 import type {
+  ActivityCommentsRule,
   Comment,
   CommentAuthor,
   CommentReport,
   CommentSettings,
-  CommentsState,
 } from './model.js';
 import type {
   CommentListItem,
@@ -46,10 +46,10 @@ interface StoredCourseSettings {
   comments?: Partial<CommentSettings>;
 }
 
-/** An activity's stored override, scoped by activity id in the same namespace.
- *  `state` absent or null = no override, so the course setting applies. */
-interface StoredCommentsState {
-  state?: CommentsState | null;
+/** The slice of an activity's opaque settings blob this context reads. Absent
+ *  or "inherit" = no override, so the course setting stands. */
+interface StoredActivitySettings {
+  comments?: ActivityCommentsRule;
 }
 
 const EMPTY_REACTIONS: CommentReactions = { reactions: {} };
@@ -91,20 +91,14 @@ export class DiscussionServiceImpl implements DiscussionService {
       activity?.courseId!,
     );
     const settings = { ...DEFAULT_SETTINGS, ...stored?.comments };
-    const override = await this.settings.get<StoredCommentsState>(
-      orgId,
-      SettingsNamespace.discussion,
-      activityId,
-    );
-    // Discussion off for the course cannot be overridden back on by an
-    // activity: the course switch is the master.
-    const state: CommentsState = !settings.enabled ? 'hidden' : (override?.state ?? 'visible');
+    // Comments off for the course cannot be overridden back on by an activity:
+    // the course switch is the master.
+    const rule = ((activity?.settings ?? {}) as StoredActivitySettings).comments ?? 'inherit';
     return {
-      enabled: settings.enabled,
+      enabled: settings.enabled && rule !== 'never',
       threaded: settings.threaded,
       requireReview: settings.requireReview,
       reactions: settings.reactions,
-      state,
     };
   }
 
@@ -190,7 +184,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     await this.hasAccess(orgId, activityId, actor);
     const config = await this.resolveConfig(orgId, activityId);
 
-    if (config.state !== 'visible') {
+    if (!config.enabled) {
       throw new ForbiddenError('discussion is not open on this activity');
     }
 
@@ -242,7 +236,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     actor: Actor,
   ): Promise<ActivityComments> {
     const config = await this.resolveConfig(orgId, activityId);
-    if (config.state === 'hidden') {
+    if (!config.enabled) {
       return { config, comments: [] };
     }
     const rows = await this.repo.listByActivity(orgId, activityId);
@@ -280,15 +274,13 @@ export class DiscussionServiceImpl implements DiscussionService {
 
     return {
       config,
-      comments: served.map((c) =>
-        this.toView(c, authors, reactions[c.id] ?? EMPTY_REACTIONS),
-      ),
+      comments: served.map((c) => this.toView(c, authors, reactions[c.id] ?? EMPTY_REACTIONS)),
     };
   }
 
   async edit(orgId: string, commentId: string, actor: Actor, body: string): Promise<CommentView> {
     const { comment, config } = await this.loadWithConfig(orgId, commentId, actor);
-    if (config.state !== 'visible') {
+    if (!config.enabled) {
       throw new ForbiddenError('discussion is not open on this activity');
     }
     // Editing is the author's alone — moderators remove, they do not rewrite.
@@ -392,7 +384,7 @@ export class DiscussionServiceImpl implements DiscussionService {
   ): Promise<CommentReactions> {
     const { comment, config } = await this.loadWithConfig(orgId, commentId, actor);
     // Writing to comments — locked and hidden both refuse.
-    if (config.state !== 'visible') {
+    if (!config.enabled) {
       throw new ForbiddenError('discussion is not open on this activity');
     }
     if (!config.reactions && emoji !== null) {
@@ -405,7 +397,6 @@ export class DiscussionServiceImpl implements DiscussionService {
     const stored = await this.repo.reactionsOf(orgId, [commentId], actor.id);
     return stored[commentId] ?? EMPTY_REACTIONS;
   }
-
 
   async approve(orgId: string, commentId: string, actor: Actor): Promise<Comment> {
     if (!this.isStaff(actor)) {
@@ -445,8 +436,25 @@ export class DiscussionServiceImpl implements DiscussionService {
     if (!comment) {
       throw new NotFoundError('Comment', commentId);
     }
+    if (comment.status === 'pending') {
+      return this.approve(orgId, commentId, actor);
+    }
+    if (comment.status === 'removed') {
+      return this.restore(orgId, commentId, actor);
+    }
+    return comment;
+  }
 
-    return this.approve(orgId, commentId, actor);
+  async resolveReports(orgId: string, commentId: string, actor: Actor): Promise<void> {
+    if (!this.isStaff(actor)) {
+      throw new ForbiddenError('only a moderator may resolve a report');
+    }
+    const comment = await this.getComment(orgId, commentId);
+    if (!comment) {
+      throw new NotFoundError('Comment', commentId);
+    }
+    await this.repo.resolveReportsFor(orgId, commentId, new Date());
+    this.logger.info('comment reports resolved', { orgId, commentId });
   }
 
   async reportComment(
@@ -459,7 +467,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     // Locked accepts reports — a locked activity can still hold something a
     // moderator needs to see. Hidden does not: nothing in it is being served,
     // so nobody is looking at a comment to flag.
-    if (config.state === 'hidden') {
+    if (!config.enabled) {
       throw new ForbiddenError('discussion is not open on this activity');
     }
     const report: CommentReport = {
@@ -496,7 +504,10 @@ export class DiscussionServiceImpl implements DiscussionService {
     if (rows.length === 0) {
       return { ...page, rows: [] };
     }
-    const reports = await this.repo.listOpenReports(orgId, rows.map((c) => c.id));
+    const reports = await this.repo.listOpenReports(
+      orgId,
+      rows.map((c) => c.id),
+    );
     const authors = await this.repo.authorsOf(orgId, [
       ...new Set([...this.peopleIn(rows), ...reports.map((r) => r.orgUserId)]),
     ]);

@@ -47,6 +47,8 @@ import type {
   DeleteStudentResponses,
   DisconnectIntegrationErrors,
   DisconnectIntegrationResponses,
+  DismissCommentReportsErrors,
+  DismissCommentReportsResponses,
   EditComment2Errors,
   EditComment2Responses,
   EditCommentErrors,
@@ -1922,13 +1924,12 @@ export class Discussion {
   }
 
   /**
-   * Revise your own comment, or publish it as a moderator
+   * Publish a comment: approves a pending one, restores a removed one
    */
   public static editComment<ThrowOnError extends boolean = false>(
     parameters: {
       commentId: string;
-      body?: string;
-      status?: "published";
+      status: "published";
     },
     options?: Options<never, ThrowOnError>,
   ): RequestResult<EditComment2Responses, EditComment2Errors, ThrowOnError, "data"> {
@@ -1938,7 +1939,6 @@ export class Discussion {
         {
           args: [
             { in: "path", key: "commentId" },
-            { in: "body", key: "body" },
             { in: "body", key: "status" },
           ],
         },
@@ -1959,6 +1959,34 @@ export class Discussion {
         ...options?.headers,
         ...params.headers,
       },
+    });
+  }
+
+  /**
+   * Dismiss every open report on a comment
+   */
+  public static dismissCommentReports<ThrowOnError extends boolean = false>(
+    parameters: {
+      commentId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<
+    DismissCommentReportsResponses,
+    DismissCommentReportsErrors,
+    ThrowOnError,
+    "data"
+  > {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "commentId" }] }]);
+    return (options?.client ?? client).delete<
+      DismissCommentReportsResponses,
+      DismissCommentReportsErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/comments/{commentId}/reports",
+      ...options,
+      ...params,
     });
   }
 
