@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Copy, FileText, Film, ImageIcon, Loader2, Trash2 } from "lucide-react";
 
 import type { Asset } from "@/lib/api/types";
@@ -17,7 +17,7 @@ function isVideo(a: Asset) {
   return a.contentType.startsWith("video/");
 }
 
-function kindMeta(a: Asset): { label: string; icon: React.ReactNode } {
+function kindMeta(a: Asset): { label: string; icon: ReactNode } {
   if (isImage(a)) return { label: "Image", icon: <ImageIcon /> };
   if (isVideo(a) || a.kind === "video") return { label: "Video", icon: <Film /> };
   return { label: "File", icon: <FileText /> };
@@ -49,8 +49,8 @@ export function AssetCard({
 
   // Lazily broker a short-lived presigned thumbnail URL via a Server Action when
   // this tile is previewable. Not cached long-term — these URLs expire quickly.
-  const [url, setUrl] = React.useState<string | null>(null);
-  React.useEffect(() => {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
     if (!previewable) return;
     let cancelled = false;
     void getAssetUrlAction(asset.id)
@@ -139,7 +139,7 @@ function CardAction({
   onClick: () => void;
   disabled?: boolean;
   variant?: "default" | "danger";
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <Tooltip>

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -45,26 +45,26 @@ export function AutomationEditor({
   const router = useRouter();
   const user = useCurrentUser();
 
-  const initial = React.useMemo(() => draftFromAutomation(automation), [automation]);
-  const [draft, setDraft] = React.useState<AutomationDraft>(initial);
-  const [selection, setSelection] = React.useState<EditorSelection>(
+  const initial = useMemo(() => draftFromAutomation(automation), [automation]);
+  const [draft, setDraft] = useState<AutomationDraft>(initial);
+  const [selection, setSelection] = useState<EditorSelection>(
     automation ? null : { kind: "trigger" },
   );
-  const [attempted, setAttempted] = React.useState(false);
-  const [deleteOpen, setDeleteOpen] = React.useState(false);
-  const [pending, startTransition] = React.useTransition();
+  const [attempted, setAttempted] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
 
-  const defs = React.useMemo(
+  const defs = useMemo(
     () => new Map(availableActions.map((a) => [a.type, a])),
     [availableActions],
   );
 
-  const dirty = React.useMemo(
+  const dirty = useMemo(
     () => JSON.stringify(draft) !== JSON.stringify(initial),
     [draft, initial],
   );
 
-  const incomplete = React.useMemo(() => {
+  const incomplete = useMemo(() => {
     const set = new Set<number>();
     draft.actions.forEach((action, i) => {
       if (!isActionComplete(action, defs.get(action.type))) set.add(i);
@@ -74,11 +74,11 @@ export function AutomationEditor({
 
   // --- draft mutators --------------------------------------------------------
 
-  const setTrigger = React.useCallback((trigger: string) => {
+  const setTrigger = useCallback((trigger: string) => {
     setDraft((d) => ({ ...d, trigger }));
   }, []);
 
-  const addStep = React.useCallback((index: number) => {
+  const addStep = useCallback((index: number) => {
     setDraft((d) => {
       const actions = [...d.actions];
       actions.splice(index, 0, { type: "", input: {} });
@@ -87,7 +87,7 @@ export function AutomationEditor({
     setSelection({ kind: "action", index });
   }, []);
 
-  const changeActionType = React.useCallback(
+  const changeActionType = useCallback(
     (index: number, type: string) => {
       const def = defs.get(type);
       setDraft((d) => {
@@ -100,7 +100,7 @@ export function AutomationEditor({
     [defs],
   );
 
-  const changeActionInput = React.useCallback((index: number, input: Record<string, unknown>) => {
+  const changeActionInput = useCallback((index: number, input: Record<string, unknown>) => {
     setDraft((d) => {
       const actions = [...d.actions];
       actions[index] = { ...actions[index], input };
@@ -108,7 +108,7 @@ export function AutomationEditor({
     });
   }, []);
 
-  const moveStep = React.useCallback((index: number, delta: -1 | 1) => {
+  const moveStep = useCallback((index: number, delta: -1 | 1) => {
     setDraft((d) => {
       const target = index + delta;
       if (target < 0 || target >= d.actions.length) return d;
@@ -120,7 +120,7 @@ export function AutomationEditor({
   }, []);
 
   const stepCount = draft.actions.length;
-  const removeStep = React.useCallback(
+  const removeStep = useCallback(
     (index: number) => {
       const nextCount = stepCount - 1;
       setDraft((d) => ({ ...d, actions: d.actions.filter((_, i) => i !== index) }));
@@ -135,7 +135,7 @@ export function AutomationEditor({
 
   // --- persistence -----------------------------------------------------------
 
-  const save = React.useCallback(() => {
+  const save = useCallback(() => {
     setAttempted(true);
     const problem = validateDraft(draft, defs);
     if (problem) {
@@ -166,7 +166,7 @@ export function AutomationEditor({
     });
   }, [automation, draft, defs, router]);
 
-  const confirmDelete = React.useCallback(() => {
+  const confirmDelete = useCallback(() => {
     if (!automation) return;
     startTransition(async () => {
       try {

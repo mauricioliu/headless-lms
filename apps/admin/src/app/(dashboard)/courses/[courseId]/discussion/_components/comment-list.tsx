@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Check, Flag, MessagesSquare, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -66,13 +66,13 @@ export function CommentList({
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
-  const [isPending, startTransition] = React.useTransition();
-  const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const [isPending, startTransition] = useTransition();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const status = params.filters?.status?.[0] ?? "";
   const reported = params.filters?.reported?.[0] ?? "";
   const lastPage = Math.max(1, Math.ceil(total / params.pageSize));
-  const nodes = React.useMemo(() => nest(rows), [rows]);
+  const nodes = useMemo(() => nest(rows), [rows]);
 
   /** Every control writes the URL; the Server Component refetches off it. Any
    *  filter change resets to page 1 — page 4 of the old filter means nothing. */

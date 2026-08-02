@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { Suspense, useCallback, useRef, useState, useTransition, type DragEvent, type ReactNode } from "react";
 import { CheckCircle2, Loader2, Search, Upload, UploadCloud, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -59,20 +59,20 @@ function MediaViewInner({
   // Navigation in flight: URL is ahead of the rows the server rendered.
   const isStale = !sameParams(state.params, params);
 
-  const [isDeleting, startDelete] = React.useTransition();
+  const [isDeleting, startDelete] = useTransition();
   // Uploads run in their own transition so a long-running upload doesn't make
   // the delete dialog spin or dim pagination; per-file progress lives in the
   // `uploads` state / UploadTray, so this transition's pending flag is unused.
-  const [, startUpload] = React.useTransition();
+  const [, startUpload] = useTransition();
 
-  const [preview, setPreview] = React.useState<Asset | null>(null);
-  const [previewOpen, setPreviewOpen] = React.useState(false);
-  const [toDelete, setToDelete] = React.useState<Asset | null>(null);
-  const [uploads, setUploads] = React.useState<UploadItem[]>([]);
-  const [dragging, setDragging] = React.useState(false);
+  const [preview, setPreview] = useState<Asset | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [toDelete, setToDelete] = useState<Asset | null>(null);
+  const [uploads, setUploads] = useState<UploadItem[]>([]);
+  const [dragging, setDragging] = useState(false);
 
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const seq = React.useRef(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const seq = useRef(0);
 
   const activeKind =
     (state.columnFilters.find((f) => f.id === "kind")?.value as string[] | undefined)?.[0] ?? "all";
@@ -116,13 +116,13 @@ function MediaViewInner({
     }
   }
 
-  function onDrop(e: React.DragEvent) {
+  function onDrop(e: DragEvent) {
     e.preventDefault();
     setDragging(false);
     handleFiles(e.dataTransfer.files);
   }
 
-  const confirmDelete = React.useCallback(() => {
+  const confirmDelete = useCallback(() => {
     if (!toDelete) return;
     const asset = toDelete;
     startDelete(async () => {
@@ -291,9 +291,9 @@ function MediaViewInner({
 export function MediaView(props: { rows: Asset[]; total: number; params: ListParams }) {
   // `useDataTable` reads `useSearchParams()`, which requires a Suspense boundary.
   return (
-    <React.Suspense fallback={null}>
+    <Suspense fallback={null}>
       <MediaViewInner {...props} />
-    </React.Suspense>
+    </Suspense>
   );
 }
 
@@ -376,7 +376,7 @@ function StatePanel({
 }: {
   title: string;
   description: string;
-  action?: React.ReactNode;
+  action?: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-card border border-line bg-surface px-6 py-16 text-center">

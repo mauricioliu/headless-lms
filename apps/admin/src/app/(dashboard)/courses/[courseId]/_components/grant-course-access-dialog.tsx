@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,7 +52,7 @@ export function GrantCourseAccessDialog({
   students: LiteStudent[];
 }) {
   const router = useRouter();
-  const [pending, startTransition] = React.useTransition();
+  const [pending, startTransition] = useTransition();
 
   const {
     control,
@@ -65,13 +65,13 @@ export function GrantCourseAccessDialog({
     defaultValues: { studentId: "", expiryMode: "never", expiresAt: "" },
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) reset({ studentId: "", expiryMode: "never", expiresAt: "" });
   }, [open, reset]);
 
   const expiryMode = useWatch({ control, name: "expiryMode" });
 
-  const studentOptions = React.useMemo(
+  const studentOptions = useMemo(
     () => students.map((s) => ({ value: s.id, label: s.name, description: s.email })),
     [students],
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -22,7 +22,7 @@ export function CourseHeaderActions({
 }) {
   const user = useCurrentUser();
   const router = useRouter();
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
 
   if (!can.publishCourse(user)) return null;
 

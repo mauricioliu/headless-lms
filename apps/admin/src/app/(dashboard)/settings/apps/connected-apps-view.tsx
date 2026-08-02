@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useCallback, useState, useTransition } from "react";
 import { Plug } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,10 +14,10 @@ import { revokeConnectedAppAction } from "./actions";
 
 // Connected apps view (client): apps come in as props; revoke goes through a server action.
 export function ConnectedAppsView({ apps }: { apps: ConnectedApp[] }) {
-  const [revokeTarget, setRevokeTarget] = React.useState<ConnectedApp | null>(null);
-  const [isPending, startTransition] = React.useTransition();
+  const [revokeTarget, setRevokeTarget] = useState<ConnectedApp | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const confirmRevoke = React.useCallback(() => {
+  const confirmRevoke = useCallback(() => {
     if (!revokeTarget) return;
     const app = revokeTarget;
     startTransition(async () => {

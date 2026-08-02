@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { Suspense, useCallback, useMemo, useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -49,20 +49,20 @@ function EntitlementsTableInner({
 
   // Optimistic status flips. Base resets to `rows` whenever the RSC re-renders,
   // so the optimistic value is discarded once the real (revalidated) row lands.
-  const [optimisticRows, applyOptimistic] = React.useOptimistic(
+  const [optimisticRows, applyOptimistic] = useOptimistic(
     rows,
     (state: Entitlement[], patch: { id: string; status: Entitlement["status"] }) =>
       state.map((e) => (e.id === patch.id ? { ...e, status: patch.status } : e)),
   );
 
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
 
-  const [grantOpen, setGrantOpen] = React.useState(false);
-  const [revokeTarget, setRevokeTarget] = React.useState<Entitlement | null>(null);
+  const [grantOpen, setGrantOpen] = useState(false);
+  const [revokeTarget, setRevokeTarget] = useState<Entitlement | null>(null);
 
-  const onRevoke = React.useCallback((e: Entitlement) => setRevokeTarget(e), []);
+  const onRevoke = useCallback((e: Entitlement) => setRevokeTarget(e), []);
 
-  const onReinstate = React.useCallback(
+  const onReinstate = useCallback(
     (e: Entitlement) => {
       startTransition(async () => {
         applyOptimistic({ id: e.id, status: "active" });
@@ -77,7 +77,7 @@ function EntitlementsTableInner({
     [applyOptimistic],
   );
 
-  const confirmRevoke = React.useCallback(() => {
+  const confirmRevoke = useCallback(() => {
     if (!revokeTarget) return;
     const target = revokeTarget;
     startTransition(async () => {
@@ -92,7 +92,7 @@ function EntitlementsTableInner({
     });
   }, [revokeTarget, applyOptimistic]);
 
-  const columns = React.useMemo(
+  const columns = useMemo(
     () => entitlementColumns(onRevoke, onReinstate),
     [onRevoke, onReinstate],
   );
@@ -183,8 +183,8 @@ export function EntitlementsTable(props: {
 }) {
   // `useDataTable` reads `useSearchParams()`, which requires a Suspense boundary.
   return (
-    <React.Suspense fallback={null}>
+    <Suspense fallback={null}>
       <EntitlementsTableInner {...props} />
-    </React.Suspense>
+    </Suspense>
   );
 }

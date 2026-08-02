@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { requireAuth } from "@/lib/auth/server-session";
 import { isManager } from "@/lib/roles";
 import { serverApi } from "@/lib/api/server";
@@ -13,7 +14,7 @@ export default async function DownloadLayout({
   children,
 }: {
   params: Promise<{ downloadId: string }>;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const { downloadId } = await params;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { Suspense, useCallback, useMemo, useOptimistic, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -46,16 +46,16 @@ function AutomationsTableInner({
 
   // Optimistic enabled flips. Base resets to `rows` whenever the RSC re-renders,
   // so the optimistic value is discarded once the real (revalidated) row lands.
-  const [optimisticRows, applyOptimistic] = React.useOptimistic(
+  const [optimisticRows, applyOptimistic] = useOptimistic(
     rows,
     (state: Automation[], patch: { id: string; enabled: boolean }) =>
       state.map((a) => (a.id === patch.id ? { ...a, enabled: patch.enabled } : a)),
   );
 
-  const [isPending, startTransition] = React.useTransition();
-  const [deleteTarget, setDeleteTarget] = React.useState<Automation | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [deleteTarget, setDeleteTarget] = useState<Automation | null>(null);
 
-  const onToggleEnabled = React.useCallback(
+  const onToggleEnabled = useCallback(
     (a: Automation, enabled: boolean) => {
       startTransition(async () => {
         applyOptimistic({ id: a.id, enabled });
@@ -70,14 +70,14 @@ function AutomationsTableInner({
     [applyOptimistic],
   );
 
-  const onEdit = React.useCallback(
+  const onEdit = useCallback(
     (a: Automation) => router.push(`/automations/${a.id}`),
     [router],
   );
 
-  const onDelete = React.useCallback((a: Automation) => setDeleteTarget(a), []);
+  const onDelete = useCallback((a: Automation) => setDeleteTarget(a), []);
 
-  const confirmDelete = React.useCallback(() => {
+  const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
     const target = deleteTarget;
     startTransition(async () => {
@@ -91,12 +91,12 @@ function AutomationsTableInner({
     });
   }, [deleteTarget]);
 
-  const triggerDescriptions = React.useMemo(
+  const triggerDescriptions = useMemo(
     () => new Map(triggers.map((t) => [t.type, t.description])),
     [triggers],
   );
 
-  const columns = React.useMemo(
+  const columns = useMemo(
     () => automationColumns(triggerDescriptions, onToggleEnabled, onEdit, onDelete),
     [triggerDescriptions, onToggleEnabled, onEdit, onDelete],
   );
@@ -177,8 +177,8 @@ export function AutomationsTable(props: {
 }) {
   // `useDataTable` reads `useSearchParams()`, which requires a Suspense boundary.
   return (
-    <React.Suspense fallback={null}>
+    <Suspense fallback={null}>
       <AutomationsTableInner {...props} />
-    </React.Suspense>
+    </Suspense>
   );
 }

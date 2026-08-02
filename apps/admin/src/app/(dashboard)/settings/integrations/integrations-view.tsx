@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useCallback, useState, useTransition } from "react";
 import { Blocks, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,13 +39,13 @@ function displayName(id: string): string {
 // Integrations view (client): rows come in as props; mutations go through
 // server actions from the sheets. One row per available integration.
 export function IntegrationsView({ rows }: { rows: IntegrationRow[] }) {
-  const [connectTarget, setConnectTarget] = React.useState<IntegrationRow | null>(null);
-  const [configureTarget, setConfigureTarget] = React.useState<IntegrationRow | null>(null);
-  const [reconnectTarget, setReconnectTarget] = React.useState<IntegrationRow | null>(null);
-  const [disconnectTarget, setDisconnectTarget] = React.useState<IntegrationRow | null>(null);
-  const [isPending, startTransition] = React.useTransition();
+  const [connectTarget, setConnectTarget] = useState<IntegrationRow | null>(null);
+  const [configureTarget, setConfigureTarget] = useState<IntegrationRow | null>(null);
+  const [reconnectTarget, setReconnectTarget] = useState<IntegrationRow | null>(null);
+  const [disconnectTarget, setDisconnectTarget] = useState<IntegrationRow | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const confirmDisconnect = React.useCallback(() => {
+  const confirmDisconnect = useCallback(() => {
     const row = disconnectTarget;
     if (!row?.connection) return;
     const id = row.connection.id;

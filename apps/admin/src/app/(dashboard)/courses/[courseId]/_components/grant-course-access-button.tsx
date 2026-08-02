@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -16,7 +16,7 @@ export function GrantCourseAccessButton({
   students: LiteStudent[];
   variant?: "primary" | "secondary";
 }) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
     <>

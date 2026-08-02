@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
@@ -24,8 +24,8 @@ import { DownloadTabsNav } from "./download-tabs-nav";
 export function DownloadHeader({ download }: { download: Download }) {
   const user = useCurrentUser();
   const router = useRouter();
-  const [isPending, startTransition] = React.useTransition();
-  const [confirmingDelete, setConfirmingDelete] = React.useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   function onTogglePublish() {
     const next: Download["status"] = download.status === "published" ? "draft" : "published";

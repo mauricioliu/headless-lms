@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -67,15 +67,15 @@ function SortableModule({
 }) {
   const router = useRouter();
   const sensors = useDndSensors();
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
 
-  const [items, setItems] = React.useState<Activity[]>(module.activities);
-  const [serverItems, setServerItems] = React.useState<Activity[]>(module.activities);
-  const [editingTitle, setEditingTitle] = React.useState(false);
-  const [titleDraft, setTitleDraft] = React.useState(module.title);
-  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [items, setItems] = useState<Activity[]>(module.activities);
+  const [serverItems, setServerItems] = useState<Activity[]>(module.activities);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(module.title);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const [newItemOpen, setNewItemOpen] = React.useState(false);
+  const [newItemOpen, setNewItemOpen] = useState(false);
 
   // Re-sync local ordering when the server returns a new activity set.
   if (module.activities !== serverItems) {
@@ -297,9 +297,9 @@ function SortableModule({
 // ---------------------------------------------------------------------------
 
 function ModuleComposer({ courseId }: { courseId: string }) {
-  const [open, setOpen] = React.useState(false);
-  const [title, setTitle] = React.useState("");
-  const [isPending, startTransition] = React.useTransition();
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   function submit() {
     const next = title.trim();
@@ -372,9 +372,9 @@ export function ModuleList({
 }) {
   const router = useRouter();
   const sensors = useDndSensors();
-  const [, startTransition] = React.useTransition();
-  const [ordered, setOrdered] = React.useState<Module[]>(modules);
-  const [serverModules, setServerModules] = React.useState<Module[]>(modules);
+  const [, startTransition] = useTransition();
+  const [ordered, setOrdered] = useState<Module[]>(modules);
+  const [serverModules, setServerModules] = useState<Module[]>(modules);
 
   // Re-sync local ordering when the server returns a new module set (e.g. after
   // a revalidated Server Action streams fresh props down).

@@ -76,10 +76,13 @@ export interface ActivitySettings {
   completion?: ActivityCompletionRule;
   /** Per-activity override of the course's transcript-download setting. */
   transcriptDownloads?: ActivityTranscriptRule;
+  /** Per-activity override of the course's comments setting. */
+  comments?: ActivityCommentsRule;
 }
 
 export type ActivityCompletionRule = "view" | "video" | "manual";
 export type ActivityTranscriptRule = "inherit" | "always" | "never";
+export type ActivityCommentsRule = "inherit" | "always" | "never";
 
 /**
  * Form payload for creating/updating an activity. Maps onto the SDK's
@@ -142,8 +145,6 @@ export type CommentStatus = CommentListItem["status"];
 /** A course's comment settings. Not a resource of its own: they ride on the
  *  course payload, so read and write both go through course settings. */
 export type CommentSettings = NonNullable<CourseSettings["comments"]>;
-export type CommentStates = ListCourseCommentStatesResponse["states"];
-export type CommentsState = CommentStates[string];
 
 // --- auth / session (not part of the resource API) -------------------------
 

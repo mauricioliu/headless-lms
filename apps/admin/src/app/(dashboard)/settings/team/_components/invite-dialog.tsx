@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useTransition } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -40,7 +40,7 @@ export function InviteDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [pending, startTransition] = React.useTransition();
+  const [pending, startTransition] = useTransition();
   const {
     register,
     control,
@@ -53,7 +53,7 @@ export function InviteDialog({
   });
 
   // Reset the form each time the sheet is (re)opened.
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) reset({ email: "", role: "instructor" });
   }, [open, reset]);
 

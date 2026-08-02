@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -40,8 +40,8 @@ export function ItemRow({
   moduleId: string;
   canEdit: boolean;
 }) {
-  const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [isPending, startTransition] = React.useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,

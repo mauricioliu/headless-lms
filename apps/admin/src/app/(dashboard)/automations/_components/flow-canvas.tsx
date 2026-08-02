@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useCallback, useEffect, useMemo, type CSSProperties, type MouseEvent } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -27,7 +27,7 @@ const nodeTypes = { trigger: TriggerNode, action: ActionNode, add: AddNode };
 const edgeTypes = { insert: InsertEdge };
 
 const GAP_Y = 148;
-const EDGE_STYLE: React.CSSProperties = { stroke: "var(--line-strong)", strokeWidth: 1.5 };
+const EDGE_STYLE: CSSProperties = { stroke: "var(--line-strong)", strokeWidth: 1.5 };
 const FIT_VIEW = { padding: 0.25, maxZoom: 1 };
 
 interface FlowCanvasProps {
@@ -54,7 +54,7 @@ function FlowCanvasInner({
 }: FlowCanvasProps) {
   const { fitView } = useReactFlow();
 
-  const nodes = React.useMemo<EditorNode[]>(() => {
+  const nodes = useMemo<EditorNode[]>(() => {
     const actionNodes = draft.actions.map((action, i): EditorNode => {
       const def = defs.get(action.type);
       return {
@@ -96,7 +96,7 @@ function FlowCanvasInner({
     ];
   }, [draft.trigger, draft.actions, triggerInfo, defs, selection, incomplete, attempted]);
 
-  const edges = React.useMemo<Edge[]>(() => {
+  const edges = useMemo<Edge[]>(() => {
     const chain = ["trigger", ...draft.actions.map((_, i) => `action-${i}`), "add"];
     return chain.slice(0, -1).map((source, i) => {
       const target = chain[i + 1];
@@ -117,13 +117,13 @@ function FlowCanvasInner({
 
   // Re-frame the chain when its length changes (next frame, so new nodes are measured).
   const stepCount = draft.actions.length;
-  React.useEffect(() => {
+  useEffect(() => {
     const id = requestAnimationFrame(() => void fitView({ ...FIT_VIEW, duration: 200 }));
     return () => cancelAnimationFrame(id);
   }, [stepCount, fitView]);
 
-  const handleNodeClick = React.useCallback(
-    (_: React.MouseEvent, node: { id: string }) => {
+  const handleNodeClick = useCallback(
+    (_: MouseEvent, node: { id: string }) => {
       if (node.id === "add") onAddStep(stepCount);
       else if (node.id === "trigger") onSelect({ kind: "trigger" });
       else if (node.id.startsWith("action-")) {

@@ -29,7 +29,7 @@ export async function replyToCommentAction(commentId: string, body: string): Pro
 }
 
 export async function resolveCommentReportsAction(commentId: string): Promise<void> {
-  await Discussion.editComment({ commentId }, await authHeaders());
+  await Discussion.dismissCommentReports({ commentId }, await authHeaders());
   revalidatePath("/courses/[courseId]/discussion", "page");
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
@@ -29,11 +29,11 @@ interface Org {
 export function SelectOrgView() {
   const params = useSearchParams();
   const clientId = params.get("client_id") ?? "";
-  const [orgs, setOrgs] = React.useState<Org[] | null>(null);
-  const [pending, setPending] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+  const [orgs, setOrgs] = useState<Org[] | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     let cancelled = false;
     authClient.organization
       .list()

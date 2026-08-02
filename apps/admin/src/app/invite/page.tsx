@@ -1,4 +1,4 @@
-import * as React from "react";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { InviteView } from "./invite-view";
 
@@ -6,8 +6,8 @@ export const metadata: Metadata = { title: "Join the team — Headless LMS" };
 
 export default function InvitePage() {
   return (
-    <React.Suspense>
+    <Suspense>
       <InviteView />
-    </React.Suspense>
+    </Suspense>
   );
 }

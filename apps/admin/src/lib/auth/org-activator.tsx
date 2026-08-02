@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import { authClient } from "@/lib/auth/client";
@@ -17,9 +17,9 @@ import { FullPageLoader } from "@/components/full-page-states";
 export function OrgActivator() {
   const router = useRouter();
   const { data: orgs } = authClient.useListOrganizations();
-  const done = React.useRef(false);
+  const done = useRef(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (done.current) return;
     if (orgs && orgs.length > 0) {
       done.current = true;

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -29,7 +29,7 @@ export function ConfigureDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [pending, startTransition] = React.useTransition();
+  const [pending, startTransition] = useTransition();
   const { control, handleSubmit, reset } = useForm<FormValues>({
     defaultValues: { config: {}, active: true },
   });
@@ -39,7 +39,7 @@ export function ConfigureDialog({
   const name = integration ? integration.id.charAt(0).toUpperCase() + integration.id.slice(1) : "";
 
   // Seed from the connection's current config/active whenever the sheet opens.
-  React.useEffect(() => {
+  useEffect(() => {
     if (open && integration && connection) {
       reset({
         config: schemaDefaults(integration.configSchema, connection.config),

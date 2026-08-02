@@ -54,7 +54,6 @@ import type {
   Paginated,
   CommentListItem,
   Student,
-  CommentStates,
 } from "./types";
 
 export const serverApi = {

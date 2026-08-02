@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 
 import { serverApi } from "@/lib/api/server";
@@ -14,7 +15,7 @@ export default async function ActivityLayout({
   children,
 }: {
   params: Promise<{ courseId: string; activityId: string }>;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const { courseId, activityId } = await params;
 

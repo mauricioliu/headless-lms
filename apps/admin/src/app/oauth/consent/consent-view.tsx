@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
@@ -23,8 +23,8 @@ export function ConsentView() {
   const params = useSearchParams();
   const clientId = params.get("client_id") ?? "";
   const scopes = (params.get("scope") ?? "").split(" ").filter(Boolean);
-  const [pending, setPending] = React.useState<"allow" | "deny" | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+  const [pending, setPending] = useState<"allow" | "deny" | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function respond(accept: boolean) {
     setPending(accept ? "allow" : "deny");

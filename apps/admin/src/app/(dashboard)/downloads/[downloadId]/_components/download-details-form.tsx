@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,7 +32,7 @@ type FormValues = z.infer<typeof schema>;
 // free text here — there's no fixed download category list.
 export function DownloadDetailsForm({ download }: { download: Download }) {
   const router = useRouter();
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
   const {
     register,
     handleSubmit,
@@ -48,7 +48,7 @@ export function DownloadDetailsForm({ download }: { download: Download }) {
   });
 
   // Re-sync when the server sends a fresh download (after a save revalidates).
-  React.useEffect(() => {
+  useEffect(() => {
     reset({
       title: download.title,
       category: download.category,
@@ -111,11 +111,11 @@ function ThumbnailField({
   thumbnailAssetId: string | null;
 }) {
   const router = useRouter();
-  const [uploading, setUploading] = React.useState(false);
-  const [url, setUrl] = React.useState<string | null>(null);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [url, setUrl] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!thumbnailAssetId) return;
     let cancelled = false;
     void getAssetUrlAction(thumbnailAssetId)

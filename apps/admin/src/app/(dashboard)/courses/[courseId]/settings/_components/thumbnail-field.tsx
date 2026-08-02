@@ -7,7 +7,7 @@
  * so the preview URL held here is only good for this session.
  */
 
-import * as React from "react";
+import { useRef, useState } from "react";
 import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,13 +33,13 @@ export function ThumbnailField({
   /** Presigned preview URL for `assetId`, resolved on the server. */
   url: string | null;
 }) {
-  const [preview, setPreview] = React.useState<{ id: string; url: string } | null>(
+  const [preview, setPreview] = useState<{ id: string; url: string } | null>(
     assetId && url ? { id: assetId, url } : null,
   );
-  const [pickerOpen, setPickerOpen] = React.useState(false);
-  const [busy, setBusy] = React.useState<"upload" | "save" | null>(null);
-  const [progress, setProgress] = React.useState(0);
-  const fileInput = React.useRef<HTMLInputElement>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [busy, setBusy] = useState<"upload" | "save" | null>(null);
+  const [progress, setProgress] = useState(0);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   async function save(next: { id: string; url: string } | null) {
     const rollback = preview;

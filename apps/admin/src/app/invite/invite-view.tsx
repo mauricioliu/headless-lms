@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -69,11 +69,11 @@ export function InviteView() {
   const params = useSearchParams();
   const token = params.get("token") ?? "";
   const email = params.get("email") ?? "";
-  const [stage, setStage] = React.useState<Stage>("activating");
-  const [error, setError] = React.useState<string | null>(null);
-  const activateStarted = React.useRef(false);
+  const [stage, setStage] = useState<Stage>("activating");
+  const [error, setError] = useState<string | null>(null);
+  const activateStarted = useRef(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!token) {
       setStage("invalid");
       return;
@@ -186,7 +186,7 @@ export function InviteView() {
 }
 
 function CreateAccountForm({ email, token }: { email: string; token: string }) {
-  const [formError, setFormError] = React.useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -250,7 +250,7 @@ function CreateAccountForm({ email, token }: { email: string; token: string }) {
 }
 
 function SignInForm({ email, token }: { email: string; token: string }) {
-  const [formError, setFormError] = React.useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import type { CommentSettings } from "@/lib/api/types";
@@ -36,8 +36,8 @@ export function CommentsSettings({
   courseId: string;
   settings: CommentSettings | undefined;
 }) {
-  const [value, setValue] = React.useState(settings ?? OFF);
-  const [isPending, startTransition] = React.useTransition();
+  const [value, setValue] = useState(settings ?? OFF);
+  const [isPending, startTransition] = useTransition();
 
   function update(key: (typeof FIELDS)[number]["key"], checked: boolean) {
     const previous = value;

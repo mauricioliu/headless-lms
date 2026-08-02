@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useMemo, useTransition } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -51,7 +51,7 @@ export function GrantAccessDialog({
   students: LiteStudent[];
   content: LiteContent[];
 }) {
-  const [pending, startTransition] = React.useTransition();
+  const [pending, startTransition] = useTransition();
 
   const {
     control,
@@ -65,17 +65,17 @@ export function GrantAccessDialog({
   });
 
   // Reset to a clean slate every time the sheet opens.
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) reset({ studentId: "", contentId: "", expiryMode: "never", expiresAt: "" });
   }, [open, reset]);
 
   const expiryMode = useWatch({ control, name: "expiryMode" });
 
-  const studentOptions = React.useMemo(
+  const studentOptions = useMemo(
     () => students.map((s) => ({ value: s.id, label: s.name, description: s.email })),
     [students],
   );
-  const contentOptions = React.useMemo(
+  const contentOptions = useMemo(
     () =>
       content.map((c) => ({
         value: c.id,

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { Suspense, useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -32,7 +32,7 @@ function StudentsTableInner({
 }) {
   const user = useCurrentUser();
   const router = useRouter();
-  const [addOpen, setAddOpen] = React.useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
   const table = useDataTable({
     pageSize: params.pageSize,
@@ -42,13 +42,13 @@ function StudentsTableInner({
   // Navigation in flight: URL is ahead of the rows the server rendered.
   const isStale = JSON.stringify(table.params) !== JSON.stringify(params);
 
-  const goToStudent = React.useCallback((id: string) => router.push(`/students/${id}`), [router]);
+  const goToStudent = useCallback((id: string) => router.push(`/students/${id}`), [router]);
 
   // Delete confirmation target.
-  const [toDelete, setToDelete] = React.useState<Student | null>(null);
-  const [isPending, startTransition] = React.useTransition();
+  const [toDelete, setToDelete] = useState<Student | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const confirmDelete = React.useCallback(() => {
+  const confirmDelete = useCallback(() => {
     if (!toDelete) return;
     const student = toDelete;
     startTransition(async () => {
@@ -62,7 +62,7 @@ function StudentsTableInner({
     });
   }, [toDelete]);
 
-  const columns = React.useMemo(() => studentColumns(goToStudent, setToDelete), [goToStudent]);
+  const columns = useMemo(() => studentColumns(goToStudent, setToDelete), [goToStudent]);
 
   // Defense-in-depth: the Server Component already 404s non-managers.
   if (!isManager(user.role)) return <ForbiddenView />;
@@ -124,8 +124,8 @@ export function StudentsTable(props: { rows: Student[]; total: number; params: L
   // `useDataTable` reads `useSearchParams()`, which requires a Suspense
   // boundary in the App Router.
   return (
-    <React.Suspense fallback={null}>
+    <Suspense fallback={null}>
       <StudentsTableInner {...props} />
-    </React.Suspense>
+    </Suspense>
   );
 }

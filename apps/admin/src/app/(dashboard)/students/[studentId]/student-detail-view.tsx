@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -41,10 +41,10 @@ export function StudentDetailView({
 }) {
   const user = useCurrentUser();
   const router = useRouter();
-  const [grantOpen, setGrantOpen] = React.useState(false);
-  const [confirmDelete, setConfirmDelete] = React.useState(false);
-  const [deleting, startDelete] = React.useTransition();
-  const [resending, startResend] = React.useTransition();
+  const [grantOpen, setGrantOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, startDelete] = useTransition();
+  const [resending, startResend] = useTransition();
 
   if (!isManager(user.role)) return <ForbiddenView />;
 

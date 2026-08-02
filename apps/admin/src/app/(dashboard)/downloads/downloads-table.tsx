@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { Suspense, useCallback, useMemo, useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -43,39 +43,39 @@ function DownloadsTableInner({
 
   // Optimistic publish flips. Base resets to `rows` whenever the RSC re-renders,
   // so the optimistic value is discarded once the real (revalidated) row lands.
-  const [optimisticRows, applyOptimistic] = React.useOptimistic(
+  const [optimisticRows, applyOptimistic] = useOptimistic(
     rows,
     (state: Download[], patch: { id: string; status: Download["status"] }) =>
       state.map((d) => (d.id === patch.id ? { ...d, status: patch.status } : d)),
   );
 
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
 
   // Dialog state: undefined download = create, a download = edit.
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [editing, setEditing] = React.useState<Download | undefined>(undefined);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Download | undefined>(undefined);
 
   // Delete confirmation target.
-  const [toDelete, setToDelete] = React.useState<Download | null>(null);
+  const [toDelete, setToDelete] = useState<Download | null>(null);
 
   const canCreate = can.createDownload(user);
 
-  const openCreate = React.useCallback(() => {
+  const openCreate = useCallback(() => {
     setEditing(undefined);
     setDialogOpen(true);
   }, []);
 
-  const openEdit = React.useCallback((download: Download) => {
+  const openEdit = useCallback((download: Download) => {
     setEditing(download);
     setDialogOpen(true);
   }, []);
 
-  const goToDetail = React.useCallback(
+  const goToDetail = useCallback(
     (download: Download) => router.push(`/downloads/${download.id}`),
     [router],
   );
 
-  const onTogglePublish = React.useCallback(
+  const onTogglePublish = useCallback(
     (download: Download) => {
       const next: Download["status"] = download.status === "published" ? "draft" : "published";
       startTransition(async () => {
@@ -91,7 +91,7 @@ function DownloadsTableInner({
     [applyOptimistic],
   );
 
-  const confirmDelete = React.useCallback(() => {
+  const confirmDelete = useCallback(() => {
     if (!toDelete) return;
     const download = toDelete;
     startTransition(async () => {
@@ -105,7 +105,7 @@ function DownloadsTableInner({
     });
   }, [toDelete]);
 
-  const columns = React.useMemo(
+  const columns = useMemo(
     () =>
       downloadsColumns({
         user,
@@ -198,8 +198,8 @@ function DownloadsTableInner({
 export function DownloadsTable(props: { rows: Download[]; total: number; params: ListParams }) {
   // `useDataTable` reads `useSearchParams()`, which requires a Suspense boundary.
   return (
-    <React.Suspense fallback={null}>
+    <Suspense fallback={null}>
       <DownloadsTableInner {...props} />
-    </React.Suspense>
+    </Suspense>
   );
 }

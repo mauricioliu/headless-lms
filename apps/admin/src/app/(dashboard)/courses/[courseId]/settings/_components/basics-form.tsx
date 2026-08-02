@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,7 +45,7 @@ type FormValues = z.infer<typeof schema>;
 /** Settings → Basics: the course's title, category, and description. */
 export function BasicsForm({ course }: { course: Course }) {
   const router = useRouter();
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
   const {
     register,
     handleSubmit,
@@ -63,7 +63,7 @@ export function BasicsForm({ course }: { course: Course }) {
   });
 
   // Re-sync when the server sends a fresh course (after a save revalidates).
-  React.useEffect(() => {
+  useEffect(() => {
     reset({ title: course.title, category: course.category, description: course.description });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [course.id, course.title, course.category, course.description]);

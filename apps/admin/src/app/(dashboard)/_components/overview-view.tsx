@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/page-header";
@@ -77,6 +78,6 @@ export function OverviewView({ role, user, organization, stats: overview }: Over
   );
 }
 
-function Section({ children }: { children: React.ReactNode }) {
+function Section({ children }: { children: ReactNode }) {
   return <div className="flex flex-col gap-4">{children}</div>;
 }

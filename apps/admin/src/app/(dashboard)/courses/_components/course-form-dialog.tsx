@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -53,7 +53,7 @@ export function CourseFormDialog({
   course?: Course;
 }) {
   const isEdit = Boolean(course);
-  const [pending, startTransition] = React.useTransition();
+  const [pending, startTransition] = useTransition();
 
   const {
     register,
@@ -75,7 +75,7 @@ export function CourseFormDialog({
   // create). Key on the stable `course?.id`, NOT the whole `course` object — a
   // list revalidation while the dialog is open streams a new `course` reference
   // with identical data, and depending on it would wipe in-progress edits.
-  React.useEffect(() => {
+  useEffect(() => {
     if (!open) return;
     reset({
       title: course?.title ?? "",

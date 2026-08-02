@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -41,7 +41,7 @@ export function NewActivityDialog({
   courseId: string;
   moduleId: string;
 }) {
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
 
   const {
     register,
@@ -54,7 +54,7 @@ export function NewActivityDialog({
   });
 
   // Clear the previous draft whenever the modal reopens.
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) reset({ title: "" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);

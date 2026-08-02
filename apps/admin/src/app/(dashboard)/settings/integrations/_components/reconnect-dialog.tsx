@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -26,7 +26,7 @@ export function ReconnectDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [pending, startTransition] = React.useTransition();
+  const [pending, startTransition] = useTransition();
   const { control, handleSubmit, reset } = useForm<FormValues>({
     defaultValues: { secrets: {} },
   });
@@ -36,7 +36,7 @@ export function ReconnectDialog({
   const name = integration ? integration.id.charAt(0).toUpperCase() + integration.id.slice(1) : "";
 
   // Always starts blank — stored secrets are never echoed back.
-  React.useEffect(() => {
+  useEffect(() => {
     if (open && integration) {
       reset({ secrets: schemaDefaults(integration.secretsSchema) });
     }

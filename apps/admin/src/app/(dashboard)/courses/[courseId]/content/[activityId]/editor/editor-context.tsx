@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import editorModule from "@/editor.config";
@@ -27,7 +27,7 @@ interface ActivityEditorValue {
   dirty: boolean;
 }
 
-const ActivityEditorContext = React.createContext<ActivityEditorValue | null>(null);
+const ActivityEditorContext = createContext<ActivityEditorValue | null>(null);
 
 /**
  * Client boundary for the editor route. The RSC page feeds it the resolved
@@ -41,13 +41,13 @@ export function ActivityEditorProvider({
   initialConfig,
   children,
 }: Omit<ActivityEditorValue, "onChange" | "save" | "saveNow" | "saving" | "dirty"> & {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  const latestConfig = React.useRef<unknown>(initialConfig);
-  const [saving, setSaving] = React.useState(false);
-  const [dirty, setDirty] = React.useState(false);
+  const latestConfig = useRef<unknown>(initialConfig);
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
-  const save = React.useCallback(
+  const save = useCallback(
     async (config: unknown) => {
       setSaving(true);
       try {
@@ -71,17 +71,17 @@ export function ActivityEditorProvider({
     [courseId, moduleId, activityId],
   );
 
-  const onChange = React.useCallback((config: unknown) => {
+  const onChange = useCallback((config: unknown) => {
     latestConfig.current = config;
     setDirty(true);
   }, []);
 
-  const saveNow = React.useCallback(() => save(latestConfig.current), [save]);
+  const saveNow = useCallback(() => save(latestConfig.current), [save]);
 
   // The bar lives in the layout above this route, so Content claims its Save.
   useRegisterSave({ save: saveNow, saving, dirty });
 
-  const value = React.useMemo(
+  const value = useMemo(
     () => ({
       courseId,
       moduleId,
@@ -100,7 +100,7 @@ export function ActivityEditorProvider({
 }
 
 export function useActivityEditor(): ActivityEditorValue {
-  const ctx = React.useContext(ActivityEditorContext);
+  const ctx = useContext(ActivityEditorContext);
   if (!ctx) throw new Error("useActivityEditor must be used inside <ActivityEditorProvider>");
   return ctx;
 }

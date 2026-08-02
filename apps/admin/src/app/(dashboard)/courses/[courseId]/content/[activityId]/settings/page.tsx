@@ -28,6 +28,7 @@ export default async function ActivitySettingsPage({
       moduleId={parent.id}
       activity={activity}
       courseTranscriptDownloads={course.settings.transcriptDownloads}
+      courseCommentsEnabled={course.settings.comments?.enabled ?? false}
     />
   );
 }

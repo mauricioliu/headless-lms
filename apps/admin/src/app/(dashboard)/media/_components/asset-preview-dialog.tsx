@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Copy, Download, FileText, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,11 +39,11 @@ export function AssetPreviewDialog({
 }) {
   // Presigned URLs are short-lived, so fetch on demand when the dialog opens
   // (via a Server Action) rather than caching long-term.
-  const [url, setUrl] = React.useState<string | null>(null);
-  const [isLoading, startTransition] = React.useTransition();
+  const [url, setUrl] = useState<string | null>(null);
+  const [isLoading, startTransition] = useTransition();
   const assetId = asset?.id;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!open || !assetId) return;
     let cancelled = false;
     startTransition(async () => {

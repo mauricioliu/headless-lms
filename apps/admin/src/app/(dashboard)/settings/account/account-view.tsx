@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 
@@ -15,7 +15,7 @@ export function AccountView() {
   const user = useCurrentUser();
   const organization = useOrganization();
   const router = useRouter();
-  const [pending, setPending] = React.useState(false);
+  const [pending, setPending] = useState(false);
 
   async function handleSignOut() {
     setPending(true);
@@ -52,7 +52,7 @@ export function AccountView() {
   );
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4 py-4">
       <dt className="text-sm text-ink-3">{label}</dt>

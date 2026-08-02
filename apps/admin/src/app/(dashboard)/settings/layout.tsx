@@ -1,4 +1,4 @@
-import * as React from "react";
+import type { ReactNode } from "react";
 
 import { requireAuth } from "@/lib/auth/server-session";
 import { isManager } from "@/lib/roles";
@@ -12,7 +12,7 @@ import { SettingsNav } from "./settings-nav";
  * The Organization group is manager-only, so the role is resolved here and
  * passed to the client nav.
  */
-export default async function SettingsLayout({ children }: { children: React.ReactNode }) {
+export default async function SettingsLayout({ children }: { children: ReactNode }) {
   const session = await requireAuth();
   const manager = isManager(session.role);
 

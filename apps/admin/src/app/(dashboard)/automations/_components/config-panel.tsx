@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { ChevronDown, ChevronUp, MousePointerClick, Trash2 } from "lucide-react";
 
@@ -106,7 +106,7 @@ function ActionPanel({
   const def = defs.get(action.type);
   const count = draft.actions.length;
 
-  const groups = React.useMemo(() => {
+  const groups = useMemo(() => {
     const bySource = new Map<string, AvailableAction[]>();
     for (const a of availableActions) {
       const list = bySource.get(a.source) ?? [];
@@ -116,7 +116,7 @@ function ActionPanel({
     return [...bySource.entries()];
   }, [availableActions]);
 
-  const onInputChange = React.useCallback(
+  const onInputChange = useCallback(
     (input: Record<string, unknown>) => onActionInputChange(index, input),
     [onActionInputChange, index],
   );
@@ -213,7 +213,7 @@ function ActionInputForm({
     defaultValues: { input: schemaDefaults(def.inputSchema, input) },
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const sub = watch((values) => onChange({ ...(values.input as Record<string, unknown>) }));
     return () => sub.unsubscribe();
   }, [watch, onChange]);

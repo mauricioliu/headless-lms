@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import type { ReactNode } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,7 +15,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
  * sessions to `/login`, and Server Actions surface failures as toasts. This
  * wrapper just provides tooltips and the toast portal.
  */
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: ReactNode }) {
   return (
     <TooltipProvider>
       {children}

@@ -1,4 +1,4 @@
-import * as React from "react";
+import type { ReactNode } from "react";
 
 export function SettingsSection({
   title,
@@ -7,7 +7,7 @@ export function SettingsSection({
 }: {
   title: string;
   description?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section className="grid gap-x-12 gap-y-4 py-8 first:pt-0 last:pb-0 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
@@ -30,7 +30,7 @@ export function SettingsRow({
   htmlFor: string;
   label: string;
   hint: string;
-  control: React.ReactNode;
+  control: ReactNode;
 }) {
   return (
     <div className="flex items-start justify-between gap-6 py-3.5 first:pt-0 last:pb-0">

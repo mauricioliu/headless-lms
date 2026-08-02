@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,16 +37,16 @@ export function LoginView() {
   const nextParam = params.get("next");
   const next = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
   const { data: session } = useSession();
-  const [mode, setMode] = React.useState<"signin" | "signup">("signin");
-  const [formError, setFormError] = React.useState<string | null>(null);
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [formError, setFormError] = useState<string | null>(null);
   // Suppresses the already-signed-in bounce while a form submission is in
   // flight: signUp sets the session before the org is created, and the live
   // useSession would otherwise redirect mid-flow.
-  const [busy, setBusy] = React.useState(false);
+  const [busy, setBusy] = useState(false);
   // One-shot guard: useSession can re-emit before the sign-out lands.
-  const forcedSignOut = React.useRef(false);
+  const forcedSignOut = useRef(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!session || busy) return;
     if (denied) {
       // The dashboard bounced this session here (valid cookie, no staff role —

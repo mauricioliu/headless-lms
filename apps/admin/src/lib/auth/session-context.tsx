@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 
 import type { ServerSession } from "./server-session";
 import type { Organization, SessionUser } from "../api/types";
@@ -18,7 +18,7 @@ interface SessionContextValue {
   organization: Organization;
 }
 
-const SessionContext = React.createContext<SessionContextValue | null>(null);
+const SessionContext = createContext<SessionContextValue | null>(null);
 
 /** Provided by the dashboard layout once an authenticated session is resolved. */
 export function SessionProvider({
@@ -26,9 +26,9 @@ export function SessionProvider({
   children,
 }: {
   session: ServerSession;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  const value = React.useMemo<SessionContextValue>(
+  const value = useMemo<SessionContextValue>(
     () => ({
       user: {
         id: session.user.id,
@@ -51,13 +51,13 @@ export function SessionProvider({
 }
 
 export function useCurrentUser(): SessionUser {
-  const ctx = React.useContext(SessionContext);
+  const ctx = useContext(SessionContext);
   if (!ctx) throw new Error("useCurrentUser must be used within the dashboard");
   return ctx.user;
 }
 
 export function useOrganization(): Organization {
-  const ctx = React.useContext(SessionContext);
+  const ctx = useContext(SessionContext);
   if (!ctx) throw new Error("useOrganization must be used within the dashboard");
   return ctx.organization;
 }

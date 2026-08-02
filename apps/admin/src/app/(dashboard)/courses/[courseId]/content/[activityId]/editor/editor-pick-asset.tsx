@@ -12,7 +12,7 @@
  * (see `editor-upload.ts`).
  */
 
-import * as React from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import type { EditorMediaKind, UploadedEditorFile } from "@headless-lms/editor-contract";
 
@@ -35,11 +35,11 @@ interface PickRequest {
 
 export function useAssetPicker(): {
   pickAsset: (opts: { kind: EditorMediaKind }) => Promise<UploadedEditorFile | null>;
-  picker: React.ReactNode;
+  picker: ReactNode;
 } {
-  const [request, setRequest] = React.useState<PickRequest | null>(null);
+  const [request, setRequest] = useState<PickRequest | null>(null);
 
-  const pickAsset = React.useCallback(
+  const pickAsset = useCallback(
     (opts: { kind: EditorMediaKind }) =>
       new Promise<UploadedEditorFile | null>((resolve) => {
         setRequest({ kind: assetKindFor(opts.kind), resolve });
@@ -47,7 +47,7 @@ export function useAssetPicker(): {
     [],
   );
 
-  const settle = React.useCallback(
+  const settle = useCallback(
     (file: UploadedEditorFile | null) => {
       request?.resolve(file);
       setRequest(null);
@@ -55,7 +55,7 @@ export function useAssetPicker(): {
     [request],
   );
 
-  const onSelect = React.useCallback(
+  const onSelect = useCallback(
     async (asset: Asset) => {
       try {
         const url = await getAssetUrlAction(asset.id, asset.filename);

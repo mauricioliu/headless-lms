@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -132,8 +132,8 @@ function RenameDialog({
   onOpenChange: (open: boolean) => void;
   onSave: (displayName: string | null) => void;
 }) {
-  const [name, setName] = React.useState("");
-  const [syncedAssetId, setSyncedAssetId] = React.useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [syncedAssetId, setSyncedAssetId] = useState<string | null>(null);
 
   // Re-seed the field when a different asset opens the dialog. Render-phase
   // sync (matching the panel's own asset-list resync below) rather than an
@@ -208,13 +208,13 @@ export function DownloadAssetsPanel({
 }) {
   const router = useRouter();
   const sensors = useDndSensors();
-  const [isPending, startTransition] = React.useTransition();
-  const [adding, setAdding] = React.useState(false);
-  const [assets, setAssets] = React.useState<DownloadAsset[]>(initialAssets);
-  const [serverAssets, setServerAssets] = React.useState<DownloadAsset[]>(initialAssets);
-  const [renaming, setRenaming] = React.useState<DownloadAsset | null>(null);
-  const [removing, setRemoving] = React.useState<DownloadAsset | null>(null);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [isPending, startTransition] = useTransition();
+  const [adding, setAdding] = useState(false);
+  const [assets, setAssets] = useState<DownloadAsset[]>(initialAssets);
+  const [serverAssets, setServerAssets] = useState<DownloadAsset[]>(initialAssets);
+  const [renaming, setRenaming] = useState<DownloadAsset | null>(null);
+  const [removing, setRemoving] = useState<DownloadAsset | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Re-sync local ordering when the server returns a fresh asset set (e.g.
   // after a revalidated Server Action streams new props down).

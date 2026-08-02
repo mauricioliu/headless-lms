@@ -9,7 +9,7 @@
  * The grid is the same `AssetCard`, in select mode.
  */
 
-import * as React from "react";
+import { useEffect, useState } from "react";
 import { Loader2, Search } from "lucide-react";
 
 import type { Asset, AssetKind } from "@/lib/api/types";
@@ -45,25 +45,25 @@ export function AssetPickerDialog({
   onOpenChange: (open: boolean) => void;
   onSelect: (asset: Asset) => void;
 }) {
-  const [search, setSearch] = React.useState("");
-  const [debounced, setDebounced] = React.useState("");
-  const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(PAGE_SIZE);
-  const [rows, setRows] = React.useState<Asset[]>([]);
-  const [total, setTotal] = React.useState(0);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [debounced, setDebounced] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  const [rows, setRows] = useState<Asset[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Reset per opening: a picker that remembers the last search is a picker
   // that looks empty when you open it for a different kind of media.
-  React.useEffect(() => {
+  useEffect(() => {
     if (!open) return;
     setSearch("");
     setDebounced("");
     setPage(1);
   }, [open, kind]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const t = window.setTimeout(() => {
       setDebounced(search);
       setPage(1);
@@ -71,7 +71,7 @@ export function AssetPickerDialog({
     return () => window.clearTimeout(t);
   }, [search]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setLoading(true);

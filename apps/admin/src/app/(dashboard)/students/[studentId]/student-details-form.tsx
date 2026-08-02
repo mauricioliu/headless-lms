@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,7 +35,7 @@ const valuesFor = (student: Student): FormValues => ({
 
 export function StudentDetailsForm({ student }: { student: Student }) {
   const router = useRouter();
-  const [pending, startTransition] = React.useTransition();
+  const [pending, startTransition] = useTransition();
 
   const {
     register,
@@ -47,7 +47,7 @@ export function StudentDetailsForm({ student }: { student: Student }) {
 
   // The RSC re-renders with the saved row after `router.refresh()`; rebasing the
   // form on it is what clears `isDirty` and disables Save again.
-  React.useEffect(() => {
+  useEffect(() => {
     reset(valuesFor(student));
   }, [student, reset]);
 

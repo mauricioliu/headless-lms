@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 /** What the bar needs to drive Save for whichever view is on screen. */
 export interface SaveState {
@@ -17,7 +17,7 @@ interface ActivityBarValue {
   register: (owner: Owner, state: SaveState | null) => void;
 }
 
-const ActivityBarContext = React.createContext<ActivityBarValue | null>(null);
+const ActivityBarContext = createContext<ActivityBarValue | null>(null);
 
 /**
  * Holds the bar's Save wiring for the activity's three views. The bar lives in
@@ -25,11 +25,11 @@ const ActivityBarContext = React.createContext<ActivityBarValue | null>(null);
  * what Save means — the editor's config save, the settings form's submit, or
  * nothing at all (Preview), which hides the button.
  */
-export function ActivityBarProvider({ children }: { children: React.ReactNode }) {
-  const [save, setSave] = React.useState<SaveState | null>(null);
-  const ownerRef = React.useRef<Owner | null>(null);
+export function ActivityBarProvider({ children }: { children: ReactNode }) {
+  const [save, setSave] = useState<SaveState | null>(null);
+  const ownerRef = useRef<Owner | null>(null);
 
-  const register = React.useCallback((owner: Owner, state: SaveState | null) => {
+  const register = useCallback((owner: Owner, state: SaveState | null) => {
     if (state === null) {
       // Ignore a stale unmount: the next view has already taken the slot.
       if (ownerRef.current !== owner) return;
@@ -41,12 +41,12 @@ export function ActivityBarProvider({ children }: { children: React.ReactNode })
     setSave(state);
   }, []);
 
-  const value = React.useMemo(() => ({ save, register }), [save, register]);
+  const value = useMemo(() => ({ save, register }), [save, register]);
   return <ActivityBarContext.Provider value={value}>{children}</ActivityBarContext.Provider>;
 }
 
 export function useActivityBar(): ActivityBarValue {
-  const ctx = React.useContext(ActivityBarContext);
+  const ctx = useContext(ActivityBarContext);
   if (!ctx) throw new Error("useActivityBar must be used inside <ActivityBarProvider>");
   return ctx;
 }
@@ -54,9 +54,9 @@ export function useActivityBar(): ActivityBarValue {
 /** Claim the bar's Save button for the mounted view. */
 export function useRegisterSave({ save, saving, dirty }: SaveState): void {
   const { register } = useActivityBar();
-  const [owner] = React.useState<Owner>(() => ({}));
+  const [owner] = useState<Owner>(() => ({}));
 
-  React.useEffect(() => {
+  useEffect(() => {
     register(owner, { save, saving, dirty });
     return () => register(owner, null);
   }, [register, owner, save, saving, dirty]);

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { requireAuth } from "@/lib/auth/server-session";
 import { isManager } from "@/lib/roles";
 import { serverApi } from "@/lib/api/server";
@@ -9,7 +10,7 @@ export default async function CourseLayout({
   children,
 }: {
   params: Promise<{ courseId: string }>;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const { courseId } = await params;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState } from "react";
 import { Check, CornerUpLeft, Flag, MoreHorizontal, RotateCcw, Trash2, X } from "lucide-react";
 
 import type { CommentListItem } from "@/lib/api/types";
@@ -52,7 +52,7 @@ export function ModerationRow({
   onDismissReports: (id: string) => void;
   onReply: (id: string, body: string, done: () => void) => void;
 }) {
-  const [replying, setReplying] = React.useState(false);
+  const [replying, setReplying] = useState(false);
   const removed = comment.status === "removed";
   const flagged = comment.reports.length > 0;
   const status = STATUS[comment.status];
@@ -87,10 +87,7 @@ export function ModerationRow({
 
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant="outline">{comment.activityTitle}</Badge>
-          <Badge variant={status.variant}>
-            <Dot className={status.dot} />
-            {status.label}
-          </Badge>
+          <Badge variant={status.variant}>{status.label}</Badge>
           {flagged && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -118,10 +115,7 @@ export function ModerationRow({
         </p>
 
         {replies.map((reply) => (
-          <div
-            key={reply.id}
-            className="flex gap-2.5 rounded-card border border-line bg-surface-2 p-3"
-          >
+          <div key={reply.id} className="flex gap-2.5 rounded-card bg-muted/50s p-3">
             <NameAvatar
               name={fullName(reply.author)}
               image={reply.author.image}
@@ -188,7 +182,7 @@ export function ModerationRow({
           ) : (
             <Button
               size="sm"
-              variant="destructive"
+              variant="ghost"
               disabled={pending}
               onClick={() => onRemove(comment.id)}
             >
@@ -270,7 +264,7 @@ function ReplyBox({
   onSubmit: (body: string) => void;
   onCancel: () => void;
 }) {
-  const [value, setValue] = React.useState("");
+  const [value, setValue] = useState("");
   const trimmed = value.trim();
 
   return (

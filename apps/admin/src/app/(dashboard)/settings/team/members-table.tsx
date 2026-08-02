@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { Suspense, useCallback, useMemo, useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -56,21 +56,21 @@ function MembersTableInner({
 
   // Optimistic role flips. Base resets to `rows` whenever the RSC re-renders,
   // so the optimistic value is discarded once the real (revalidated) row lands.
-  const [optimisticRows, applyOptimistic] = React.useOptimistic(
+  const [optimisticRows, applyOptimistic] = useOptimistic(
     rows,
     (rowsState: Member[], patch: { id: string; role: Role }) =>
       rowsState.map((m) => (m.id === patch.id ? { ...m, role: patch.role } : m)),
   );
 
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
 
-  const [inviteOpen, setInviteOpen] = React.useState(false);
-  const [removeTarget, setRemoveTarget] = React.useState<Member | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<Member | null>(null);
 
   const canManageRoles = can.manageRoles(user);
   const canInvite = can.inviteMembers(user);
 
-  const onChangeRole = React.useCallback(
+  const onChangeRole = useCallback(
     (id: string, role: Role) => {
       startTransition(async () => {
         applyOptimistic({ id, role });
@@ -85,7 +85,7 @@ function MembersTableInner({
     [applyOptimistic],
   );
 
-  const confirmRemove = React.useCallback(() => {
+  const confirmRemove = useCallback(() => {
     if (!removeTarget) return;
     const member = removeTarget;
     startTransition(async () => {
@@ -99,7 +99,7 @@ function MembersTableInner({
     });
   }, [removeTarget]);
 
-  const columns = React.useMemo(
+  const columns = useMemo(
     () =>
       memberColumns({
         canManageRoles,
@@ -174,8 +174,8 @@ function MembersTableInner({
 export function MembersTable(props: { rows: Member[]; total: number; params: ListParams }) {
   // `useDataTable` reads `useSearchParams()`, which requires a Suspense boundary.
   return (
-    <React.Suspense fallback={null}>
+    <Suspense fallback={null}>
       <MembersTableInner {...props} />
-    </React.Suspense>
+    </Suspense>
   );
 }

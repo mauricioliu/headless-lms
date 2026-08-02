@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import type { CSSProperties } from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -43,7 +43,7 @@ export type InsertFlowEdge = Edge<InsertEdgeData, "insert">;
 
 export type EditorNode = TriggerFlowNode | ActionFlowNode | AddFlowNode;
 
-const hiddenHandle: React.CSSProperties = {
+const hiddenHandle: CSSProperties = {
   opacity: 0,
   pointerEvents: "none",
   width: 1,

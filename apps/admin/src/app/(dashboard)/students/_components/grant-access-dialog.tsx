@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useMemo, useTransition } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -48,7 +48,7 @@ export function GrantAccessDialog({
   studentId: string;
   content: LiteContent[];
 }) {
-  const [pending, startTransition] = React.useTransition();
+  const [pending, startTransition] = useTransition();
 
   const {
     control,
@@ -61,13 +61,13 @@ export function GrantAccessDialog({
     defaultValues: { contentId: "", expiryMode: "never", expiresAt: "" },
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) reset({ contentId: "", expiryMode: "never", expiresAt: "" });
   }, [open, reset]);
 
   const expiryMode = useWatch({ control, name: "expiryMode" });
 
-  const contentOptions = React.useMemo(
+  const contentOptions = useMemo(
     () =>
       content.map((c) => ({
         value: c.id,

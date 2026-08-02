@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,7 +38,7 @@ export function AddStudentDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const [pending, startTransition] = React.useTransition();
+  const [pending, startTransition] = useTransition();
 
   const {
     register,
@@ -49,7 +49,7 @@ export function AddStudentDialog({
   } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: DEFAULTS });
 
   // Reset to a clean slate every time the dialog opens.
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) reset(DEFAULTS);
   }, [open, reset]);
 

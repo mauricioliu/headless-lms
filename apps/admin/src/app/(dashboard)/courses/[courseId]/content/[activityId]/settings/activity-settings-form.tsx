@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,6 +31,7 @@ const schema = z.object({
   published: z.boolean(),
   completion: z.enum(["view", "video", "manual"]),
   transcriptDownloads: z.enum(["inherit", "always", "never"]),
+  comments: z.enum(["inherit", "always", "never"]),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -47,12 +48,19 @@ const TRANSCRIPT_LABELS: Record<FormValues["transcriptDownloads"], string> = {
   never: "Never allow",
 };
 
+const COMMENTS_LABELS: Record<FormValues["comments"], string> = {
+  inherit: "Inherit from course",
+  always: "Always allow",
+  never: "Never allow",
+};
+
 function toDefaults(settings: ActivitySettings): FormValues {
   return {
     title: settings.title ?? "",
     published: settings.published ?? false,
     completion: settings.completion ?? "view",
     transcriptDownloads: settings.transcriptDownloads ?? "inherit",
+    comments: settings.comments ?? "inherit",
   };
 }
 
@@ -67,15 +75,17 @@ export function ActivitySettingsForm({
   moduleId,
   activity,
   courseTranscriptDownloads,
+  courseCommentsEnabled,
 }: {
   courseId: string;
   moduleId: string;
   activity: Activity;
   courseTranscriptDownloads: boolean;
+  courseCommentsEnabled: boolean;
 }) {
   const router = useRouter();
   // Memoised: a fresh `{}` each render would churn the bar's save registration.
-  const settings = React.useMemo(
+  const settings = useMemo(
     () => (activity.settings ?? {}) as ActivitySettings,
     [activity.settings],
   );
@@ -87,7 +97,7 @@ export function ActivitySettingsForm({
     formState: { errors, isSubmitting, isDirty },
   } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: toDefaults(settings) });
 
-  const onValid = React.useCallback(
+  const onValid = useCallback(
     async (values: FormValues) => {
       try {
         await saveActivityAction(courseId, moduleId, {
@@ -105,7 +115,7 @@ export function ActivitySettingsForm({
     [courseId, moduleId, activity.id, activity.assetIds, settings, reset, router],
   );
 
-  const save = React.useCallback(() => handleSubmit(onValid)(), [handleSubmit, onValid]);
+  const save = useCallback(() => handleSubmit(onValid)(), [handleSubmit, onValid]);
   useRegisterSave({ save, saving: isSubmitting, dirty: isDirty });
 
   return (
@@ -183,6 +193,32 @@ export function ActivitySettingsForm({
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(TRANSCRIPT_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </SettingRow>
+
+        <SettingRow
+          id="activity-comments"
+          label="Comments"
+          hint={`The course currently has comments ${courseCommentsEnabled ? "on" : "off"}. Turning them off here overrides the course; it cannot turn them back on.`}
+          controlClassName="w-full sm:w-72"
+        >
+          <Controller
+            control={control}
+            name="comments"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id="activity-comments" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(COMMENTS_LABELS).map(([value, label]) => (
                     <SelectItem key={value} value={value}>
                       {label}
                     </SelectItem>

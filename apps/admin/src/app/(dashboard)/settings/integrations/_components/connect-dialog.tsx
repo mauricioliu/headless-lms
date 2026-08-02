@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -27,7 +27,7 @@ export function ConnectDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [pending, startTransition] = React.useTransition();
+  const [pending, startTransition] = useTransition();
   const { control, handleSubmit, reset } = useForm<FormValues>({
     defaultValues: { secrets: {}, config: {} },
   });
@@ -36,7 +36,7 @@ export function ConnectDialog({
   const name = integration ? integration.id.charAt(0).toUpperCase() + integration.id.slice(1) : "";
 
   // Seed schema-implied defaults whenever the sheet opens for an integration.
-  React.useEffect(() => {
+  useEffect(() => {
     if (open && integration) {
       reset({
         secrets: schemaDefaults(integration.secretsSchema),

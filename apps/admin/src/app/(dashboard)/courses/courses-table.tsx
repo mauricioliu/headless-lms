@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { Suspense, useCallback, useMemo, useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -55,39 +55,39 @@ function CoursesTableInner({
 
   // Optimistic publish flips. Base resets to `rows` whenever the RSC re-renders,
   // so the optimistic value is discarded once the real (revalidated) row lands.
-  const [optimisticRows, applyOptimistic] = React.useOptimistic(
+  const [optimisticRows, applyOptimistic] = useOptimistic(
     rows,
     (state: Course[], patch: { id: string; status: Course["status"] }) =>
       state.map((c) => (c.id === patch.id ? { ...c, status: patch.status } : c)),
   );
 
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
 
   // Dialog state: undefined course = create, a course = edit.
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [editing, setEditing] = React.useState<Course | undefined>(undefined);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Course | undefined>(undefined);
 
   // Delete confirmation target.
-  const [toDelete, setToDelete] = React.useState<Course | null>(null);
+  const [toDelete, setToDelete] = useState<Course | null>(null);
 
   const canCreate = can.createCourse(user);
 
-  const openCreate = React.useCallback(() => {
+  const openCreate = useCallback(() => {
     setEditing(undefined);
     setDialogOpen(true);
   }, []);
 
-  const openEdit = React.useCallback((course: Course) => {
+  const openEdit = useCallback((course: Course) => {
     setEditing(course);
     setDialogOpen(true);
   }, []);
 
-  const goToBuilder = React.useCallback(
+  const goToBuilder = useCallback(
     (course: Course) => router.push(`/courses/${course.id}`),
     [router],
   );
 
-  const onTogglePublish = React.useCallback(
+  const onTogglePublish = useCallback(
     (course: Course) => {
       const next: Course["status"] = course.status === "published" ? "draft" : "published";
       startTransition(async () => {
@@ -103,7 +103,7 @@ function CoursesTableInner({
     [applyOptimistic],
   );
 
-  const confirmDelete = React.useCallback(() => {
+  const confirmDelete = useCallback(() => {
     if (!toDelete) return;
     const course = toDelete;
     startTransition(async () => {
@@ -117,7 +117,7 @@ function CoursesTableInner({
     });
   }, [toDelete]);
 
-  const columns = React.useMemo(
+  const columns = useMemo(
     () =>
       coursesColumns({
         user,
@@ -215,8 +215,8 @@ function CoursesTableInner({
 export function CoursesTable(props: { rows: Course[]; total: number; params: ListParams }) {
   // `useDataTable` reads `useSearchParams()`, which requires a Suspense boundary.
   return (
-    <React.Suspense fallback={null}>
+    <Suspense fallback={null}>
       <CoursesTableInner {...props} />
-    </React.Suspense>
+    </Suspense>
   );
 }
