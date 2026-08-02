@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState, type ReactNode } from "react";
 import { CornerUpLeft, Flag, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import type { CommentsConfig, CommentView, ReactionEmoji } from "@/lib/api/types";
 
@@ -38,15 +38,15 @@ export function CommentItem({
   isReply?: boolean;
   /** Rendered under this comment's actions — the panel owns the reply list so
    *  each reply keeps its own handlers. */
-  replies?: React.ReactNode;
+  replies?: ReactNode;
   onReply?: (body: string) => Promise<void>;
   onEdit: (body: string) => Promise<void>;
   onRemove: () => Promise<void>;
   onReact: (emoji: ReactionEmoji | null) => Promise<void>;
   onReport: (reason: string) => Promise<void>;
 }) {
-  const [editing, setEditing] = React.useState(false);
-  const [replying, setReplying] = React.useState(false);
+  const [editing, setEditing] = useState(false);
+  const [replying, setReplying] = useState(false);
   const p = permissions(config, comment, orgUserId);
   const author = fullName(comment.author);
 

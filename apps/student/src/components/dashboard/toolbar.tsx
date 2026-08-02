@@ -1,33 +1,38 @@
 "use client";
 
+import { useOptimistic, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { LayoutGrid, List } from "lucide-react";
+
 import { SegmentedControl } from "@/components/primitives/segmented-control";
+import { dashboardHref, type DashboardParams, type SortValue } from "@/lib/dashboard";
 
-export type FilterValue = "all" | "inprogress" | "completed";
-export type SortValue = "recent" | "progress" | "title";
-export type LayoutValue = "grid" | "list";
+/**
+ * Dashboard toolbar (handoff §4): filter segmented · sort · grid/list toggle.
+ *
+ * The view lives in the URL, not in component state — the page re-renders on
+ * the server for every change, so this stays a leaf that only writes. Current
+ * values arrive as props (no `useSearchParams`), and `useOptimistic` keeps the
+ * control responsive while the server round-trip is in flight.
+ */
+export function Toolbar(params: DashboardParams) {
+  const router = useRouter();
+  const [view, setView] = useOptimistic(params);
+  const [, startTransition] = useTransition();
 
-/** Dashboard toolbar (handoff §4): filter segmented · sort · grid/list toggle. */
-export function Toolbar({
-  filter,
-  onFilter,
-  sort,
-  onSort,
-  layout,
-  onLayout,
-}: {
-  filter: FilterValue;
-  onFilter: (v: FilterValue) => void;
-  sort: SortValue;
-  onSort: (v: SortValue) => void;
-  layout: LayoutValue;
-  onLayout: (v: LayoutValue) => void;
-}) {
+  const go = (patch: Partial<DashboardParams>) => {
+    const next = { ...view, ...patch };
+    startTransition(() => {
+      setView(next);
+      router.push(dashboardHref(next), { scroll: false });
+    });
+  };
+
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
       <SegmentedControl
-        value={filter}
-        onChange={onFilter}
+        value={view.filter}
+        onChange={(filter) => go({ filter })}
         options={[
           { value: "all", label: "All" },
           { value: "inprogress", label: "In progress" },
@@ -35,25 +40,33 @@ export function Toolbar({
         ]}
       />
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-[7px] text-[13px] text-ink-3">
+        <label className="flex items-center gap-[7px] text-[13px] text-ink-3">
           <span>Sort</span>
           <select
-            value={sort}
-            onChange={(e) => onSort(e.target.value as SortValue)}
+            value={view.sort}
+            onChange={(e) => go({ sort: e.target.value as SortValue })}
             className="cursor-pointer rounded-[9px] border border-line bg-surface px-3 py-[7px] text-[13px] text-ink-btn"
           >
             <option value="recent">Recently accessed</option>
             <option value="progress">Progress</option>
             <option value="title">Title (A–Z)</option>
           </select>
-        </div>
+        </label>
         <SegmentedControl
           size="icon"
-          value={layout}
-          onChange={onLayout}
+          value={view.layout}
+          onChange={(layout) => go({ layout })}
           options={[
-            { value: "grid", title: "Grid", icon: <LayoutGrid className="size-[17px]" strokeWidth={1.7} /> },
-            { value: "list", title: "List", icon: <List className="size-[17px]" strokeWidth={1.7} /> },
+            {
+              value: "grid",
+              title: "Grid",
+              icon: <LayoutGrid className="size-[17px]" strokeWidth={1.7} />,
+            },
+            {
+              value: "list",
+              title: "List",
+              icon: <List className="size-[17px]" strokeWidth={1.7} />,
+            },
           ]}
         />
       </div>

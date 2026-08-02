@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState } from "react";
 import { SmilePlus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ export function ReactionBar({
   canReact: boolean;
   onReact: (emoji: ReactionEmoji | null) => Promise<void>;
 }) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   const used = usedReactions(reactions);
 
   if (!canReact && used.length === 0) return null;

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 
@@ -9,9 +9,9 @@ import { signOut } from "@/lib/auth/client";
 /** Signs the student out (clears the better-auth session) and returns to /login. */
 export function SignOutButton({ className }: { className?: string }) {
   const router = useRouter();
-  const [pending, setPending] = React.useState(false);
+  const [pending, setPending] = useState(false);
 
-  const onClick = React.useCallback(async () => {
+  const onClick = useCallback(async () => {
     if (pending) return;
     setPending(true);
     try {

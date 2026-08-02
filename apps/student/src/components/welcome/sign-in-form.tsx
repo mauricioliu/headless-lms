@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -31,7 +31,7 @@ export function SignInForm({
   email: string;
   onSignedIn: () => Promise<string | null>;
 }) {
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { password: "" },

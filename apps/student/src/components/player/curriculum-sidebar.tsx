@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { Check, ChevronDown, Lock, X } from "lucide-react";
 
 import { LESSON_ICON } from "@/components/icons";
@@ -41,7 +42,7 @@ export function CurriculumSidebar({
   const width = sidebarStyle === "compact" ? 308 : 340;
   const coursePct = coursePercent(course, completion);
 
-  const wrapperStyle: React.CSSProperties = isNarrow
+  const wrapperStyle: CSSProperties = isNarrow
     ? {
         position: "absolute",
         top: 0,
@@ -184,7 +185,7 @@ function LessonRow({
 
   const titleColor = locked ? "var(--ink-faint)" : isCurrent ? "var(--ink)" : "var(--ink-btn)";
 
-  const rowStyle: React.CSSProperties = {
+  const rowStyle: CSSProperties = {
     padding: sidebarStyle === "compact" ? "7px 9px" : "9px 9px",
     background: isCurrent ? "var(--brand-soft)" : "transparent",
     boxShadow: isCurrent ? "inset 2px 0 0 var(--brand)" : undefined,

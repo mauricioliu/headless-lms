@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Monitor, Moon, Sun } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
@@ -16,7 +16,7 @@ type ThemeValue = "light" | "system" | "dark";
 export function UserMenu({ name, email }: { name: string; email: string }) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const [pending, setPending] = React.useState(false);
+  const [pending, setPending] = useState(false);
 
   const onSignOut = async () => {
     if (pending) return;

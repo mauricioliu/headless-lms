@@ -1,13 +1,13 @@
 "use client";
 
-import * as React from "react";
+import type { ComponentProps } from "react";
 import { Popover as P } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
-const Popover = (p: React.ComponentProps<typeof P.Root>) => <P.Root data-slot="popover" {...p} />;
+const Popover = (p: ComponentProps<typeof P.Root>) => <P.Root data-slot="popover" {...p} />;
 
-const PopoverTrigger = (p: React.ComponentProps<typeof P.Trigger>) => (
+const PopoverTrigger = (p: ComponentProps<typeof P.Trigger>) => (
   <P.Trigger data-slot="popover-trigger" {...p} />
 );
 
@@ -16,7 +16,7 @@ function PopoverContent({
   align = "start",
   sideOffset = 6,
   ...props
-}: React.ComponentProps<typeof P.Content>) {
+}: ComponentProps<typeof P.Content>) {
   return (
     <P.Portal>
       <P.Content

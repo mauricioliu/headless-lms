@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
@@ -21,7 +21,7 @@ export function LoginView() {
   // A session that reaches this page is one worth honouring. Anything the API
   // rejected was revoked at `/session/reset` before the browser got here, so
   // there is no stale-but-truthy case to second-guess.
-  React.useEffect(() => {
+  useEffect(() => {
     if (session) router.replace(next);
   }, [session, router, next]);
 
@@ -64,12 +64,12 @@ export function LoginView() {
 }
 
 function SignInForm({ onDone }: { onDone: () => void }) {
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [error, setError] = React.useState<string | null>(null);
-  const [submitting, setSubmitting] = React.useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);

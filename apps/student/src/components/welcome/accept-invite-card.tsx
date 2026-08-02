@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState, useTransition } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -24,8 +24,8 @@ export function AcceptInviteCard({
   sessionEmail: string;
 }) {
   const router = useRouter();
-  const [error, setError] = React.useState<string | null>(null);
-  const [pending, startTransition] = React.useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
   const mismatch = invitedEmail.toLowerCase() !== sessionEmail.toLowerCase();
 
   function onAccept() {

@@ -45,7 +45,6 @@ const open: CommentsConfig = {
   threaded: true,
   requireReview: false,
   reactions: true,
-  state: "visible",
 };
 
 describe("groupComments", () => {
@@ -97,18 +96,18 @@ describe("permissions", () => {
     expect(permissions(open, mine(), ME).canReport).toBe(false);
   });
 
-  it("keeps reporting available on locked comments and nothing else", () => {
-    const locked = { ...open, state: "locked" as const };
-    const p = permissions(locked, comment(), ME);
-    expect(p.canReport).toBe(true);
+  it("closes every action when comments are off for the activity", () => {
+    const off: CommentsConfig = { ...open, enabled: false };
+    const p = permissions(off, comment(), ME);
+    expect(p.canReport).toBe(false);
     expect(p.canReply).toBe(false);
     expect(p.canReact).toBe(false);
-    expect(permissions(locked, mine(), ME).canEdit).toBe(false);
+    expect(permissions(off, mine(), ME).canEdit).toBe(false);
   });
 
-  it("lets an author still remove their own comment when comments are locked", () => {
-    const locked = { ...open, state: "locked" as const };
-    expect(permissions(locked, mine(), ME).canRemove).toBe(true);
+  it("lets an author still remove their own comment when comments are off", () => {
+    const off: CommentsConfig = { ...open, enabled: false };
+    expect(permissions(off, mine(), ME).canRemove).toBe(true);
   });
 
   it("refuses replies to a reply and to a pending comment", () => {
@@ -122,26 +121,10 @@ describe("permissions", () => {
 });
 
 describe("commentsReducer", () => {
-  it("marks comments off when the course has discussion disabled", () => {
+  it("marks comments off when they are disabled for this activity", () => {
     const next = commentsReducer(initialCommentsState, {
       kind: "loaded",
-      view: { config: { ...open, enabled: false, state: "hidden" }, comments: [] },
-    });
-    expect(next.status).toBe("off");
-  });
-
-  it("marks comments off when the activity hides them", () => {
-    const next = commentsReducer(initialCommentsState, {
-      kind: "loaded",
-      view: { config: { ...open, state: "hidden" }, comments: [] },
-    });
-    expect(next.status).toBe("off");
-  });
-
-  it("marks comments off when the course disables discussion even while the activity still shows it visible", () => {
-    const next = commentsReducer(initialCommentsState, {
-      kind: "loaded",
-      view: { config: { ...open, enabled: false, state: "visible" }, comments: [] },
+      view: { config: { ...open, enabled: false }, comments: [] },
     });
     expect(next.status).toBe("off");
   });

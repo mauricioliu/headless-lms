@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useState } from "react";
 
 export function CommentComposer({
   placeholder,
@@ -19,8 +19,8 @@ export function CommentComposer({
   onSubmit: (body: string) => Promise<void>;
   onCancel?: () => void;
 }) {
-  const [value, setValue] = React.useState(initialValue);
-  const [busy, setBusy] = React.useState(false);
+  const [value, setValue] = useState(initialValue);
+  const [busy, setBusy] = useState(false);
   const trimmed = value.trim();
 
   async function submit() {

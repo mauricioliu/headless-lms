@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { coverGradient } from "@/lib/covers";
 import type { CoverTone } from "@/lib/types";
@@ -23,7 +24,7 @@ export function CourseCover({
   className?: string;
   eyebrowClassName?: string;
   letterClassName?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <div

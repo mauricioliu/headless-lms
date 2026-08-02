@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { initials } from "@/lib/format";
@@ -16,8 +16,8 @@ import {
   moduleOfLesson,
   totalLessons,
 } from "@/lib/progress";
-import { useApp, useCompletion } from "@/lib/store";
-import type { Completion, Course } from "@/lib/types";
+import { useApp } from "@/lib/store";
+import type { Completion, Course, LessonStatus } from "@/lib/types";
 import { ensureClientSdk } from "@/lib/api/client-sdk";
 import { progressReporter } from "@/lib/progress-reporter";
 import {
@@ -45,8 +45,8 @@ export interface CoursePlayerProps {
   /** Portal org name — the header brand. */
   orgName: string;
   /** Server-rendered activity content, keyed by lesson id (see render-activity). */
-  renderedContent: Record<string, React.ReactNode>;
-  /** Server-hydrated completion, seeded into the store on mount. */
+  renderedContent: Record<string, ReactNode>;
+  /** Server-derived completion — the initial value of the player's own state. */
   initialCompletion?: Completion;
   /** Server-hydrated per-activity position maps (activity id → asset id → state). */
   initialPositions?: Record<string, unknown>;
@@ -58,6 +58,14 @@ export interface CoursePlayerProps {
 }
 
 const AUTO_ADVANCE_MS = 420;
+
+/** Promote a lesson to in-progress only if not started — never demotes a
+ *  completed one. Returns the same object when nothing changes. */
+function opened(completion: Completion, lessonId: string): Completion {
+  if (!lessonId) return completion;
+  if ((completion[lessonId] ?? "not-started") !== "not-started") return completion;
+  return { ...completion, [lessonId]: "in-progress" };
+}
 
 export function CoursePlayer({
   course,
@@ -73,23 +81,38 @@ export function CoursePlayer({
   autoAdvance = true,
 }: CoursePlayerProps) {
   const router = useRouter();
-  const { setLessonStatus, seedCompletion, markOpened, showToast } = useApp();
-  const completion = useCompletion(course.id);
+  const { showToast } = useApp();
   const isNarrow = useIsNarrow();
 
-  const flat = React.useMemo(() => flattenLessons(course), [course]);
+  const flat = useMemo(() => flattenLessons(course), [course]);
   const startLessonId =
     (initialLessonId && flat.some((l) => l.id === initialLessonId) ? initialLessonId : null) ??
     flat[0]?.id ??
     "";
 
-  const [lessonId, setLessonId] = React.useState(startLessonId);
-  const [expanded, setExpanded] = React.useState<Record<string, boolean>>(() => {
+  // Completion is this course's, and only the player advances it — so it starts
+  // as the server's value rather than being seeded into a global store after
+  // mount. Opening the start lesson is part of that initial value, not a
+  // post-mount correction, so the first paint is already right.
+  const [completion, setCompletion] = useState<Completion>(() =>
+    opened(initialCompletion ?? {}, startLessonId),
+  );
+
+  const setLessonStatus = useCallback((lessonId: string, status: LessonStatus) => {
+    setCompletion((prev) => ({ ...prev, [lessonId]: status }));
+  }, []);
+
+  const markOpened = useCallback((lessonId: string) => {
+    setCompletion((prev) => opened(prev, lessonId));
+  }, []);
+
+  const [lessonId, setLessonId] = useState(startLessonId);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const mod = moduleOfLesson(course, startLessonId);
     return mod ? { [mod.id]: true } : {};
   });
-  const [sidebarOpen, setSidebarOpen] = React.useState(true);
-  const [mobileSidebar, setMobileSidebar] = React.useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSidebar, setMobileSidebar] = useState(false);
 
   const curLesson = findLesson(course, lessonId) ?? flat[0];
   // A course may have no student-visible lessons (every activity a draft). Keep a
@@ -98,7 +121,7 @@ export function CoursePlayer({
   const curLessonId = curLesson?.id ?? "";
   const curIdx = flat.findIndex((l) => l.id === curLessonId);
 
-  const reporter = React.useMemo(() => {
+  const reporter = useMemo(() => {
     ensureClientSdk();
     return curLessonId ? progressReporter({ activity: curLessonId }) : null;
   }, [curLessonId]);
@@ -107,9 +130,9 @@ export function CoursePlayer({
   // page-load hydration so within-session navigation never rewinds progress.
   // A stable useState object (never set) rather than a ref: it's read from
   // callbacks the lint can't prove are event-time.
-  const [sessionPositions] = React.useState<SessionPositions>(() => ({}));
+  const [sessionPositions] = useState<SessionPositions>(() => ({}));
 
-  const assetSeed = React.useCallback(
+  const assetSeed = useCallback(
     (lessonId: string, assetId: string): VideoAssetSeed | undefined => {
       const local = sessionPositions[lessonId]?.[assetId];
       if (local) return local;
@@ -122,7 +145,7 @@ export function CoursePlayer({
 
   // Fresh tracker per lesson — per-asset watch state must not leak across
   // lessons — seeded with prior state so revisits keep the high-water mark.
-  const tracker = React.useMemo(() => {
+  const tracker = useMemo(() => {
     if (!reporter || !curLessonId) return null;
     const lessonId = curLessonId;
     return createVideoTracker({
@@ -134,12 +157,12 @@ export function CoursePlayer({
     });
   }, [reporter, curLessonId, sessionPositions, assetSeed]);
 
-  const onMediaEvent = React.useCallback(
+  const onMediaEvent = useCallback(
     (e: MediaTrackingEvent) => tracker?.handleEvent(e),
     [tracker],
   );
 
-  const startPosition = React.useCallback(
+  const startPosition = useCallback(
     (assetId: string): number | undefined => {
       const seconds = assetSeed(curLessonId, assetId)?.seconds;
       return typeof seconds === "number" ? seconds : undefined;
@@ -147,7 +170,7 @@ export function CoursePlayer({
     [assetSeed, curLessonId],
   );
 
-  const refreshUrl = React.useCallback(async (assetId: string): Promise<string | null> => {
+  const refreshUrl = useCallback(async (assetId: string): Promise<string | null> => {
     ensureClientSdk();
     try {
       const ticket = await Learn.getAssetDownloadUrl({ id: assetId });
@@ -158,7 +181,7 @@ export function CoursePlayer({
   }, []);
 
   // Flush unsent watch state when the tab hides or the lesson unmounts.
-  React.useEffect(() => {
+  useEffect(() => {
     if (!tracker || !curLessonId) return;
     const lessonId = curLessonId;
     const flush = () => {
@@ -178,30 +201,25 @@ export function CoursePlayer({
     };
   }, [tracker, curLessonId, sessionPositions]);
 
-  // Seed once per mount — local state (set by later reports) wins over the seed.
-  React.useEffect(() => {
-    if (initialCompletion) seedCompletion(course.id, initialCompletion);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed once per mount
-  }, []);
-
-  // Report the open and reflect it locally.
-  React.useEffect(() => {
+  // Tell the server the lesson was opened. Purely an outbound side effect —
+  // the local status is set by whoever navigated (or by the initial state).
+  useEffect(() => {
     if (!curLessonId) return;
-    markOpened(course.id, curLessonId);
     reporter?.opened();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- report on lesson change only
-  }, [course.id, curLessonId]);
+  }, [curLessonId]);
 
-  const goToLesson = React.useCallback(
+  const goToLesson = useCallback(
     (id: string) => {
       const mod = moduleOfLesson(course, id);
       setLessonId(id);
+      markOpened(id);
       setExpanded((e) => (mod ? { ...e, [mod.id]: true } : e));
     },
-    [course],
+    [course, markOpened],
   );
 
-  const selectLesson = React.useCallback(
+  const selectLesson = useCallback(
     (id: string) => {
       const locked = isLessonLocked(course, id, completion, curLessonId, sequentialLocking);
       if (locked) return;
@@ -211,7 +229,7 @@ export function CoursePlayer({
     [course, completion, curLessonId, sequentialLocking, goToLesson],
   );
 
-  const goNext = React.useCallback(
+  const goNext = useCallback(
     (fromComplete: boolean) => {
       const nxt = adjacentLesson(course, curLessonId, 1);
       if (nxt) {
@@ -223,7 +241,7 @@ export function CoursePlayer({
     [course, curLessonId, goToLesson, showToast],
   );
 
-  const goPrev = React.useCallback(() => {
+  const goPrev = useCallback(() => {
     const prv = adjacentLesson(course, curLessonId, -1);
     if (prv) goToLesson(prv.id);
   }, [course, curLessonId, goToLesson]);
@@ -236,26 +254,17 @@ export function CoursePlayer({
   const curStatus = lessonStatus(completion, curLessonId);
   const isCompleted = curStatus === "completed";
 
-  const markComplete = React.useCallback(() => {
+  const markComplete = useCallback(() => {
     if (isCompleted || !reporter) return;
     void reporter.completed().then((status) => {
       if (status !== "completed") return;
-      setLessonStatus(course.id, curLessonId, "completed");
+      setLessonStatus(curLessonId, "completed");
       showToast("Lesson completed");
       if (autoAdvance) {
         window.setTimeout(() => goNext(true), AUTO_ADVANCE_MS);
       }
     });
-  }, [
-    isCompleted,
-    reporter,
-    course.id,
-    curLessonId,
-    setLessonStatus,
-    showToast,
-    autoAdvance,
-    goNext,
-  ]);
+  }, [isCompleted, reporter, curLessonId, setLessonStatus, showToast, autoAdvance, goNext]);
 
   const sidebarShownDesktop = !isNarrow && sidebarOpen;
   const sidebarShownMobile = isNarrow && mobileSidebar;

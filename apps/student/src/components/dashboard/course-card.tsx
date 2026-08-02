@@ -1,48 +1,24 @@
-"use client";
-
+import Link from "next/link";
 import { Play } from "lucide-react";
+
 import { cn } from "@/lib/utils";
-import type { CourseSummaryVM } from "@/lib/types";
+import { courseHref, type CourseView } from "@/lib/dashboard";
 import { CourseCover } from "@/components/primitives/course-cover";
 import { coverLetter } from "@/lib/covers";
 import { ProgressBar } from "@/components/primitives/progress-bar";
 import { CompletedPill, ExpiredPill } from "@/components/primitives/status-pill";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { courseAction } from "./course-action";
 
-export type CourseState = "in-progress" | "not-started" | "completed" | "expired";
-
-function action(state: CourseState) {
-  switch (state) {
-    case "not-started":
-      return { label: "Start", variant: "brand" as const, icon: true };
-    case "completed":
-      return { label: "Review", variant: "ghostOutline" as const, icon: false };
-    case "expired":
-      return { label: "Renew", variant: "ghostOutline" as const, icon: false };
-    default:
-      return { label: "Continue", variant: "brand" as const, icon: true };
-  }
-}
-
-/** Course card — grid layout (handoff §5). */
-export function CourseCard({
-  course,
-  percent,
-  state,
-  onOpen,
-}: {
-  course: CourseSummaryVM;
-  percent: number;
-  state: CourseState;
-  onOpen: () => void;
-}) {
+/** Course card — grid layout (handoff §5). The action link is stretched over
+ *  the whole card, so the card is one link rather than a click handler. */
+export function CourseCard({ course, percent, state }: CourseView) {
   const expired = state === "expired";
-  const a = action(state);
+  const action = courseAction(state);
   return (
     <article
-      onClick={onOpen}
       className={cn(
-        "flex cursor-pointer flex-col overflow-hidden rounded-card border border-line bg-surface transition-[transform,box-shadow,border-color] duration-200",
+        "relative flex flex-col overflow-hidden rounded-card border border-line bg-surface transition-[transform,box-shadow,border-color] duration-200",
         "hover:-translate-y-[3px] hover:border-line-hover hover:shadow-[0_12px_30px_-18px_rgba(20,20,18,0.28)] dark:hover:shadow-none",
         expired && "opacity-[0.62]",
       )}
@@ -67,20 +43,21 @@ export function CourseCard({
 
         <div className="mt-auto">
           <div className="mb-3.5 flex items-center gap-[11px]">
-            <ProgressBar
-              percent={percent}
-              fillClassName={expired ? "bg-expired-bar" : "bg-brand"}
-            />
+            <ProgressBar percent={percent} fillClassName={expired ? "bg-expired-bar" : "bg-brand"} />
             <span className="text-[12px] text-ink-3">{percent}%</span>
           </div>
-          <Button
-            variant={a.variant}
-            onClick={onOpen}
-            className="w-full justify-center gap-1.5 py-2.5 text-[13.5px]"
+          <Link
+            href={courseHref(course.id)}
+            aria-label={`${action.label} ${course.title}`}
+            className={cn(
+              buttonVariants({ variant: action.variant }),
+              "w-full justify-center gap-1.5 py-2.5 text-[13.5px]",
+              "after:absolute after:inset-0 after:z-10 after:content-['']",
+            )}
           >
-            {a.icon && <Play className="size-[15px]" fill="currentColor" strokeWidth={0} />}
-            {a.label}
-          </Button>
+            {action.icon && <Play className="size-[15px]" fill="currentColor" strokeWidth={0} />}
+            {action.label}
+          </Link>
         </div>
       </div>
     </article>

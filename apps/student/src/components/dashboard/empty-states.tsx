@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { Inbox } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 /** No enrollments at all (handoff §6 / account empty). */
 export function LibraryEmpty() {
@@ -17,7 +18,7 @@ export function LibraryEmpty() {
 }
 
 /** No courses match the active filter (handoff §6). */
-export function FilterEmpty({ onShowAll }: { onShowAll: () => void }) {
+export function FilterEmpty({ showAllHref }: { showAllHref: string }) {
   return (
     <div className="rounded-card border border-dashed border-line-dashed bg-surface-warm-2 px-6 py-16 text-center">
       <div className="mb-3.5 flex justify-center text-ink-faintest">
@@ -25,9 +26,9 @@ export function FilterEmpty({ onShowAll }: { onShowAll: () => void }) {
       </div>
       <div className="mb-1.5 text-[21px] font-semibold">Nothing here right now</div>
       <p className="mb-[18px] text-[14px] text-ink-3">No courses match this filter.</p>
-      <Button variant="ghostOutline" size="pillSm" onClick={onShowAll}>
+      <Link href={showAllHref} className={buttonVariants({ variant: "ghostOutline", size: "pillSm" })}>
         Show all courses
-      </Button>
+      </Link>
     </div>
   );
 }

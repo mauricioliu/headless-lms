@@ -23,12 +23,17 @@ export function inProgressCount(course: Course, completion: Completion): number 
 }
 
 /** round(100 * (completed + 0.5*inProgress) / total) — in-progress counts as half. */
-export function coursePercent(course: Course, completion: Completion): number {
-  const total = totalLessons(course);
+export function percentOf(done: number, inProgress: number, total: number): number {
   if (total === 0) return 0;
-  const done = completedCount(course, completion);
-  const half = inProgressCount(course, completion);
-  return Math.round((100 * (done + 0.5 * half)) / total);
+  return Math.round((100 * (done + 0.5 * inProgress)) / total);
+}
+
+export function coursePercent(course: Course, completion: Completion): number {
+  return percentOf(
+    completedCount(course, completion),
+    inProgressCount(course, completion),
+    totalLessons(course),
+  );
 }
 
 export function moduleCounts(

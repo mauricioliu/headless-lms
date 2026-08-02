@@ -57,7 +57,7 @@ export function commentsReducer(
       const { config, comments } = action.view;
       // Disabled for the course and hidden on the activity look the same to a
       // reader: the section renders nothing at all, not an empty state.
-      const off = !config.enabled || config.state === "hidden";
+      const off = !config.enabled;
       return { status: off ? "off" : "ready", config, comments, error: null };
     }
     case "failed":
@@ -131,16 +131,15 @@ export interface CommentPermissions {
 }
 
 /**
- * What this comment offers this reader. Locked is read-only for everything
- * except reporting — locked comments can still hold something a moderator
- * needs to see — and an author may still withdraw their own comment.
+ * What this comment offers this reader. An author may still withdraw their own
+ * comment once it is removed from view for everyone else.
  */
 export function permissions(
   config: CommentsConfig,
   comment: CommentView,
   orgUserId: string,
 ): CommentPermissions {
-  const open = config.enabled && config.state === "visible";
+  const open = config.enabled;
   const live = comment.status !== "removed";
   const isOwn = comment.author.id === orgUserId;
   return {
@@ -149,11 +148,11 @@ export function permissions(
     canReact: open && config.reactions && live,
     canEdit: open && live && isOwn,
     canRemove: live && isOwn,
-    canReport: config.state !== "hidden" && live && !isOwn,
+    canReport: open && live && !isOwn,
   };
 }
 
 /** Whether the composer is offered at all. */
 export function canPost(config: CommentsConfig): boolean {
-  return config.enabled && config.state === "visible";
+  return config.enabled;
 }

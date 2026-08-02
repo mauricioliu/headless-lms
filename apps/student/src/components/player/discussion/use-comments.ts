@@ -3,7 +3,7 @@
 // Fetch and mutate one activity's comments. All state transitions go through
 // the reducer in ./comment-state so the rules stay testable; this file owns
 // only the network calls and the request-ordering guard.
-import * as React from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { Learn } from "@headless-lms/sdk";
 import type { CommentAuthor, CommentView, ReactionEmoji } from "@/lib/api/types";
 
@@ -23,19 +23,19 @@ export interface UseComments extends CommentsPanelState {
 }
 
 export function useComments(activityId: string): UseComments {
-  const [state, dispatch] = React.useReducer(commentsReducer, initialCommentsState);
+  const [state, dispatch] = useReducer(commentsReducer, initialCommentsState);
   // Guards a response for a lesson the reader has already left.
-  const current = React.useRef(activityId);
+  const current = useRef(activityId);
   // Mirrors state.comments every render so optimistic() can snapshot the
   // latest value at call time rather than a value closed over at the last
   // render — two optimistic calls issued before a render commits must not
   // share (and clobber each other via) the same rollback snapshot.
-  const commentsRef = React.useRef(state.comments);
-  React.useEffect(() => {
+  const commentsRef = useRef(state.comments);
+  useEffect(() => {
     commentsRef.current = state.comments;
   }, [state.comments]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!activityId) return;
     current.current = activityId;
     ensureClientSdk();
@@ -56,7 +56,7 @@ export function useComments(activityId: string): UseComments {
   }, [activityId]);
 
   /** Apply locally, call the server, put the snapshot back if it refuses. */
-  const optimistic = React.useCallback(async (apply: () => void, call: () => Promise<void>) => {
+  const optimistic = useCallback(async (apply: () => void, call: () => Promise<void>) => {
     const snapshot = commentsRef.current;
     apply();
     try {
@@ -71,7 +71,7 @@ export function useComments(activityId: string): UseComments {
   // pending, and guessing wrong would flash the wrong badge. The composer shows
   // its own busy state while this runs, so the wait is visible. Rethrows on
   // failure so the composer can tell success from failure and keep the draft.
-  const post = React.useCallback(
+  const post = useCallback(
     async (body: string, parentId: string | null) => {
       ensureClientSdk();
       try {
@@ -85,7 +85,7 @@ export function useComments(activityId: string): UseComments {
     [activityId],
   );
 
-  const edit = React.useCallback(async (id: string, body: string) => {
+  const edit = useCallback(async (id: string, body: string) => {
     ensureClientSdk();
     try {
       const comment = await Learn.editComment({ commentId: id, body });
@@ -96,7 +96,7 @@ export function useComments(activityId: string): UseComments {
     }
   }, []);
 
-  const remove = React.useCallback(
+  const remove = useCallback(
     (id: string, by: CommentAuthor) =>
       optimistic(
         () => dispatch({ kind: "removed", id, by }),
@@ -110,7 +110,7 @@ export function useComments(activityId: string): UseComments {
 
   // Not optimistic: the server returns the authoritative counts, so guessing
   // them here only risks disagreeing with what comes back.
-  const react = React.useCallback(async (id: string, emoji: ReactionEmoji | null) => {
+  const react = useCallback(async (id: string, emoji: ReactionEmoji | null) => {
     ensureClientSdk();
     try {
       const state = emoji
@@ -125,7 +125,7 @@ export function useComments(activityId: string): UseComments {
   // Not optimistic: the reader needs to know the signal was actually recorded.
   // Rethrows so a caller can tell success from failure (e.g. only toast a
   // confirmation on success); callers must handle the rejection themselves.
-  const report = React.useCallback(async (id: string, reason: string) => {
+  const report = useCallback(async (id: string, reason: string) => {
     ensureClientSdk();
     try {
       await Learn.reportComment({ commentId: id, reason });

@@ -1,26 +1,16 @@
-"use client";
-
+import Link from "next/link";
 import { Play } from "lucide-react";
-import type { CourseSummaryVM } from "@/lib/types";
+
+import { cn } from "@/lib/utils";
+import { courseHref, type CourseView } from "@/lib/dashboard";
 import { CourseCover } from "@/components/primitives/course-cover";
 import { coverLetter } from "@/lib/covers";
 import { ProgressBar } from "@/components/primitives/progress-bar";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 /** "Continue learning" resume hero (handoff §3). */
-export function ContinueHero({
-  course,
-  percent,
-  resumeLabel,
-  lessonsLeft,
-  onContinue,
-}: {
-  course: CourseSummaryVM;
-  percent: number;
-  resumeLabel: string;
-  lessonsLeft: number;
-  onContinue: () => void;
-}) {
+export function ContinueHero({ course, percent, done }: CourseView) {
+  const lessonsLeft = Math.max(0, course.lessonCount - done);
   return (
     <section className="mb-[38px] flex overflow-hidden rounded-[20px] border border-line bg-surface max-[900px]:flex-col">
       <CourseCover
@@ -37,18 +27,25 @@ export function ContinueHero({
       </CourseCover>
 
       <div className="flex min-w-0 flex-1 flex-col justify-center px-7 py-[26px]">
-        <div className="mb-3 text-[11px] tracking-[0.04em] text-brand">Pick up where you left off</div>
+        <div className="mb-3 text-[11px] tracking-[0.04em] text-brand">
+          Pick up where you left off
+        </div>
         <h3 className="mb-1.5 text-[24px] font-semibold tracking-[-0.01em]">{course.title}</h3>
-        <div className="mb-5 text-[14.5px] text-ink-2">{resumeLabel}</div>
+        <div className="mb-5 text-[14.5px] text-ink-2">
+          {done} of {course.lessonCount} lessons complete
+        </div>
         <div className="mb-[22px] flex max-w-[440px] items-center gap-3.5">
           <ProgressBar percent={percent} trackClassName="h-[7px]" />
           <span className="text-[13px] text-ink-2">{percent}%</span>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="brand" size="pill" onClick={onContinue} className="gap-[9px]">
+          <Link
+            href={courseHref(course.id)}
+            className={cn(buttonVariants({ variant: "brand", size: "pill" }), "gap-[9px]")}
+          >
             <Play className="size-[17px]" fill="currentColor" strokeWidth={0} />
             Continue learning
-          </Button>
+          </Link>
           <span className="text-[13.5px] text-ink-3">{lessonsLeft} lessons left</span>
         </div>
       </div>

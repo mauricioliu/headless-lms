@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 /** Sticky bottom footer nav (handoff §12). */
@@ -18,7 +19,7 @@ export function FooterNav({
   onNext: () => void;
   onMarkComplete: () => void;
 }) {
-  const ghost = (disabled: boolean): React.CSSProperties => ({
+  const ghost = (disabled: boolean): CSSProperties => ({
     border: "1px solid var(--line-btn)",
     background: "var(--surface)",
     color: disabled ? "var(--ink-faintest)" : "var(--ink-btn)",

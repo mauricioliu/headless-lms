@@ -1,11 +1,12 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export interface SegmentOption<T extends string> {
   value: T;
   label?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   count?: number;
   title?: string;
 }

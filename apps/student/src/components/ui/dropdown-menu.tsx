@@ -1,15 +1,15 @@
 "use client";
 
-import * as React from "react";
+import type { ComponentProps } from "react";
 import { DropdownMenu as DM } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 
-const DropdownMenu = (p: React.ComponentProps<typeof DM.Root>) => (
+const DropdownMenu = (p: ComponentProps<typeof DM.Root>) => (
   <DM.Root data-slot="dropdown-menu" {...p} />
 );
 
-const DropdownMenuTrigger = (p: React.ComponentProps<typeof DM.Trigger>) => (
+const DropdownMenuTrigger = (p: ComponentProps<typeof DM.Trigger>) => (
   <DM.Trigger data-slot="dropdown-menu-trigger" {...p} />
 );
 
@@ -18,7 +18,7 @@ function DropdownMenuContent({
   sideOffset = 6,
   align = "end",
   ...props
-}: React.ComponentProps<typeof DM.Content>) {
+}: ComponentProps<typeof DM.Content>) {
   return (
     <DM.Portal>
       <DM.Content
@@ -41,7 +41,7 @@ function DropdownMenuItem({
   className,
   variant = "default",
   ...props
-}: React.ComponentProps<typeof DM.Item> & { variant?: "default" | "danger" }) {
+}: ComponentProps<typeof DM.Item> & { variant?: "default" | "danger" }) {
   return (
     <DM.Item
       data-slot="dropdown-menu-item"
@@ -57,7 +57,7 @@ function DropdownMenuItem({
   );
 }
 
-function DropdownMenuSeparator({ className, ...props }: React.ComponentProps<typeof DM.Separator>) {
+function DropdownMenuSeparator({ className, ...props }: ComponentProps<typeof DM.Separator>) {
   return <DM.Separator className={cn("-mx-1 my-1 h-px bg-line", className)} {...props} />;
 }
 

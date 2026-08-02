@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useRef } from "react";
 import { MessageCircle } from "lucide-react";
 
 import { useApp } from "@/lib/store";
@@ -23,8 +23,8 @@ export function DiscussionPanel({
   const { showToast } = useApp();
 
   // Surface a refused mutation once, then let the comments carry on.
-  const lastError = React.useRef<string | null>(null);
-  React.useEffect(() => {
+  const lastError = useRef<string | null>(null);
+  useEffect(() => {
     if (panel.error && panel.error !== lastError.current) {
       lastError.current = panel.error;
       showToast(panel.error);

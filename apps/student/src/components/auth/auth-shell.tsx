@@ -1,4 +1,4 @@
-import * as React from "react";
+import type { ReactNode } from "react";
 
 /**
  * Split-panel shell for the unauthenticated surfaces (invite landing, sign in).
@@ -7,7 +7,7 @@ import * as React from "react";
  * browser. Pages compose it and drop a client island into `children` only where
  * interactivity is genuinely needed.
  */
-export function AuthShell({ children }: { children: React.ReactNode }) {
+export function AuthShell({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
       <div className="flex flex-col bg-surface">
@@ -42,7 +42,7 @@ export function AuthHeading({
   children,
 }: {
   title: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1.5">

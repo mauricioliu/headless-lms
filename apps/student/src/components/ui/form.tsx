@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { createContext, useContext, useId, type ComponentProps } from "react";
 import { Slot } from "radix-ui";
 import {
   Controller,
@@ -22,8 +22,8 @@ type FormFieldContextValue<
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > = { name: TName };
 
-const FormFieldContext = React.createContext<FormFieldContextValue | null>(null);
-const FormItemContext = React.createContext<{ id: string } | null>(null);
+const FormFieldContext = createContext<FormFieldContextValue | null>(null);
+const FormItemContext = createContext<{ id: string } | null>(null);
 
 function FormField<
   TFieldValues extends FieldValues = FieldValues,
@@ -37,8 +37,8 @@ function FormField<
 }
 
 function useFormField() {
-  const fieldContext = React.useContext(FormFieldContext);
-  const itemContext = React.useContext(FormItemContext);
+  const fieldContext = useContext(FormFieldContext);
+  const itemContext = useContext(FormItemContext);
   const { getFieldState } = useFormContext();
   const formState = useFormState({ name: fieldContext?.name as string });
 
@@ -57,8 +57,8 @@ function useFormField() {
   };
 }
 
-function FormItem({ className, ...props }: React.ComponentProps<"div">) {
-  const id = React.useId();
+function FormItem({ className, ...props }: ComponentProps<"div">) {
+  const id = useId();
   return (
     <FormItemContext.Provider value={{ id }}>
       <div data-slot="form-item" className={cn("flex flex-col gap-1.5", className)} {...props} />
@@ -66,7 +66,7 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function FormLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
+function FormLabel({ className, ...props }: ComponentProps<typeof Label>) {
   const { error, formItemId } = useFormField();
   return (
     <Label
@@ -79,7 +79,7 @@ function FormLabel({ className, ...props }: React.ComponentProps<typeof Label>) 
   );
 }
 
-function FormControl({ ...props }: React.ComponentProps<typeof Slot.Root>) {
+function FormControl({ ...props }: ComponentProps<typeof Slot.Root>) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
   return (
     <Slot.Root
@@ -92,7 +92,7 @@ function FormControl({ ...props }: React.ComponentProps<typeof Slot.Root>) {
   );
 }
 
-function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
+function FormDescription({ className, ...props }: ComponentProps<"p">) {
   const { formDescriptionId } = useFormField();
   return (
     <p
@@ -104,7 +104,7 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
   );
 }
 
-function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
+function FormMessage({ className, ...props }: ComponentProps<"p">) {
   const { error, formMessageId } = useFormField();
   const body = error ? String(error.message ?? "") : props.children;
   if (!body) return null;
