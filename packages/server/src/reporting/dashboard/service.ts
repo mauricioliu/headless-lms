@@ -4,11 +4,19 @@ import type { DashboardReportRepository, DashboardReportService } from './ports.
 import type { Logger } from '../../core/shared/ports.js';
 import { noopLogger } from '../../core/shared/logger.js';
 
+export type DashboardReportServiceParams = {
+  repo: DashboardReportRepository;
+  logger?: Logger;
+};
+
 export class DashboardReportServiceImpl implements DashboardReportService {
-  constructor(
-    private readonly repo: DashboardReportRepository,
-    private readonly logger: Logger = noopLogger,
-  ) {}
+  private readonly repo: DashboardReportRepository;
+  private readonly logger: Logger;
+
+  constructor(params: DashboardReportServiceParams) {
+    this.repo = params.repo;
+    this.logger = params.logger ?? noopLogger;
+  }
 
   overview(orgId: string): Promise<OverviewStats> {
     return this.repo.overview(orgId);

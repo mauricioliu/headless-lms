@@ -14,19 +14,37 @@ function isActivityPublished(settings: unknown): boolean {
   return (settings as { published?: boolean } | null)?.published !== false;
 }
 
+export type LearnReportServiceParams = {
+  reader: LearnEntitlementReader;
+  content: ContentService;
+  progress: ProgressService;
+  assets: AssetsService;
+  deliveryExpirySeconds: number;
+  logger?: Logger;
+};
+
 export class LearnReportServiceImpl implements LearnReportService {
-  constructor(
-    private readonly reader: LearnEntitlementReader,
-    private readonly content: ContentService,
-    private readonly progress: ProgressService,
-    private readonly assets: AssetsService,
-    private readonly deliveryExpirySeconds: number,
-    private readonly logger: Logger = noopLogger,
-  ) {}
+  private readonly reader: LearnEntitlementReader;
+  private readonly content: ContentService;
+  private readonly progress: ProgressService;
+  private readonly assets: AssetsService;
+  private readonly deliveryExpirySeconds: number;
+  private readonly logger: Logger;
+
+  constructor(params: LearnReportServiceParams) {
+    this.reader = params.reader;
+    this.content = params.content;
+    this.progress = params.progress;
+    this.assets = params.assets;
+    this.deliveryExpirySeconds = params.deliveryExpirySeconds;
+    this.logger = params.logger ?? noopLogger;
+  }
 
   async listCourses(orgId: string, orgUserId: string): Promise<Course[]> {
     const refs = await this.reader.activeRefs(orgId, orgUserId);
-    const courses = await Promise.all(refs.map((ref) => this.content.getCourse(ref.orgId, ref.contentId)));
+    const courses = await Promise.all(
+      refs.map((ref) => this.content.getCourse(ref.orgId, ref.contentId)),
+    );
     return courses.filter((c): c is Course => c !== null && c.status === 'published');
   }
 

@@ -140,40 +140,40 @@ function fakeEntitlementReader(over: Partial<LearnEntitlementReader> = {}): Lear
 
 describe('LearnReportServiceImpl', () => {
   it('lists only published courses the student is enrolled in', async () => {
-    const svc = new LearnReportServiceImpl(
-      fakeReader([
+    const svc = new LearnReportServiceImpl({
+      reader: fakeReader([
         { orgId: 'o1', contentId: 'c1' },
         { orgId: 'o1', contentId: 'c2' },
       ]),
-      fakeContent({ c1: course('c1', 'published'), c2: course('c2', 'draft') }, {}),
-      fakeProgress([]),
-      fakeAssets(),
-      300,
-    );
+      content: fakeContent({ c1: course('c1', 'published'), c2: course('c2', 'draft') }, {}),
+      progress: fakeProgress([]),
+      assets: fakeAssets(),
+      deliveryExpirySeconds: 300,
+    });
     const rows = await svc.listCourses('o1', 'stu_1');
     expect(rows.map((c) => c.id)).toEqual(['c1']);
   });
 
   it('returns null for a course the student is not enrolled in', async () => {
-    const svc = new LearnReportServiceImpl(
-      fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
-      fakeContent({ c1: course('c1') }, {}),
-      fakeProgress([]),
-      fakeAssets(),
-      300,
-    );
+    const svc = new LearnReportServiceImpl({
+      reader: fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
+      content: fakeContent({ c1: course('c1') }, {}),
+      progress: fakeProgress([]),
+      assets: fakeAssets(),
+      deliveryExpirySeconds: 300,
+    });
     expect(await svc.getCourse('o1', 'stu_1', 'cX')).toBeNull();
     expect(await svc.listModules('o1', 'stu_1', 'cX')).toBeNull();
   });
 
   it('does not return a course enrolled in another org', async () => {
-    const svc = new LearnReportServiceImpl(
-      fakeReader([{ orgId: 'o2', contentId: 'c1' }]),
-      fakeContent({ c1: course('c1') }, {}),
-      fakeProgress([]),
-      fakeAssets(),
-      300,
-    );
+    const svc = new LearnReportServiceImpl({
+      reader: fakeReader([{ orgId: 'o2', contentId: 'c1' }]),
+      content: fakeContent({ c1: course('c1') }, {}),
+      progress: fakeProgress([]),
+      assets: fakeAssets(),
+      deliveryExpirySeconds: 300,
+    });
     expect(await svc.listCourses('o1', 'stu_1')).toEqual([]);
     expect(await svc.getCourse('o1', 'stu_1', 'c1')).toBeNull();
   });
@@ -186,7 +186,14 @@ describe('LearnReportServiceImpl', () => {
         title: 'M1',
         seq: 0,
         activities: [
-          { id: 'a1', moduleId: 'm1', courseId: 'c1', seq: 0, settings: { published: true }, assetIds: [] },
+          {
+            id: 'a1',
+            moduleId: 'm1',
+            courseId: 'c1',
+            seq: 0,
+            settings: { published: true },
+            assetIds: [],
+          },
           {
             id: 'a2',
             moduleId: 'm1',
@@ -206,13 +213,13 @@ describe('LearnReportServiceImpl', () => {
         ],
       },
     ];
-    const svc = new LearnReportServiceImpl(
-      fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
-      fakeContent({ c1: course('c1') }, { c1: modules }),
-      fakeProgress([]),
-      fakeAssets(),
-      300,
-    );
+    const svc = new LearnReportServiceImpl({
+      reader: fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
+      content: fakeContent({ c1: course('c1') }, { c1: modules }),
+      progress: fakeProgress([]),
+      assets: fakeAssets(),
+      deliveryExpirySeconds: 300,
+    });
     const result = await svc.listModules('o1', 'stu_1', 'c1');
     expect(result?.[0]?.activities.map((a) => a.id)).toEqual(['a1', 'a3']);
   });
@@ -229,41 +236,49 @@ const progressModules: Module[] = [
       { id: 'a1', moduleId: 'm1', courseId: 'c1', seq: 0, settings: {}, assetIds: [] },
       { id: 'a2', moduleId: 'm1', courseId: 'c1', seq: 1, settings: {}, assetIds: [] },
       {
-      id: 'a3',
-      moduleId: 'm1',
-      courseId: 'c1',
-      seq: 2,
-      settings: { published: false },
-      assetIds: [],
-    },
+        id: 'a3',
+        moduleId: 'm1',
+        courseId: 'c1',
+        seq: 2,
+        settings: { published: false },
+        assetIds: [],
+      },
     ],
   },
 ];
 
 describe('LearnReportServiceImpl.courseProgress', () => {
   it('returns null when the student is not enrolled', async () => {
-    const svc = new LearnReportServiceImpl(
-      fakeReader([]),
-      fakeContent({ c1: course('c1') }, { c1: progressModules }),
-      fakeProgress([]),
-      fakeAssets(),
-      300,
-    );
+    const svc = new LearnReportServiceImpl({
+      reader: fakeReader([]),
+      content: fakeContent({ c1: course('c1') }, { c1: progressModules }),
+      progress: fakeProgress([]),
+      assets: fakeAssets(),
+      deliveryExpirySeconds: 300,
+    });
     expect(await svc.courseProgress('o1', 'stu_1', 'c1')).toBeNull();
   });
 
   it('maps records to statuses and derives percent from published activities only', async () => {
-    const svc = new LearnReportServiceImpl(
-      fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
-      fakeContent({ c1: course('c1') }, { c1: progressModules }),
-      fakeProgress([
-        progressRecord({ targetType: 'activity', targetId: 'a1', completedAt: '2026-07-23T09:30:00Z' }),
+    const svc = new LearnReportServiceImpl({
+      reader: fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
+      content: fakeContent({ c1: course('c1') }, { c1: progressModules }),
+      progress: fakeProgress([
+        progressRecord({
+          targetType: 'activity',
+          targetId: 'a1',
+          completedAt: '2026-07-23T09:30:00Z',
+        }),
         progressRecord({ targetType: 'activity', targetId: 'a2' }),
-        progressRecord({ targetType: 'activity', targetId: 'a3', completedAt: '2026-07-23T09:31:00Z' }),
+        progressRecord({
+          targetType: 'activity',
+          targetId: 'a3',
+          completedAt: '2026-07-23T09:31:00Z',
+        }),
       ]),
-      fakeAssets(),
-      300,
-    );
+      assets: fakeAssets(),
+      deliveryExpirySeconds: 300,
+    });
     const view = await svc.courseProgress('o1', 'stu_1', 'c1');
     // a3 is a draft — absent from the map and the denominator
     expect(view).toEqual({
@@ -275,26 +290,38 @@ describe('LearnReportServiceImpl.courseProgress', () => {
   });
 
   it('completed reflects the course target record', async () => {
-    const svc = new LearnReportServiceImpl(
-      fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
-      fakeContent({ c1: course('c1') }, { c1: progressModules }),
-      fakeProgress([
-        progressRecord({ targetType: 'activity', targetId: 'a1', completedAt: '2026-07-23T09:30:00Z' }),
-        progressRecord({ targetType: 'activity', targetId: 'a2', completedAt: '2026-07-23T09:32:00Z' }),
-        progressRecord({ targetType: 'course', targetId: 'c1', completedAt: '2026-07-23T09:32:00Z' }),
+    const svc = new LearnReportServiceImpl({
+      reader: fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
+      content: fakeContent({ c1: course('c1') }, { c1: progressModules }),
+      progress: fakeProgress([
+        progressRecord({
+          targetType: 'activity',
+          targetId: 'a1',
+          completedAt: '2026-07-23T09:30:00Z',
+        }),
+        progressRecord({
+          targetType: 'activity',
+          targetId: 'a2',
+          completedAt: '2026-07-23T09:32:00Z',
+        }),
+        progressRecord({
+          targetType: 'course',
+          targetId: 'c1',
+          completedAt: '2026-07-23T09:32:00Z',
+        }),
       ]),
-      fakeAssets(),
-      300,
-    );
+      assets: fakeAssets(),
+      deliveryExpirySeconds: 300,
+    });
     const view = await svc.courseProgress('o1', 'stu_1', 'c1');
     expect(view).toMatchObject({ percent: 100, completed: true });
   });
 
   it('includes stored positions keyed by activity, omitting recordless activities', async () => {
-    const svc = new LearnReportServiceImpl(
-      fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
-      fakeContent({ c1: course('c1') }, { c1: progressModules }),
-      fakeProgress([
+    const svc = new LearnReportServiceImpl({
+      reader: fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
+      content: fakeContent({ c1: course('c1') }, { c1: progressModules }),
+      progress: fakeProgress([
         progressRecord({
           targetType: 'activity',
           targetId: 'a1',
@@ -302,9 +329,9 @@ describe('LearnReportServiceImpl.courseProgress', () => {
         }),
         progressRecord({ targetType: 'activity', targetId: 'a2' }),
       ]),
-      fakeAssets(),
-      300,
-    );
+      assets: fakeAssets(),
+      deliveryExpirySeconds: 300,
+    });
     const view = await svc.courseProgress('o1', 'stu_1', 'c1');
     expect(view?.positions).toEqual({
       a1: { vid_1: { seconds: 612, furthest: 700, duration: 1475 } },
@@ -317,14 +344,14 @@ describe('download delivery', () => {
 
   it('returns null when the student has no entitlement', async () => {
     const captured: { expiry?: number; filename?: string } = {};
-    const svc = new LearnReportServiceImpl(
-      fakeEntitlementReader({
+    const svc = new LearnReportServiceImpl({
+      reader: fakeEntitlementReader({
         // Both would let the request through if gate 1 were bypassed — only
         // the missing entitlement (activeDownloadRef → null) can produce
         // null here.
         downloadHasAsset: async () => true,
       }),
-      fakeContentService({
+      content: fakeContentService({
         getDownload: async () => download,
         listDownloadAssets: async () => [
           {
@@ -338,10 +365,10 @@ describe('download delivery', () => {
           },
         ],
       }),
-      fakeProgress([]),
-      fakeAssets(captured),
-      300,
-    );
+      progress: fakeProgress([]),
+      assets: fakeAssets(captured),
+      deliveryExpirySeconds: 300,
+    });
 
     expect(await svc.downloadAssetUrl('o1', 'stu_1', 'd1', 'a1')).toBeNull();
     expect(captured.expiry).toBeUndefined();
@@ -349,12 +376,12 @@ describe('download delivery', () => {
 
   it('returns null when the asset belongs to a different download', async () => {
     const captured: { expiry?: number; filename?: string } = {};
-    const svc = new LearnReportServiceImpl(
-      fakeEntitlementReader({
+    const svc = new LearnReportServiceImpl({
+      reader: fakeEntitlementReader({
         activeDownloadRef: async () => ({ orgId: 'o1', contentId: 'd1' }),
         downloadHasAsset: async () => false,
       }),
-      fakeContentService({
+      content: fakeContentService({
         getDownload: async () => download,
         // The link lookup itself would succeed for the requested asset id —
         // only the downloadHasAsset gate can produce null here.
@@ -370,10 +397,10 @@ describe('download delivery', () => {
           },
         ],
       }),
-      fakeProgress([]),
-      fakeAssets(captured),
-      300,
-    );
+      progress: fakeProgress([]),
+      assets: fakeAssets(captured),
+      deliveryExpirySeconds: 300,
+    });
 
     expect(await svc.downloadAssetUrl('o1', 'stu_1', 'd1', 'a_other')).toBeNull();
     expect(captured.expiry).toBeUndefined();
@@ -381,12 +408,12 @@ describe('download delivery', () => {
 
   it('signs with the configured expiry and the display name', async () => {
     const captured: { expiry?: number; filename?: string } = {};
-    const svc = new LearnReportServiceImpl(
-      fakeEntitlementReader({
+    const svc = new LearnReportServiceImpl({
+      reader: fakeEntitlementReader({
         activeDownloadRef: async () => ({ orgId: 'o1', contentId: 'd1' }),
         downloadHasAsset: async () => true,
       }),
-      fakeContentService({
+      content: fakeContentService({
         getDownload: async () => download,
         listDownloadAssets: async () => [
           {
@@ -400,10 +427,10 @@ describe('download delivery', () => {
           },
         ],
       }),
-      fakeProgress([]),
-      fakeAssets(captured),
-      300,
-    );
+      progress: fakeProgress([]),
+      assets: fakeAssets(captured),
+      deliveryExpirySeconds: 300,
+    });
 
     const result = await svc.downloadAssetUrl('o1', 'stu_1', 'd1', 'a1');
 
@@ -414,12 +441,12 @@ describe('download delivery', () => {
 
   it('falls back to the asset filename when there is no display name', async () => {
     const captured: { expiry?: number; filename?: string } = {};
-    const svc = new LearnReportServiceImpl(
-      fakeEntitlementReader({
+    const svc = new LearnReportServiceImpl({
+      reader: fakeEntitlementReader({
         activeDownloadRef: async () => ({ orgId: 'o1', contentId: 'd1' }),
         downloadHasAsset: async () => true,
       }),
-      fakeContentService({
+      content: fakeContentService({
         getDownload: async () => download,
         listDownloadAssets: async () => [
           {
@@ -433,10 +460,10 @@ describe('download delivery', () => {
           },
         ],
       }),
-      fakeProgress([]),
-      fakeAssets(captured),
-      300,
-    );
+      progress: fakeProgress([]),
+      assets: fakeAssets(captured),
+      deliveryExpirySeconds: 300,
+    });
 
     await svc.downloadAssetUrl('o1', 'stu_1', 'd1', 'a1');
 
