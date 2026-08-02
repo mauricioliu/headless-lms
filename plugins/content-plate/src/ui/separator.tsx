@@ -2,7 +2,7 @@
 
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Separator as SeparatorPrimitive } from 'radix-ui';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -23,7 +23,7 @@ export function Separator({
   decorative = true,
   orientation = 'horizontal',
   ...props
-}: React.ComponentProps<typeof SeparatorPrimitive.Root> &
+}: ComponentProps<typeof SeparatorPrimitive.Root> &
   VariantProps<typeof separatorVariants>) {
   return (
     <SeparatorPrimitive.Root

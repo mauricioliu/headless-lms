@@ -13,7 +13,7 @@ import {
   useElement,
   useReadOnly,
 } from 'platejs/react';
-import * as React from 'react';
+import { useMemo, useState } from 'react';
 
 import { cn } from '../lib/utils';
 import { useCopyToClipboard } from '../hooks/use-copy-to-clipboard';
@@ -96,14 +96,14 @@ export function CodeBlockElement(props: PlateElementProps) {
 }
 
 function CodeBlockCombobox({ className }: { className?: string }) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   const readOnly = useReadOnly();
   const editor = useEditorRef();
   const element = useElement<TCodeBlockElement>();
   const value = element?.lang || 'plaintext';
-  const [searchValue, setSearchValue] = React.useState('');
+  const [searchValue, setSearchValue] = useState('');
 
-  const items = React.useMemo(
+  const items = useMemo(
     () =>
       languages.filter(
         (language) =>

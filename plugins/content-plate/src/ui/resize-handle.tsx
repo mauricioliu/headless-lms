@@ -7,7 +7,7 @@ import {
   useResizeHandleState,
 } from '@platejs/resizable';
 import { cva, type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -38,7 +38,7 @@ const resizeHandleVariants = cva(cn('absolute z-40'), {
   },
 });
 
-type ResizeHandleProps = React.ComponentProps<typeof ResizeHandlePrimitive> &
+type ResizeHandleProps = ComponentProps<typeof ResizeHandlePrimitive> &
   VariantProps<typeof resizeHandleVariants>;
 
 export function ResizeHandle({
@@ -74,7 +74,7 @@ const resizableVariants = cva('', {
   },
 });
 
-type ResizableProps = React.ComponentProps<typeof ResizablePrimitive> &
+type ResizableProps = ComponentProps<typeof ResizablePrimitive> &
   VariantProps<typeof resizableVariants>;
 
 export function Resizable({ align, className, ...props }: ResizableProps) {

@@ -21,7 +21,7 @@ import {
 import type { TMediaElement, TTextAlignProps } from 'platejs';
 import { KEYS } from 'platejs';
 import { useEditorRef, useElement } from 'platejs/react';
-import * as React from 'react';
+import type { ComponentProps, Dispatch, SetStateAction } from 'react';
 import { toast } from 'sonner';
 
 import { cn } from '../lib/utils';
@@ -41,7 +41,7 @@ import { Toolbar, ToolbarButton, toolbarButtonVariants } from './toolbar';
 export function MediaToolbar({
   className,
   ...props
-}: React.ComponentProps<typeof Toolbar>) {
+}: ComponentProps<typeof Toolbar>) {
   return (
     <Toolbar
       className={cn(
@@ -157,7 +157,7 @@ function MediaAlignButton({
   children,
   ...props
 }: {
-  setAlignOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setAlignOpen: Dispatch<SetStateAction<boolean>>;
 } & DropdownMenuProps) {
   const editor = useEditorRef();
   const element = useElement<TMediaElement & TTextAlignProps>();

@@ -11,7 +11,7 @@ import {
   useElement,
   usePluginOption,
 } from 'platejs/react';
-import * as React from 'react';
+import type { ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
 import { useIsTouchDevice } from '../hooks/use-is-touch-device';
@@ -21,7 +21,7 @@ import { BlockMenu } from './block-menu';
 import { Button, type ButtonProps } from './button';
 import { useContextMenu } from './menu';
 
-export function BlockContextMenu({ children }: { children: React.ReactNode }) {
+export function BlockContextMenu({ children }: { children: ReactNode }) {
   const { api, editor } = useEditorPlugin(BlockMenuPlugin);
   const anchorRect = usePluginOption(BlockMenuPlugin, 'position');
   const openId = usePluginOption(BlockMenuPlugin, 'openId');

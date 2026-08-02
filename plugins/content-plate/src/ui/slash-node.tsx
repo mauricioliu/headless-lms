@@ -24,7 +24,7 @@ import {
 import { KEYS } from 'platejs';
 import type { PlateEditor, PlateElementProps } from 'platejs/react';
 import { PlateElement } from 'platejs/react';
-import * as React from 'react';
+import type { ReactNode } from 'react';
 
 import {
   insertBlock,
@@ -52,7 +52,7 @@ import { turnIntoItems } from './turn-into-toolbar-button';
 type Group = {
   group: string;
   items: {
-    icon: React.ReactNode;
+    icon: ReactNode;
     value: string;
     onSelect: (editor: PlateEditor, value: string) => void;
     description?: string;

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ComponentProps } from 'react';
 import {
   PreviewImage,
   useImagePreview,
@@ -123,7 +124,7 @@ export function ImagePreview() {
   );
 }
 
-function ScaleInput(props: React.ComponentProps<'input'>) {
+function ScaleInput(props: ComponentProps<'input'>) {
   const { props: scaleInputProps, ref } = useScaleInput();
 
   return <input {...scaleInputProps} {...props} ref={ref} />;

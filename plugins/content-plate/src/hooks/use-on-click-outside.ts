@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 
 /**
  * Determines the appropriate effect hook to use based on the environment. If
@@ -12,7 +12,7 @@ export const useIsomorphicLayoutEffect =
 export function useEventListener<K extends keyof MediaQueryListEventMap>(
   eventName: K,
   handler: (event: MediaQueryListEventMap[K]) => void,
-  element: React.RefObject<MediaQueryList>,
+  element: RefObject<MediaQueryList>,
   options?: AddEventListenerOptions | boolean
 ): void;
 
@@ -31,7 +31,7 @@ export function useEventListener<
 >(
   eventName: K,
   handler: (event: HTMLElementEventMap[K]) => void,
-  element: React.RefObject<T>,
+  element: RefObject<T>,
   options?: AddEventListenerOptions | boolean
 ): void;
 
@@ -39,7 +39,7 @@ export function useEventListener<
 export function useEventListener<K extends keyof DocumentEventMap>(
   eventName: K,
   handler: (event: DocumentEventMap[K]) => void,
-  element: React.RefObject<Document>,
+  element: RefObject<Document>,
   options?: AddEventListenerOptions | boolean
 ): void;
 
@@ -58,7 +58,7 @@ export function useEventListener<
       | MediaQueryListEventMap[KM]
       | WindowEventMap[KW]
   ) => void,
-  element?: React.RefObject<T>,
+  element?: RefObject<T>,
   options?: AddEventListenerOptions | boolean
 ) {
   // Create a ref that stores handler
@@ -101,7 +101,7 @@ type Handler = (event: MouseEvent) => void;
  *   for (e.g., 'mousedown', 'mouseup'). Default is `'mousedown'`
  */
 export const useOnClickOutside = <T extends HTMLElement = HTMLElement>(
-  ref: React.RefObject<T | null>,
+  ref: RefObject<T | null>,
   handler?: Handler,
   mouseEvent: 'mousedown' | 'mouseup' = 'mousedown'
 ): void => {

@@ -2,7 +2,7 @@
 
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Command as CommandPrimitive } from 'cmdk';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -28,7 +28,7 @@ function Command({
   className,
   variant,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive> &
+}: ComponentProps<typeof CommandPrimitive> &
   VariantProps<typeof commandVariants>) {
   return (
     <CommandPrimitive
@@ -71,7 +71,7 @@ function CommandInput({
   variant,
   wrapClassName,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Input> &
+}: ComponentProps<typeof CommandPrimitive.Input> &
   VariantProps<typeof inputVariants> & {
     wrapClassName?: string;
   }) {
@@ -93,7 +93,7 @@ function CommandInput({
 function CommandList({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.List>) {
+}: ComponentProps<typeof CommandPrimitive.List>) {
   return (
     <CommandPrimitive.List
       className={cn(
@@ -109,7 +109,7 @@ function CommandList({
 function CommandEmpty({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Empty>) {
+}: ComponentProps<typeof CommandPrimitive.Empty>) {
   return (
     <CommandPrimitive.Empty
       className={cn('py-6 text-center text-sm', className)}
@@ -122,7 +122,7 @@ function CommandEmpty({
 function CommandGroup({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Group>) {
+}: ComponentProps<typeof CommandPrimitive.Group>) {
   return (
     <CommandPrimitive.Group
       className={cn(
@@ -138,7 +138,7 @@ function CommandGroup({
 function CommandSeparator({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Separator>) {
+}: ComponentProps<typeof CommandPrimitive.Separator>) {
   return (
     <CommandPrimitive.Separator
       className={cn('-mx-1 h-px bg-border', className)}
@@ -170,7 +170,7 @@ function CommandItem({
   className,
   variant,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Item> &
+}: ComponentProps<typeof CommandPrimitive.Item> &
   VariantProps<typeof commandItemVariants>) {
   return (
     <CommandPrimitive.Item
@@ -184,7 +184,7 @@ function CommandItem({
 function CommandShortcut({
   className,
   ...props
-}: React.ComponentProps<'span'>) {
+}: ComponentProps<'span'>) {
   return (
     <span
       className={cn(

@@ -7,7 +7,7 @@ import {
   FileTextIcon,
   LinkIcon,
 } from 'lucide-react';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 export const mockRecentDocuments = [
   {

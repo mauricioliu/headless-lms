@@ -1,7 +1,7 @@
 'use client';
 
 import { Tooltip as TooltipPrimitive } from 'radix-ui';
-import * as React from 'react';
+import type { ComponentProps, ComponentPropsWithoutRef, ElementType, ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
 import { useMounted } from '../hooks/use-mounted';
@@ -11,7 +11,7 @@ export function TooltipProvider({
   disableHoverableContent = true,
   skipDelayDuration = 0,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+}: ComponentProps<typeof TooltipPrimitive.Provider>) {
   return (
     <TooltipPrimitive.Provider
       delayDuration={delayDuration}
@@ -32,7 +32,7 @@ export function TooltipContent({
   className,
   sideOffset = 4,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+}: ComponentProps<typeof TooltipPrimitive.Content>) {
   return (
     <TooltipPrimitive.Content
       className={cn(
@@ -56,9 +56,9 @@ export function TooltipTC({
   onOpenChange,
   ...props
 }: {
-  content: React.ReactNode;
-} & React.ComponentProps<typeof TooltipPrimitive.Content> &
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Root>) {
+  content: ReactNode;
+} & ComponentProps<typeof TooltipPrimitive.Content> &
+  ComponentPropsWithoutRef<typeof TooltipPrimitive.Root>) {
   const mounted = useMounted();
 
   if (!mounted) {
@@ -86,23 +86,23 @@ export function TooltipTC({
   );
 }
 
-type TooltipProps<T extends React.ElementType> = {
-  shortcut?: React.ReactNode;
-  tooltip?: React.ReactNode;
+type TooltipProps<T extends ElementType> = {
+  shortcut?: ReactNode;
+  tooltip?: ReactNode;
   tooltipContentProps?: Omit<
-    React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>,
+    ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>,
     'children'
   >;
   tooltipProps?: Omit<
-    React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Root>,
+    ComponentPropsWithoutRef<typeof TooltipPrimitive.Root>,
     'children'
   >;
-  tooltipTriggerProps?: React.ComponentPropsWithoutRef<
+  tooltipTriggerProps?: ComponentPropsWithoutRef<
     typeof TooltipPrimitive.Trigger
   >;
-} & React.ComponentProps<T>;
+} & ComponentProps<T>;
 
-export function withTooltip<T extends React.ElementType>(Component: T) {
+export function withTooltip<T extends ElementType>(Component: T) {
   return function ExtendComponent({
     shortcut,
     tooltip,
@@ -113,7 +113,7 @@ export function withTooltip<T extends React.ElementType>(Component: T) {
   }: TooltipProps<T>) {
     const isMounted = useMounted();
 
-    const component = <Component {...(props as React.ComponentProps<T>)} />;
+    const component = <Component {...(props as ComponentProps<T>)} />;
 
     if (tooltip && isMounted) {
       return (

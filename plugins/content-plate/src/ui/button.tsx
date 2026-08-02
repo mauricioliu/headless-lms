@@ -5,8 +5,7 @@ import { Slot } from 'radix-ui';
 const SlotRoot = Slot.Root;
 
 import { cva, type VariantProps } from 'class-variance-authority';
-import type { ComponentProps } from 'react';
-import * as React from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -85,14 +84,14 @@ export const buttonVariants = cva(
 export type ButtonExtendedProps = {
   active?: boolean;
   asChild?: boolean;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   iconPlacement?: 'left' | 'right';
   isPending?: boolean;
   loading?: boolean;
   loadingClassName?: string;
   onToggleClick?: () => void;
 } & {
-  children?: React.ReactNode;
+  children?: ReactNode;
   label?: string;
 } & VariantProps<typeof buttonVariants>;
 
@@ -116,7 +115,7 @@ export const Button = withTooltip(function Button({
   variant,
   onToggleClick,
   ...props
-}: ButtonExtendedProps & React.ComponentProps<'button'>) {
+}: ButtonExtendedProps & ComponentProps<'button'>) {
   const Comp = asChild ? SlotRoot : 'button';
 
   return (
@@ -162,7 +161,7 @@ export const LinkButton = withTooltip(function LinkButton({
   truncate,
   variant = 'ghost',
   ...props
-}: ButtonExtendedProps & React.ComponentProps<'a'>) {
+}: ButtonExtendedProps & ComponentProps<'a'>) {
   return (
     <a
       aria-label={label && label.length > 0 ? label : undefined}

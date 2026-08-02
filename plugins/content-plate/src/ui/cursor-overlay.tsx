@@ -8,7 +8,6 @@ import {
 import { getTableGridAbove } from '@platejs/table';
 import { RangeApi } from 'platejs';
 import { useEditorRef } from 'platejs/react';
-import * as React from 'react';
 
 import { cn } from '../lib/utils';
 

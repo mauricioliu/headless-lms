@@ -3,7 +3,7 @@ import {
   CaptionTextarea as CaptionTextareaPrimitive,
 } from '@platejs/caption/react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
+import type { ComponentPropsWithoutRef } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -20,7 +20,7 @@ const captionVariants = cva('max-w-full', {
   },
 });
 
-type CaptionProps = React.ComponentPropsWithoutRef<typeof CaptionPrimitive> &
+type CaptionProps = ComponentPropsWithoutRef<typeof CaptionPrimitive> &
   VariantProps<typeof captionVariants>;
 
 export function Caption({ align, className, ...props }: CaptionProps) {
@@ -33,7 +33,7 @@ export function Caption({ align, className, ...props }: CaptionProps) {
 }
 
 export function CaptionTextarea(
-  props: React.ComponentPropsWithoutRef<typeof CaptionTextareaPrimitive>
+  props: ComponentPropsWithoutRef<typeof CaptionTextareaPrimitive>
 ) {
   return (
     <CaptionTextareaPrimitive

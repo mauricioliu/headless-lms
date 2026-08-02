@@ -11,7 +11,7 @@ import {
   useEditorSelector,
   usePluginOption,
 } from 'platejs/react';
-import React, { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { cn } from '../lib/utils';
 import type { MyLinkElement } from '../editor/plate-types';
 
@@ -49,7 +49,7 @@ export function LinkFloatingToolbar() {
 
   const aboveUrl = editor.api.above<MyLinkElement>()?.[0].url ?? '';
 
-  const [initialUrl, setInitialUrl] = React.useState(aboveUrl);
+  const [initialUrl, setInitialUrl] = useState(aboveUrl);
 
   useEffect(() => {
     setInitialUrl(aboveUrl);
@@ -114,16 +114,16 @@ export function LinkFloatingToolbar() {
 }
 
 const InsertLinkCommand = ({ initialUrl }: { initialUrl: string }) => {
-  const [query, setQuery] = React.useState(initialUrl);
+  const [query, setQuery] = useState(initialUrl);
 
   const { editor } = useEditorPlugin(linkPlugin);
 
-  const recentDocuments = React.useMemo(
+  const recentDocuments = useMemo(
     () => mockRecentDocuments.slice(0, 5),
     []
   );
 
-  const searchDocuments = React.useMemo(
+  const searchDocuments = useMemo(
     () =>
       mockRecentDocuments.filter((doc) =>
         doc.title?.toLowerCase().includes(query.toLowerCase())
@@ -177,9 +177,9 @@ const EditLinkCommand = ({
   setInitialUrl: (url: string) => void;
   autoFocus?: boolean;
 }) => {
-  const [searching, setSearching] = React.useState(false);
-  const [query, setQuery] = React.useState<string>('');
-  const [text, setText] = React.useState<string>('');
+  const [searching, setSearching] = useState(false);
+  const [query, setQuery] = useState<string>('');
+  const [text, setText] = useState<string>('');
 
   const mode = usePluginOption(linkPlugin, 'mode');
 
@@ -200,7 +200,7 @@ const EditLinkCommand = ({
     (template) => template.id === initialUrl.slice(1)
   );
 
-  const searchDocuments = React.useMemo(
+  const searchDocuments = useMemo(
     () =>
       mockRecentDocuments.filter((doc) =>
         doc.title?.toLowerCase().includes(query.toLowerCase())

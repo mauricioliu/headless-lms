@@ -4,7 +4,7 @@ import { EmojiInlineIndexSearch, insertEmoji } from '@platejs/emoji';
 import { EmojiPlugin } from '@platejs/emoji/react';
 import type { PlateElementProps } from 'platejs/react';
 import { PlateElement, usePluginOption } from 'platejs/react';
-import * as React from 'react';
+import { useMemo, useState } from 'react';
 
 import { useDebounce } from '../hooks/use-debounce';
 
@@ -22,12 +22,12 @@ const EMOJI_REGEX = /:$/;
 export function EmojiInputElement(props: PlateElementProps) {
   const data = usePluginOption(EmojiPlugin, 'data')!;
   const { children, editor, element } = props;
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
 
   const debouncedValue = useDebounce(value, 100);
   const isPending = value !== debouncedValue;
 
-  const filteredEmojis = React.useMemo(() => {
+  const filteredEmojis = useMemo(() => {
     if (debouncedValue.trim().length === 0) return [];
 
     return EmojiInlineIndexSearch.getInstance(data)

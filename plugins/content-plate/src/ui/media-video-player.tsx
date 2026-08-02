@@ -2,7 +2,7 @@
 // Vidstack island for the static video node. Emits media facts to the host's
 // MediaTracking context; plays plain progressive sources (no hls.js). The
 // resume/retry choreography lives in media-playback.ts, tested there.
-import * as React from 'react';
+import { useRef, useState } from 'react';
 import {
   MediaPlayer,
   MediaProvider as VidstackMediaProvider,
@@ -35,9 +35,9 @@ export function MediaVideoPlayer({
   name?: string;
 }) {
   const { onEvent, startPosition, refreshUrl } = useMediaTracking();
-  const playerRef = React.useRef<MediaPlayerInstance>(null);
-  const stateRef = React.useRef(createResumeState());
-  const [src, setSrc] = React.useState(url);
+  const playerRef = useRef<MediaPlayerInstance>(null);
+  const stateRef = useRef(createResumeState());
+  const [src, setSrc] = useState(url);
 
   const duration = () => {
     const raw = playerRef.current?.duration;

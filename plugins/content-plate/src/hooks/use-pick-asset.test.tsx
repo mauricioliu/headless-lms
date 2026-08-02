@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
@@ -9,7 +10,7 @@ import {
 
 /** Renders `tree` and returns whatever the probe inside it read from context. */
 function seenIn(
-  render: (Probe: () => null) => React.ReactElement,
+  render: (Probe: () => null) => ReactElement,
 ): PickAssetHandler | null | undefined {
   let seen: PickAssetHandler | null | undefined;
   const Probe = () => {

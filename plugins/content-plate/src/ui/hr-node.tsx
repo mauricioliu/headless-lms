@@ -6,7 +6,6 @@ import {
   useFocused,
   useSelected,
 } from 'platejs/react';
-import * as React from 'react';
 
 import { cn } from '../lib/utils';
 

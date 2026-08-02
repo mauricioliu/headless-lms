@@ -2,8 +2,7 @@
 
 import { KEYS } from 'platejs';
 import { useEditorRef, useSelectionFragmentProp } from 'platejs/react';
-import * as React from 'react';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ComponentProps } from 'react';
 
 import {
   DropdownMenu,
@@ -18,7 +17,7 @@ import {
 import { ToolbarButton } from './toolbar';
 
 export function FontColorToolbarButton(
-  props: React.ComponentProps<typeof DropdownMenu>
+  props: ComponentProps<typeof DropdownMenu>
 ) {
   const editor = useEditorRef();
 

@@ -10,7 +10,6 @@ import {
   useEditorMounted,
   withHOC,
 } from 'platejs/react';
-import * as React from 'react';
 import LiteYouTubeEmbed from 'react-lite-youtube-embed';
 import ReactPlayer from 'react-player';
 

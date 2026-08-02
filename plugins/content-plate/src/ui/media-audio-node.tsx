@@ -3,7 +3,6 @@
 import { useMediaState } from '@platejs/media/react';
 import { ResizableProvider } from '@platejs/resizable';
 import { PlateElement, type PlateElementProps, withHOC } from 'platejs/react';
-import * as React from 'react';
 
 import { Caption, CaptionTextarea } from './caption';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { cva, type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -26,7 +26,7 @@ export const inputVariants = cva(
   }
 );
 
-export type InputProps = React.ComponentProps<'input'> &
+export type InputProps = ComponentProps<'input'> &
   VariantProps<typeof inputVariants>;
 
 export function Input({ className, variant, ...props }: InputProps) {

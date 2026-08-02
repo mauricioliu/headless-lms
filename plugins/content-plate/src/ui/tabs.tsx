@@ -2,7 +2,7 @@
 
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Tabs as TabsPrimitive } from 'radix-ui';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -15,7 +15,7 @@ const tabsListVariants = cva(
 export function TabsList({
   className,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.List> &
+}: ComponentProps<typeof TabsPrimitive.List> &
   VariantProps<typeof tabsListVariants>) {
   return (
     <TabsPrimitive.List
@@ -36,7 +36,7 @@ const tabsTriggerVariants = cva(
 export function TabsTrigger({
   className,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Trigger> &
+}: ComponentProps<typeof TabsPrimitive.Trigger> &
   VariantProps<typeof tabsTriggerVariants>) {
   return (
     <TabsPrimitive.Trigger
@@ -49,7 +49,7 @@ export function TabsTrigger({
 export function TabsContent({
   className,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Content>) {
+}: ComponentProps<typeof TabsPrimitive.Content>) {
   return (
     <TabsPrimitive.Content
       className={cn(

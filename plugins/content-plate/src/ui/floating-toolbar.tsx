@@ -15,7 +15,7 @@ import {
   useEventEditorValue,
   usePluginOption,
 } from 'platejs/react';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 
 import { cn } from '../lib/utils';
 import { linkPlugin } from '../editor/plugins/link-kit';
@@ -27,7 +27,7 @@ export function FloatingToolbar({
   ref: refProp,
   state,
   ...props
-}: React.ComponentProps<typeof Toolbar> & {
+}: ComponentProps<typeof Toolbar> & {
   state?: FloatingToolbarState;
 }) {
   const editor = useEditorRef();

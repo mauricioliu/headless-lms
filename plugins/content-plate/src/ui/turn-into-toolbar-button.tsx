@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { KEYS } from 'platejs';
 import { useEditorRef, useSelectionFragmentProp } from 'platejs/react';
-import * as React from 'react';
+import { useMemo } from 'react';
 
 import {
   getBlockType,
@@ -119,7 +119,7 @@ export function TurnIntoToolbarButton(props: DropdownMenuProps) {
     defaultValue: KEYS.p,
     getProp: (node) => getBlockType(node as any),
   });
-  const selectedItem = React.useMemo(
+  const selectedItem = useMemo(
     () =>
       turnIntoItems.find((item) => item.value === (value ?? KEYS.p)) ??
       turnIntoItems[0],

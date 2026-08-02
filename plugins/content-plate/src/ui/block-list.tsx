@@ -11,7 +11,7 @@ import {
   type RenderNodeWrapper,
   useReadOnly,
 } from 'platejs/react';
-import React from 'react';
+import type { FC } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -20,8 +20,8 @@ import { Checkbox } from './checkbox';
 const config: Record<
   string,
   {
-    Li: React.FC<PlateElementProps>;
-    Marker: React.FC<PlateElementProps>;
+    Li: FC<PlateElementProps>;
+    Marker: FC<PlateElementProps>;
   }
 > = {
   todo: {

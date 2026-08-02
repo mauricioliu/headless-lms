@@ -4,7 +4,6 @@ import { DndPlugin } from '@platejs/dnd';
 import { useBlockSelected } from '@platejs/selection/react';
 import { cva } from 'class-variance-authority';
 import { type PlateElementProps, usePluginOption } from 'platejs/react';
-import * as React from 'react';
 
 import { cn } from '../lib/utils';
 

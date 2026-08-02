@@ -7,7 +7,7 @@
 // Ctrl/Cmd+S triggers `onSave` directly.
 import type { Value } from 'platejs';
 import { Plate, usePlateEditor } from 'platejs/react';
-import * as React from 'react';
+import { useEffect } from 'react';
 
 import type { PageEditorProps } from '@headless-lms/editor-contract';
 
@@ -31,7 +31,7 @@ export function Editor({
     value: isNodeList(initialConfig) ? (initialConfig as Value) : EMPTY_VALUE,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();

@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState } from 'react';
 
 import { type ExternalToast, toast } from 'sonner';
 
@@ -7,7 +7,7 @@ export const useCopyToClipboard = ({
 }: {
   timeout?: number;
 } = {}) => {
-  const [isCopied, setIsCopied] = React.useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const copyToClipboard = (
     value: string,

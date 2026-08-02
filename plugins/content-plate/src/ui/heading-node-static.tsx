@@ -1,7 +1,6 @@
 import { cva } from 'class-variance-authority';
 import { PathApi } from 'platejs';
 import { SlateElement, type SlateElementProps } from 'platejs/static';
-import * as React from 'react';
 
 const headingVariants = cva(
   'relative mb-1 px-0.5 py-[3px] font-semibold leading-[1.3]!',

@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 import { DayPicker } from 'react-day-picker';
 
 import { cn } from '../lib/utils';
@@ -13,7 +13,7 @@ function Calendar({
   classNames,
   showOutsideDays = true,
   ...props
-}: React.ComponentProps<typeof DayPicker>) {
+}: ComponentProps<typeof DayPicker>) {
   return (
     <DayPicker
       className={cn('p-3', className)}

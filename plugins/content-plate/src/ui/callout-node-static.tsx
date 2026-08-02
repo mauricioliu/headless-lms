@@ -1,5 +1,4 @@
 import { SlateElement, type SlateElementProps } from 'platejs/static';
-import * as React from 'react';
 
 export function CalloutElementStatic(props: SlateElementProps) {
   return (

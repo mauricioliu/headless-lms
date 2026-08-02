@@ -28,7 +28,7 @@ import {
   XIcon,
 } from 'lucide-react';
 import { Popover } from 'radix-ui';
-import React, { memo, type ReactNode, useCallback } from 'react';
+import { memo, useCallback, type ReactElement, type ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
 import { Button } from './button';
@@ -77,7 +77,7 @@ export function EmojiPicker({
   onMouseOver,
   onSelectEmoji,
 }: Omit<UseEmojiPickerType, 'icons'> & {
-  icons?: EmojiIconList<React.ReactElement>;
+  icons?: EmojiIconList<ReactElement>;
 }) {
   return (
     <div
@@ -519,7 +519,7 @@ function EmojiPickerNavigation({
 
 export const emojiCategoryIcons: Record<
   EmojiCategoryList,
-  { outline: React.ReactElement; solid: React.ReactElement }
+  { outline: ReactElement; solid: ReactElement }
 > = {
   activity: {
     outline: (

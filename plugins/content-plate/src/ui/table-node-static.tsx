@@ -2,7 +2,7 @@ import { BaseTablePlugin } from '@platejs/table';
 
 import type { TTableCellElement, TTableElement } from 'platejs';
 import { SlateElement, type SlateElementProps } from 'platejs/static';
-import * as React from 'react';
+import type { CSSProperties } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -67,7 +67,7 @@ export function TableCellElementStatic({
           '--cellBackground': element.background,
           maxWidth: width || 240,
           minWidth: width || 120,
-        } as React.CSSProperties
+        } as CSSProperties
       }
     >
       <div

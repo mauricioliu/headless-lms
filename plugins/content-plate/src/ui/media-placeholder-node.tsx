@@ -15,8 +15,7 @@ import {
   useEditorPlugin,
   withHOC,
 } from 'platejs/react';
-import type { ReactNode } from 'react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { toast } from 'sonner';
 import { useFilePicker } from 'use-file-picker';
 
@@ -171,7 +170,7 @@ const MEDIA_CONFIG: Record<
   },
 };
 
-function MediaPlaceholderPopover({ children }: { children: React.ReactNode }) {
+function MediaPlaceholderPopover({ children }: { children: ReactNode }) {
   const { api, editor, getOption, tf } = useEditorPlugin(PlaceholderPlugin);
 
   const {
@@ -392,7 +391,7 @@ function ImageProgress({
 }: {
   file: File;
   className?: string;
-  imageRef?: React.RefObject<HTMLImageElement | null>;
+  imageRef?: RefObject<HTMLImageElement | null>;
   progress?: number;
 }) {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);

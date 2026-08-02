@@ -4,7 +4,6 @@ import { parseTwitterUrl, parseVideoUrl } from '@platejs/media';
 import { useMediaState } from '@platejs/media/react';
 import { ResizableProvider, useResizableValue } from '@platejs/resizable';
 import { PlateElement, type PlateElementProps, withHOC } from 'platejs/react';
-import * as React from 'react';
 import { Tweet } from 'react-tweet';
 
 import { cn } from '../lib/utils';

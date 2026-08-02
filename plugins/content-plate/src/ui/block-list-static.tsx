@@ -2,15 +2,15 @@ import { isOrderedList } from '@platejs/list';
 import { CheckIcon } from 'lucide-react';
 import type { RenderStaticNodeWrapper, TListElement } from 'platejs';
 import type { SlateRenderElementProps } from 'platejs/static';
-import * as React from 'react';
+import type { FC } from 'react';
 
 import { cn } from '../lib/utils';
 
 const config: Record<
   string,
   {
-    Li: React.FC<SlateRenderElementProps>;
-    Marker: React.FC<SlateRenderElementProps>;
+    Li: FC<SlateRenderElementProps>;
+    Marker: FC<SlateRenderElementProps>;
   }
 > = {
   todo: {

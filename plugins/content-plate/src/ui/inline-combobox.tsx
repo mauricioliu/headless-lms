@@ -9,8 +9,7 @@ import {
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { Point, TElement } from 'platejs';
 import { useComposedRef, useEditorRef } from 'platejs/react';
-import type { HTMLAttributes, ReactNode, RefObject } from 'react';
-import React, { useEffect } from 'react';
+import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentProps, type HTMLAttributes, type ReactNode, type RefObject } from 'react';
 import { cn } from '../lib/utils';
 import { Ariakit } from './menu';
 
@@ -29,7 +28,7 @@ type InlineComboboxContextValue = {
   setHasEmpty: (hasEmpty: boolean) => void;
 };
 
-const InlineComboboxContext = React.createContext<InlineComboboxContextValue>(
+const InlineComboboxContext = createContext<InlineComboboxContextValue>(
   null as any
 );
 
@@ -68,15 +67,15 @@ function InlineCombobox({
   value: valueProp,
 }: InlineComboboxProps) {
   const editor = useEditorRef();
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const cursorState = useHTMLInputCursorState(inputRef);
 
-  const [valueState, setValueState] = React.useState('');
+  const [valueState, setValueState] = useState('');
   const hasValueProp = valueProp !== undefined;
   const value = hasValueProp ? valueProp : valueState;
 
   // Check if current user is the creator of this element (for Yjs collaboration)
-  const isCreator = React.useMemo(() => {
+  const isCreator = useMemo(() => {
     const elementUserId = (element as any).userId;
     const currentUserId = editor.meta.userId;
 
@@ -86,7 +85,7 @@ function InlineCombobox({
     return elementUserId === currentUserId;
   }, [editor, element]);
 
-  const setValue = React.useCallback(
+  const setValue = useCallback(
     (newValue: string) => {
       setValueProp?.(newValue);
 
@@ -97,7 +96,7 @@ function InlineCombobox({
     [setValueProp, hasValueProp]
   );
 
-  const insertPoint = React.useRef<Point | null>(null);
+  const insertPoint = useRef<Point | null>(null);
 
   useEffect(() => {
     const path = editor.api.findPath(element);
@@ -136,9 +135,9 @@ function InlineCombobox({
     },
   });
 
-  const [hasEmpty, setHasEmpty] = React.useState(false);
+  const [hasEmpty, setHasEmpty] = useState(false);
 
-  const contextValue: InlineComboboxContextValue = React.useMemo(
+  const contextValue: InlineComboboxContextValue = useMemo(
     () => ({
       filter,
       inputProps,
@@ -160,7 +159,7 @@ function InlineCombobox({
   );
 
   const store = Ariakit.useComboboxStore({
-    setValue: (newValue) => React.startTransition(() => setValue(newValue)),
+    setValue: (newValue) => startTransition(() => setValue(newValue)),
   });
 
   const items = store.useState('items');
@@ -193,13 +192,13 @@ function InlineComboboxInput({
   className,
   ref: refProp,
   ...props
-}: React.ComponentProps<'input'>) {
+}: ComponentProps<'input'>) {
   const {
     inputProps,
     inputRef: contextRef,
     showTrigger,
     trigger,
-  } = React.useContext(InlineComboboxContext);
+  } = useContext(InlineComboboxContext);
 
   const store = Ariakit.useComboboxContext()!;
   const value = store.useState('value');
@@ -270,7 +269,7 @@ function InlineComboboxContent({
   className,
   variant,
   ...props
-}: React.ComponentProps<typeof Ariakit.ComboboxPopover> &
+}: ComponentProps<typeof Ariakit.ComboboxPopover> &
   VariantProps<typeof comboboxVariants>) {
   return (
     <Ariakit.Portal>
@@ -301,13 +300,13 @@ function InlineComboboxItem({
   Required<Pick<Ariakit.ComboboxItemProps, 'value'>>) {
   const { value } = props;
 
-  const { filter, removeInput } = React.useContext(InlineComboboxContext);
+  const { filter, removeInput } = useContext(InlineComboboxContext);
 
   const store = Ariakit.useComboboxContext()!;
 
   const search = filter && store.useState('value');
 
-  const visible = React.useMemo(
+  const visible = useMemo(
     () =>
       !filter || filter({ group, keywords, label, value }, search as string),
     [filter, group, keywords, value, label, search]
@@ -331,7 +330,7 @@ function InlineComboboxEmpty({
   children,
   className,
 }: HTMLAttributes<HTMLDivElement>) {
-  const { setHasEmpty } = React.useContext(InlineComboboxContext);
+  const { setHasEmpty } = useContext(InlineComboboxContext);
   const store = Ariakit.useComboboxContext()!;
   const items = store.useState('items');
 
@@ -361,7 +360,7 @@ function InlineComboboxEmpty({
 function InlineComboboxGroup({
   className,
   ...props
-}: React.ComponentProps<typeof Ariakit.ComboboxGroup>) {
+}: ComponentProps<typeof Ariakit.ComboboxGroup>) {
   return (
     <Ariakit.ComboboxGroup
       className={cn(
@@ -376,7 +375,7 @@ function InlineComboboxGroup({
 function InlineComboboxGroupLabel({
   className,
   ...props
-}: React.ComponentProps<typeof Ariakit.ComboboxGroupLabel>) {
+}: ComponentProps<typeof Ariakit.ComboboxGroupLabel>) {
   return (
     <Ariakit.ComboboxGroupLabel
       className={cn(

@@ -6,7 +6,6 @@ import {
   useEditorReadOnly,
   useSelectionAcrossBlocks,
 } from 'platejs/react';
-import * as React from 'react';
 
 import { FontColorToolbarButton } from './font-color-toolbar-button';
 import { LinkToolbarButton } from './link-toolbar-button';

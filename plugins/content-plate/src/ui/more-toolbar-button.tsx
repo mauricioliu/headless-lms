@@ -3,7 +3,6 @@
 import { BlockMenuPlugin } from '@platejs/selection/react';
 import { MoreHorizontal } from 'lucide-react';
 import { useEditorRef } from 'platejs/react';
-import * as React from 'react';
 
 import { useOpenState } from './dropdown-menu';
 import { ToolbarButton } from './toolbar';

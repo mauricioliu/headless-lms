@@ -2,13 +2,12 @@
 
 import { Dialog as DialogPrimitive } from 'radix-ui';
 
-type DialogPrimitiveProps = React.ComponentProps<typeof DialogPrimitive.Root>;
+type DialogPrimitiveProps = ComponentProps<typeof DialogPrimitive.Root>;
 
 import { cva, type VariantProps } from 'class-variance-authority';
 import { createAtomStore } from 'jotai-x';
 import { XIcon } from 'lucide-react';
-import type { ComponentProps } from 'react';
-import * as React from 'react';
+import type { ComponentProps, FC } from 'react';
 import { Drawer as DrawerPrimitive } from 'vaul';
 
 import { cn } from '../lib/utils';
@@ -35,7 +34,7 @@ export const DialogPortal = DialogPrimitive.Portal;
 export function DialogOverlay({
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+}: ComponentProps<typeof DialogPrimitive.Overlay>) {
   return (
     <DialogPrimitive.Overlay
       className={cn(
@@ -53,7 +52,7 @@ export function DialogClose({
   children,
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Close>) {
+}: ComponentProps<typeof DialogPrimitive.Close>) {
   return (
     <DialogPrimitive.Close
       aria-label="Close"
@@ -124,13 +123,13 @@ function DialogModalContent({
   onPointerDownOutside,
   ...props
 }: {
-  as?: React.FC<ComponentProps<typeof DialogPrimitive.Content>>;
+  as?: FC<ComponentProps<typeof DialogPrimitive.Content>>;
   disableAutoFocus?: boolean;
   dismissible?: boolean;
   fixed?: boolean;
   hideClose?: boolean;
 } & VariantProps<typeof dialogContentVariants> &
-  React.ComponentProps<typeof DialogPrimitive.Content>) {
+  ComponentProps<typeof DialogPrimitive.Content>) {
   let variant = useDialogValue('variant') as any;
   variant = variant === 'modal' ? variantProp! : variant;
   const fixed = useDialogContentValue('fixed');
@@ -170,7 +169,7 @@ function DialogModalContent({
 export function DialogHeader({
   className,
   ...props
-}: React.ComponentProps<'div'>) {
+}: ComponentProps<'div'>) {
   const variant = useDialogValue('variant');
   const fixed = useDialogContentValue('fixed');
 
@@ -190,7 +189,7 @@ export function DialogHeader({
 export function DialogFooter({
   className,
   ...props
-}: React.ComponentProps<'div'>) {
+}: ComponentProps<'div'>) {
   const variant = useDialogValue('variant');
   const fixed = useDialogContentValue('fixed');
 
@@ -211,7 +210,7 @@ export function DialogFooter({
 export function DialogModalTitle({
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Title>) {
+}: ComponentProps<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
       className={cn(
@@ -226,7 +225,7 @@ export function DialogModalTitle({
 export function DialogDescription({
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+}: ComponentProps<typeof DialogPrimitive.Description>) {
   return (
     <DialogPrimitive.Description
       className={cn('text-sm text-subtle-foreground', className)}
@@ -270,7 +269,7 @@ export function Dialog({
 }
 
 export function DialogTrigger(
-  props: React.ComponentProps<typeof DialogModalTrigger>
+  props: ComponentProps<typeof DialogModalTrigger>
 ) {
   const variant = useDialogValue('variant');
   const ResponsiveTrigger =
@@ -286,7 +285,7 @@ export function DialogContent({
   hideClose,
   size,
   ...props
-}: React.ComponentProps<typeof DialogModalContent> & { fixed?: boolean }) {
+}: ComponentProps<typeof DialogModalContent> & { fixed?: boolean }) {
   const variant = useDialogValue('variant');
   const dismissible = useDialogValue('dismissible');
 
@@ -312,7 +311,7 @@ export function DialogBody({
   children,
   className,
   ...props
-}: React.ComponentProps<'div'>) {
+}: ComponentProps<'div'>) {
   const fixed = useDialogContentValue('fixed');
   const variant = useDialogValue('variant');
 
@@ -332,7 +331,7 @@ export function DialogBody({
 }
 
 export function DialogTitle(
-  props: React.ComponentProps<typeof DialogModalTitle>
+  props: ComponentProps<typeof DialogModalTitle>
 ) {
   const variant = useDialogValue('variant');
 
@@ -346,7 +345,7 @@ export function DialogTitle(
 /** Drawer */
 
 export function Drawer(
-  props: React.ComponentProps<typeof DrawerPrimitive.Root>
+  props: ComponentProps<typeof DrawerPrimitive.Root>
 ) {
   return <DrawerPrimitive.Root shouldScaleBackground={false} {...props} />;
 }
@@ -360,7 +359,7 @@ export const DrawerClose = DrawerPrimitive.Close;
 export function DrawerOverlay({
   className,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Overlay>) {
+}: ComponentProps<typeof DrawerPrimitive.Overlay>) {
   return (
     <DrawerPrimitive.Overlay
       className={cn('fixed inset-0 z-50 bg-black/40', className)}
@@ -375,7 +374,7 @@ export function DrawerContent({
   dismissible = true,
   onPointerDownOutside,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Content> & {
+}: ComponentProps<typeof DrawerPrimitive.Content> & {
   dismissible?: boolean;
 }) {
   return (
@@ -409,7 +408,7 @@ export const DrawerHeader = DialogHeader;
 export function DrawerTitle({
   className,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Title>) {
+}: ComponentProps<typeof DrawerPrimitive.Title>) {
   return (
     <DrawerPrimitive.Title
       className={cn(
@@ -424,7 +423,7 @@ export function DrawerTitle({
 export function DrawerDescription({
   className,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Description>) {
+}: ComponentProps<typeof DrawerPrimitive.Description>) {
   return (
     <DrawerPrimitive.Description
       className={cn('text-sm text-subtle-foreground', className)}

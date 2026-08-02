@@ -14,7 +14,7 @@ import {
   useEditorPlugin,
   withHOC,
 } from 'platejs/react';
-import React, { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 
 import { cn } from '../lib/utils';
@@ -46,7 +46,7 @@ export const ImageElement = withHOC(
 
     const { align = 'center', focused, readOnly, selected } = useMediaState();
 
-    const [loading, setLoading] = React.useState(true);
+    const [loading, setLoading] = useState(true);
 
     const width = useResizableValue('width');
 

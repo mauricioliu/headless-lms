@@ -3,7 +3,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { ChevronDownIcon } from 'lucide-react';
 import { Toolbar as ToolbarPrimitive } from 'radix-ui';
-import * as React from 'react';
+import { Children, type ComponentProps } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -27,7 +27,7 @@ export function Toolbar({
   className,
   variant,
   ...props
-}: React.ComponentProps<typeof ToolbarPrimitive.Root> &
+}: ComponentProps<typeof ToolbarPrimitive.Root> &
   VariantProps<typeof toolbarVariants>) {
   return (
     <ToolbarPrimitive.Root
@@ -40,7 +40,7 @@ export function Toolbar({
 export function ToolbarToggleGroup({
   className,
   ...props
-}: React.ComponentProps<typeof ToolbarPrimitive.ToolbarToggleGroup>) {
+}: ComponentProps<typeof ToolbarPrimitive.ToolbarToggleGroup>) {
   return (
     <ToolbarPrimitive.ToolbarToggleGroup
       className={cn('flex items-center', className)}
@@ -52,7 +52,7 @@ export function ToolbarToggleGroup({
 export function ToolbarLink({
   className,
   ...props
-}: React.ComponentProps<typeof ToolbarPrimitive.Link>) {
+}: ComponentProps<typeof ToolbarPrimitive.Link>) {
   return (
     <ToolbarPrimitive.Link
       className={cn('font-medium underline underline-offset-4', className)}
@@ -64,7 +64,7 @@ export function ToolbarLink({
 export function ToolbarSeparator({
   className,
   ...props
-}: React.ComponentProps<typeof ToolbarPrimitive.Separator>) {
+}: ComponentProps<typeof ToolbarPrimitive.Separator>) {
   return (
     <ToolbarPrimitive.Separator
       className={cn('mx-2 my-1 w-px shrink-0 bg-border', className)}
@@ -107,7 +107,7 @@ export const ToolbarButton = withTooltip(function ToolbarButton({
   size,
   variant,
   ...props
-}: Omit<React.ComponentProps<typeof ToolbarToggleItem>, 'asChild' | 'value'> & {
+}: Omit<ComponentProps<typeof ToolbarToggleItem>, 'asChild' | 'value'> & {
   isDropdown?: boolean;
   pressed?: boolean;
 } & VariantProps<typeof toolbarButtonVariants>) {
@@ -164,7 +164,7 @@ export function ToolbarToggleItem({
   size,
   variant,
   ...props
-}: React.ComponentProps<typeof ToolbarPrimitive.ToggleItem> &
+}: ComponentProps<typeof ToolbarPrimitive.ToggleItem> &
   VariantProps<typeof toolbarButtonVariants>) {
   return (
     <ToolbarPrimitive.ToggleItem
@@ -177,8 +177,8 @@ export function ToolbarToggleItem({
 export function ToolbarGroup({
   children,
   className,
-}: React.ComponentProps<'div'>) {
-  const childArr = React.Children.map(children, (c) => c);
+}: ComponentProps<'div'>) {
+  const childArr = Children.map(children, (c) => c);
 
   if (!childArr || childArr.length === 0) return null;
 

@@ -22,7 +22,7 @@ import {
   usePluginOption,
   useSelected,
 } from 'platejs/react';
-import React, { useEffect } from 'react';
+import { memo, useEffect, useMemo, useState, type ComponentProps, type RefObject } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -34,7 +34,7 @@ const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td];
 export const BlockDraggable: RenderNodeWrapper = (props) => {
   const { editor, element, path } = props;
 
-  const enabled = React.useMemo(() => {
+  const enabled = useMemo(() => {
     if (editor.dom.readOnly) return false;
     if (path.length === 1 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
       return true;
@@ -93,7 +93,7 @@ function Draggable(props: PlateElementProps) {
   const isInColumn = path.length === 3;
   const isInTable = path.length === 4;
 
-  const [previewTop, setPreviewTop] = React.useState(0);
+  const [previewTop, setPreviewTop] = useState(0);
 
   const resetPreview = () => {
     if (previewRef.current) {
@@ -117,7 +117,7 @@ function Draggable(props: PlateElementProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAboutToDrag]);
 
-  const [dragButtonTop, setDragButtonTop] = React.useState(0);
+  const [dragButtonTop, setDragButtonTop] = useState(0);
 
   return (
     <div
@@ -216,7 +216,7 @@ function Gutter({
   children,
   className,
   ...props
-}: React.ComponentProps<'div'>) {
+}: ComponentProps<'div'>) {
   const editor = useEditorRef();
   const element = useElement();
   const isSelectionAreaVisible = usePluginOption(
@@ -245,14 +245,14 @@ function Gutter({
   );
 }
 
-const DragHandle = React.memo(function DragHandle({
+const DragHandle = memo(function DragHandle({
   isDragging,
   previewRef,
   resetPreview,
   setPreviewTop,
 }: {
   isDragging: boolean;
-  previewRef: React.RefObject<HTMLDivElement | null>;
+  previewRef: RefObject<HTMLDivElement | null>;
   resetPreview: () => void;
   setPreviewTop: (top: number) => void;
 }) {
@@ -350,10 +350,10 @@ const DragHandle = React.memo(function DragHandle({
   );
 });
 
-const DropLine = React.memo(function DropLine({
+const DropLine = memo(function DropLine({
   className,
   ...props
-}: React.ComponentProps<'div'>) {
+}: ComponentProps<'div'>) {
   const { dropLine } = useDropLine();
 
   if (!dropLine) return null;

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { KEYS, type TElement } from 'platejs';
 import { type PlateEditor, useEditorRef, useHotkeys } from 'platejs/react';
-import * as React from 'react';
+import { useMemo, useState, type ComponentType, type ReactNode } from 'react';
 
 import {
   getBlockType,
@@ -62,10 +62,10 @@ export function BlockMenu({
 }: Pick<MenuProps, 'open' | 'placement' | 'store'> &
   Pick<MenuContentProps, 'animateZoom' | 'getAnchorRect'> & {
     id?: string;
-    children?: React.ReactNode;
+    children?: ReactNode;
   }) {
   const editor = useEditorRef();
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
     <Menu
@@ -266,7 +266,7 @@ function BlockMenuItems() {
   const selectedBlocks = useBlockSelectionNodes();
   const editor = useEditorRef();
 
-  const menuGroups = React.useMemo(() => {
+  const menuGroups = useMemo(() => {
     const isMedia =
       selectedBlocks.length === 1 &&
       selectedBlocks.some((item) =>
@@ -285,7 +285,7 @@ function BlockMenuItems() {
       {menuGroups.map((group, index) => (
         <MenuGroup key={index} label={group.label}>
           {group.items?.map((item: Action) => {
-            const menuItem = blockMenuItems[item.value! as keyof typeof blockMenuItems] as (typeof blockMenuItems)[keyof typeof blockMenuItems] & { component?: React.ComponentType; focusEditor?: boolean; onSelect?: (args: { editor: PlateEditor }) => void; shortcut?: string };
+            const menuItem = blockMenuItems[item.value! as keyof typeof blockMenuItems] as (typeof blockMenuItems)[keyof typeof blockMenuItems] & { component?: ComponentType; focusEditor?: boolean; onSelect?: (args: { editor: PlateEditor }) => void; shortcut?: string };
 
             if (menuItem.component) {
               const ItemComponent = menuItem.component;
@@ -341,7 +341,7 @@ function ColorMenuItem() {
     editor.getApi(BlockSelectionPlugin).blockSelection.focus();
   };
 
-  const menuGroups = React.useMemo(
+  const menuGroups = useMemo(
     () => filterMenuGroups(blockMenuItems[GROUP.COLOR].items, searchValue),
     [searchValue]
   );
@@ -393,7 +393,7 @@ function AlignMenuItem() {
     defaultValue: 'left',
   });
 
-  const menuItems = React.useMemo(
+  const menuItems = useMemo(
     () => filterMenuItems(blockMenuItems[GROUP.ALIGN], searchValue),
     [searchValue]
   );
@@ -458,7 +458,7 @@ function TurnIntoMenuItem() {
     editor.getApi(BlockSelectionPlugin).blockSelection.focus();
   };
 
-  const menuItems = React.useMemo(
+  const menuItems = useMemo(
     () => filterMenuItems(blockMenuItems[GROUP.TURN_INTO], searchValue),
     [searchValue]
   );

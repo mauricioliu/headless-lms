@@ -7,7 +7,7 @@
 // kept as a local object URL so the editor still works in demos — but nothing
 // is persisted.
 
-import React from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 
 export interface UploadedFile {
@@ -24,13 +24,13 @@ export type UploadHandler = (
   opts: { onProgress: (fraction: number) => void },
 ) => Promise<UploadedFile>;
 
-const UploadContext = React.createContext<UploadHandler | null>(null);
+const UploadContext = createContext<UploadHandler | null>(null);
 
 export function UploadProvider({
   children,
   uploadFile,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   uploadFile: UploadHandler | null;
 }) {
   return (
@@ -47,11 +47,11 @@ export function useUploadFile({
   onUploadComplete,
   onUploadError,
 }: UseUploadFileProps = {}) {
-  const handler = React.useContext(UploadContext);
-  const [uploadedFile, setUploadedFile] = React.useState<UploadedFile>();
-  const [uploadingFile, setUploadingFile] = React.useState<File>();
-  const [progress, setProgress] = React.useState<number>(0);
-  const [isUploading, setIsUploading] = React.useState(false);
+  const handler = useContext(UploadContext);
+  const [uploadedFile, setUploadedFile] = useState<UploadedFile>();
+  const [uploadingFile, setUploadingFile] = useState<File>();
+  const [progress, setProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   async function uploadFile(file: File) {
     setIsUploading(true);

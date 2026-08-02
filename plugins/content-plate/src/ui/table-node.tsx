@@ -21,7 +21,7 @@ import {
   useSelected,
   withHOC,
 } from 'platejs/react';
-import * as React from 'react';
+import type { CSSProperties, ComponentProps } from 'react';
 
 import { cn } from '../lib/utils';
 import { blockSelectionVariants } from './block-selection';
@@ -214,7 +214,7 @@ export function TableCellElement({
           '--cellBackground': element.background,
           maxWidth: width || 240,
           minWidth: width || 120,
-        } as React.CSSProperties
+        } as CSSProperties
       }
     >
       <div
@@ -275,7 +275,7 @@ export function TableCellElement({
 }
 
 export function TableCellHeaderElement(
-  props: React.ComponentProps<typeof TableCellElement>
+  props: ComponentProps<typeof TableCellElement>
 ) {
   return <TableCellElement {...props} isHeader />;
 }

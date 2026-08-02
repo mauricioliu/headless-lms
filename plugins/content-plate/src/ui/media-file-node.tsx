@@ -9,7 +9,6 @@ import {
   useReadOnly,
   withHOC,
 } from 'platejs/react';
-import * as React from 'react';
 
 import { BlockActionButton } from './block-context-menu';
 import { Caption, CaptionTextarea } from './caption';

@@ -1,7 +1,6 @@
 'use client';
 
 import { PlateElement, type PlateElementProps } from 'platejs/react';
-import * as React from 'react';
 
 import { Calendar } from './calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';

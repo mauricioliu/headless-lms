@@ -4,7 +4,16 @@ import * as Ariakit from '@ariakit/react';
 import { useComposedRef } from '@udecode/cn';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { CornerDownLeftIcon } from 'lucide-react';
-import React, { useEffect } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentProps,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from 'react';
 
 import { cn } from '../lib/utils';
 import { useOnClickOutside } from '../hooks/use-on-click-outside';
@@ -13,7 +22,7 @@ export type Action = {
   filterItems?: boolean;
   focusEditor?: boolean;
   group?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   items?: Action[];
   keywords?: string[];
   label?: string;
@@ -26,9 +35,9 @@ export type ActionGroup = {
   value?: string;
 };
 
-const SearchableContext = React.createContext(false);
+const SearchableContext = createContext(false);
 
-const MenuContext = React.createContext<{
+const MenuContext = createContext<{
   isRootMenu: boolean;
   open: boolean;
 }>({
@@ -37,7 +46,7 @@ const MenuContext = React.createContext<{
 });
 
 export type MenuProps = Ariakit.MenuProviderProps & {
-  trigger?: React.ReactNode;
+  trigger?: ReactNode;
   value?: string;
   onOpenChange?: Ariakit.MenuProviderProps['setOpen'];
   onRootMenuClose?: () => void;
@@ -56,7 +65,7 @@ export function Menu({
   ...props
 }: MenuProps) {
   const isRootMenu = !Ariakit.useMenuContext();
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
   const searchable = !!onValuesChange || isRootMenu;
 
@@ -103,9 +112,9 @@ export function MenuTrigger({
   icon,
   label,
   ...props
-}: React.ComponentProps<typeof Ariakit.MenuButton> & {
-  icon?: React.ReactNode;
-  label?: React.ReactNode;
+}: ComponentProps<typeof Ariakit.MenuButton> & {
+  icon?: ReactNode;
+  label?: ReactNode;
 }) {
   return (
     <Ariakit.MenuButton render={(children as any) ?? <MenuItem />} {...props}>
@@ -157,8 +166,8 @@ export function MenuContent({
   onClickOutside,
   ...props
 }: MenuContentProps) {
-  const menuRef = React.useRef<HTMLDivElement | null>(null);
-  const { open } = React.useContext(MenuContext);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const { open } = useContext(MenuContext);
   const side = useMenuSide();
 
   useOnClickOutside(menuRef, onClickOutside);
@@ -181,7 +190,7 @@ export function MenuContent({
 }
 
 export function MenuSeparator(
-  props: React.ComponentProps<typeof Ariakit.MenuSeparator>
+  props: ComponentProps<typeof Ariakit.MenuSeparator>
 ) {
   return <Ariakit.MenuSeparator {...props} className={cn(props.className)} />;
 }
@@ -189,8 +198,8 @@ export function MenuSeparator(
 export function MenuGroup({
   label,
   ...props
-}: React.ComponentProps<typeof Ariakit.MenuGroup> & {
-  label?: React.ReactNode;
+}: ComponentProps<typeof Ariakit.MenuGroup> & {
+  label?: ReactNode;
 }) {
   return (
     <>
@@ -220,7 +229,7 @@ export function MenuGroup({
   );
 }
 
-export function MenuShortcut({ ...props }: React.ComponentProps<'span'>) {
+export function MenuShortcut({ ...props }: ComponentProps<'span'>) {
   return (
     <span
       {...props}
@@ -252,12 +261,12 @@ const menuItemVariants = cva(
 export type MenuItemProps = Omit<Ariakit.ComboboxItemProps, 'store'> & {
   checked?: boolean;
   group?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   label?: string;
   name?: string;
   parentGroup?: string;
   preventClose?: boolean;
-  shortcut?: React.ReactNode;
+  shortcut?: ReactNode;
   shortcutEnter?: boolean;
   value?: string;
 } & VariantProps<typeof menuItemVariants>;
@@ -279,12 +288,12 @@ export function MenuItem({
 }: Omit<Ariakit.ComboboxItemProps, 'store'> & {
   checked?: boolean;
   group?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   label?: string;
   name?: string;
   parentGroup?: string;
   preventClose?: boolean;
-  shortcut?: React.ReactNode;
+  shortcut?: ReactNode;
   shortcutEnter?: boolean;
   value?: string;
 } & VariantProps<typeof menuItemVariants>) {
@@ -292,7 +301,7 @@ export function MenuItem({
 
   if (!menu) throw new Error('MenuItem should be used inside a Menu');
 
-  const searchable = React.useContext(SearchableContext);
+  const searchable = useContext(SearchableContext);
 
   const hasShortcut = !!shortcut || shortcutEnter;
 
@@ -354,7 +363,7 @@ export function MenuItem({
     return <Ariakit.MenuItem {...baseProps} />;
   }
 
-  const hideOnClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+  const hideOnClick = (event: ReactMouseEvent<HTMLElement, MouseEvent>) => {
     const expandable = event.currentTarget.hasAttribute('aria-expanded');
 
     if (expandable) return false;
@@ -384,7 +393,7 @@ export function ComboboxContent({
   className,
   variant = 'default',
   ...props
-}: React.ComponentProps<'div'> & VariantProps<typeof comboboxVariants>) {
+}: ComponentProps<'div'> & VariantProps<typeof comboboxVariants>) {
   return (
     <div className={cn(comboboxVariants({ variant }), className)} {...props} />
   );
@@ -413,7 +422,7 @@ export function ComboboxList({
   className,
   variant = 'default',
   ...props
-}: React.ComponentProps<typeof Ariakit.ComboboxList> &
+}: ComponentProps<typeof Ariakit.ComboboxList> &
   VariantProps<typeof comboboxListVariants>) {
   return (
     <Ariakit.ComboboxList
@@ -426,7 +435,7 @@ export function ComboboxList({
 export function ComboboxInput({
   children,
   ...props
-}: React.ComponentProps<typeof Ariakit.Combobox>) {
+}: ComponentProps<typeof Ariakit.Combobox>) {
   return <Ariakit.Combobox autoSelect render={children as any} {...props} />;
 }
 

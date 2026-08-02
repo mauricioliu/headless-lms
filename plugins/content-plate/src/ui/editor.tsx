@@ -8,7 +8,7 @@ import {
   type PlateContentProps,
   useEditorRef,
 } from 'platejs/react';
-import * as React from 'react';
+import type { HTMLAttributes } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -41,7 +41,7 @@ export function EditorContainer({
   className,
   variant,
   ...props
-}: React.HTMLAttributes<HTMLDivElement> &
+}: HTMLAttributes<HTMLDivElement> &
   VariantProps<typeof editorContainerVariants>) {
   const editor = useEditorRef();
 

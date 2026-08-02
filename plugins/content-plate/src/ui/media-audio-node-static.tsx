@@ -1,6 +1,5 @@
 import type { TAudioElement } from 'platejs';
 import { SlateElement, type SlateElementProps } from 'platejs/static';
-import * as React from 'react';
 
 export function MediaAudioElementStatic(
   props: SlateElementProps<TAudioElement>

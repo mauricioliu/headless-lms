@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 
 export const useDebounce = <T>(value: T, delay = 500) => {
-  const [debouncedValue, setDebouncedValue] = React.useState(value);
+  const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {
     const handler: NodeJS.Timeout = setTimeout(() => {
-      React.startTransition(() => {
+      startTransition(() => {
         setDebouncedValue(value);
       });
     }, delay);

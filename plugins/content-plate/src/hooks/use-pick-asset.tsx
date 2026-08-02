@@ -7,7 +7,7 @@
 // Without a handler there is no library to browse, so the affordance is hidden
 // entirely rather than shown broken.
 
-import React from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 
 import type { UploadedFile } from './use-upload-file';
 
@@ -17,13 +17,13 @@ export type PickAssetHandler = (opts: {
   kind: PickAssetKind;
 }) => Promise<UploadedFile | null>;
 
-const PickAssetContext = React.createContext<PickAssetHandler | null>(null);
+const PickAssetContext = createContext<PickAssetHandler | null>(null);
 
 export function PickAssetProvider({
   children,
   pickAsset,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   pickAsset: PickAssetHandler | null;
 }) {
   return (
@@ -35,5 +35,5 @@ export function PickAssetProvider({
 
 /** The host's picker, or `null` when the host configured none. */
 export function usePickAsset(): PickAssetHandler | null {
-  return React.useContext(PickAssetContext);
+  return useContext(PickAssetContext);
 }

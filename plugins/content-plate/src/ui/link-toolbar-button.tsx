@@ -2,14 +2,14 @@
 
 import { Link } from 'lucide-react';
 import { useEditorPlugin } from 'platejs/react';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
 
 import { linkPlugin } from '../editor/plugins/link-kit';
 
 import { ToolbarButton } from './toolbar';
 
 export function LinkToolbarButton(
-  props: React.ComponentProps<typeof ToolbarButton>
+  props: ComponentProps<typeof ToolbarButton>
 ) {
   const { api } = useEditorPlugin(linkPlugin);
 
