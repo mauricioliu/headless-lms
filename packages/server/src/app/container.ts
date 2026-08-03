@@ -30,12 +30,12 @@ import { ContentServiceImpl } from '../core/content/index.js';
 import { EntitlementsServiceImpl } from '../core/entitlements/index.js';
 import { ProgressServiceImpl } from '../core/progress/index.js';
 import { DiscussionServiceImpl } from '../core/discussion/index.js';
+import { IdentityServiceImpl } from '../core/identity/index.js';
 import {
-  type AuthAccountWriter,
-  type IdentityRepository,
-  IdentityServiceImpl,
-} from '../core/identity/index.js';
-import { type OrgAdmin, OrganizationServiceImpl } from '../core/organizations/index.js';
+  type OrgAdmin,
+  OrganizationAdminServiceImpl,
+  OrganizationServiceImpl,
+} from '../core/organizations/index.js';
 import { AssetsServiceImpl } from '../core/assets/index.js';
 import { IntegrationsServiceImpl } from '../core/integrations/index.js';
 import { AutomationsServiceImpl } from '../core/automations/index.js';
@@ -76,7 +76,6 @@ import type {
   TemplateRenderer,
 } from '../core/shared/ports.js';
 import type { AutomationEngine } from '@headless-lms/types';
-import type { IdentityUnitOfWork } from '../core/identity/ports.js';
 
 /** Installation-supplied ports; an absent slot falls back to a fail-loudly stub. */
 export interface AdapterOverrides {
@@ -172,6 +171,8 @@ export interface Container {
   // Domains
   identity: IdentityServiceImpl;
   organizations: OrganizationServiceImpl;
+  /** Caller-driven org CRUD, driven through the organization provider. */
+  organizationAdmin: OrganizationAdminServiceImpl;
   content: ContentServiceImpl;
   entitlements: EntitlementsServiceImpl;
   progress: ProgressServiceImpl;
@@ -249,14 +250,14 @@ export async function buildContainer(
   });
 
   // OrgAdmin (member writes via Better Auth) cannot exist until auth is built,
-  // and auth depends on the organizations service. Provide it lazily via a ref
-  // that composition fills in once auth exists.
-  const orgAdminRef: { current: OrgAdmin | undefined } = { current: undefined };
+  // and auth depends on the organizations service. Provide it lazily via a
+  // function that will throw if called before auth is initialized.
+  let orgAdminInstance: OrgAdmin | undefined;
   const orgAdminProvider = (): OrgAdmin => {
-    if (!orgAdminRef.current) {
+    if (!orgAdminInstance) {
       throw new Error('orgAdmin not initialised');
     }
-    return orgAdminRef.current;
+    return orgAdminInstance;
   };
 
   const identityUoW = new DrizzleUnitOfWork(db, (tx) => ({
@@ -273,16 +274,23 @@ export async function buildContainer(
     organizations: new DrizzleOrganizationsRepository(tx, organizationsLogger),
     outbox: new DrizzleOutboxAppender(tx, organizationsLogger),
   }));
-  const organizations = new OrganizationServiceImpl(
-    new DrizzleOrganizationsRepository(db, organizationsLogger),
-    new DrizzleMembersRepository(db, organizationsLogger),
-    orgAdminProvider,
-    identity,
-    organizationsUow,
-    organizationsLogger,
+  const organizations = new OrganizationServiceImpl({
+    repo: new DrizzleOrganizationsRepository(db, organizationsLogger),
+    membersRepo: new DrizzleMembersRepository(db, organizationsLogger),
+    orgAdmin: orgAdminProvider,
+    people: identity,
+    uow: organizationsUow,
+    logger: organizationsLogger,
     mailer,
-    { studentPortalUrl: config.studentPortalUrl, adminAppUrl: config.adminAppUrl },
-  );
+    inviteUrls: { studentPortalUrl: config.studentPortalUrl, adminAppUrl: config.adminAppUrl },
+  });
+  // Caller-driven org CRUD. The provider it drives is the swap point for
+  // another auth/org provider — nothing else in this graph names Better Auth.
+  const organizationAdmin = new OrganizationAdminServiceImpl({
+    provider: orgAdminProvider,
+    repo: new DrizzleOrganizationsRepository(db, organizationsLogger),
+    logger: organizationsLogger,
+  });
   const settings = new SettingsService(
     new DrizzleSettingsRepository(db, logger.child({ name: 'settings' })),
   );
@@ -291,36 +299,35 @@ export async function buildContainer(
     content: new DrizzleContentRepository(tx, contentLogger),
     outbox: new DrizzleOutboxAppender(tx, outboxLogger),
   }));
-  const content = new ContentServiceImpl(
-    new DrizzleContentRepository(db, contentLogger),
-    new DrizzleContentStructureRepository(db, contentLogger),
-    contentUow,
+  const content = new ContentServiceImpl({
+    repo: new DrizzleContentRepository(db, contentLogger),
+    structureRepo: new DrizzleContentStructureRepository(db, contentLogger),
+    uow: contentUow,
     settings,
-    contentLogger,
-  );
+    logger: contentLogger,
+  });
   // Entitlements: reads on the root db; writes + outbox append in one tx.
   const entitlementsUow = new DrizzleUnitOfWork(db, (tx) => ({
     entitlements: new DrizzleEntitlementsRepository(tx, entitlementsLogger),
     outbox: new DrizzleOutboxAppender(tx, outboxLogger),
   }));
-  const entitlements = new EntitlementsServiceImpl(
-    new DrizzleEntitlementsRepository(db, entitlementsLogger),
-    entitlementsUow,
-    entitlementsLogger,
-  );
+  const entitlements = new EntitlementsServiceImpl({
+    repo: new DrizzleEntitlementsRepository(db, entitlementsLogger),
+    uow: entitlementsUow,
+    logger: entitlementsLogger,
+  });
   // Progress: report writes + outbox append in one tx; content supplies the
   // structure and completion rules the service evaluates against.
   const progressUow = new DrizzleUnitOfWork(db, (tx) => ({
     progress: new DrizzleProgressRepository(tx, progressLogger),
     outbox: new DrizzleOutboxAppender(tx, outboxLogger),
   }));
-  const progress = new ProgressServiceImpl(
-    new DrizzleProgressRepository(db, progressLogger),
+  const progress = new ProgressServiceImpl({
+    repo: new DrizzleProgressRepository(db, progressLogger),
     content,
-    progressUow,
-    () => new Date().toISOString(),
-    progressLogger,
-  );
+    uow: progressUow,
+    logger: progressLogger,
+  });
 
   const discussion = new DiscussionServiceImpl({
     repo: new DrizzleDiscussionRepository(db, discussionLogger),
@@ -333,30 +340,29 @@ export async function buildContainer(
     settings,
     logger: discussionLogger,
   });
-  const assets = new AssetsServiceImpl(
+  const assets = new AssetsServiceImpl({
     storage,
-    new DrizzleAssetsRepository(db, assetsLogger),
-    () => new Date().toISOString(),
-    assetsLogger,
-  );
+    repo: new DrizzleAssetsRepository(db, assetsLogger),
+    logger: assetsLogger,
+  });
 
   const reporting = {
-    students: new StudentsReportServiceImpl(
-      new DrizzleStudentsRepository(db, reportingLogger),
-      reportingLogger,
-    ),
-    dashboard: new DashboardReportServiceImpl(
-      new DrizzleDashboardRepository(db, reportingLogger),
-      reportingLogger,
-    ),
-    learn: new LearnReportServiceImpl(
-      new DrizzleLearnRepository(db, reportingLogger),
+    students: new StudentsReportServiceImpl({
+      repo: new DrizzleStudentsRepository(db, reportingLogger),
+      logger: reportingLogger,
+    }),
+    dashboard: new DashboardReportServiceImpl({
+      repo: new DrizzleDashboardRepository(db, reportingLogger),
+      logger: reportingLogger,
+    }),
+    learn: new LearnReportServiceImpl({
+      reader: new DrizzleLearnRepository(db, reportingLogger),
       content,
       progress,
       assets,
-      config.deliveryExpirySeconds,
-      reportingLogger,
-    ),
+      deliveryExpirySeconds: config.deliveryExpirySeconds,
+      logger: reportingLogger,
+    }),
   };
 
   const connectedApps = createConnectedAppsRepo(db);
@@ -377,13 +383,12 @@ export async function buildContainer(
     credentials: new DrizzleCredentialStore(tx, config.credentialStoreKey, integrationsLogger),
     outbox: new DrizzleOutboxAppender(tx, outboxLogger),
   }));
-  const integrations = new IntegrationsServiceImpl(
-    integrationsRegistry,
-    new DrizzleConnectionsRepository(db, integrationsLogger),
-    integrationsUow,
-    () => new Date().toISOString(),
-    integrationsLogger,
-  );
+  const integrations = new IntegrationsServiceImpl({
+    registry: integrationsRegistry,
+    repo: new DrizzleConnectionsRepository(db, integrationsLogger),
+    uow: integrationsUow,
+    logger: integrationsLogger,
+  });
 
   // Automations: run writes + outbox append in one tx; the engine drives
   // execution (register below), integrations supplies the loaded
@@ -393,16 +398,15 @@ export async function buildContainer(
     runs: new DrizzleAutomationRunsRepository(tx, automationsLogger),
     outbox: new DrizzleOutboxAppender(tx, automationsLogger),
   }));
-  const automations = new AutomationsServiceImpl(
-    new DrizzleAutomationsRepository(db, automationsLogger),
-    new DrizzleAutomationRunsRepository(db, automationsLogger),
-    automationsUow,
-    automationEngine,
+  const automations = new AutomationsServiceImpl({
+    repo: new DrizzleAutomationsRepository(db, automationsLogger),
+    runsRepo: new DrizzleAutomationRunsRepository(db, automationsLogger),
+    uow: automationsUow,
+    engine: automationEngine,
     mailer,
     integrations,
-    () => new Date().toISOString(),
-    automationsLogger,
-  );
+    logger: automationsLogger,
+  });
   automationEngine.register(automations);
 
   const eventBus = new InMemoryEventBus();
@@ -427,9 +431,21 @@ export async function buildContainer(
     mcpLoginPage: config.mcpLoginPage,
     mcpConsentPage: config.mcpConsentPage,
     mcpSelectOrgPage: config.mcpSelectOrgPage,
-    mailer,
-    identity,
-    organizations,
+    // Each hook hands the reported change to the service that owns it.
+    hooks: {
+      userCreated: async (input) => {
+        await identity.handleExternalUserCreated(input);
+      },
+      beforeCreateOrganization: async ({ organization: org, user: baUser }) => {
+        const domainOrg = await organizations.createOrganization({
+          ownerExternalId: baUser.id,
+          ...org,
+        });
+        return { data: domainOrg };
+      },
+      afterUpdateOrganization: ({ organization }) =>
+        organizations.updateOrganization(organization.id, organization),
+    },
     logger: logger.child({ name: 'auth' }),
     cookieDomain: config.cookieDomain,
     secureCookies: config.secureCookies,
@@ -437,13 +453,14 @@ export async function buildContainer(
 
   // Resolve the lazy OrgAdmin now that auth exists — organizations' member-write
   // operations drive Better Auth through it.
-  orgAdminRef.current = createOrgAdmin(auth);
+  orgAdminInstance = createOrgAdmin(auth);
 
   return {
     auth,
     authBaseURL: config.authBaseURL,
     identity,
     organizations,
+    organizationAdmin,
     content,
     entitlements,
     progress,

@@ -1,7 +1,3 @@
-// OrgAdmin (organizations' member-write port) implemented over Better Auth's
-// organization API. Member/invitation writes flow through Better Auth (the source
-// of truth); its hooks mirror the change into the domain tables, which the
-// organizations members repo reads.
 import { fromNodeHeaders } from 'better-auth/node';
 import { APIError } from 'better-auth/api';
 import {
@@ -76,6 +72,19 @@ export function createOrgAdmin(auth: Auth): OrgAdmin {
         // a domain rule error the route maps to 409 rather than a raw 500.
         if (err instanceof APIError) {
           throw new OrganizationRuleError(err.message || 'Could not update organization');
+        }
+        throw err;
+      }
+    },
+    async deleteOrganization(headers: AuthHeaders, externalId: string): Promise<void> {
+      try {
+        await auth.api.deleteOrganization({
+          body: { organizationId: externalId },
+          headers: fromNodeHeaders(headers),
+        });
+      } catch (err) {
+        if (err instanceof APIError) {
+          throw new OrganizationRuleError(err.message || 'Could not delete organization');
         }
         throw err;
       }

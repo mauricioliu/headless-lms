@@ -24,4 +24,12 @@ export class Mailer {
     const content = await this.templates.render(id, { ...this.ctx, ...ctx }, params);
     await this.email.send({ to, subject: content.subject, text: content.text, html: content.html });
   }
+
+  async sendPasswordReset(input: { email: string; url: string }): Promise<void> {
+    await this.send(input.email, 'passwordReset', { resetUrl: input.url });
+  }
+
+  async sendMagicLink(input: { email: string; url: string }): Promise<void> {
+    await this.send(input.email, 'magicLink', { url: input.url });
+  }
 }

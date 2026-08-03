@@ -6,13 +6,12 @@ import { oauthProvider } from '@better-auth/oauth-provider';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { UserProfile } from '@headless-lms/types';
 
-import type { Mailer } from '../../core/shared/mailer.js';
 import type { Logger } from '../../core/shared/ports.js';
-import type { IdentityService } from '../../core/identity/index.js';
-import type { OrganizationProvisioner } from '../../core/organizations/index.js';
 import { ID_PREFIXES, prefixId } from '../../core/shared/id.js';
 import * as authSchema from './schema.js';
 import { ac, roles } from './access.js';
+import type { AuthHooks } from './hooks.js';
+import { OrganizationOptions } from 'better-auth/dist/plugins/organization/types.js';
 
 // Prefixes for better-auth's own tables. This is a distinct id space from the
 // mirrored domain rows (auth `user.id` → `users.external_id`, etc.), but we reuse
@@ -38,14 +37,10 @@ export interface CreateAuthOptions {
   baseURL: string;
   secret: string;
   trustedOrigins: string[];
-  /** Sends transactional auth emails via the template catalog. */
-  mailer: Mailer;
   /** Logs failures that must not abort an auth flow (e.g. a failed invite email). */
   logger: Logger;
-  /** Provisions a domain student and resolves auth users to students. */
-  identity: IdentityService;
-  /** Mirrors the organization plugin's records into the domain. */
-  organizations: OrganizationProvisioner;
+  /** Handlers for what the engine reports. The adapter owns no rules. */
+  hooks: OrganizationOptions['organizationHooks'];
   /** Login page URL shown to unauthenticated MCP OAuth clients. */
   mcpLoginPage: string;
   /** Consent page URL the MCP OAuth flow redirects to (?consent_code&client_id&scope). */
@@ -61,15 +56,7 @@ export interface CreateAuthOptions {
 
 export function createAuth(opts: CreateAuthOptions): Auth {
   const logger = opts.logger;
-  // Resolve a better-auth user id to its mirrored domain staff User. The User is
-  // provisioned on user creation, so it exists by the time org hooks fire.
-  const getUserById = async (externalId: string) => {
-    const user = await opts.identity.getUserByExternalId(externalId);
-    if (!user) {
-      throw new Error(`no domain user for auth user ${externalId}`);
-    }
-    return user;
-  };
+  const hooks = opts.hooks;
 
   const auth = betterAuth({
     baseURL: opts.baseURL,
@@ -114,7 +101,7 @@ export function createAuth(opts: CreateAuthOptions): Auth {
     emailAndPassword: {
       enabled: true,
       sendResetPassword: async ({ user, url }) => {
-        await opts.mailer.send(user.email, 'passwordReset', { resetUrl: url });
+        await hooks.sendPasswordReset({ email: user.email, url });
       },
     },
     plugins: [
@@ -122,7 +109,7 @@ export function createAuth(opts: CreateAuthOptions): Auth {
         // Invite-only: magic links sign in existing accounts, never mint new ones.
         disableSignUp: true,
         sendMagicLink: async ({ email, url }) => {
-          await opts.mailer.send(email, 'magicLink', { url });
+          await hooks.sendMagicLink({ email, url });
         },
       }),
       organization({
@@ -138,38 +125,37 @@ export function createAuth(opts: CreateAuthOptions): Auth {
               message: 'Invites are managed by the invite system',
             });
           },
-          // New org → mirror it plus the creator's owner orgUser.
-          afterCreateOrganization: async ({ organization: org, member, user }) => {
-            const owner = await getUserById(user.id);
-            await opts.organizations.createOrg({
+          /*
+           * Create the organization domain side and use the same ID in BetterAuth
+           */
+          beforeCreateOrganization: hooks.beforeCreateOrganization,
+          // The updated org is null when the adapter cannot return the row —
+          // nothing names what changed, so there is nothing to mirror.
+          afterUpdateOrganization: async ({ organization: org }) => {
+            if (!org) {
+              logger.warn('afterUpdateOrganization without an organization');
+              return;
+            }
+            await hooks.organizationUpdated({
               externalId: org.id,
               name: org.name,
               slug: org.slug,
-              ownerId: owner.id,
-            });
-            await opts.organizations.addOrgUser({
-              orgExternalId: org.id,
-              userId: owner.id,
-              role: member.role,
             });
           },
+          afterDeleteOrganization: async ({ organization: org }) => {
+            await hooks.organizationDeleted({ externalId: org.id });
+          },
           afterAddMember: async ({ member, user, organization: org }) => {
-            const mirrored = await opts.organizations.getByExternalId(org.id);
-            if (!mirrored) {
-              return;
-            }
-            const user_ = await getUserById(user.id);
-            await opts.organizations.addOrgUser({
+            await hooks.orgUserAdded({
               orgExternalId: org.id,
-              userId: user_.id,
+              userExternalId: user.id,
               role: member.role,
             });
           },
           afterRemoveMember: async ({ user, organization: org }) => {
-            const removedDomainUser = await getUserById(user.id);
-            await opts.organizations.removeOrgUser({
+            await hooks.orgUserRemoved({
               orgExternalId: org.id,
-              userId: removedDomainUser.id,
+              userExternalId: user.id,
             });
           },
         },
@@ -205,14 +191,8 @@ export function createAuth(opts: CreateAuthOptions): Auth {
           // Only interrupt when the choice is genuinely ambiguous. A single
           // org is already stamped onto the session at login (see the
           // session.create hook below), so there is nothing to ask.
-          shouldRedirect: async ({ session }) => {
-            const person = await opts.identity.getUserByExternalId(session.userId as string);
-            if (!person) {
-              return false;
-            }
-            const orgUsers = await opts.organizations.getOrgUsersForUser(person.id);
-            return orgUsers.length > 1;
-          },
+          shouldRedirect: ({ session }) =>
+            hooks.needsOrgChoice({ userExternalId: session.userId as string }),
           // Fail closed: no active org means no org to bind, and a token that
           // named no organization would be a token with ambient authority.
           consentReferenceId: async ({ session }) => {
@@ -237,14 +217,14 @@ export function createAuth(opts: CreateAuthOptions): Auth {
       user: {
         create: {
           after: async ({ id, email, name }) => {
-            // Sign-up collects one free-text name; identity stores two columns.
+            // Sign-up collects one free-text name; the domain holds two fields.
             // First token is the given name, the rest the family name — wrong
             // for some naming orders, but the person can correct it, and
-            // copying the whole string into both columns never can be right.
+            // copying the whole string into both fields never can be right.
             const parts = name.trim().split(/\s+/).filter(Boolean);
-            await opts.identity.handleExternalUserCreated({
-              email,
+            await hooks.userCreated({
               externalId: id,
+              email,
               firstName: parts[0] ?? '',
               lastName: parts.slice(1).join(' '),
             });
@@ -255,20 +235,13 @@ export function createAuth(opts: CreateAuthOptions): Auth {
         create: {
           before: async (session) => {
             logger.debug('session.create.before', { session });
-            const person = await opts.identity.getUserByExternalId(session.userId);
-            if (!person) {
+            const activeOrganizationId = await hooks.activeOrgForNewSession({
+              userExternalId: session.userId,
+            });
+            if (!activeOrganizationId) {
               return;
             }
-            const orgUsers = await opts.organizations.getOrgUsersForUser(person.id);
-            if (orgUsers.length !== 1) {
-              return;
-            }
-
-            const org = await opts.organizations.getById(orgUsers[0]!.orgId);
-            if (!org) {
-              return;
-            }
-            return { data: { ...session, activeOrganizationId: org.externalId } };
+            return { data: { ...session, activeOrganizationId } };
           },
         },
       },
@@ -311,6 +284,10 @@ export interface Auth {
       headers: Headers;
     }) => Promise<unknown>;
     updateOrganization: (input: {
+      body: Record<string, unknown>;
+      headers: Headers;
+    }) => Promise<unknown>;
+    deleteOrganization: (input: {
       body: Record<string, unknown>;
       headers: Headers;
     }) => Promise<unknown>;

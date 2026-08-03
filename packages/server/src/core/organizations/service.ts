@@ -1,6 +1,5 @@
 // organizations context — service implementation (inbound port).
 import type {
-  AuthHeaders,
   MemberRecord,
   MembersRepository,
   MemberWriteContext,
@@ -20,12 +19,12 @@ import {
 } from './members.js';
 import type {
   AcceptInviteInput,
-  AddOrgUserInput,
   CreateInviteInput,
+  DeleteOrganizationMirrorInput,
   CreateOrganizationInput,
-  NewOrganizationInput,
   RemoveOrgUserInput,
   ResendStudentInviteInput,
+  UnlinkOrgUserInput,
   UpdateOrganizationInput,
   UpdateStudentInput,
 } from './types.js';
@@ -101,57 +100,97 @@ export class OrganizationServiceImpl implements OrganizationService {
     this.inviteUrls = params.inviteUrls;
   }
 
-  async createOrg(input: CreateOrganizationInput): Promise<Organization> {
+  async createOrganization(input: CreateOrganizationInput): Promise<Organization> {
     const created = await this.uow.run(async ({ organizations, outbox }) => {
-      const created = await organizations.create(input);
+      const created = await organizations.create({
+        name: input.name!,
+        slug: input.slug,
+        ownerId: input.ownerExternalId,
+      });
+      const orgUser = await this.repo.upsertOrgUser(created.id, {
+        orgId: created.id,
+        userId: input.ownerExternalId,
+        role: 'owner',
+      });
       await outbox.append([
         { type: 'organization.created', orgId: created.id, organization: created },
+        { type: 'organization.user.linked', orgId: created.id, org_user: orgUser },
       ]);
       return created;
     });
-
-    this.logger.info('organization created', { input });
+    this.logger.info('organization created', { orgId: created.id, slug: created.slug });
     return created;
   }
 
-  // User-facing create: drive Better Auth to create the org (it infers the owner
-  // from the session) and make it active, then read back the org its hooks
-  // mirrored into the domain. Mirrors the write-then-read shape of inviteMember.
-  async createOrganization(
-    headers: AuthHeaders,
-    input: NewOrganizationInput,
-  ): Promise<Organization> {
-    const { externalId } = await this.orgAdmin().createOrganization(headers, input);
-    await this.orgAdmin().setActiveOrganization(headers, externalId);
-    const org = await this.repo.findByExternalId(externalId);
-    if (!org) {
-      throw new Error('organization did not propagate to the domain mirror');
-    }
-    this.logger.info('organization created', { orgId: org.id, slug: org.slug });
-    return org;
+  async updateOrganization(id: string, input: UpdateOrganizationInput): Promise<Organization> {
+    const updatedOrg = await this.uow.run(async ({ organizations, outbox }) => {
+      const updated = await organizations.update(id, {
+        name: input.name,
+        slug: input.slug,
+      });
+      await outbox.append([
+        { type: 'organization.updated', orgId: updated.id!, organization: updated },
+      ]);
+      return updated;
+    });
+
+    this.logger.info('organization updated', { updatedOrg });
+    return updatedOrg;
   }
 
-  // User-facing update: drive Better Auth to update the active org, then mirror
-  // the new name/slug into the domain row and return it. Mirrors createOrganization.
-  async updateOrganization(
-    headers: AuthHeaders,
-    authOrgId: string,
-    input: UpdateOrganizationInput,
-  ): Promise<Organization> {
-    await this.orgAdmin().updateOrganization(headers, authOrgId, input);
-    const org = await this.repo.updateByExternalId(authOrgId, input);
-    if (!org) {
-      throw new Error('organization did not propagate to the domain mirror');
+  async deleteOrg(input: DeleteOrganizationMirrorInput): Promise<void> {
+    const deleted = await this.uow.run(async ({ organizations, outbox }) => {
+      const deleted = await organizations.deleteByExternalId(input.externalId);
+      if (!deleted) {
+        return null;
+      }
+      await outbox.append([
+        { type: 'organization.deleted', orgId: deleted.id, organization: deleted },
+      ]);
+      return deleted;
+    });
+    if (!deleted) {
+      this.logger.warn('organization delete for an unmirrored org', {
+        externalId: input.externalId,
+      });
+      return;
     }
-    this.logger.info('organization updated', { orgId: org.id });
-    return org;
+    this.logger.info('organization deleted', { orgId: deleted.id });
   }
 
-  async addOrgUser(input: AddOrgUserInput): Promise<OrgUser> {
-    const org = await this.getOrgByExternalId(input.orgExternalId);
-    const orgUser = await this.repo.upsertOrgUser(org.id, input);
-    this.logger.info('orgUser added', { orgId: org.id });
-    return orgUser;
+  async unlinkOrgUser(input: UnlinkOrgUserInput): Promise<void> {
+    const person = await this.requirePersonByExternalId(input.userExternalId);
+    await this.removeOrgUser({ orgExternalId: input.orgExternalId, userId: person.id });
+  }
+
+  // One org is unambiguous, so a session can start there. Nothing is chosen on
+  // the person's behalf when they belong to none or to several.
+  async soleOrgExternalId(input: { userExternalId: string }): Promise<string | null> {
+    const orgUsers = await this.orgUsersByExternalId(input.userExternalId);
+    if (orgUsers.length !== 1) {
+      return null;
+    }
+    const org = await this.repo.findById(orgUsers[0]!.orgId);
+    return org?.externalId ?? null;
+  }
+
+  async belongsToManyOrgs(input: { userExternalId: string }): Promise<boolean> {
+    return (await this.orgUsersByExternalId(input.userExternalId)).length > 1;
+  }
+
+  // The person behind an auth account. They are provisioned when the account is
+  // created, so they exist by the time any organization change arrives.
+  private async requirePersonByExternalId(externalId: string) {
+    const person = await this.people.getUserByExternalId(externalId);
+    if (!person) {
+      throw new Error(`no person for auth user ${externalId}`);
+    }
+    return person;
+  }
+
+  private async orgUsersByExternalId(externalId: string): Promise<OrgUser[]> {
+    const person = await this.people.getUserByExternalId(externalId);
+    return person ? this.repo.findOrgUsersByUser(person.id) : [];
   }
 
   async removeOrgUser(input: RemoveOrgUserInput): Promise<void> {

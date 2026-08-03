@@ -17,31 +17,46 @@ import type {
   ResendStudentInviteInput,
   UpdatePersonInput,
   UpdateStudentInput,
+  CreateOrganizationInput,
+  UpdateOrganizationInput,
+  DeleteOrganizationMirrorInput,
+  LinkOrgUserInput,
+  UnlinkOrgUserInput,
 } from './types.js';
 
 /** Inbound HTTP headers carrying the session, forwarded to the auth provider. */
 export type AuthHeaders = Record<string, string | string[] | undefined>;
 
-// Capability used by the auth adapter to mirror the organization plugin's
-// records (org, members, invites) into the domain. A narrow slice of the
-// organization service. The adapter resolves auth user ids to domain USER ids
-// before calling, so core stays decoupled from the auth schema.
+// What the auth adapter's hooks call when the auth engine reports an
+// organization change. Everything is named by external id — the ids the auth
+// engine holds — and this context resolves them to its own rows, so no auth
+// schema leaks into core and no rule lives in the adapter.
 export interface OrganizationProvisioner {
-  createOrg(input: CreateOrganizationInput): Promise<Organization>;
+  createOrganization(input: CreateOrganizationInput): Promise<Organization>;
+  /** Mirrors an org profile change. */
+  updateOrganization(id: string, input: UpdateOrganizationInput): Promise<Organization>;
+  /** Drops the mirror of a deleted org. */
+  deleteOrg(input: DeleteOrganizationMirrorInput): Promise<void>;
+  /** Mirrors a granted membership. */
+  linkOrgUser(input: LinkOrgUserInput): Promise<void>;
+  /** Mirrors a revoked membership. */
+  unlinkOrgUser(input: UnlinkOrgUserInput): Promise<void>;
+  /** External id of the one org this person belongs to; null when none or several. */
+  soleOrgExternalId(input: { userExternalId: string }): Promise<string | null>;
+  /** Whether this person belongs to more than one org. */
+  belongsToManyOrgs(input: { userExternalId: string }): Promise<boolean>;
+}
+
+// Inbound port (use cases the service exposes).
+export interface OrganizationService extends OrganizationProvisioner {
   addOrgUser(input: AddOrgUserInput): Promise<OrgUser>;
   removeOrgUser(input: RemoveOrgUserInput): Promise<void>;
-  // Lets the adapter detect whether an org is already mirrored (used to make
-  // the creator's orgUser hook resilient to firing before provisioning).
   getByExternalId(externalId: string): Promise<Organization | null>;
   /** The caller's org_users row in a specific org. Null when they hold none. */
   getOrgUser(orgId: string, userId: string): Promise<OrgUser | null>;
   /** Every org this person belongs to, oldest first. */
   getOrgUsersForUser(userId: string): Promise<OrgUser[]>;
   getById(id: string): Promise<Organization | null>;
-}
-
-// Inbound port (use cases the service exposes).
-export interface OrganizationService extends OrganizationProvisioner {
   // Mints a domain-owned invite (token + row + event, one transaction) and
   // emails the invite link. A pending invite for the same email is re-issued
   // with a fresh token. Throws OrganizationRuleError on rule violations.
@@ -51,18 +66,6 @@ export interface OrganizationService extends OrganizationProvisioner {
   // Token-based acceptance by the logged-in account: links the account to the
   // invite's org under the invited role and returns the new org user.
   acceptInvite(input: AcceptInviteInput): Promise<OrgUser>;
-  // Creates a new organization on the caller's behalf and makes it the session's
-  // active org. Drives Better Auth (via OrgAdmin); its hooks mirror the org into
-  // the domain, which this method then returns.
-  createOrganization(headers: AuthHeaders, input: NewOrganizationInput): Promise<Organization>;
-  // Updates the caller's active org (name/slug) via Better Auth, then returns the
-  // re-read domain org. `authOrgId` is the Better Auth organization id.
-  updateOrganization(
-    headers: AuthHeaders,
-    authOrgId: string,
-    input: UpdateOrganizationInput,
-  ): Promise<Organization>;
-
   deleteOrgUser(orgId: string, id: string): Promise<void>;
   // Re-issues the pending student invite for an existing org user, rotating the
   // token and emailing it. Throws NotFoundError when the org user is unknown,
@@ -103,10 +106,9 @@ export interface NewInviteRow {
 // Outbound port (persistence contract the repository fulfils).
 export interface OrganizationsRepository {
   create(input: CreateOrganizationInput): Promise<Organization>;
-  updateByExternalId(
-    externalId: string,
-    input: UpdateOrganizationInput,
-  ): Promise<Organization | null>;
+  update(id: string, input: UpdateOrganizationInput): Promise<Organization | null>;
+  /** Drops the org row and its dependents; null when none matched. */
+  deleteByExternalId(externalId: string): Promise<Organization | null>;
   findById(id: string): Promise<Organization | null>;
   findByExternalId(externalId: string): Promise<Organization | null>;
   findBySlug(slug: string): Promise<Organization | null>;
@@ -161,7 +163,6 @@ export interface PersonRecord {
   lastName: string | null;
 }
 
-
 /** Context for a write: domain org (reads/rules) + auth org & session (writes). */
 export interface MemberWriteContext {
   orgId: string;
@@ -169,7 +170,10 @@ export interface MemberWriteContext {
   headers: Record<string, string | string[] | undefined>;
 }
 
-/** Outbound: org orgUser writes, fulfilled by the auth provider (Better Auth). */
+/** Outbound: the organization provider's own API, wrapped. Better Auth fulfils
+ *  it today; swapping providers means swapping this one implementation at
+ *  container assembly. The provider is the system of record — every write here
+ *  lands there first and reaches the domain through the provisioner. */
 export interface OrgAdmin {
   // Creates an org (owner inferred from the session) and returns its auth id.
   createOrganization(
@@ -185,6 +189,9 @@ export interface OrgAdmin {
     externalId: string,
     input: UpdateOrganizationInput,
   ): Promise<void>;
+  // Deletes the org. Throws OrganizationRuleError when the provider refuses
+  // (e.g. the caller is not its owner).
+  deleteOrganization(headers: AuthHeaders, externalId: string): Promise<void>;
   // Grants a orgUser server-side when an accepted invitation is honoured
   // (no acting session — the invitee's acceptance IS the authorisation).
   grantMembership(orgExternalId: string, userExternalId: string, role: string): Promise<void>;
@@ -192,4 +199,19 @@ export interface OrgAdmin {
   // record from it, so nothing about auth's member ids leaks into the domain.
   updateRole(ctx: MemberWriteContext, userExternalId: string, role: Role): Promise<void>;
   removeMember(ctx: MemberWriteContext, userExternalId: string): Promise<void>;
+}
+
+/** Inbound: caller-driven org CRUD. Each write goes to the provider first; the
+ *  provider's callbacks mirror it into the domain, and the row is read back
+ *  from there. Nothing here writes the mirror itself. */
+export interface OrganizationAdminService {
+  // Creates an org on the caller's behalf and makes it their active org.
+  create(headers: AuthHeaders, input: NewOrganizationInput): Promise<Organization>;
+  // Updates an org's profile. `externalId` is the provider's org id.
+  update(
+    headers: AuthHeaders,
+    externalId: string,
+    input: UpdateOrganizationInput,
+  ): Promise<Organization>;
+  delete(headers: AuthHeaders, externalId: string): Promise<void>;
 }

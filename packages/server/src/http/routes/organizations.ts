@@ -58,7 +58,7 @@ export async function organizationsRoutes(
       response: { 201: Organization },
     },
     handler: async (req, reply) => {
-      const org = await organizations.createOrganization(req.headers, req.body);
+      const org = await container.organizationAdmin.create(req.headers, req.body);
       return reply.code(201).send({
         id: org.id,
         name: org.name,
@@ -83,7 +83,7 @@ export async function organizationsRoutes(
     },
     handler: async (req, reply) => {
       const scope = await resolveScope(container, req);
-      const org = await organizations.updateOrganization(req.headers, scope.authOrgId, req.body);
+      const org = await container.organizationAdmin.update(req.headers, scope.authOrgId, req.body);
       return reply.send({
         id: org.id,
         name: org.name,

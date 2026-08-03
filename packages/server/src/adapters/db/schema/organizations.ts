@@ -22,6 +22,10 @@ export const organizations = pgTable('organizations', {
     .notNull()
     .references(() => users.id),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 // A person's link to an organization under one role

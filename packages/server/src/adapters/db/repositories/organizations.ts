@@ -59,13 +59,21 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row;
   }
 
-  async updateByExternalId(
-    externalId: string,
+  async update(
+    id: string,
     input: UpdateOrganizationInput,
   ): Promise<Organization | null> {
     const [row] = await this.db
       .update(organizations)
       .set({ name: input.name, slug: input.slug })
+      .where(eq(organizations.id, id))
+      .returning();
+    return row ?? null;
+  }
+
+  async deleteByExternalId(externalId: string): Promise<Organization | null> {
+    const [row] = await this.db
+      .delete(organizations)
       .where(eq(organizations.externalId, externalId))
       .returning();
     return row ?? null;

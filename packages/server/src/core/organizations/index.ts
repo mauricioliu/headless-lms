@@ -1,7 +1,9 @@
 // organizations context — public surface.
 export { OrganizationServiceImpl } from './service.js';
+export { OrganizationAdminServiceImpl } from './admin-service.js';
 export type {
   OrganizationService,
+  OrganizationAdminService,
   OrganizationProvisioner,
   MembersRepository,
   MemberRecord,
@@ -40,4 +42,9 @@ export type {
   ResendStudentInviteInput,
   UpdatePersonInput,
   UpdateStudentInput,
+  CreateOrganizationInput,
+  UpdateOrganizationInput,
+  DeleteOrganizationMirrorInput,
+  LinkOrgUserInput,
+  UnlinkOrgUserInput,
 } from './types.js';

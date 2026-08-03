@@ -16,6 +16,7 @@ export interface Organization {
   // The identity USER who owns the organization (better-auth's creator/owner).
   readonly ownerId: string;
   readonly createdAt: Date;
+  readonly updatedAt: Date;
 }
 
 /**
@@ -75,9 +76,9 @@ export type InviteId = string;
 
 export interface CreateOrganizationInput {
   // Links to the better-auth organization record.
-  externalId: string;
-  name: string;
-  slug: string;
+  externalId?: string;
+  name?: string;
+  slug?: string;
   // The identity USER who owns the organization.
   ownerId: string;
 }
@@ -91,17 +92,10 @@ export interface NewOrganizationInput {
   slug: string;
 }
 
-// A user-facing request to update the active organization's profile. Applied
-// via Better Auth (the source of truth), then mirrored into the domain org row.
-export interface UpdateOrganizationInput {
-  name: string;
-  slug: string;
-}
+
 
 export interface AddOrgUserInput {
-  // The owning org's better-auth id (used to locate the domain org).
-  orgExternalId: string;
-  // The identity USER this org user links to the org.
+  orgId: string;
   userId: string;
   role: string;
 }

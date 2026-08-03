@@ -1,11 +1,11 @@
 // organizations context — DTOs, owned by @headless-lms/types.
+import type { Organization } from '@headless-lms/types';
+
 export type {
   OrganizationId,
   OrgUserId,
   InviteId,
-  CreateOrganizationInput,
   NewOrganizationInput,
-  UpdateOrganizationInput,
   AddOrgUserInput,
   RemoveOrgUserInput,
   CreateInviteInput,
@@ -16,6 +16,34 @@ export type {
 } from '@headless-lms/types';
 // The identity slice organizations needs to name someone with no account yet.
 export type { ProvisionUserInput } from '@headless-lms/types';
+
+export interface CreateOrganizationInput {
+  externalId?: string;
+  name?: string;
+  slug?: string;
+  logo?: string;
+  ownerExternalId: string;
+}
+
+export type UpdateOrganizationInput = Partial<Omit<Organization, 'createdAt,updatedAt'>>;
+
+/** An org the auth engine deleted, named by its id. */
+export interface DeleteOrganizationMirrorInput {
+  externalId: string;
+}
+
+/** A membership the auth engine granted, named by its ids. */
+export interface LinkOrgUserInput {
+  orgExternalId: string;
+  userExternalId: string;
+  role: string;
+}
+
+/** A membership the auth engine revoked, named by its ids. */
+export interface UnlinkOrgUserInput {
+  orgExternalId: string;
+  userExternalId: string;
+}
 
 /** The person fields this context can correct through the identity slice. */
 export interface UpdatePersonInput {
