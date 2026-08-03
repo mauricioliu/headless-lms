@@ -76,6 +76,7 @@ import type {
   TemplateRenderer,
 } from '../core/shared/ports.js';
 import type { AutomationEngine } from '@headless-lms/types';
+import { type GenericEndpointContext, User } from 'better-auth';
 
 /** Installation-supplied ports; an absent slot falls back to a fail-loudly stub. */
 export interface AdapterOverrides {
@@ -223,8 +224,7 @@ export async function buildContainer(
     resolveLoggingConfig(config.logging).level,
   );
   // One child per domain — a context's service and repositories share it.
-  const identityLogger = logger.child({ name: 'identity' });
-  const organizationsLogger = logger.child({ name: 'organizations' });
+
   const contentLogger = logger.child({ name: 'content' });
   const entitlementsLogger = logger.child({ name: 'entitlements' });
   const progressLogger = logger.child({ name: 'progress' });
@@ -260,36 +260,45 @@ export async function buildContainer(
     return orgAdminInstance;
   };
 
+  /*
+   * Identity
+   */
   const identityUoW = new DrizzleUnitOfWork(db, (tx) => ({
-    identity: new DrizzleIdentityRepository(tx, organizationsLogger),
-    outbox: new DrizzleOutboxAppender(tx, organizationsLogger),
+    identity: new DrizzleIdentityRepository(tx, logger.child({ name: 'identity' })),
+    outbox: new DrizzleOutboxAppender(tx, logger.child({ name: 'identity' })),
   }));
   const identity = new IdentityServiceImpl({
-    repo: new DrizzleIdentityRepository(db, identityLogger),
-    logger: identityLogger,
-    authAccounts: new DrizzleAuthAccountWriter(db, identityLogger),
+    repo: new DrizzleIdentityRepository(db, logger.child({ name: 'identity_repo' })),
+    logger: logger.child({ name: 'identity' }),
+    authAccounts: new DrizzleAuthAccountWriter(db, logger.child({ name: 'identity' })),
     uow: identityUoW,
+    mailer,
   });
+
+  /*
+   * Organization
+   */
   const organizationsUow = new DrizzleUnitOfWork(db, (tx) => ({
-    organizations: new DrizzleOrganizationsRepository(tx, organizationsLogger),
-    outbox: new DrizzleOutboxAppender(tx, organizationsLogger),
+    organizations: new DrizzleOrganizationsRepository(tx, logger.child({ name: 'org' })),
+    outbox: new DrizzleOutboxAppender(tx, logger.child({ name: 'org' })),
   }));
   const organizations = new OrganizationServiceImpl({
-    repo: new DrizzleOrganizationsRepository(db, organizationsLogger),
-    membersRepo: new DrizzleMembersRepository(db, organizationsLogger),
+    repo: new DrizzleOrganizationsRepository(db, logger.child({ name: 'org' })),
+    membersRepo: new DrizzleMembersRepository(db, logger.child({ name: 'org' })),
     orgAdmin: orgAdminProvider,
     people: identity,
     uow: organizationsUow,
-    logger: organizationsLogger,
+    logger: logger.child({ name: 'org' }),
     mailer,
     inviteUrls: { studentPortalUrl: config.studentPortalUrl, adminAppUrl: config.adminAppUrl },
   });
+
   // Caller-driven org CRUD. The provider it drives is the swap point for
   // another auth/org provider — nothing else in this graph names Better Auth.
   const organizationAdmin = new OrganizationAdminServiceImpl({
     provider: orgAdminProvider,
-    repo: new DrizzleOrganizationsRepository(db, organizationsLogger),
-    logger: organizationsLogger,
+    repo: new DrizzleOrganizationsRepository(db, logger.child({ name: 'org' })),
+    logger: logger.child({ name: 'org' }),
   });
   const settings = new SettingsService(
     new DrizzleSettingsRepository(db, logger.child({ name: 'settings' })),
@@ -431,20 +440,67 @@ export async function buildContainer(
     mcpLoginPage: config.mcpLoginPage,
     mcpConsentPage: config.mcpConsentPage,
     mcpSelectOrgPage: config.mcpSelectOrgPage,
-    // Each hook hands the reported change to the service that owns it.
     hooks: {
-      userCreated: async (input) => {
-        await identity.handleExternalUserCreated(input);
+      sendResetPassword: async (data: { user: User; url: string; token: string }) => {
+        await identity.sendPasswordReset({
+          email: data.user.email,
+          url: '',
+        });
+      },
+      sendMagicLink: async ({ email, url }) => {
+        await identity.sendMagicLink({
+          email,
+          url,
+        });
+      },
+      beforeUserCreate: async ({ id, email, name, ...props }) => {
+        const newUser = await identity.createUser({
+          email,
+          firstName: name.split(' ')[0],
+          lastName: name.split(' ')[1],
+          id,
+          externalId: id,
+        });
+        return {
+          data: { ...newUser, ...props },
+        };
+      },
+      beforeCreateSession: async (session) => {
+        const person = await identity.getUserByExternalId(session.userId);
+        if (!person) {
+          return;
+        }
+        const orgs = await organizations.getOrgUsersForUser(person.id);
+        if (orgs.length !== 1) {
+          return;
+        }
+        // TODO - fix, why default to the first?
+        const org = await organizations.getById(orgs[0]!.orgId);
+        if (!org) {
+          return;
+        }
+        return { data: { ...session, activeOrganizationId: org.externalId } };
       },
       beforeCreateOrganization: async ({ organization: org, user: baUser }) => {
         const domainOrg = await organizations.createOrganization({
-          ownerExternalId: baUser.id,
+          ownerId: baUser.id,
           ...org,
+          logo: org.logo ?? undefined,
         });
         return { data: domainOrg };
       },
-      afterUpdateOrganization: ({ organization }) =>
-        organizations.updateOrganization(organization.id, organization),
+      beforeUpdateOrganization: async ({ organization }: any) => {
+        await organizations.updateOrganization(organization.id, organization);
+      },
+      beforeDeleteOrganization: async ({ organization }) => {
+        await organizations.deleteOrganization(organization.id);
+      },
+      afterAddMember: async () => {
+        throw new Error('Not implemented');
+      },
+      afterRemoveMember: async () => {
+        throw new Error('Not implemented');
+      },
     },
     logger: logger.child({ name: 'auth' }),
     cookieDomain: config.cookieDomain,

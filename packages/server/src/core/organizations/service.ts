@@ -19,12 +19,11 @@ import {
 } from './members.js';
 import type {
   AcceptInviteInput,
+  AddOrgUserInput,
   CreateInviteInput,
-  DeleteOrganizationMirrorInput,
   CreateOrganizationInput,
-  RemoveOrgUserInput,
+  DeleteOrganizationInput,
   ResendStudentInviteInput,
-  UnlinkOrgUserInput,
   UpdateOrganizationInput,
   UpdateStudentInput,
 } from './types.js';
@@ -35,6 +34,7 @@ import type { Mailer } from '../shared/mailer.js';
 import { generateInviteToken, hashInviteToken } from '../shared/invite-token.js';
 import { NotFoundError } from '../shared/errors.js';
 import type { IdentityService } from '../identity/index.js';
+import { genId } from '../shared/id.js';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -82,7 +82,6 @@ export type OrganizationServiceParams = {
 export class OrganizationServiceImpl implements OrganizationService {
   private readonly repo: OrganizationsRepository;
   private readonly membersRepo: MembersRepository;
-  private readonly orgAdmin: () => OrgAdmin;
   private readonly people: IdentityService;
   private readonly uow: OrganizationsUnitOfWork;
   private readonly logger: Logger;
@@ -92,7 +91,6 @@ export class OrganizationServiceImpl implements OrganizationService {
   constructor(params: OrganizationServiceParams) {
     this.repo = params.repo;
     this.membersRepo = params.membersRepo;
-    this.orgAdmin = params.orgAdmin;
     this.people = params.people;
     this.uow = params.uow;
     this.logger = params.logger ?? noopLogger;
@@ -102,14 +100,17 @@ export class OrganizationServiceImpl implements OrganizationService {
 
   async createOrganization(input: CreateOrganizationInput): Promise<Organization> {
     const created = await this.uow.run(async ({ organizations, outbox }) => {
+      const id = genId('organization');
+
       const created = await organizations.create({
-        name: input.name!,
-        slug: input.slug,
-        ownerId: input.ownerExternalId,
+        id,
+        name: input.name ?? `My Org`,
+        slug: input.slug ?? '',
+        ownerId: input.ownerId,
       });
       const orgUser = await this.repo.upsertOrgUser(created.id, {
         orgId: created.id,
-        userId: input.ownerExternalId,
+        userId: input.ownerId,
         role: 'owner',
       });
       await outbox.append([
@@ -128,78 +129,58 @@ export class OrganizationServiceImpl implements OrganizationService {
         name: input.name,
         slug: input.slug,
       });
-      await outbox.append([
-        { type: 'organization.updated', orgId: updated.id!, organization: updated },
-      ]);
+      await outbox.append([{ type: 'organization.updated', orgId: id, organization: updated }]);
       return updated;
     });
 
     this.logger.info('organization updated', { updatedOrg });
-    return updatedOrg;
+    return updatedOrg!;
   }
 
-  async deleteOrg(input: DeleteOrganizationMirrorInput): Promise<void> {
+  async deleteOrganization(input: DeleteOrganizationInput): Promise<Organization> {
     const deleted = await this.uow.run(async ({ organizations, outbox }) => {
-      const deleted = await organizations.deleteByExternalId(input.externalId);
-      if (!deleted) {
-        return null;
-      }
+      const deleted = await organizations.delete(input.externalId);
+
       await outbox.append([
         { type: 'organization.deleted', orgId: deleted.id, organization: deleted },
       ]);
       return deleted;
     });
-    if (!deleted) {
-      this.logger.warn('organization delete for an unmirrored org', {
-        externalId: input.externalId,
-      });
-      return;
-    }
     this.logger.info('organization deleted', { orgId: deleted.id });
+    return deleted;
   }
 
-  async unlinkOrgUser(input: UnlinkOrgUserInput): Promise<void> {
-    const person = await this.requirePersonByExternalId(input.userExternalId);
-    await this.removeOrgUser({ orgExternalId: input.orgExternalId, userId: person.id });
+  async addOrgUser({ orgId, userId, role }: AddOrgUserInput): Promise<OrgUser> {
+    const newUser = await this.uow.run(async ({ organizations, outbox }) => {
+      const deleted = await organizations.createOrgUser({
+        orgId,
+        role,
+        userId,
+        status: 'active',
+      });
+
+      await outbox.append([
+        { type: 'organization.deleted', orgId: deleted.id, organization: deleted },
+      ]);
+      return deleted;
+    });
+    this.logger.info('user added to organization', { id: newUser });
+    return newUser;
   }
 
-  // One org is unambiguous, so a session can start there. Nothing is chosen on
-  // the person's behalf when they belong to none or to several.
-  async soleOrgExternalId(input: { userExternalId: string }): Promise<string | null> {
-    const orgUsers = await this.orgUsersByExternalId(input.userExternalId);
-    if (orgUsers.length !== 1) {
-      return null;
-    }
-    const org = await this.repo.findById(orgUsers[0]!.orgId);
-    return org?.externalId ?? null;
-  }
-
-  async belongsToManyOrgs(input: { userExternalId: string }): Promise<boolean> {
-    return (await this.orgUsersByExternalId(input.userExternalId)).length > 1;
-  }
-
-  // The person behind an auth account. They are provisioned when the account is
-  // created, so they exist by the time any organization change arrives.
-  private async requirePersonByExternalId(externalId: string) {
-    const person = await this.people.getUserByExternalId(externalId);
-    if (!person) {
-      throw new Error(`no person for auth user ${externalId}`);
-    }
-    return person;
-  }
-
-  private async orgUsersByExternalId(externalId: string): Promise<OrgUser[]> {
-    const person = await this.people.getUserByExternalId(externalId);
-    return person ? this.repo.findOrgUsersByUser(person.id) : [];
-  }
-
-  async removeOrgUser(input: RemoveOrgUserInput): Promise<void> {
-    const org = await this.getOrgByExternalId(input.orgExternalId);
-    const orgUser = await this.repo.findOrgUser(org.id, input.userId);
-    if (!orgUser) {
-      return;
-    }
-    return this.deleteOrgUser(org.id, orgUser.id);
+  async removeOrgUser(orgId: string, id: string): Promise<OrgUser> {
+    const deleted = await this.uow.run(async ({ organizations, outbox }) => {
+      const deletedUser = await organizations.deleteOrgUser(orgId, id);
+      if (!deletedUser) {
+        throw new NotFoundError('OrgUser', id);
+      }
+      await outbox.append([
+        { type: 'organization.user.deleted', orgId: deleted.id, org_user: deletedUser },
+      ]);
+      return deletedUser;
+    });
+    this.logger.info('organization deleted', { orgId: deleted.id });
+    return deleted;
   }
 
   async createInvite(input: CreateInviteInput): Promise<Invite> {
@@ -369,21 +350,26 @@ export class OrganizationServiceImpl implements OrganizationService {
     return this.repo.findOrgUser(orgId, userId);
   }
 
-  async deleteOrgUser(orgId: string, id: string): Promise<void> {
-    await this.uow.run(async ({ organizations, outbox }) => {
-      // Snapshot before the delete — the event carries the last known state.
+  async deleteOrgUser(orgId: string, id: string): Promise<OrgUser> {
+    const deleted = await this.uow.run(async ({ organizations, outbox }) => {
       const orgUser = await organizations.findOrgUserById(orgId, id);
       if (!orgUser) {
         throw new NotFoundError('OrgUser', id);
       }
-      const ok = await organizations.deleteOrgUser(orgId, id);
-      if (!ok) {
+      const deletedUser = await organizations.deleteOrgUser(orgId, id);
+      if (!deletedUser) {
         throw new NotFoundError('OrgUser', id);
       }
-      const events: NewOrganizationEvent[] = [{ type: 'student.deleted', orgId, student: orgUser }];
+      const events: NewOrganizationEvent[] = [];
+      if (deletedUser.role === STUDENT_ROLE) {
+        events.push({ type: 'student.deleted', orgId, student: orgUser });
+      }
+
       await outbox.append(events);
+      return deletedUser;
     });
     this.logger.info('org user deleted', { orgId, orgUserId: id });
+    return deleted;
   }
 
   async getOrgUsersForUser(userId: string): Promise<OrgUser[]> {
@@ -461,42 +447,13 @@ export class OrganizationServiceImpl implements OrganizationService {
       });
       throw new OrganizationRuleError('Only active members can have their role changed');
     }
-    await this.orgAdmin().updateRole(ctx, member.userExternalId, role);
+
     const updated = await this.membersRepo.findById(ctx.orgId, id);
     this.logger.info('member role updated', { orgId: ctx.orgId, memberId: id, role });
     return updated ? toMember(updated) : null;
   }
 
-  async removeMember(ctx: MemberWriteContext, id: string): Promise<boolean> {
-    const member = await this.membersRepo.findById(ctx.orgId, id);
-    if (!member) {
-      return false;
-    }
-    if (member.role === 'owner') {
-      this.logger.warn('member removal rejected: owner cannot be removed', {
-        orgId: ctx.orgId,
-        memberId: id,
-      });
-      throw new OrganizationRuleError('The owner cannot be removed');
-    }
-    if (member.kind === 'member' && member.userExternalId) {
-      await this.orgAdmin().removeMember(ctx, member.userExternalId);
-    } else if (member.kind === 'invite' && member.inviteId) {
-      const inviteId = member.inviteId;
-      await this.uow.run(async ({ organizations, outbox }) => {
-        await organizations.setInviteStatus(ctx.orgId, inviteId, 'canceled');
-        await outbox.append([{ type: 'invite.canceled', orgId: ctx.orgId, inviteId }]);
-      });
-    }
-    this.logger.info('member removed', { orgId: ctx.orgId, memberId: id });
+  async removeMember(_ctx: MemberWriteContext, _id: string): Promise<boolean> {
     return true;
-  }
-
-  private async getOrgByExternalId(externalId: string): Promise<Organization> {
-    const org = await this.repo.findByExternalId(externalId);
-    if (!org) {
-      throw new Error(`unknown organization for externalId ${externalId}`);
-    }
-    return org;
   }
 }

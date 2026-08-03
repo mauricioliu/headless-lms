@@ -5,12 +5,8 @@ import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 
 export interface UserProvisioner {
   createUser(input: CreateUserInput): Promise<User>;
-  handleExternalUserCreated(params: {
-    externalId: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-  }): Promise<User>;
+  sendPasswordReset(input: { email: string; url: string }): Promise<void>;
+  sendMagicLink(input: { email: string; url: string }): Promise<void>;
 }
 
 /** Resolves an auth account to the domain person. Used by the organizations
@@ -32,13 +28,9 @@ export interface UserEditor {
 // Inbound port (use cases the service exposes).
 export interface IdentityService extends UserProvisioner, UserResolver, UserEditor {}
 
-/** Outbound: the auth engine's own account row, which mirrors the person's
- *  address. Only reached for people who have actually authenticated — an
- *  invited student has no account, so there is nothing there to keep in step. */
 export interface AuthAccountWriter {
-  /** Points the auth account at a new address. `emailVerified` goes back to
-   *  false: an address an admin typed is one nobody has proven they own. */
   updateEmail(externalId: string, email: string): Promise<void>;
+
 }
 
 // Outbound port (persistence contract the repository fulfils).

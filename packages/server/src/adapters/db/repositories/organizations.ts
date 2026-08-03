@@ -11,7 +11,6 @@ import type {
   UpdateOrganizationInput,
 } from '../../../core/organizations/types.js';
 import { invites, organizations, orgUsers } from '../schema/organizations.js';
-import { progressRecords } from '../schema/progress.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
 import { ConflictError } from '../../../core/shared/errors.js';
@@ -43,7 +42,7 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     private readonly logger: Logger = noopLogger,
   ) {}
 
-  async create(input: CreateOrganizationInput): Promise<Organization> {
+  async create(input: CreateOrganizationInput & { id: string }): Promise<Organization> {
     const [row] = await this.db
       .insert(organizations)
       .values({
@@ -51,18 +50,16 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
         name: input.name,
         slug: input.slug,
         ownerId: input.ownerId,
+        id: input.id,
       })
       .returning();
     if (!row) {
       throw new Error('failed to insert organization');
     }
-    return row;
+    return row!;
   }
 
-  async update(
-    id: string,
-    input: UpdateOrganizationInput,
-  ): Promise<Organization | null> {
+  async update(id: string, input: UpdateOrganizationInput): Promise<Organization | null> {
     const [row] = await this.db
       .update(organizations)
       .set({ name: input.name, slug: input.slug })
@@ -71,20 +68,17 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row ?? null;
   }
 
-  async deleteByExternalId(externalId: string): Promise<Organization | null> {
-    const [row] = await this.db
-      .delete(organizations)
-      .where(eq(organizations.externalId, externalId))
-      .returning();
-    return row ?? null;
+  async delete(id: string): Promise<Organization> {
+    const [row] = await this.db.delete(organizations).where(eq(organizations.id, id)).returning();
+
+    if (!row) {
+      throw new Error('failed to delete organization');
+    }
+    return row;
   }
 
   async findById(id: string): Promise<Organization | null> {
-    const [row] = await this.db
-      .select()
-      .from(organizations)
-      .where(eq(organizations.id, id))
-      .limit(1);
+    const [row] = await this.db.select().from(organizations).where(eq(organizations.id, id));
     return row ?? null;
   }
 
@@ -106,10 +100,6 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row ?? null;
   }
 
-  // Mirrors better-auth's member record onto the org user. The row usually
-  // already exists — invite acceptance creates it, and only then does the
-  // auth-side member get added — so this reconciles the role on `(org, user)`,
-  // which is also what makes a re-fired hook idempotent.
   async upsertOrgUser(orgId: string, input: AddOrgUserInput): Promise<OrgUser> {
     const role = normalizeRole(input.role);
     const [row] = await this.db
@@ -177,9 +167,6 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row ? { ...row, role: parseRole(row.role) } : null;
   }
 
-  // Every organization this person belongs to. What the org switcher lists;
-  // callers with no active org decide for themselves what to do when there is
-  // more than one.
   async findOrgUsersByUser(userId: string): Promise<OrgUser[]> {
     const rows = await this.db
       .select()
@@ -198,9 +185,6 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row ? { ...row, role: parseRole(row.role) } : null;
   }
 
-  // Throws ConflictError when the person already holds a row in this org —
-  // `(org_id, user_id)` is unique. Translating here keeps core free of Postgres
-  // error codes; the service treats it as a refusal.
   async createOrgUser(input: CreateOrgUserInput): Promise<OrgUser> {
     try {
       const [row] = await this.db
@@ -224,10 +208,6 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     }
   }
 
-  // Insert-or-promote on `(org_id, user_id)`. `created` is what the caller
-  // needs to fire student.created exactly once across an invite and the
-  // acceptance that follows it. Promotion is one-way — an 'active' row is
-  // never demoted back to 'invited' by a re-invite.
   async ensureOrgUser(input: CreateOrgUserInput): Promise<{ orgUser: OrgUser; created: boolean }> {
     const status = input.status ?? 'active';
     const [inserted] = await this.db
@@ -281,16 +261,12 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row ? toInvite(row) : null;
   }
 
-  async deleteOrgUser(orgId: string, id: string): Promise<boolean> {
-    // progress_records is deleted first so the org user's FK has nothing
-    // pointing at it when the row goes.
-    await this.db
-      .delete(progressRecords)
-      .where(and(eq(progressRecords.orgId, orgId), eq(progressRecords.orgUserId, id)));
-    const rows = await this.db
+  async deleteOrgUser(orgId: string, id: string): Promise<OrgUser | null> {
+    const [row] = await this.db
       .delete(orgUsers)
       .where(and(eq(orgUsers.orgId, orgId), eq(orgUsers.id, id)))
-      .returning({ id: orgUsers.id });
-    return rows.length > 0;
+      .returning();
+
+    return row ?? null;
   }
 }

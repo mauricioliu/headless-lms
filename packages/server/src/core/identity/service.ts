@@ -8,21 +8,25 @@ import type { User } from './model.js';
 import type { CreateUserInput, UpdateUserInput } from './types.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
-import { ConflictError, NotFoundError } from '../shared/errors.js';
+import { NotFoundError } from '../shared/errors.js';
+import type { Mailer } from '@headless-lms/server';
 
 export class IdentityServiceImpl implements IdentityService {
   private readonly repo: IdentityRepository;
   private readonly logger: Logger;
   private readonly authAccounts?: AuthAccountWriter;
   private readonly uow: IdentityUnitOfWork;
+  private readonly mailer: Pick<Mailer, 'send'>;
 
   constructor(input: {
     repo: IdentityRepository;
     logger?: Logger;
     authAccounts?: AuthAccountWriter;
+    mailer: Mailer;
     uow: IdentityUnitOfWork;
   }) {
     this.repo = input.repo;
+    this.mailer = input.mailer;
     this.logger = input.logger ?? noopLogger;
     this.authAccounts = input.authAccounts;
     this.uow = input.uow;
@@ -65,28 +69,11 @@ export class IdentityServiceImpl implements IdentityService {
     return this.repo.findUserById(id);
   }
 
-  async handleExternalUserCreated({
-    externalId,
-    email,
-    firstName,
-    lastName,
-  }: {
-    externalId: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-  }): Promise<User> {
-    const existing = await this.getUserByEmail(email);
-    if (existing) {
-      const updated = await this.repo.updateUser(existing.id, { externalId, firstName, lastName });
-      return updated!;
-    }
+  async sendPasswordReset(input: { email: string; url: string }): Promise<void> {
+    await this.mailer.send(input.email, 'passwordReset', { resetUrl: input.url });
+  }
 
-    return this.createUser({
-      externalId,
-      email,
-      firstName,
-      lastName,
-    });
+  async sendMagicLink(input: { email: string; url: string }): Promise<void> {
+    await this.mailer.send(input.email, 'magicLink', { url: input.url });
   }
 }

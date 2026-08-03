@@ -44,7 +44,7 @@ export type {
   UpdateStudentInput,
   CreateOrganizationInput,
   UpdateOrganizationInput,
-  DeleteOrganizationMirrorInput,
+  DeleteOrganizationInput,
   LinkOrgUserInput,
   UnlinkOrgUserInput,
 } from './types.js';

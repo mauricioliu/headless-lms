@@ -15,7 +15,7 @@ export const organizations = pgTable('organizations', {
     .primaryKey()
     .$defaultFn(() => genId('organization')),
   // Links to the better-auth organization record.
-  externalId: text('external_id').notNull().unique(),
+  externalId: text('external_id').unique(),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   ownerId: text('owner_id')

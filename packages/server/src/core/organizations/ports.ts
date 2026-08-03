@@ -1,60 +1,33 @@
 // organizations context — ports.
-import type { Organization, OrgUser, Invite } from './model.js';
+import type { Invite, Organization, OrgUser } from './model.js';
 import type { Member, MembersQuery, Page } from './members.js';
 import type { Role } from './roles.js';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 import type {
-  CreateOrganizationInput,
-  NewOrganizationInput,
-  UpdateOrganizationInput,
-  AddOrgUserInput,
-  RemoveOrgUserInput,
-  CreateInviteInput,
   AcceptInviteInput,
-  InviteRole,
-  CreateOrgUserInput,
-  ProvisionUserInput,
-  ResendStudentInviteInput,
-  UpdatePersonInput,
-  UpdateStudentInput,
+  AddOrgUserInput,
+  CreateInviteInput,
   CreateOrganizationInput,
+  CreateOrgUserInput,
+  InviteRole,
+  NewOrganizationInput,
+  ResendStudentInviteInput,
   UpdateOrganizationInput,
-  DeleteOrganizationMirrorInput,
-  LinkOrgUserInput,
-  UnlinkOrgUserInput,
+  UpdateStudentInput,
 } from './types.js';
 
 /** Inbound HTTP headers carrying the session, forwarded to the auth provider. */
 export type AuthHeaders = Record<string, string | string[] | undefined>;
 
-// What the auth adapter's hooks call when the auth engine reports an
-// organization change. Everything is named by external id — the ids the auth
-// engine holds — and this context resolves them to its own rows, so no auth
-// schema leaks into core and no rule lives in the adapter.
-export interface OrganizationProvisioner {
-  createOrganization(input: CreateOrganizationInput): Promise<Organization>;
-  /** Mirrors an org profile change. */
-  updateOrganization(id: string, input: UpdateOrganizationInput): Promise<Organization>;
-  /** Drops the mirror of a deleted org. */
-  deleteOrg(input: DeleteOrganizationMirrorInput): Promise<void>;
-  /** Mirrors a granted membership. */
-  linkOrgUser(input: LinkOrgUserInput): Promise<void>;
-  /** Mirrors a revoked membership. */
-  unlinkOrgUser(input: UnlinkOrgUserInput): Promise<void>;
-  /** External id of the one org this person belongs to; null when none or several. */
-  soleOrgExternalId(input: { userExternalId: string }): Promise<string | null>;
-  /** Whether this person belongs to more than one org. */
-  belongsToManyOrgs(input: { userExternalId: string }): Promise<boolean>;
-}
-
 // Inbound port (use cases the service exposes).
-export interface OrganizationService extends OrganizationProvisioner {
+export interface OrganizationService {
+  createOrganization(input: CreateOrganizationInput): Promise<Organization>;
+  updateOrganization(id: string, input: UpdateOrganizationInput): Promise<Organization>;
+  deleteOrganization(id: string): Promise<Organization>;
   addOrgUser(input: AddOrgUserInput): Promise<OrgUser>;
-  removeOrgUser(input: RemoveOrgUserInput): Promise<void>;
+  removeOrgUser(orgId: string, id: string): Promise<OrgUser>;
   getByExternalId(externalId: string): Promise<Organization | null>;
-  /** The caller's org_users row in a specific org. Null when they hold none. */
   getOrgUser(orgId: string, userId: string): Promise<OrgUser | null>;
-  /** Every org this person belongs to, oldest first. */
   getOrgUsersForUser(userId: string): Promise<OrgUser[]>;
   getById(id: string): Promise<Organization | null>;
   // Mints a domain-owned invite (token + row + event, one transaction) and
@@ -66,7 +39,7 @@ export interface OrganizationService extends OrganizationProvisioner {
   // Token-based acceptance by the logged-in account: links the account to the
   // invite's org under the invited role and returns the new org user.
   acceptInvite(input: AcceptInviteInput): Promise<OrgUser>;
-  deleteOrgUser(orgId: string, id: string): Promise<void>;
+  deleteOrgUser(orgId: string, id: string): Promise<OrgUser>;
   // Re-issues the pending student invite for an existing org user, rotating the
   // token and emailing it. Throws NotFoundError when the org user is unknown,
   // OrganizationRuleError when they have already joined.
@@ -108,7 +81,7 @@ export interface OrganizationsRepository {
   create(input: CreateOrganizationInput): Promise<Organization>;
   update(id: string, input: UpdateOrganizationInput): Promise<Organization | null>;
   /** Drops the org row and its dependents; null when none matched. */
-  deleteByExternalId(externalId: string): Promise<Organization | null>;
+  delete(id: string): Promise<Organization>;
   findById(id: string): Promise<Organization | null>;
   findByExternalId(externalId: string): Promise<Organization | null>;
   findBySlug(slug: string): Promise<Organization | null>;
@@ -134,8 +107,8 @@ export interface OrganizationsRepository {
   findStudentOrgUsers(userId: string): Promise<OrgUser[]>;
   /** Kills the org's pending invite for an address, if any. */
   cancelPendingInvite(orgId: string, email: string): Promise<Invite | null>;
-  /** Deletes the org user and its dependent rows; false when none matched. */
-  deleteOrgUser(orgId: string, id: string): Promise<boolean>;
+
+  deleteOrgUser(orgId: string, id: string): Promise<OrgUser | null>;
 }
 
 /** A member row enriched with the ids needed to drive writes. */
