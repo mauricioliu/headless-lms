@@ -1,7 +1,13 @@
-import { betterAuth, type BetterAuthOptions } from 'better-auth';
+import {
+  betterAuth,
+  type BetterAuthOptions,
+  type GenericEndpointContext,
+  Session,
+  User,
+} from 'better-auth';
 import { APIError } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { magicLink, organization, jwt } from 'better-auth/plugins';
+import { jwt, magicLink, organization, type OrganizationOptions } from 'better-auth/plugins';
 import { oauthProvider } from '@better-auth/oauth-provider';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { UserProfile } from '@headless-lms/types';
@@ -10,8 +16,6 @@ import type { Logger } from '../../core/shared/ports.js';
 import { ID_PREFIXES, prefixId } from '../../core/shared/id.js';
 import * as authSchema from './schema.js';
 import { ac, roles } from './access.js';
-import type { AuthHooks } from './hooks.js';
-import { OrganizationOptions } from 'better-auth/dist/plugins/organization/types.js';
 
 // Prefixes for better-auth's own tables. This is a distinct id space from the
 // mirrored domain rows (auth `user.id` → `users.external_id`, etc.), but we reuse
@@ -32,6 +36,42 @@ const AUTH_ID_PREFIXES: Record<string, string> = {
   jwks: 'jwk',
 };
 
+export type Hooks = OrganizationOptions['organizationHooks'] & {
+  beforeUserCreate: (
+    user: User & Record<string, unknown>,
+    context: GenericEndpointContext | null,
+  ) => Promise<
+    | boolean
+    | void
+    | {
+        data: User;
+      }
+  >;
+  beforeCreateSession?: (
+    session: Session & Record<string, unknown>,
+    context: GenericEndpointContext | null,
+  ) => Promise<
+    | boolean
+    | void
+    | {
+        data: Session & Record<string, any>;
+      }
+  >;
+  sendResetPassword: (
+    data: { user: User; url: string; token: string },
+    request?: Request,
+  ) => Promise<void>;
+  sendMagicLink: (
+    data: {
+      email: string;
+      url: string;
+      token: string;
+      metadata?: Record<string, unknown>;
+    },
+    ctx?: GenericEndpointContext | undefined,
+  ) => Promise<void>;
+};
+
 export interface CreateAuthOptions {
   db: NodePgDatabase;
   baseURL: string;
@@ -40,7 +80,7 @@ export interface CreateAuthOptions {
   /** Logs failures that must not abort an auth flow (e.g. a failed invite email). */
   logger: Logger;
   /** Handlers for what the engine reports. The adapter owns no rules. */
-  hooks: OrganizationOptions['organizationHooks'];
+  hooks: Hooks;
   /** Login page URL shown to unauthenticated MCP OAuth clients. */
   mcpLoginPage: string;
   /** Consent page URL the MCP OAuth flow redirects to (?consent_code&client_id&scope). */
@@ -100,65 +140,18 @@ export function createAuth(opts: CreateAuthOptions): Auth {
     }),
     emailAndPassword: {
       enabled: true,
-      sendResetPassword: async ({ user, url }) => {
-        await hooks.sendPasswordReset({ email: user.email, url });
-      },
+      sendResetPassword: hooks.sendResetPassword,
     },
     plugins: [
       magicLink({
-        // Invite-only: magic links sign in existing accounts, never mint new ones.
         disableSignUp: true,
-        sendMagicLink: async ({ email, url }) => {
-          await hooks.sendMagicLink({ email, url });
-        },
+        sendMagicLink: hooks.sendMagicLink,
       }),
       organization({
         ac,
         roles,
         creatorRole: 'owner',
-        organizationHooks: {
-          // Invites are domain-owned (core organizations + /api/invites).
-          // Block the org plugin's native invite endpoint so it cannot
-          // silently create invites the domain never learns about.
-          beforeCreateInvitation: async () => {
-            throw new APIError('BAD_REQUEST', {
-              message: 'Invites are managed by the invite system',
-            });
-          },
-          /*
-           * Create the organization domain side and use the same ID in BetterAuth
-           */
-          beforeCreateOrganization: hooks.beforeCreateOrganization,
-          // The updated org is null when the adapter cannot return the row —
-          // nothing names what changed, so there is nothing to mirror.
-          afterUpdateOrganization: async ({ organization: org }) => {
-            if (!org) {
-              logger.warn('afterUpdateOrganization without an organization');
-              return;
-            }
-            await hooks.organizationUpdated({
-              externalId: org.id,
-              name: org.name,
-              slug: org.slug,
-            });
-          },
-          afterDeleteOrganization: async ({ organization: org }) => {
-            await hooks.organizationDeleted({ externalId: org.id });
-          },
-          afterAddMember: async ({ member, user, organization: org }) => {
-            await hooks.orgUserAdded({
-              orgExternalId: org.id,
-              userExternalId: user.id,
-              role: member.role,
-            });
-          },
-          afterRemoveMember: async ({ user, organization: org }) => {
-            await hooks.orgUserRemoved({
-              orgExternalId: org.id,
-              userExternalId: user.id,
-            });
-          },
-        },
+        organizationHooks: hooks,
       }),
       // Signs the JWT access tokens the OAuth provider issues.
       jwt(),
@@ -188,13 +181,7 @@ export function createAuth(opts: CreateAuthOptions): Auth {
         // later joins a second org does not change what an issued token can do.
         postLogin: {
           page: opts.mcpSelectOrgPage,
-          // Only interrupt when the choice is genuinely ambiguous. A single
-          // org is already stamped onto the session at login (see the
-          // session.create hook below), so there is nothing to ask.
-          shouldRedirect: ({ session }) =>
-            hooks.needsOrgChoice({ userExternalId: session.userId as string }),
-          // Fail closed: no active org means no org to bind, and a token that
-          // named no organization would be a token with ambient authority.
+          shouldRedirect: () => true,
           consentReferenceId: async ({ session }) => {
             const activeOrganizationId = session.activeOrganizationId as string | undefined;
             if (!activeOrganizationId) {
@@ -216,19 +203,7 @@ export function createAuth(opts: CreateAuthOptions): Auth {
     databaseHooks: {
       user: {
         create: {
-          after: async ({ id, email, name }) => {
-            // Sign-up collects one free-text name; the domain holds two fields.
-            // First token is the given name, the rest the family name — wrong
-            // for some naming orders, but the person can correct it, and
-            // copying the whole string into both fields never can be right.
-            const parts = name.trim().split(/\s+/).filter(Boolean);
-            await hooks.userCreated({
-              externalId: id,
-              email,
-              firstName: parts[0] ?? '',
-              lastName: parts.slice(1).join(' '),
-            });
-          },
+          before: hooks.beforeUserCreate,
         },
       },
       session: {
