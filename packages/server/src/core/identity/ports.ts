@@ -1,4 +1,3 @@
-// identity context — ports.
 import type { User } from './model.js';
 import type { CreateUserInput, UpdateUserInput } from './types.js';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
@@ -30,7 +29,6 @@ export interface IdentityService extends UserProvisioner, UserResolver, UserEdit
 
 export interface AuthAccountWriter {
   updateEmail(externalId: string, email: string): Promise<void>;
-
 }
 
 // Outbound port (persistence contract the repository fulfils).

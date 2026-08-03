@@ -1,10 +1,7 @@
 // Everything better-auth touches on the HTTP surface:
 //   - the /api/auth/* catch-all bridged to better-auth's Web handler
-//   - the RFC 8414 OAuth discovery endpoints MCP clients need at the root
 //   - the `requireSession` / `requireOrgSession` decorators routes guard with
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { fromNodeHeaders } from 'better-auth/node';
-import { oauthProviderAuthServerMetadata } from '@better-auth/oauth-provider';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Container } from '../../app/container.js';
 import { bridgeWebResponse, toWebRequest } from '../web-bridge.js';
 
@@ -16,18 +13,8 @@ export class UnauthorizedError extends Error {
   }
 }
 
-export function registerAuth(app: FastifyInstance, container: Container): void {
-  const { auth, authBaseURL } = container;
-
-  // OAuth 2.1 / MCP clients POST form-encoded bodies to the token endpoint.
-  // Fastify has no built-in parser for this content-type and would 415 before
-  // the handler runs. Register a raw passthrough so the string body reaches the
-  // bridge, which forwards it verbatim with the original Content-Type.
-  app.addContentTypeParser(
-    'application/x-www-form-urlencoded',
-    { parseAs: 'string' },
-    (_req, body, done) => done(null, body),
-  );
+export function registerAuth(app: FastifyInstance, appServer: Container): void {
+  const { auth } = appServer;
 
   // Mount better-auth: a catch-all that bridges Fastify <-> Web Request/Response.
   app.route({
@@ -38,49 +25,21 @@ export function registerAuth(app: FastifyInstance, container: Container): void {
     },
   });
 
-  // OAuth 2.0 discovery endpoints required by MCP clients (RFC 8414). These must
-  // live at the root — outside any /api prefix — so MCP clients can discover the
-  // authorization server via standard well-known paths.
-  const discovery = oauthProviderAuthServerMetadata(auth);
-  const serveDiscovery = async (request: FastifyRequest, reply: FastifyReply) => {
-    await bridgeWebResponse(await discovery(toWebRequest(request)), reply);
-  };
-  app.get('/.well-known/oauth-authorization-server', serveDiscovery);
-  // The issuer is the mounted base path (`<origin>/api/auth`), and RFC 8414
-  // inserts that path after the well-known segment. Clients that follow the
-  // spec literally look here; the bare path above stays for the rest.
-  app.get('/.well-known/oauth-authorization-server/api/auth', serveDiscovery);
-
-  // RFC 9728. The authorization server and the protected resource are the same
-  // deployment here, so this document is served directly rather than proxied.
-  const protectedResource = {
-    resource: new URL('/mcp', authBaseURL).toString(),
-    authorization_servers: [authBaseURL],
-    bearer_methods_supported: ['header'],
-  };
-  app.get('/.well-known/oauth-protected-resource', async (_request, reply) => {
-    await reply.send(protectedResource);
-  });
-
   // Session only, no active org required. For the routes a caller reaches
   // *before* they have an org: creating their first organization, and accepting
   // an invitation (which is what stamps the active org onto the session).
   app.decorate('requireSession', async (request: FastifyRequest) => {
-    const sessionData = await auth.api.getSession({
-      headers: fromNodeHeaders(request.headers),
-    });
-    if (!sessionData) {
+    const session = await appServer.auth.verify(request.headers);
+    if (!session) {
       throw new UnauthorizedError();
     }
-    request.authUser = sessionData.user;
-    const person = await container.identity.getUserByExternalId(sessionData.user.id);
-    if (person) {
-      request.userId = person.id;
-    }
-    const authOrgId = sessionData.session.activeOrganizationId;
+    request.authUser = session.user;
+    request.userId = session.user.id;
+
+    const authOrgId = session.session.activeOrganizationId;
     if (authOrgId) {
       request.authOrgId = authOrgId;
-      const org = await container.organizations.getByExternalId(authOrgId);
+      const org = await appServer.organizations.getByExternalId(authOrgId);
       if (org) {
         request.orgId = org.id;
       }
@@ -89,33 +48,23 @@ export function registerAuth(app: FastifyInstance, container: Container): void {
 
   // Requires a valid session with an active org set — every org-scoped route.
   app.decorate('requireOrgSession', async (request: FastifyRequest) => {
-    const sessionData = await auth.api.getSession({
-      headers: fromNodeHeaders(request.headers),
-    });
-    if (!sessionData) {
+    const session = await appServer.auth.verify(request.headers);
+    if (!session) {
       throw new UnauthorizedError();
     }
-    const authOrgId = sessionData.session.activeOrganizationId;
-    if (!authOrgId) {
-      throw new UnauthorizedError('no active organization on the session');
+    if (!session.session.activeOrganizationId) {
+      throw new UnauthorizedError();
     }
-    // The session stores better-auth's organization id; every domain read keys
-    // off `organizations.id`. Translate once here so routes never hold the auth
-    // id by mistake — `authOrgId` stays available for writes that go back
-    // through the auth provider.
-    const [org, person] = await Promise.all([
-      container.organizations.getByExternalId(authOrgId),
-      container.identity.getUserByExternalId(sessionData.user.id),
+
+    const [org] = await Promise.all([
+      appServer.organizations.getById(session.session.activeOrganizationId),
     ]);
     if (!org) {
       throw new UnauthorizedError('session organization not found');
     }
-    if (!person) {
-      throw new UnauthorizedError('no person for the session account');
-    }
-    request.authUser = sessionData.user;
-    request.authOrgId = authOrgId;
+    request.authUser = session.user;
+    request.userId = session.user.id;
     request.orgId = org.id;
-    request.userId = person.id;
+    request.userId = session.user.id;
   });
 }

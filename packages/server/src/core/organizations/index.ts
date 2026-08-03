@@ -1,15 +1,14 @@
 // organizations context — public surface.
 export { OrganizationServiceImpl } from './service.js';
-export { OrganizationAdminServiceImpl } from './admin-service.js';
+
 export type {
   OrganizationService,
-  OrganizationAdminService,
-  OrganizationProvisioner,
   MembersRepository,
   MemberRecord,
   MemberWriteContext,
   OrgAdmin,
   AuthHeaders,
+  AuthOrganization,
 } from './ports.js';
 export type { Organization, OrgUser, Invite } from './model.js';
 export { OrganizationRuleError } from './members.js';
@@ -33,7 +32,6 @@ export type {
   NewOrganizationInput,
   UpdateOrganizationInput,
   AddOrgUserInput,
-  RemoveOrgUserInput,
   CreateInviteInput,
   AcceptInviteInput,
   InviteRole,
@@ -42,9 +40,6 @@ export type {
   ResendStudentInviteInput,
   UpdatePersonInput,
   UpdateStudentInput,
-  CreateOrganizationInput,
-  UpdateOrganizationInput,
-  DeleteOrganizationInput,
   LinkOrgUserInput,
   UnlinkOrgUserInput,
 } from './types.js';

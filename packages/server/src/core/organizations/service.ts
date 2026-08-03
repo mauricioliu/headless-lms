@@ -3,7 +3,6 @@ import type {
   MemberRecord,
   MembersRepository,
   MemberWriteContext,
-  OrgAdmin,
   OrganizationService,
   OrganizationsRepository,
   OrganizationsUnitOfWork,
@@ -22,7 +21,6 @@ import type {
   AddOrgUserInput,
   CreateInviteInput,
   CreateOrganizationInput,
-  DeleteOrganizationInput,
   ResendStudentInviteInput,
   UpdateOrganizationInput,
   UpdateStudentInput,
@@ -69,10 +67,7 @@ function toMember(r: MemberRecord): Member {
 export type OrganizationServiceParams = {
   repo: OrganizationsRepository;
   membersRepo: MembersRepository;
-  orgAdmin: () => OrgAdmin;
   people: IdentityService;
-  /** Writes that emit an event run through the UoW so the row and its outbox
-   *  entry commit in one transaction. */
   uow: OrganizationsUnitOfWork;
   logger?: Logger;
   mailer?: Pick<Mailer, 'send'>;
@@ -137,9 +132,9 @@ export class OrganizationServiceImpl implements OrganizationService {
     return updatedOrg!;
   }
 
-  async deleteOrganization(input: DeleteOrganizationInput): Promise<Organization> {
+  async deleteOrganization(id: string): Promise<Organization> {
     const deleted = await this.uow.run(async ({ organizations, outbox }) => {
-      const deleted = await organizations.delete(input.externalId);
+      const deleted = await organizations.delete(id);
 
       await outbox.append([
         { type: 'organization.deleted', orgId: deleted.id, organization: deleted },

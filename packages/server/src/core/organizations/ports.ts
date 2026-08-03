@@ -67,6 +67,16 @@ export interface OrganizationsWriteScope {
 }
 export type OrganizationsUnitOfWork = UnitOfWork<OrganizationsWriteScope>;
 
+/** Repo-facing write shape for a new org row. The service mints the id and
+ *  resolves the defaults, so nothing is optional by the time it lands here. */
+export interface NewOrganizationRow {
+  id: string;
+  externalId?: string | null;
+  name: string;
+  slug: string;
+  ownerId: string;
+}
+
 /** Repo-facing write shape for a freshly minted invite. */
 export interface NewInviteRow {
   email: string;
@@ -78,7 +88,7 @@ export interface NewInviteRow {
 
 // Outbound port (persistence contract the repository fulfils).
 export interface OrganizationsRepository {
-  create(input: CreateOrganizationInput): Promise<Organization>;
+  create(input: NewOrganizationRow): Promise<Organization>;
   update(id: string, input: UpdateOrganizationInput): Promise<Organization | null>;
   /** Drops the org row and its dependents; null when none matched. */
   delete(id: string): Promise<Organization>;
@@ -143,25 +153,27 @@ export interface MemberWriteContext {
   headers: Record<string, string | string[] | undefined>;
 }
 
-/** Outbound: the organization provider's own API, wrapped. Better Auth fulfils
- *  it today; swapping providers means swapping this one implementation at
- *  container assembly. The provider is the system of record — every write here
- *  lands there first and reaches the domain through the provisioner. */
+/*
+ * Outbound: separate interface to allow auth systems or similar to own orgs.
+ * E.g. Better-Auth API owns the create org, but integrated with the domain using
+ * their hooks, so the domain org is created in the same call.
+ */
+/** The provider's view of an org: what it stores itself, minus the fields only
+ *  the domain row carries (`ownerId`, `externalId`, `updatedAt`). */
+export type AuthOrganization = Pick<Organization, 'id' | 'name' | 'slug' | 'createdAt'>;
+
 export interface OrgAdmin {
   // Creates an org (owner inferred from the session) and returns its auth id.
-  createOrganization(
-    headers: AuthHeaders,
-    input: NewOrganizationInput,
-  ): Promise<{ externalId: string }>;
+  createOrganization(headers: AuthHeaders, input: NewOrganizationInput): Promise<AuthOrganization>;
   // Marks an org as the session's active organization.
   setActiveOrganization(headers: AuthHeaders, externalId: string): Promise<void>;
   // Updates an org's profile (name/slug). Throws OrganizationRuleError on a
   // conflict (e.g. slug already taken) so the route can map it to 409.
   updateOrganization(
     headers: AuthHeaders,
-    externalId: string,
+    id: string,
     input: UpdateOrganizationInput,
-  ): Promise<void>;
+  ): Promise<AuthOrganization>;
   // Deletes the org. Throws OrganizationRuleError when the provider refuses
   // (e.g. the caller is not its owner).
   deleteOrganization(headers: AuthHeaders, externalId: string): Promise<void>;
@@ -172,19 +184,4 @@ export interface OrgAdmin {
   // record from it, so nothing about auth's member ids leaks into the domain.
   updateRole(ctx: MemberWriteContext, userExternalId: string, role: Role): Promise<void>;
   removeMember(ctx: MemberWriteContext, userExternalId: string): Promise<void>;
-}
-
-/** Inbound: caller-driven org CRUD. Each write goes to the provider first; the
- *  provider's callbacks mirror it into the domain, and the row is read back
- *  from there. Nothing here writes the mirror itself. */
-export interface OrganizationAdminService {
-  // Creates an org on the caller's behalf and makes it their active org.
-  create(headers: AuthHeaders, input: NewOrganizationInput): Promise<Organization>;
-  // Updates an org's profile. `externalId` is the provider's org id.
-  update(
-    headers: AuthHeaders,
-    externalId: string,
-    input: UpdateOrganizationInput,
-  ): Promise<Organization>;
-  delete(headers: AuthHeaders, externalId: string): Promise<void>;
 }

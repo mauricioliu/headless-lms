@@ -1,6 +1,6 @@
 // Bridges between Fastify's request/reply and the Web `Request`/`Response` that
-// better-auth (and the MCP transport) speak. Both the auth catch-all and the
-// MCP route hand a Fastify request to a Web-standard handler and forward the
+// better-auth speaks. The auth catch-all hands a Fastify request to a
+// Web-standard handler and forwards the
 // Web response back, so the conversion lives here once.
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { fromNodeHeaders } from 'better-auth/node';

@@ -23,7 +23,6 @@ export function registerOpenApi(app: FastifyInstance, config: ServerConfig): voi
         { name: 'Automations', description: 'Trigger/action workflows' },
         { name: 'Dashboard', description: 'Back-office overview' },
         { name: 'Assets', description: 'Media library and uploads' },
-        { name: 'ConnectedApps', description: 'OAuth clients connected to the MCP endpoint' },
         { name: 'Integrations', description: 'Third-party integration connections' },
       ],
     },

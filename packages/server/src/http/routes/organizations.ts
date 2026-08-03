@@ -1,12 +1,3 @@
-// HTTP routes for the organizations resource: creating an org, managing its
-// members (/api/organizations/members) and its invites
-// (/api/organizations/invites — mint, accept). Member reads come from the
-// domain mirror; org/member writes go through Better Auth (the org provider).
-//
-// The invitee makes two calls, both keyed only by the emailed token: `resolve`
-// (unguarded — they have no session yet) turns the token into the invited email,
-// then `accept` links the account they just signed up or in with. The token is
-// never persisted browser-side.
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -58,11 +49,11 @@ export async function organizationsRoutes(
       response: { 201: Organization },
     },
     handler: async (req, reply) => {
-      const org = await container.organizationAdmin.create(req.headers, req.body);
+      const org = await container.orgProvider.createOrganization(req.headers, req.body);
       return reply.code(201).send({
-        id: org.id,
         name: org.name,
         slug: org.slug,
+        id: org.id,
         createdAt: org.createdAt.toISOString(),
       });
     },
@@ -83,7 +74,7 @@ export async function organizationsRoutes(
     },
     handler: async (req, reply) => {
       const scope = await resolveScope(container, req);
-      const org = await container.organizationAdmin.update(req.headers, scope.authOrgId, req.body);
+      const org = await container.orgProvider.updateOrganization(req.headers, scope.authOrgId, req.body);
       return reply.send({
         id: org.id,
         name: org.name,
@@ -261,7 +252,7 @@ export async function organizationsRoutes(
       if (!org) {
         throw new NotFoundError('Organization', accepted.orgId);
       }
-      const stamped = await container.stampSessionActiveOrg(req.headers, org.externalId);
+      const stamped = await container.stampSessionActiveOrg(req.headers, org.externalId ?? org.id);
 
       req.log.info({ accepted, stamped }, 'accepted invite');
       return {};

@@ -26,11 +26,12 @@ CREATE TABLE "org_users" (
 --> statement-breakpoint
 CREATE TABLE "organizations" (
 	"id" text PRIMARY KEY NOT NULL,
-	"external_id" text NOT NULL,
+	"external_id" text,
 	"name" text NOT NULL,
 	"slug" text NOT NULL,
 	"owner_id" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "organizations_external_id_unique" UNIQUE("external_id"),
 	CONSTRAINT "organizations_slug_unique" UNIQUE("slug")
 );

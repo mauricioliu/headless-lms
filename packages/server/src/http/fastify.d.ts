@@ -1,11 +1,9 @@
 import 'fastify';
-import type { UserProfile } from '@headless-lms/types';
+import type { User } from '@headless-lms/types';
 
-// The authenticated person attached to a request by the session guards. `id` is
-// the auth engine's user id, not org_users.id — see UserProfile.
-export interface AuthUser extends UserProfile {
-  emailVerified: boolean;
-}
+/** The session's account as the HTTP layer sees it. Re-exported from the
+ *  package entry point so this module — and its augmentation — gets loaded. */
+export type AuthUser = User;
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -17,7 +15,7 @@ declare module 'fastify' {
     requireOrgSession(request: FastifyRequest): Promise<void>;
   }
   interface FastifyRequest {
-    authUser: AuthUser;
+    authUser: User;
     /** Domain `organizations.id` for the session's active org — what every
      *  domain read keys off. Guaranteed set by `requireOrgSession`; absent under
      *  `requireSession` when the session has no active org. */

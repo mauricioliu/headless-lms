@@ -40,7 +40,6 @@ function loadContainerConfig(): ContainerConfig {
     authBaseURL: apiOrigin,
     authSecret: process.env.BETTER_AUTH_SECRET ?? "",
     trustedOrigins,
-    mcpLoginPage: process.env.MCP_LOGIN_PAGE ?? "http://localhost:8001/login",
     credentialStoreKey: process.env.CREDENTIAL_STORE_KEY ?? "",
     cookieDomain: process.env.AUTH_COOKIE_DOMAIN || undefined,
     secureCookies: process.env.NODE_ENV === "production",

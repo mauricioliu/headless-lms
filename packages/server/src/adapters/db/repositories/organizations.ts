@@ -1,12 +1,15 @@
 // organizations — Drizzle repository (implements the core outbound port).
 import { and, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { NewInviteRow, OrganizationsRepository } from '../../../core/organizations/ports.js';
+import type {
+  NewInviteRow,
+  NewOrganizationRow,
+  OrganizationsRepository,
+} from '../../../core/organizations/ports.js';
 import type { Invite, Organization, OrgUser } from '../../../core/organizations/model.js';
 import { normalizeRole, parseRole } from '../../../core/organizations/index.js';
 import type {
   AddOrgUserInput,
-  CreateOrganizationInput,
   CreateOrgUserInput,
   UpdateOrganizationInput,
 } from '../../../core/organizations/types.js';
@@ -42,7 +45,7 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     private readonly logger: Logger = noopLogger,
   ) {}
 
-  async create(input: CreateOrganizationInput & { id: string }): Promise<Organization> {
+  async create(input: NewOrganizationRow): Promise<Organization> {
     const [row] = await this.db
       .insert(organizations)
       .values({
