@@ -6,25 +6,40 @@
 // identity. See ./organizations.ts.
 
 import type { DomainEvent } from "./shared.js";
+import type { IncomingHttpHeaders } from "node:http";
+
+export type ActiveSession = {
+  user: User;
+  session: {
+    activeOrganizationId?: string | null;
+  };
+};
+
+export interface SessionVerifier {
+  verify(headers: IncomingHttpHeaders): Promise<ActiveSession | null>;
+}
+
+export interface AccountProvisioner {
+  create(input: {
+    email: string;
+    password?: string;
+    name?: string;
+  }): Promise<{ externalId: string }>;
+  updateEmail(externalId: string, email: string): Promise<void>;
+  setPassword(externalId: string, password: string): Promise<void>;
+  revokeSessions(externalId: string): Promise<void>;
+  delete(externalId: string): Promise<void>;
+}
 
 export interface User {
   readonly id: string;
-  // The auth engine's user id (e.g. better-auth). The mirror link.
-  // Null until the person authenticates: a student invited by an admin is
-  // known to the org before any account exists.
+  // The auth engine's user id.
   readonly externalId: string | null;
   readonly email: string;
   readonly firstName: string | null;
   readonly lastName: string | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
-}
-
-export interface UserProfile {
-  readonly id: string;
-  name: string;
-  email: string;
-  image: string | null;
 }
 
 export type UserId = string;
@@ -50,7 +65,6 @@ export type UpdateUserInput = {
   lastName?: string;
   email?: string;
 };
-
 
 export interface UserCreated extends DomainEvent {
   type: "user.created";

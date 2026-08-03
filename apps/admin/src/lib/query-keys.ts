@@ -41,8 +41,4 @@ export const qk = {
     list: (params: ListParams) => ["assets", "list", params] as const,
     url: (id: string) => ["assets", id, "url"] as const,
   },
-
-  connectedApps: {
-    all: ["connected-apps"] as const,
-  },
 };

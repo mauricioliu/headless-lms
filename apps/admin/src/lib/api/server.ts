@@ -21,7 +21,6 @@ import "server-only";
 import {
   Assets,
   Automations,
-  ConnectedApps,
   Courses,
   Dashboard,
   Discussion,
@@ -41,7 +40,6 @@ import type {
   AutomationTriggerInfo,
   AvailableAction,
   AvailableIntegration,
-  ConnectedApp,
   Course,
   Download,
   DownloadAsset,
@@ -176,11 +174,6 @@ export const serverApi = {
   // media library (assets) — list only; presigned URL/upload stay client-side
   async listAssets(params: ListParams): Promise<Paginated<Asset>> {
     return await Assets.listAssets(toQuery(params, ["kind"]), await authHeaders());
-  },
-
-  // connected apps
-  async listConnectedApps(): Promise<ConnectedApp[]> {
-    return await ConnectedApps.listConnectedApps(await authHeaders());
   },
 
   // integrations

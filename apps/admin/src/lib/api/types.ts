@@ -19,7 +19,6 @@ import type {
   ListAutomationActionsResponse,
   ListAutomationTriggersResponse,
   ListAvailableIntegrationsResponse,
-  ListConnectedAppsResponse,
   ListConnectionsResponse,
   ListCoursesResponse,
   ListDownloadAssetsResponse,
@@ -106,8 +105,6 @@ export type Role = Member["role"];
 export type OverviewStats = GetOverviewResponse;
 
 // --- media library (assets) ------------------------------------------------
-
-export type ConnectedApp = ListConnectedAppsResponse[number];
 
 // --- integrations -----------------------------------------------------------
 

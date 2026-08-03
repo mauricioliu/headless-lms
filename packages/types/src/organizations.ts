@@ -9,11 +9,9 @@ export type Role = "owner" | "admin" | "instructor" | "student";
 
 export interface Organization {
   readonly id: string;
-  // Links to the better-auth organization record owned by the auth adapter.
-  readonly externalId: string;
+  readonly externalId?: string | null;
   readonly name: string;
   readonly slug: string;
-  // The identity USER who owns the organization (better-auth's creator/owner).
   readonly ownerId: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -74,22 +72,12 @@ export type OrganizationId = string;
 export type OrgUserId = string;
 export type InviteId = string;
 
-export interface CreateOrganizationInput {
-  // Links to the better-auth organization record.
-  externalId?: string;
-  name?: string;
-  slug?: string;
-  // The identity USER who owns the organization.
-  ownerId: string;
-}
 
-// A user-facing request to create a new organization. Unlike
-// CreateOrganizationInput (the mirror slice), this carries no externalId/ownerId:
-// Better Auth creates the org (inferring the owner from the session) and its
-// hooks mirror it into the domain, at which point the service reads it back.
-export interface NewOrganizationInput {
+
+export type NewOrganizationInput = {
   name: string;
   slug: string;
+  logo?: string;
 }
 
 
@@ -97,15 +85,9 @@ export interface NewOrganizationInput {
 export interface AddOrgUserInput {
   orgId: string;
   userId: string;
-  role: string;
+  role: Role;
 }
 
-/** The mirror of an auth-side member removal. Keyed the same way as the add:
- *  the auth org plus the identity USER, not a mirrored member id. */
-export interface RemoveOrgUserInput {
-  orgExternalId: string;
-  userId: string;
-}
 
 
 export interface CreateOrgUserInput {
