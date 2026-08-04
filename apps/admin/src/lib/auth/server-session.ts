@@ -146,9 +146,8 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
 export async function requireOrgSession(): Promise<ServerSession> {
   const session = await getServerSession();
   if (!session) redirect("/login");
-  // Valid cookie, no staff role (e.g. a student login) — the login page
-  // force-signs-out on `denied`.
-  if (session.status === "denied") redirect("/login?denied=1");
+  // Valid cookie, no staff role — /onboarding clears it.
+  if (session.status === "denied") redirect("/onboarding");
   return session;
 }
 
@@ -172,9 +171,7 @@ export async function requireAuth(...pending: Promise<unknown>[]): Promise<Authe
   const session = await getServerSession();
   if (!session || session.status !== "authenticated" || !session.organization) {
     for (const p of pending) void p.catch(() => {});
-    // A denied session (valid cookie, no staff role) is force-signed-out by
-    // the login page; plain unauthenticated just sees the sign-in form.
-    redirect(session?.status === "denied" ? "/login?denied=1" : "/login");
+    redirect(session ? "/onboarding" : "/login");
   }
   return session as AuthenticatedSession;
 }
@@ -191,8 +188,7 @@ export async function requireManager(
   if (!session || session.status !== "authenticated" || !isManager(session.role)) {
     for (const p of pending) void p.catch(() => {});
     if (!session) redirect("/login");
-    if (session.status === "denied") redirect("/login?denied=1");
-    if (session.status !== "authenticated") redirect("/login");
+    if (session.status !== "authenticated") redirect("/onboarding");
     notFound();
   }
   return session as AuthenticatedSession;
