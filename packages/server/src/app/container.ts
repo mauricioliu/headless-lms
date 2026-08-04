@@ -23,7 +23,7 @@ import { ContentServiceImpl } from '../core/content/index.js';
 import { EntitlementsServiceImpl } from '../core/entitlements/index.js';
 import { ProgressServiceImpl } from '../core/progress/index.js';
 import { DiscussionServiceImpl } from '../core/discussion/index.js';
-import { IdentityServiceImpl } from '../core/identity/index.js';
+import { IdentityServiceImpl, type SessionAdmin } from '../core/identity/index.js';
 import { type OrgAdmin, OrganizationServiceImpl, parseRole } from '../core/organizations/index.js';
 import { AssetsServiceImpl } from '../core/assets/index.js';
 import { IntegrationsServiceImpl } from '../core/integrations/index.js';
@@ -148,8 +148,6 @@ export function resolveLoggingConfig(config: LoggingConfig = {}): Required<Loggi
 
 export interface Container {
   auth: BetterAuth;
-  /** Public origin better-auth is mounted on. */
-  authBaseURL: string;
   // Org Provider
   orgProvider: OrgAdmin;
 
@@ -190,11 +188,8 @@ export interface Container {
   loggerInstance: PinoInstance;
   /** Request-scoped log correlation; the HTTP layer enters it per request. */
   requestContext: RequestLogContext;
-  /** Stamps the caller's session with an active org (invite acceptance). */
-  stampSessionActiveOrg: (
-    headers: Record<string, string | string[] | undefined>,
-    orgExternalId: string,
-  ) => Promise<boolean>;
+  /** Identity's session-write port; the auth adapter fulfils it. */
+  sessions: SessionAdmin;
 }
 
 export async function buildContainer(
@@ -510,7 +505,7 @@ export async function buildContainer(
     logger,
     loggerInstance,
     requestContext: requestLogContext,
-    stampSessionActiveOrg: (headers, orgExternalId) =>
-      auth.stampActiveOrganization(headers, orgExternalId),
+    // Better Auth owns the session store; the same instance fulfils SessionAdmin.
+    sessions: auth,
   };
 }

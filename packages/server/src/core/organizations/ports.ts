@@ -16,8 +16,9 @@ import type {
   UpdateStudentInput,
 } from './types.js';
 
-/** Inbound HTTP headers carrying the session, forwarded to the auth provider. */
-export type AuthHeaders = Record<string, string | string[] | undefined>;
+// Sessions are identity's, so the header shape it forwards is declared there.
+export type { AuthHeaders } from '../identity/ports.js';
+import type { AuthHeaders } from '../identity/ports.js';
 
 // Inbound port (use cases the service exposes).
 export interface OrganizationService {

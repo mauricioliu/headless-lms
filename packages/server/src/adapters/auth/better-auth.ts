@@ -13,7 +13,7 @@ import { prefixId } from '../../core/shared/id.js';
 import { magicLink, organization } from 'better-auth/plugins';
 import { ac, roles } from './access.js';
 import  { type AuthHeaders, type AuthOrganization, type MemberWriteContext, type OrgAdmin, OrganizationRuleError, parseRole, type Role, type UpdateOrganizationInput } from '../../core/organizations/index.js';
-import { stampSessionActiveOrg } from './session-stamp.js';
+import type { SessionAdmin } from '../../core/identity/index.js';
 
 export function createAuth(opts: CreateAuthOptions) {
   const { sendResetPassword, sendMagicLink, beforeUserCreate, beforeCreateSession } = opts.hooks;
@@ -92,7 +92,7 @@ export function createAuth(opts: CreateAuthOptions) {
 
 export type Auth = ReturnType<typeof createAuth>;
 
-export class BetterAuth implements SessionVerifier, OrgAdmin {
+export class BetterAuth implements SessionVerifier, OrgAdmin, SessionAdmin {
   protected auth: Auth;
   protected logger: Logger;
 
@@ -127,9 +127,18 @@ export class BetterAuth implements SessionVerifier, OrgAdmin {
   }
 
 
-  /** Stamps the org onto the caller's session row — the invite-accept path. */
-  async stampActiveOrganization(headers: AuthHeaders, orgExternalId: string): Promise<boolean> {
-    return stampSessionActiveOrg(this.auth, headers, orgExternalId);
+  /** Stamps the org onto the caller's session row. The 5-minute cookie cache
+   *  still holds the pre-stamp session, so callers refresh it client-side with
+   *  `getSession({ disableCookieCache: true })`. */
+  async stampActiveOrganization(headers: AuthHeaders, orgId: string): Promise<boolean> {
+    const session = await this.auth.api.getSession({ headers: fromNodeHeaders(headers) });
+    const token = (session?.session as { token?: string } | undefined)?.token;
+    if (!token) {
+      return false;
+    }
+    const ctx = await this.auth.$context;
+    await ctx.internalAdapter.updateSession(token, { activeOrganizationId: orgId });
+    return true;
   }
 
   async createOrganization(

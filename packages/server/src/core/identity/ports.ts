@@ -24,6 +24,15 @@ export interface UserEditor {
   updateUser(id: string, input: UpdateUserInput): Promise<User>;
 }
 
+/** Inbound HTTP headers carrying the session, forwarded to the auth provider. */
+export type AuthHeaders = Record<string, string | string[] | undefined>;
+
+/** Writes to a live session, fulfilled by the auth provider.  */
+export interface SessionAdmin {
+  /** Points the caller's current session at `orgId`.  */
+  stampActiveOrganization(headers: AuthHeaders, orgId: string): Promise<boolean>;
+}
+
 // Inbound port (use cases the service exposes).
 export interface IdentityService extends UserProvisioner, UserResolver, UserEditor {}
 
