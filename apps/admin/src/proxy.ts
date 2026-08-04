@@ -24,14 +24,14 @@ export function proxy(req: NextRequest) {
   if (!hasSession) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", req.nextUrl.pathname);
+    url.search = "";
     return NextResponse.redirect(url);
   }
   return NextResponse.next();
 }
 
 export const config = {
-  // Guard everything except the login page, Next internals, and the (unused
-  // here) /api namespace. The dashboard group is what remains.
-  matcher: ["/((?!login|_next/static|_next/image|favicon.ico|api).*)"],
+  // Guard everything except the pages that exist to be reached without a
+  // session, Next internals, and the (unused here) /api namespace.
+  matcher: ["/((?!login|signup|invite|_next/static|_next/image|favicon.ico|api).*)"],
 };

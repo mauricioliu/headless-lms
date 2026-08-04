@@ -5,10 +5,10 @@
  * which mounts better-auth at `/api/auth` with the organization plugin
  * (owner/admin/instructor roles).
  *
- * This is now **browser-only**: sign-in/out/up, the org mutations, and the live
- * `useSession` hook (used on the login page). The dashboard session/org/role is
- * resolved on the server (`lib/auth/server-session.ts`) and seeded into the
- * client via `SessionProvider` — there is no client-side session stitching here.
+ * This is **browser-only**: sign-in/out/up and the org mutations. The dashboard
+ * session/org/role is resolved on the server (`lib/auth/server-session.ts`) and
+ * seeded into the client via `SessionProvider` — no client-side session
+ * stitching here.
  */
 
 import { createAuthClient } from "better-auth/react";
