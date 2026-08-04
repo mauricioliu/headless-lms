@@ -18,6 +18,9 @@ import { redirect } from "next/navigation";
 import { API_URL } from "./api-url";
 import { requireOrgSession } from "../auth/server-session";
 import { ApiError } from "./http";
+import { logger } from "@/lib/log";
+
+const log = logger.child({ name: "api" });
 
 export { API_URL };
 
@@ -37,6 +40,9 @@ export { API_URL };
 configureSdk({
   baseUrl: API_URL,
   onError: (error, response) => {
+    // The API's own body, logged before it is flattened into an ApiError and
+    // shown to the user as a generic message.
+    log.error({ body: error, status: response?.status, url: response?.url }, "api call failed");
     if (response?.status === 401) redirect("/login");
     // The SDK hands back the parsed response body, which for this API is
     // `{ error, message? }` — prefer that over the bare status so the toast

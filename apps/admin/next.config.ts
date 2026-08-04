@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
     "@headless-lms/editor-contract",
     "@headless-lms/content-plate",
   ],
+  // pino resolves transports at runtime; bundling it breaks that.
+  serverExternalPackages: ["pino"],
+  // Dev-only: each server-side fetch is logged, so an API call and the line it
+  // produced sit together.
+  logging: { fetches: { fullUrl: true } },
 };
 
 export default nextConfig;

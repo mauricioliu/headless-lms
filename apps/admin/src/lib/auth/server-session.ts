@@ -20,6 +20,9 @@ import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { API_URL } from "../api/api-url";
 import { isManager } from "../roles";
+import { logger } from "@/lib/log";
+
+const log = logger.child({ name: "auth" });
 
 export type ServerRole = "owner" | "admin" | "instructor";
 
@@ -52,12 +55,18 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
     headers: { cookie },
     cache: "no-store",
   });
-  if (!res.ok) return null;
+  if (!res.ok) {
+    log.warn({ status: res.status }, "session rejected by api");
+    return null;
+  }
   const data = (await res.json()) as {
     user?: SessionPerson;
     session?: { activeOrganizationId?: string | null };
   } | null;
-  if (!data?.user) return null;
+  if (!data?.user) {
+    log.debug("no session on request");
+    return null;
+  }
 
   const activeOrgId = data.session?.activeOrganizationId ?? null;
 
@@ -81,6 +90,9 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
     if (memberRes.ok) {
       const m = (await memberRes.json()) as { role?: unknown } | null;
       role = toRole(m?.role);
+      if (!role) log.debug({ rawRole: m?.role }, "active member holds no staff role");
+    } else {
+      log.debug({ status: memberRes.status }, "active member lookup failed");
     }
     if (orgRes.ok) {
       const o = (await orgRes.json()) as { id?: string; name?: string; slug?: string } | null;
@@ -103,6 +115,7 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
       headers: { cookie },
       cache: "no-store",
     });
+    if (!listRes.ok) log.warn({ status: listRes.status }, "organization list failed");
     const raw = listRes.ok ? ((await listRes.json()) as unknown) : [];
     organizations = Array.isArray(raw)
       ? raw
@@ -115,6 +128,12 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
     status = organizations.length > 0 ? "no-active-org" : activeOrgId ? "denied" : "no-organization";
     organization = null;
   }
+
+  // The single line that explains every redirect the gates make.
+  log.debug(
+    { userId: data.user.id, status, activeOrgId, orgCount: organizations.length, role },
+    "session resolved",
+  );
 
   return {
     user: {
