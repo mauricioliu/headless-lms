@@ -34,6 +34,7 @@ app/(auth)/signup/signup-form.tsx            client
 
 app/onboarding/layout.tsx                               centered card, logo, sign out
 app/onboarding/page.tsx                      server     decides and redirects
+app/onboarding/session-reset.tsx             client     signs out, returns to /login
 app/onboarding/select-organization/page.tsx  server
 app/onboarding/select-organization/org-picker.tsx       client
 app/onboarding/create-organization/page.tsx  server
@@ -55,11 +56,10 @@ Deleted: `app/login/page.tsx`, `app/login/login-view.tsx`,
 
 /onboarding
     getServerSession()
-      null              → /login
-      denied            → /login
       authenticated     → /
       no-active-org     → /onboarding/select-organization
       no-organization   → /onboarding/create-organization
+      anything else     → <SessionReset/>: signOut() ──▶ /login
 
 /onboarding/select-organization
     setActive(organizationId) ──▶ location.assign("/onboarding")
@@ -82,13 +82,11 @@ the server resolver see it.
 
 ### Session states
 
-`ServerSession.status` already distinguishes the five cases and keeps its
-current meanings:
+`/onboarding` recognises exactly three states. Each is a person who can be sent
+somewhere useful:
 
 | status | meaning | destination |
 | --- | --- | --- |
-| — (null) | no cookie, or cookie rejected | `/login` |
-| `denied` | valid cookie, no staff role — e.g. a student login | `/login` |
 | `authenticated` | active org resolved and a staff role held in it | `/` |
 | `no-active-org` | member of 2+ orgs, none stamped active | `/onboarding/select-organization` |
 | `no-organization` | no memberships | `/onboarding/create-organization` |
@@ -97,20 +95,23 @@ A user with exactly one organization never reaches `no-active-org`: the API's
 `beforeCreateSession` hook stamps `activeOrganizationId` at sign-in, so they
 resolve as `authenticated` and `/onboarding` passes them straight to `/`.
 
+Everything else is a session that cannot be routed — no cookie, a rejected
+cookie, or `denied` (a valid cookie carrying no staff role). Reaching
+`/onboarding` in any of those states means the session is unusable, so
+`/onboarding` renders `<SessionReset/>`, which calls `authClient.signOut()` and
+sends the browser to `/login`. The cookie is gone by the time `/login` renders,
+so it shows the sign-in form and there is nothing to loop on.
+
+This is why `/login` needs no special case and no `?denied=1`. It redirects any
+signed-in session to `/onboarding` unconditionally; if that session turns out to
+be unusable, `/onboarding` clears it. Every other gate follows the same rule:
+no session at all → `/login`; a session that will not resolve → `/onboarding`,
+which decides whether to route the user or reset them.
+
 `ServerSession` gains `organizations: { id, name, slug }[]`.
 `getServerSession` already fetches `organization/list` (`server-session.ts:98`)
 and discards it after a length check; retaining the array lets
 `select-organization` render from the session it has already resolved.
-
-### The denied loop
-
-`/login` redirects a signed-in session to `/onboarding`, *except* when the
-status is `denied` — then it renders the sign-in form. Without that exception a
-non-staff cookie would bounce `/login → /onboarding → /login` forever. Signing in
-with a staff account overwrites the cookie and the exception stops applying.
-
-This replaces the current `?denied=1` round trip and the client-side forced
-`signOut` that went with it.
 
 ### Pages
 
@@ -127,7 +128,12 @@ email sign-up requires; there is no organization field. Foot link to `/login`.
 **`onboarding/layout.tsx`** — centered card on `bg-page`, logo above, sign-out
 link below. Both onboarding pages render inside it.
 
-**`onboarding/page.tsx`** — resolves the session and redirects. Renders nothing.
+**`onboarding/page.tsx`** — resolves the session and redirects. The only thing
+it ever renders is `<SessionReset/>`, for a session it cannot route.
+
+**`session-reset.tsx`** — calls `authClient.signOut()` on mount, then
+`location.assign("/login")`. Shows "Signing you out…" while it runs. Sign-out
+goes browser-to-API like `signIn` does, so better-auth clears its own cookie.
 
 **`select-organization/page.tsx`** — renders `session.organizations` through
 `org-picker.tsx`. The picker calls
@@ -145,10 +151,15 @@ exclusion. The matcher today is `/((?!login|_next/static|_next/image|favicon.ico
 which matches `/invite`, so an invited user arriving without a cookie is bounced
 to `/login` and never sees the invitation. `/signup` would land in the same trap.
 
-`(dashboard)/layout.tsx` — the gate collapses to: no session → `/login`;
-`denied` → `/login`; status not `authenticated` → `/onboarding`. The
-`no-organization` and `no-active-org` branches and the `OrgActivator` render go
-away, because `/onboarding` now owns that decision.
+`(dashboard)/layout.tsx` — the gate collapses to two lines: no session →
+`/login`; status not `authenticated` → `/onboarding`. The `denied`,
+`no-organization` and `no-active-org` branches and the `OrgActivator` render all
+go away, because `/onboarding` owns that decision now.
+
+`server-session.ts` — `requireOrgSession`, `requireAuth` and `requireManager`
+drop their `/login?denied=1` redirects. Same rule as the layout: no session →
+`/login`, a session that will not resolve → `/onboarding`. `requireManager`
+keeps `notFound()` for an authenticated non-manager.
 
 `lib/auth/actions.ts` is unchanged.
 
@@ -167,6 +178,8 @@ No redirect consumes an error.
 1. Fresh signup → create organization → dashboard.
 2. Existing user, one organization → dashboard without touching onboarding.
 3. Existing user, two organizations, none active → picker → dashboard.
+4. A student session's cookie carried into the admin app → `/onboarding` signs
+   it out and lands on `/login` with the form, once, no bouncing.
 
 Plus: an invite link opened with no session reaches `/invite` rather than
 `/login`.
