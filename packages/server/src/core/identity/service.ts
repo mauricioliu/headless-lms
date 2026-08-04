@@ -1,5 +1,4 @@
 import type {
-  AuthAccountWriter,
   IdentityRepository,
   IdentityService,
   IdentityUnitOfWork,
@@ -14,21 +13,18 @@ import type { Mailer } from '@headless-lms/server';
 export class IdentityServiceImpl implements IdentityService {
   private readonly repo: IdentityRepository;
   private readonly logger: Logger;
-  private readonly authAccounts?: AuthAccountWriter;
   private readonly uow: IdentityUnitOfWork;
   private readonly mailer: Pick<Mailer, 'send'>;
 
   constructor(input: {
     repo: IdentityRepository;
     logger?: Logger;
-    authAccounts?: AuthAccountWriter;
     mailer: Mailer;
     uow: IdentityUnitOfWork;
   }) {
     this.repo = input.repo;
     this.mailer = input.mailer;
     this.logger = input.logger ?? noopLogger;
-    this.authAccounts = input.authAccounts;
     this.uow = input.uow;
   }
 

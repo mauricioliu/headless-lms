@@ -27,10 +27,6 @@ export interface UserEditor {
 // Inbound port (use cases the service exposes).
 export interface IdentityService extends UserProvisioner, UserResolver, UserEditor {}
 
-export interface AuthAccountWriter {
-  updateEmail(externalId: string, email: string): Promise<void>;
-}
-
 // Outbound port (persistence contract the repository fulfils).
 export interface IdentityRepository {
   insertUser(input: CreateUserInput): Promise<User>;
