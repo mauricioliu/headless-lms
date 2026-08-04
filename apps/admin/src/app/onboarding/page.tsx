@@ -2,20 +2,17 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { getServerSession } from "@/lib/auth/server-session";
-import { OnboardingView } from "./onboarding-view";
+import { SessionReset } from "./session-reset";
 
-export const metadata: Metadata = { title: "Create your organization — Headless LMS" };
+export const metadata: Metadata = { title: "Setting up — Headless LMS" };
 
-// Onboarding sits outside the `(dashboard)` group so the org-creation prompt has
-// its own URL instead of rendering in place of whatever dashboard route the user
-// landed on. The gate is the dashboard's, inverted: only a signed-in session
-// with no organization belongs here — everyone else is sent where they do.
+// The single decision point after authentication. It resolves the session and
+// sends the user to the one thing they need to do next. A session it cannot
+// route is one that has to be re-established, so it is cleared, not bounced.
 export default async function OnboardingPage() {
   const session = await getServerSession();
-  if (!session) redirect("/login");
-  if (session.status === "denied") redirect("/login?denied=1");
-  // Already has an org (active or awaiting activation) — the dashboard takes over.
-  if (session.status !== "no-organization") redirect("/");
-
-  return <OnboardingView />;
+  if (session?.status === "authenticated") redirect("/");
+  if (session?.status === "no-active-org") redirect("/onboarding/select-organization");
+  if (session?.status === "no-organization") redirect("/onboarding/create-organization");
+  return <SessionReset />;
 }
