@@ -450,7 +450,8 @@ export async function buildContainer(
         if (!org) {
           return;
         }
-        return { data: { ...session, activeOrganizationId: org.externalId } };
+
+        return { data: { ...session, activeOrganizationId: org.id } };
       },
       /*
        * We're making sure the domain org creates and using the same ID for better-auth org ID.

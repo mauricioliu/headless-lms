@@ -252,7 +252,7 @@ export async function organizationsRoutes(
       if (!org) {
         throw new NotFoundError('Organization', accepted.orgId);
       }
-      const stamped = await container.stampSessionActiveOrg(req.headers, org.externalId ?? org.id);
+      const stamped = await container.stampSessionActiveOrg(req.headers, org.id);
 
       req.log.info({ accepted, stamped }, 'accepted invite');
       return {};
