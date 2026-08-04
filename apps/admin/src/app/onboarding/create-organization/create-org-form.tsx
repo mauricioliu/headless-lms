@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { createOrganizationAction } from "@/lib/auth/actions";
+import { authClient } from "@/lib/auth/client";
 import { uniqueOrgSlug } from "@/lib/slug";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,9 @@ export function CreateOrgForm() {
       });
       return;
     }
+    // The Server Action doesn't relay better-auth's refreshed cookie to the
+    // browser, so force the cookie cache to refresh before re-resolving the session.
+    await authClient.getSession({ query: { disableCookieCache: true } });
     window.location.assign("/onboarding");
   }
 
