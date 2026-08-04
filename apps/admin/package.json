@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 8001 | pino-pretty",
+    "dev": "next dev -p 8001 | pino-pretty --ignore app",
     "build": "next build",
     "start": "next start -p 8001",
     "lint": "eslint",
