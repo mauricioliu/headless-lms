@@ -28,6 +28,8 @@ type SessionPerson = { id: string; name: string; email: string; image: string | 
 export type ServerSession = {
   user: SessionPerson;
   organization: { id: string; name: string; slug: string } | null;
+  /** Every org the user is a member of. Populated when no org is active yet. */
+  organizations: { id: string; name: string; slug: string }[];
   role: ServerRole;
   status: "authenticated" | "no-organization" | "no-active-org" | "denied";
 };
@@ -62,6 +64,7 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
   let role: ServerRole | null = null;
   let organization: ServerSession["organization"] = null;
   let status: ServerSession["status"] = "no-organization";
+  let organizations: ServerSession["organizations"] = [];
 
   if (activeOrgId) {
     // get-session alone lacks the org role; the org plugin's active-member does.
@@ -92,20 +95,24 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
 
   if (status !== "authenticated") {
     // Valid cookie but no usable active org + staff membership. Distinguish:
-    //  - member of ≥1 org, none active → activator can pick one
+    //  - member of ≥1 org, none active → the picker can offer them
     //  - no memberships, but the session carries a stamped org → a student
-    //    (or otherwise non-staff) cookie: deny, the login page force-signs-out
+    //    (or otherwise non-staff) cookie: deny
     //  - no memberships, nothing stamped → fresh staff signup, prompt to create
     const listRes = await fetch(`${API_URL}/api/auth/organization/list`, {
       headers: { cookie },
       cache: "no-store",
     });
-    const orgs = listRes.ok ? ((await listRes.json()) as unknown) : [];
-    if (Array.isArray(orgs) && orgs.length > 0) {
-      status = "no-active-org";
-    } else {
-      status = activeOrgId ? "denied" : "no-organization";
-    }
+    const raw = listRes.ok ? ((await listRes.json()) as unknown) : [];
+    organizations = Array.isArray(raw)
+      ? raw
+          .filter(
+            (o): o is { id: string; name?: string; slug?: string } =>
+              !!o && typeof o === "object" && typeof (o as { id?: unknown }).id === "string",
+          )
+          .map((o) => ({ id: o.id, name: o.name ?? "", slug: o.slug ?? "" }))
+      : [];
+    status = organizations.length > 0 ? "no-active-org" : activeOrgId ? "denied" : "no-organization";
     organization = null;
   }
 
@@ -117,6 +124,7 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
       image: data.user.image ?? null,
     },
     organization,
+    organizations,
     role: role ?? "instructor",
     status,
   };
