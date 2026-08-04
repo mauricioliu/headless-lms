@@ -17,7 +17,11 @@ function container(opts: {
       getOrgUser: async (orgId: string, userId: string) =>
         opts.orgUsers?.[`${orgId}:${userId}`] ?? null,
     },
-    identity: { getUserByExternalId: async () => opts.user ?? null },
+    // The account-create hook hands the domain id back to better-auth and
+    // records it as the external id, so a user's external id is its own id.
+    identity: {
+      getUserByExternalId: async (id: string) => (id === opts.user?.id ? opts.user : null),
+    },
     requestContext: {
       run: (_fields: unknown, fn: () => void) => fn(),
       set: () => {},
@@ -26,9 +30,10 @@ function container(opts: {
   } as unknown as Container;
 }
 
-// Both ids as the session guard leaves them: `authOrgId` is better-auth's,
-// `orgId` the domain organizations.id it was translated to.
-const req = (authUser: unknown, authOrgId: string | null = 'ext_org_1') =>
+// Both ids as the session guard leaves them. Better Auth's org id and the
+// domain organizations.id are the same value — the org-create hook gives the
+// domain id to better-auth — so `authOrgId` and `orgId` match.
+const req = (authUser: unknown, authOrgId: string | null = 'org_1') =>
   ({ authUser, authOrgId, orgId: authOrgId ? 'org_1' : undefined }) as unknown as FastifyRequest;
 
 const acme = { id: 'org_1', name: 'Acme', slug: 'acme' };
@@ -38,14 +43,14 @@ describe('resolveScope', () => {
   it('resolves the acting org user for the session active org', async () => {
     const scope = await resolveScope(
       container({ org: acme, user: { id: 'usr_1' }, orgUsers: owner }),
-      req({ id: 'ext_1' }),
+      req({ id: 'usr_1' }),
     );
     expect(scope).toEqual({
       orgId: 'org_1',
       userId: 'usr_1',
       orgUserId: 'orm_1',
       role: 'owner',
-      authOrgId: 'ext_org_1',
+      authOrgId: 'org_1',
     });
   });
 
@@ -59,7 +64,7 @@ describe('resolveScope', () => {
           'org_1:usr_1': { id: 'orm_1', orgId: 'org_1', role: 'instructor' },
         },
       }),
-      req({ id: 'ext_1' }),
+      req({ id: 'usr_1' }),
     );
     expect(scope.orgUserId).toBe('orm_1');
     expect(scope.role).toBe('instructor');
@@ -73,14 +78,14 @@ describe('resolveScope', () => {
           user: { id: 'usr_1' },
           orgUsers: { 'org_1:usr_1': { id: 'orm_1', orgId: 'org_1', role: 'student' } },
         }),
-        req({ id: 'ext_1' }),
+        req({ id: 'usr_1' }),
       ),
     ).rejects.toBeInstanceOf(NoActiveOrgError);
   });
 
   it('throws when the session user belongs to no org', async () => {
     await expect(
-      resolveScope(container({ org: acme, user: { id: 'usr_1' }, orgUsers: {} }), req({ id: 'ext_1' })),
+      resolveScope(container({ org: acme, user: { id: 'usr_1' }, orgUsers: {} }), req({ id: 'usr_1' })),
     ).rejects.toBeInstanceOf(NoActiveOrgError);
   });
 
@@ -92,7 +97,7 @@ describe('resolveScope', () => {
           user: { id: 'usr_1' },
           orgUsers: { 'org_other:usr_1': { id: 'orm_x', orgId: 'org_other', role: 'owner' } },
         }),
-        req({ id: 'ext_1' }),
+        req({ id: 'usr_1' }),
       ),
     ).rejects.toBeInstanceOf(NoActiveOrgError);
   });
@@ -105,19 +110,19 @@ describe('resolveScope', () => {
 
   it('throws NoActiveOrgError when the session carries no active org', async () => {
     await expect(
-      resolveScope(container({ org: acme, user: { id: 'usr_1' }, orgUsers: owner }), req({ id: 'ext_1' }, null)),
+      resolveScope(container({ org: acme, user: { id: 'usr_1' }, orgUsers: owner }), req({ id: 'usr_1' }, null)),
     ).rejects.toBeInstanceOf(NoActiveOrgError);
   });
 
   it('throws NoActiveOrgError when the active org is not found', async () => {
     await expect(
-      resolveScope(container({ org: null, user: { id: 'usr_1' }, orgUsers: owner }), req({ id: 'ext_1' })),
+      resolveScope(container({ org: null, user: { id: 'usr_1' }, orgUsers: owner }), req({ id: 'usr_1' })),
     ).rejects.toBeInstanceOf(NoActiveOrgError);
   });
 
   it('throws NoActiveOrgError when there is no domain user for the session user', async () => {
     await expect(
-      resolveScope(container({ org: acme, user: null, orgUsers: owner }), req({ id: 'ext_1' })),
+      resolveScope(container({ org: acme, user: null, orgUsers: owner }), req({ id: 'usr_1' })),
     ).rejects.toBeInstanceOf(NoActiveOrgError);
   });
 });

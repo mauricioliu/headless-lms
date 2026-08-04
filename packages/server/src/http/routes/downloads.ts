@@ -16,7 +16,7 @@ import {
   RenameDownloadAsset,
   ReorderDownloadAssets,
   UpdateDownload,
-} from '@headless-lms/api-contract';
+} from '../schemas/index.js';
 import { z } from 'zod';
 import type { Container } from '../../app/container.js';
 import { NotFoundError } from '../../core/shared/errors.js';

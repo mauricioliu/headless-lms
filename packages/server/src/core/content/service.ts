@@ -72,15 +72,6 @@ export class ContentServiceImpl implements ContentService {
       orgId,
       SettingsNamespace.content,
       id,
-      {
-        transcriptDownloads: true,
-        comments: {
-          enabled: false,
-          reactions: false,
-          requireReview: false,
-          threaded: false,
-        },
-      },
     );
 
     return {

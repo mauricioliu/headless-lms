@@ -21,7 +21,7 @@ export const settings = pgTable(
     // Org-scoped rows carry the org id, so the column is never null and the
     // natural key can be the primary key.
     scopeId: text('scope_id').notNull(),
-    value: jsonb('value').notNull().default({}),
+    value: jsonb('value').$type<Record<string, unknown>>().notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()

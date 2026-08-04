@@ -6,7 +6,7 @@ import {
   LearnCourseIdParam,
   LearnCourses,
   LearnModules,
-} from '@headless-lms/api-contract';
+} from '../../schemas/index.js';
 import { NotFoundError } from '../../../core/shared/errors.js';
 import type { Container } from '../../../app/container.js';
 import { UnauthorizedError } from '../../plugins/auth.js';

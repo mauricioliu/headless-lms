@@ -13,7 +13,6 @@ packages/
   create-headless-lms/  npm create headless-lms — installation scaffolder
   types/        @headless-lms/types — the published type surface
   utils/        @headless-lms/utils — runtime helpers for integrations
-  api-contract/ Zod schemas, source of truth for the HTTP API
   sdk/          @headless-lms/sdk — client generated off the OpenAPI spec
 plugins/
   slack/        @headless-lms/plugin-slack — the Slack integration

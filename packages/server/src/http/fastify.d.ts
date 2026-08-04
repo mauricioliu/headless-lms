@@ -21,7 +21,9 @@ declare module 'fastify' {
      *  `requireSession` when the session has no active org. */
     orgId: string;
     /** The same org as better-auth knows it (`organizations.external_id`), for
-     *  writes that go back through the auth provider. */
+     *  writes that go back through the auth provider. Equal to `orgId` today:
+     *  the org-create hook gives better-auth the domain id and records it as
+     *  the external id. */
     authOrgId: string;
     /** Domain `users.id` for the session's account — what `org_users.user_id`
      *  and every other domain row references. Not `authUser.id`: the two match

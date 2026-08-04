@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { AssetIdParam, DownloadTicket, ErrorBody } from '@headless-lms/api-contract';
+import { AssetIdParam, DownloadTicket, ErrorBody } from '../../schemas/index.js';
 import { NotFoundError } from '../../../core/shared/errors.js';
 import type { Container } from '@headless-lms/server';
 

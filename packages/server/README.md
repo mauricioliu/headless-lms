@@ -34,7 +34,8 @@ src/
   adapters/     outbound infra: db, auth, events, logging + email/storage stubs
   app/          container.ts — wires adapters into services; integration
                 loader; migrate
-  http/         Fastify server, routes validated against @headless-lms/api-contract
+  http/         Fastify server; routes validated against the Zod schemas in
+                http/schemas — the source of truth for the OpenAPI spec and SDK
 ```
 
 Import boundaries between these layers are enforced by ESLint (`pnpm lint`).

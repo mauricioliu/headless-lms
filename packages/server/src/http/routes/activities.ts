@@ -13,7 +13,7 @@ import {
   ReorderInput,
   SaveActivity,
   UpdateModule,
-} from '@headless-lms/api-contract';
+} from '../schemas/index.js';
 import type { Container } from '../../app/container.js';
 import { resolveScope } from '../scope.js';
 

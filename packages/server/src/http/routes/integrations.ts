@@ -14,7 +14,7 @@ import {
   ConnectionsList,
   ErrorBody,
   ReconnectRequest,
-} from '@headless-lms/api-contract';
+} from '../schemas/index.js';
 import type { Connection as DomainConnection } from '../../core/integrations/index.js';
 import { NotFoundError } from '../../core/shared/errors.js';
 import type { Container } from '../../app/container.js';

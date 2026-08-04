@@ -52,19 +52,20 @@ export function registerAuth(app: FastifyInstance, appServer: Container): void {
     if (!session) {
       throw new UnauthorizedError();
     }
-    if (!session.session.activeOrganizationId) {
+    const authOrgId = session.session.activeOrganizationId;
+    if (!authOrgId) {
       throw new UnauthorizedError();
     }
 
-    const [org] = await Promise.all([
-      appServer.organizations.getById(session.session.activeOrganizationId),
-    ]);
+    const org = await appServer.organizations.getByExternalId(authOrgId);
     if (!org) {
       throw new UnauthorizedError('session organization not found');
     }
     request.authUser = session.user;
     request.userId = session.user.id;
     request.orgId = org.id;
-    request.userId = session.user.id;
+    // resolveScope requires the auth-provider id too — routes that write back
+    // through better-auth key on it.
+    request.authOrgId = authOrgId;
   });
 }

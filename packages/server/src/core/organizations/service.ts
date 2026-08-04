@@ -99,18 +99,15 @@ export class OrganizationServiceImpl implements OrganizationService {
 
       const created = await organizations.create({
         id,
+        // The auth provider adopts this id for its own org row, so the org is
+        // its own external id — a lookup by either id lands on the same row.
+        externalId: input.externalId ?? id,
         name: input.name ?? `My Org`,
         slug: input.slug ?? '',
         ownerId: input.ownerId,
       });
-      const orgUser = await this.repo.upsertOrgUser(created.id, {
-        orgId: created.id,
-        userId: input.ownerId,
-        role: 'owner',
-      });
       await outbox.append([
         { type: 'organization.created', orgId: created.id, organization: created },
-        { type: 'organization.user.linked', orgId: created.id, org_user: orgUser },
       ]);
       return created;
     });
@@ -146,21 +143,13 @@ export class OrganizationServiceImpl implements OrganizationService {
   }
 
   async addOrgUser({ orgId, userId, role }: AddOrgUserInput): Promise<OrgUser> {
-    const newUser = await this.uow.run(async ({ organizations, outbox }) => {
-      const deleted = await organizations.createOrgUser({
-        orgId,
-        role,
-        userId,
-        status: 'active',
-      });
-
-      await outbox.append([
-        { type: 'organization.deleted', orgId: deleted.id, organization: deleted },
-      ]);
-      return deleted;
+    const orgUser = await this.uow.run(async ({ organizations, outbox }) => {
+      const created = await organizations.createOrgUser({ orgId, role, userId, status: 'active' });
+      await outbox.append([{ type: 'organization.user.linked', orgId, org_user: created }]);
+      return created;
     });
-    this.logger.info('user added to organization', { id: newUser });
-    return newUser;
+    this.logger.info('user added to organization', { orgId, userId, role });
+    return orgUser;
   }
 
   async removeOrgUser(orgId: string, id: string): Promise<OrgUser> {

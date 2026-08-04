@@ -13,7 +13,7 @@ pnpm typecheck
 pnpm test
 ```
 
-If you changed anything under `packages/api-contract` or
+If you changed anything under `packages/server/src/http/schemas/` or
 `packages/server/src/http/routes/`, run `pnpm gen:sdk` and commit the
 regenerated `packages/sdk/openapi.json` and `src/generated/` — a stale diff
 fails review.

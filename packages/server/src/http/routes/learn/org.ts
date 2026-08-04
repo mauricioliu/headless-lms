@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { LearnOrg, LearnViewer } from '@headless-lms/api-contract';
+import { LearnOrg, LearnViewer } from '../../schemas/index.js';
 import type { Container } from '../../../app/container.js';
 import { UnauthorizedError } from '../../plugins/auth.js';
 

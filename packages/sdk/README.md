@@ -19,7 +19,7 @@ Two steps run in sequence:
 2. `@hey-api/openapi-ts` (`pnpm --filter @headless-lms/sdk gen`) — generates
    `src/generated/` from `openapi.json`.
 
-Regenerate whenever `packages/api-contract` schemas or `apps/api` routes change.
+Regenerate whenever the schemas in `packages/server/src/http/schemas/` or `apps/api` routes change.
 The generated output is committed; a stale diff in review means it wasn't regenerated.
 
 ## Usage

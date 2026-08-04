@@ -1,11 +1,14 @@
 // Wires adapters + services in dependency order. Starts nothing.
-import {createDb} from '../adapters/db/index.js';
-import {DrizzleUnitOfWork} from '../adapters/db/unit-of-work.js';
-import {InMemoryEventBus} from '../adapters/events/index.js';
-import {PollingOutboxRelay, type PollingOutboxRelayConfig,} from '../adapters/events/outbox-relay.js';
-import {InlineAutomationEngine} from '../adapters/workflows/index.js';
-import {DrizzleOutboxAppender, DrizzleOutboxStore} from '../adapters/db/repositories/outbox.js';
-import {EmailAdapter, StubTemplateRenderer} from '../adapters/email/index.js';
+import { createDb } from '../adapters/db/index.js';
+import { DrizzleUnitOfWork } from '../adapters/db/unit-of-work.js';
+import { InMemoryEventBus } from '../adapters/events/index.js';
+import {
+  PollingOutboxRelay,
+  type PollingOutboxRelayConfig,
+} from '../adapters/events/outbox-relay.js';
+import { InlineAutomationEngine } from '../adapters/workflows/index.js';
+import { DrizzleOutboxAppender, DrizzleOutboxStore } from '../adapters/db/repositories/outbox.js';
+import { EmailAdapter, StubTemplateRenderer } from '../adapters/email/index.js';
 import {
   createRootLogger,
   type LogLevel,
@@ -13,42 +16,42 @@ import {
   requestLogContext,
   type RequestLogContext,
 } from '../adapters/logging/index.js';
-import {StorageAdapter} from '../adapters/storage/index.js';
-import {BetterAuth,} from '../adapters/auth/index.js';
-import {DrizzleAuthAccountWriter} from '../adapters/auth/account-writer.js';
+import { StorageAdapter } from '../adapters/storage/index.js';
+import { BetterAuth } from '../adapters/auth/index.js';
 
-import {ContentServiceImpl} from '../core/content/index.js';
-import {EntitlementsServiceImpl} from '../core/entitlements/index.js';
-import {ProgressServiceImpl} from '../core/progress/index.js';
-import {DiscussionServiceImpl} from '../core/discussion/index.js';
-import {IdentityServiceImpl} from '../core/identity/index.js';
-import {type OrgAdmin, OrganizationServiceImpl} from '../core/organizations/index.js';
-import {AssetsServiceImpl} from '../core/assets/index.js';
-import {IntegrationsServiceImpl} from '../core/integrations/index.js';
-import {AutomationsServiceImpl} from '../core/automations/index.js';
-import {loadIntegrations} from './integrations.js';
-import {registerNotificationSubscribers} from './notifications.js';
-import {StudentsReportServiceImpl} from '../reporting/students/index.js';
-import {DashboardReportServiceImpl} from '../reporting/dashboard/index.js';
-import {LearnReportServiceImpl} from '../reporting/learn/index.js';
-import {Mailer} from '../core/shared/mailer.js';
-import {SettingsService} from '../core/shared/settings.js';
+import { ContentServiceImpl } from '../core/content/index.js';
+import { EntitlementsServiceImpl } from '../core/entitlements/index.js';
+import { ProgressServiceImpl } from '../core/progress/index.js';
+import { DiscussionServiceImpl } from '../core/discussion/index.js';
+import { IdentityServiceImpl } from '../core/identity/index.js';
+import { type OrgAdmin, OrganizationServiceImpl, parseRole } from '../core/organizations/index.js';
+import { AssetsServiceImpl } from '../core/assets/index.js';
+import { IntegrationsServiceImpl } from '../core/integrations/index.js';
+import { AutomationsServiceImpl } from '../core/automations/index.js';
+import { loadIntegrations } from './integrations.js';
+import { registerNotificationSubscribers } from './notifications.js';
+import { StudentsReportServiceImpl } from '../reporting/students/index.js';
+import { DashboardReportServiceImpl } from '../reporting/dashboard/index.js';
+import { LearnReportServiceImpl } from '../reporting/learn/index.js';
+import { Mailer } from '../core/shared/mailer.js';
+import { SettingsService } from '../core/shared/settings.js';
+import { genId } from '../core/shared/id.js';
 
-import {DrizzleEntitlementsRepository} from '../adapters/db/repositories/entitlements.js';
-import {DrizzleProgressRepository} from '../adapters/db/repositories/progress.js';
-import {DrizzleDiscussionRepository} from '../adapters/db/repositories/discussion.js';
-import {DrizzleIdentityRepository} from '../adapters/db/repositories/identity.js';
-import {DrizzleOrganizationsRepository} from '../adapters/db/repositories/organizations.js';
-import {DrizzleMembersRepository} from '../adapters/db/repositories/members.js';
-import {DrizzleContentRepository} from '../adapters/db/repositories/content.js';
-import {DrizzleContentStructureRepository} from '../adapters/db/repositories/structure.js';
-import {DrizzleAssetsRepository} from '../adapters/db/repositories/assets.js';
-import {DrizzleStudentsRepository} from '../adapters/db/repositories/students.js';
-import {DrizzleDashboardRepository} from '../adapters/db/repositories/dashboard.js';
-import {DrizzleLearnRepository} from '../adapters/db/repositories/learn.js';
-import {DrizzleCredentialStore} from '../adapters/db/repositories/credentials.js';
-import {DrizzleSettingsRepository} from '../adapters/db/repositories/settings.js';
-import {DrizzleConnectionsRepository} from '../adapters/db/repositories/integrations.js';
+import { DrizzleEntitlementsRepository } from '../adapters/db/repositories/entitlements.js';
+import { DrizzleProgressRepository } from '../adapters/db/repositories/progress.js';
+import { DrizzleDiscussionRepository } from '../adapters/db/repositories/discussion.js';
+import { DrizzleIdentityRepository } from '../adapters/db/repositories/identity.js';
+import { DrizzleOrganizationsRepository } from '../adapters/db/repositories/organizations.js';
+import { DrizzleMembersRepository } from '../adapters/db/repositories/members.js';
+import { DrizzleContentRepository } from '../adapters/db/repositories/content.js';
+import { DrizzleContentStructureRepository } from '../adapters/db/repositories/structure.js';
+import { DrizzleAssetsRepository } from '../adapters/db/repositories/assets.js';
+import { DrizzleStudentsRepository } from '../adapters/db/repositories/students.js';
+import { DrizzleDashboardRepository } from '../adapters/db/repositories/dashboard.js';
+import { DrizzleLearnRepository } from '../adapters/db/repositories/learn.js';
+import { DrizzleCredentialStore } from '../adapters/db/repositories/credentials.js';
+import { DrizzleSettingsRepository } from '../adapters/db/repositories/settings.js';
+import { DrizzleConnectionsRepository } from '../adapters/db/repositories/integrations.js';
 import {
   DrizzleAutomationRunsRepository,
   DrizzleAutomationsRepository,
@@ -62,7 +65,7 @@ import type {
   TemplateContext,
   TemplateRenderer,
 } from '../core/shared/ports.js';
-import type {AutomationEngine} from '@headless-lms/types';
+import type { AutomationEngine } from '@headless-lms/types';
 
 /** Installation-supplied ports; an absent slot falls back to a fail-loudly stub. */
 export interface AdapterOverrides {
@@ -237,7 +240,6 @@ export async function buildContainer(
   const identity = new IdentityServiceImpl({
     repo: new DrizzleIdentityRepository(db, logger.child({ name: 'identity_repo' })),
     logger: logger.child({ name: 'identity' }),
-    authAccounts: new DrizzleAuthAccountWriter(db, logger.child({ name: 'identity' })),
     uow: identityUoW,
     mailer,
   });
@@ -413,15 +415,26 @@ export async function buildContainer(
           url,
         });
       },
-      beforeUserCreate: async ({ id, email, name }) => {
+      beforeUserCreate: async (user) => {
+        const { email, name } = user;
         const [firstName, lastName] = name.split(' ');
-        await identity.createUser({
+        // Better Auth has not minted an id yet — the id returned below becomes
+        // its account id, so the domain user is its own external id.
+        const id = genId('user');
+        const domainUser = await identity.createUser({
           email,
           ...(firstName !== undefined && { firstName }),
           ...(lastName !== undefined && { lastName }),
           id,
           externalId: id,
         });
+
+        return {
+          data: {
+            ...user,
+            id: domainUser.id,
+          },
+        };
       },
       beforeCreateSession: async (session) => {
         const person = await identity.getUserByExternalId(session.userId);
@@ -439,13 +452,16 @@ export async function buildContainer(
         }
         return { data: { ...session, activeOrganizationId: org.externalId } };
       },
+      /*
+       * We're making sure the domain org creates and using the same ID for better-auth org ID.
+       */
       beforeCreateOrganization: async ({ organization: org, user: baUser }) => {
         const domainOrg = await organizations.createOrganization({
           ownerId: baUser.id,
           ...org,
           logo: org.logo ?? undefined,
         });
-        return { data: domainOrg };
+        return { data: { ...org, id: domainOrg.id } };
       },
       beforeUpdateOrganization: async ({ organization }) => {
         await organizations.updateOrganization(organization.id, organization);
@@ -453,11 +469,15 @@ export async function buildContainer(
       beforeDeleteOrganization: async ({ organization }) => {
         await organizations.deleteOrganization(organization.id);
       },
-      afterAddMember: async () => {
-        throw new Error('Not implemented');
+      beforeAddMember: async ({ member }) => {
+        await organizations.addOrgUser({
+          orgId: member.organizationId,
+          userId: member.userId,
+          role: parseRole(member.role),
+        });
       },
-      afterRemoveMember: async () => {
-        throw new Error('Not implemented');
+      beforeRemoveMember: async ({ member }) => {
+        await organizations.removeOrgUser(member.organizationId, member.userId);
       },
     },
     logger: logger.child({ name: 'auth' }),

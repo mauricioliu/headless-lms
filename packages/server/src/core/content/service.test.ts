@@ -12,7 +12,7 @@ function makeSettings() {
     patch: vi.fn(async (_orgId: string, namespace: string, scopeId: string, value: unknown) => ({
       namespace,
       scopeId,
-      value,
+      value: value as Record<string, unknown>,
     })),
   };
   return { settings: new SettingsService(repo), settingsRepo: repo };

@@ -13,7 +13,7 @@ import {
   PostComment,
   ReportComment,
   SetCommentReaction,
-} from '@headless-lms/api-contract';
+} from '../../schemas/index.js';
 import type { Container } from '../../../app/container.js';
 import { UnauthorizedError } from '../../plugins/auth.js';
 

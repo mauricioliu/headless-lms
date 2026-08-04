@@ -1,7 +1,7 @@
 // HTTP routes for the dashboard (overview) context.
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { OverviewStats } from '@headless-lms/api-contract';
+import { OverviewStats } from '../schemas/index.js';
 import type { Container } from '../../app/container.js';
 import { resolveScope } from '../scope.js';
 

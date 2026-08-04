@@ -17,7 +17,7 @@ import {
   Organization,
   UpdateMemberRole,
   UpdateOrganization,
-} from '@headless-lms/api-contract';
+} from '../schemas/index.js';
 import type { MemberWriteContext } from '../../core/organizations/index.js';
 import { NotFoundError } from '../../core/shared/errors.js';
 import type { Container } from '../../app/container.js';

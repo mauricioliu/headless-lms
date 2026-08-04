@@ -1,13 +1,9 @@
 import { and, eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type {
-  SettingsRecord,
-  SettingsRepository,
-} from '../../../core/shared/settings.js';
+import type { SettingsRecord, SettingsRepository } from '../../../core/shared/settings.js';
 import { settings } from '../schema/settings.js';
 import type { Logger } from '@headless-lms/types';
 import { noopLogger } from '../../../core/shared/logger.js';
-import type { SettingsValue } from '@headless-lms/api-contract';
 
 type Row = typeof settings.$inferSelect;
 
@@ -15,7 +11,7 @@ function toRecord(row: Row): SettingsRecord {
   return {
     namespace: row.namespace,
     scopeId: row.scopeId,
-    value: (row.value ?? {}) as SettingsValue,
+    value: row.value,
   };
 }
 
@@ -61,7 +57,7 @@ export class DrizzleSettingsRepository implements SettingsRepository {
     orgId: string,
     namespace: string,
     scopeId: string,
-    patch: SettingsValue,
+    patch: Record<string, unknown>,
   ): Promise<SettingsRecord> {
     const key = and(
       eq(settings.orgId, orgId),
@@ -95,7 +91,7 @@ export class DrizzleSettingsRepository implements SettingsRepository {
 
       const [updated] = await tx
         .update(settings)
-        .set({ value: deepMerge(existing.value, patch) as SettingsValue, updatedAt: new Date() })
+        .set({ value: deepMerge(existing.value, patch) as Record<string, unknown>, updatedAt: new Date() })
         .where(key)
         .returning();
       return updated;

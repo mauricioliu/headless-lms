@@ -3,7 +3,6 @@ export { IdentityServiceImpl } from './service.js';
 export type {
   IdentityService,
   IdentityRepository,
-  AuthAccountWriter,
   UserProvisioner,
   UserResolver,
   UserEditor,
