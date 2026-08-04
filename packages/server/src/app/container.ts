@@ -483,7 +483,6 @@ export async function buildContainer(
 
   return {
     auth,
-    authBaseURL: config.authBaseURL,
     identity,
     organizations,
     // Better Auth owns org writes; the same instance fulfils the OrgAdmin port.
