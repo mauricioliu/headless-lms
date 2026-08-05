@@ -124,6 +124,24 @@ module.exports = {
   },
   overrides: [
     {
+      // The editor contract entry is React-bound; the server may only import
+      // the @headless-lms/types root.
+      files: ["packages/server/**/*.ts"],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: [
+              {
+                name: "@headless-lms/types/editor",
+                message: "editor types are React-bound; the server imports only the types root",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
       // core must stay framework-free, runtime-free, and persistence-free, and a
       // context may reach another context ONLY through its public index.ts.
       files: ["packages/server/src/core/**/*.ts"],
@@ -134,6 +152,10 @@ module.exports = {
             paths: [
               { name: "fastify", message: "core must be framework-free" },
               { name: "pg", message: "core must be runtime-free" },
+              {
+                name: "@headless-lms/types/editor",
+                message: "editor types are React-bound; the server imports only the types root",
+              },
               {
                 name: "drizzle-orm",
                 message: "core must be persistence-free; schema + repos live in adapters/db",
