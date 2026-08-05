@@ -11,6 +11,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./editor": {
+      "types": "./dist/editor/index.d.ts",
+      "default": "./dist/editor/index.js"
     }
   },
   "scripts": {
@@ -19,6 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
+    "@types/react": "^19",
     "tsdown": "^0.22.9",
     "typescript": "^5.7.2"
   }
