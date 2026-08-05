@@ -414,14 +414,11 @@ export async function buildContainer(
         const { email, name } = user;
         const [firstName, lastName] = name.split(' ');
         // Better Auth has not minted an id yet — the id returned below becomes
-        // its account id, so the domain user is its own external id.
-        const id = genId('user');
-        const domainUser = await identity.createUser({
+        // its account id. A person provisioned at invite time is linked instead of re-created.
+        const domainUser = await identity.linkOrCreateUser({
           email,
           ...(firstName !== undefined && { firstName }),
           ...(lastName !== undefined && { lastName }),
-          id,
-          externalId: id,
         });
 
         return {
