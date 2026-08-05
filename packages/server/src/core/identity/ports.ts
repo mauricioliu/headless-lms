@@ -4,6 +4,10 @@ import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 
 export interface UserProvisioner {
   createUser(input: CreateUserInput): Promise<User>;
+  /** Auth signup entry point. Claims a person provisioned at invite time by
+   *  stamping `externalId`; creates the person when the email is unknown.
+   *  Throws ConflictError when the email is already linked to an account. */
+  linkOrCreateUser(input: CreateUserInput): Promise<User>;
   sendPasswordReset(input: { email: string; url: string }): Promise<void>;
   sendMagicLink(input: { email: string; url: string }): Promise<void>;
 }

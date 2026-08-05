@@ -1,13 +1,9 @@
-import type {
-  IdentityRepository,
-  IdentityService,
-  IdentityUnitOfWork,
-} from './ports.js';
+import type { IdentityRepository, IdentityService, IdentityUnitOfWork } from './ports.js';
 import type { User } from './model.js';
 import type { CreateUserInput, UpdateUserInput } from './types.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
-import { NotFoundError } from '../shared/errors.js';
+import { ConflictError, NotFoundError } from '../shared/errors.js';
 import type { Mailer } from '@headless-lms/server';
 
 export class IdentityServiceImpl implements IdentityService {
@@ -36,6 +32,29 @@ export class IdentityServiceImpl implements IdentityService {
     });
     this.logger.info('user created', { user: created });
     return created;
+  }
+
+  async linkOrCreateUser(input: CreateUserInput): Promise<User> {
+    const existing = await this.repo.findUserByEmail(input.email);
+    if (!existing) {
+      return this.createUser(input);
+    }
+    if (existing.externalId !== null) {
+      throw new ConflictError('That email already has an account');
+    }
+    // Existing user without external link, so invited. update the user with the
+    // id.
+    const linked = await this.uow.run(async ({ identity, outbox }) => {
+      const user = await identity.updateUser(existing.id, {
+        externalId: existing.id,
+        ...(input.firstName !== undefined && { firstName: input.firstName }),
+        ...(input.lastName !== undefined && { lastName: input.lastName }),
+      });
+      await outbox.append([{ type: 'user.updated', orgId: '-', user: user! }]);
+      return user!;
+    });
+    this.logger.info('user linked to auth account', { user: linked });
+    return linked;
   }
 
   async updateUser(id: string, input: UpdateUserInput): Promise<User> {
