@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 import { Field } from "@/components/forms/field";
+import { SettingsSection } from "@/components/forms/settings-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api/http";
@@ -70,8 +71,27 @@ export function StudentDetailsForm({ student }: { student: Student }) {
   const emailPending = student.status === "invited";
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col rounded-card border border-line bg-surface">
-      <div className="flex flex-col gap-5 px-6 py-5">
+    <form onSubmit={onSubmit}>
+      <SettingsSection
+        title="Profile"
+        description="The student's name and the email they sign in with."
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => reset(valuesFor(student))}
+              disabled={pending || !isDirty}
+            >
+              Discard
+            </Button>
+            <Button type="submit" variant="primary" disabled={pending || !isDirty}>
+              {pending && <Loader2 className="animate-spin" />}
+              Save changes
+            </Button>
+          </>
+        }
+      >
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <Field id="firstName" label="First name" required error={errors.firstName?.message}>
             <Input
@@ -104,22 +124,7 @@ export function StudentDetailsForm({ student }: { student: Student }) {
         >
           <Input id="email" type="email" aria-invalid={!!errors.email} {...register("email")} />
         </Field>
-      </div>
-
-      <div className="flex items-center justify-end gap-3 border-t border-line px-6 py-4">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => reset(valuesFor(student))}
-          disabled={pending || !isDirty}
-        >
-          Discard
-        </Button>
-        <Button type="submit" variant="primary" disabled={pending || !isDirty}>
-          {pending && <Loader2 className="animate-spin" />}
-          Save changes
-        </Button>
-      </div>
+      </SettingsSection>
     </form>
   );
 }

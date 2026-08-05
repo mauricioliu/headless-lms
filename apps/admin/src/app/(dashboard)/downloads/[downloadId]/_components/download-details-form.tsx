@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ImageIcon, Loader2 } from "lucide-react";
 
 import { Field } from "@/components/forms/field";
+import { SettingsSection } from "@/components/forms/settings-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,8 +71,16 @@ export function DownloadDetailsForm({ download }: { download: Download }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onValid)} className="flex max-w-2xl flex-col gap-6">
-      <div className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit(onValid)} className="w-full max-w-3xl">
+      <SettingsSection
+        title="Details"
+        description="How this download appears to students."
+        footer={
+          <Button type="submit" variant="primary" disabled={isPending || !isDirty}>
+            {isPending ? "Saving…" : "Save"}
+          </Button>
+        }
+      >
         <Field id="title" label="Title" required error={errors.title?.message}>
           <Input id="title" {...register("title")} />
         </Field>
@@ -88,13 +97,7 @@ export function DownloadDetailsForm({ download }: { download: Download }) {
         </Field>
 
         <ThumbnailField downloadId={download.id} thumbnailAssetId={download.thumbnailAssetId} />
-      </div>
-
-      <div className="flex items-center justify-end gap-2 border-t border-line pt-5">
-        <Button type="submit" variant="primary" disabled={isPending || !isDirty}>
-          {isPending ? "Saving…" : "Save"}
-        </Button>
-      </div>
+      </SettingsSection>
     </form>
   );
 }

@@ -41,7 +41,6 @@ import type {
   DeleteCourseResponses,
   DeleteDownloadErrors,
   DeleteDownloadResponses,
-  DeleteMcpResponses,
   DeleteModuleResponses,
   DeleteStudentErrors,
   DeleteStudentResponses,
@@ -65,6 +64,7 @@ import type {
   GetCourseResponses,
   GetDownloadErrors,
   GetDownloadResponses,
+  GetEnrollmentSeriesResponses,
   GetInviteErrors,
   GetInviteResponses,
   GetLearnCourseErrors,
@@ -76,7 +76,6 @@ import type {
   GetLearnDownloadResponses,
   GetLearnOrgResponses,
   GetLearnViewerResponses,
-  GetMcpResponses,
   GetOverviewResponses,
   GetStudentErrors,
   GetStudentResponses,
@@ -92,8 +91,6 @@ import type {
   ListAvailableIntegrationsErrors,
   ListAvailableIntegrationsResponses,
   ListCommentsResponses,
-  ListConnectedAppsErrors,
-  ListConnectedAppsResponses,
   ListConnectionsErrors,
   ListConnectionsResponses,
   ListCoursesResponses,
@@ -112,7 +109,6 @@ import type {
   ModerateRemoveCommentResponses,
   PostCommentErrors,
   PostCommentResponses,
-  PostMcpResponses,
   ReconnectIntegrationErrors,
   ReconnectIntegrationResponses,
   RemoveDownloadAssetErrors,
@@ -137,8 +133,6 @@ import type {
   RequestUploadResponses,
   ResendStudentInviteErrors,
   ResendStudentInviteResponses,
-  RevokeConnectedAppErrors,
-  RevokeConnectedAppResponses,
   SetCommentReactionErrors,
   SetCommentReactionResponses,
   SetEntitlementStatusErrors,
@@ -2566,6 +2560,29 @@ export class Dashboard {
       ...options,
     });
   }
+
+  /**
+   * Enrollments granted per day over a trailing window
+   */
+  public static getEnrollmentSeries<ThrowOnError extends boolean = false>(
+    parameters?: {
+      days?: number;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetEnrollmentSeriesResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "days" }] }]);
+    return (options?.client ?? client).get<
+      GetEnrollmentSeriesResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/overview/enrollments",
+      ...options,
+      ...params,
+    });
+  }
 }
 
 export class Assets {
@@ -2757,49 +2774,6 @@ export class Assets {
         ...options?.headers,
         ...params.headers,
       },
-    });
-  }
-}
-
-export class ConnectedApps {
-  /**
-   * List apps the current user has authorized
-   */
-  public static listConnectedApps<ThrowOnError extends boolean = false>(
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListConnectedAppsResponses, ListConnectedAppsErrors, ThrowOnError, "data"> {
-    return (options?.client ?? client).get<
-      ListConnectedAppsResponses,
-      ListConnectedAppsErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/connected-apps",
-      ...options,
-    });
-  }
-
-  /**
-   * Revoke a connected app's access token
-   */
-  public static revokeConnectedApp<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<RevokeConnectedAppResponses, RevokeConnectedAppErrors, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
-    return (options?.client ?? client).delete<
-      RevokeConnectedAppResponses,
-      RevokeConnectedAppErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/connected-apps/{id}",
-      ...options,
-      ...params,
     });
   }
 }
@@ -3028,38 +3002,6 @@ export class Integrations {
         ...options?.headers,
         ...params.headers,
       },
-    });
-  }
-}
-
-export class Default {
-  public static deleteMcp<ThrowOnError extends boolean = false>(
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<DeleteMcpResponses, unknown, ThrowOnError, "data"> {
-    return (options?.client ?? client).delete<DeleteMcpResponses, unknown, ThrowOnError, "data">({
-      responseStyle: "data",
-      url: "/mcp",
-      ...options,
-    });
-  }
-
-  public static getMcp<ThrowOnError extends boolean = false>(
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GetMcpResponses, unknown, ThrowOnError, "data"> {
-    return (options?.client ?? client).get<GetMcpResponses, unknown, ThrowOnError, "data">({
-      responseStyle: "data",
-      url: "/mcp",
-      ...options,
-    });
-  }
-
-  public static postMcp<ThrowOnError extends boolean = false>(
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<PostMcpResponses, unknown, ThrowOnError, "data"> {
-    return (options?.client ?? client).post<PostMcpResponses, unknown, ThrowOnError, "data">({
-      responseStyle: "data",
-      url: "/mcp",
-      ...options,
     });
   }
 }

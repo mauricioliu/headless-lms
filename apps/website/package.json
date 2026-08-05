@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 8003",
+    "dev-web": "next dev -p 8003",
     "build": "next build",
     "start": "next start -p 8003",
     "gen:api-docs": "node scripts/generate-api-docs.mjs",

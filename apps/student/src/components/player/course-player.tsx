@@ -28,7 +28,7 @@ import {
   type VideoAssetSeed,
 } from "@/lib/video-tracking";
 import editorMedia from "@/editor-media.config";
-import type { MediaTrackingEvent } from "@headless-lms/editor-contract";
+import type { MediaTrackingEvent } from "@headless-lms/types/editor";
 import { Learn } from "@headless-lms/sdk";
 
 import { PlayerHeader } from "./player-header";

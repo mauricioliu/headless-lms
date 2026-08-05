@@ -4,8 +4,33 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 /**
- * Card-per-group settings layout, shared by every settings surface: a titled
- * section holding divided rows, with the form's actions in a bordered footer.
+ * The stack for a settings/form surface: constrains the column and puts a
+ * single hairline between stacked sections (or the forms wrapping them).
+ */
+export function SettingsSurface({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex w-full max-w-3xl flex-col divide-y divide-line",
+        "[&>*]:py-8 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * One borderless settings section, shared by every form surface: heading and
+ * description in a left rail, the fields filling the right column, the form's
+ * actions right-aligned under the fields.
  */
 export function SettingsSection({
   title,
@@ -19,17 +44,15 @@ export function SettingsSection({
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col rounded-card border border-line bg-surface">
-      <header className="flex flex-col gap-1 border-b border-line px-6 py-4">
+    <section className="flex flex-col gap-6 md:grid md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-x-12">
+      <header className="flex flex-col gap-1">
         <h2 className="text-sm font-semibold text-ink">{title}</h2>
         {description ? <p className="text-sm text-ink-3 text-pretty">{description}</p> : null}
       </header>
-      <div className="flex flex-col divide-y divide-line">{children}</div>
-      {footer ? (
-        <div className="flex items-center justify-end gap-3 border-t border-line px-6 py-4">
-          {footer}
-        </div>
-      ) : null}
+      <div className="flex min-w-0 flex-col gap-5">
+        {children}
+        {footer ? <div className="flex items-center justify-end gap-3 pt-1">{footer}</div> : null}
+      </div>
     </section>
   );
 }
@@ -51,7 +74,7 @@ export function SettingRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
       <div className="flex min-w-0 flex-col gap-1">
         <Label htmlFor={id}>{label}</Label>
         {error ? (

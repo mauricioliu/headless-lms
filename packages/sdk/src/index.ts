@@ -11,10 +11,8 @@ import { client } from "./generated/client.gen";
 import {
   Assets as AssetsGen,
   Automations as AutomationsGen,
-  ConnectedApps as ConnectedAppsGen,
   Courses as CoursesGen,
   Dashboard as DashboardGen,
-  Default as DefaultGen,
   Discussion as DiscussionGen,
   Downloads as DownloadsGen,
   Entitlements as EntitlementsGen,
@@ -39,10 +37,8 @@ type Throwing<S> = {
 
 export const Assets = AssetsGen as Throwing<typeof AssetsGen>;
 export const Automations = AutomationsGen as Throwing<typeof AutomationsGen>;
-export const ConnectedApps = ConnectedAppsGen as Throwing<typeof ConnectedAppsGen>;
 export const Courses = CoursesGen as Throwing<typeof CoursesGen>;
 export const Dashboard = DashboardGen as Throwing<typeof DashboardGen>;
-export const Default = DefaultGen as Throwing<typeof DefaultGen>;
 export const Discussion = DiscussionGen as Throwing<typeof DiscussionGen>;
 export const Downloads = DownloadsGen as Throwing<typeof DownloadsGen>;
 export const Entitlements = EntitlementsGen as Throwing<typeof EntitlementsGen>;

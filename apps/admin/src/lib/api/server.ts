@@ -43,6 +43,7 @@ import type {
   Course,
   Download,
   DownloadAsset,
+  EnrollmentSeries,
   Entitlement,
   IntegrationConnection,
   ListParams,
@@ -58,6 +59,9 @@ export const serverApi = {
   // dashboard
   async overview(): Promise<OverviewStats> {
     return await Dashboard.getOverview(await authHeaders());
+  },
+  async enrollmentSeries(days: number): Promise<EnrollmentSeries> {
+    return await Dashboard.getEnrollmentSeries({ days }, await authHeaders());
   },
 
   // courses

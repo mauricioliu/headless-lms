@@ -3,10 +3,11 @@ import Link from "next/link";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import type { OverviewStats, SessionUser } from "@/lib/api/types";
+import type { EnrollmentSeries, OverviewStats, SessionUser } from "@/lib/api/types";
 import type { ServerRole } from "@/lib/auth/server-session";
 import { can, isManager } from "@/lib/roles";
 
+import { EnrollmentsChart, type EnrollmentRangeKey } from "./enrollments-chart";
 import { FocusPanel } from "./focus-panel";
 import { StatStrip, type Stat } from "./stat-strip";
 
@@ -21,7 +22,6 @@ const STAT_CONFIG: { key: keyof OverviewStats; label: string; managerOnly?: bool
   { key: "publishedCourses", label: "Published courses" },
   { key: "draftCourses", label: "Draft courses" },
   { key: "activeStudents", label: "Active students", managerOnly: true },
-  { key: "activeEntitlements", label: "Active entitlements", managerOnly: true },
   { key: "expiringSoon", label: "Expiring soon", managerOnly: true },
 ];
 
@@ -30,10 +30,19 @@ interface OverviewViewProps {
   user: { id: string; name: string; email: string; image: string | null };
   organization: { id: string; name: string; slug: string };
   stats: OverviewStats;
+  enrollments: EnrollmentSeries | null;
+  range: EnrollmentRangeKey;
 }
 
 // Overview view: role/user/org and stats come in as props; presentational Server Component.
-export function OverviewView({ role, user, organization, stats: overview }: OverviewViewProps) {
+export function OverviewView({
+  role,
+  user,
+  organization,
+  stats: overview,
+  enrollments,
+  range,
+}: OverviewViewProps) {
   const manager = isManager(role);
 
   // Rehydrate a SessionUser so the shared `can.*` gates stay the single source
@@ -60,6 +69,8 @@ export function OverviewView({ role, user, organization, stats: overview }: Over
 
       <Section>
         <StatStrip stats={stats} />
+
+        {manager && enrollments ? <EnrollmentsChart data={enrollments} range={range} /> : null}
 
         {manager ? (
           <div className="@container">

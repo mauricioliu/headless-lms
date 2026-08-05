@@ -9,7 +9,7 @@ import type { Value } from 'platejs';
 import { Plate, usePlateEditor } from 'platejs/react';
 import { useEffect } from 'react';
 
-import type { PageEditorProps } from '@headless-lms/editor-contract';
+import type { PageEditorProps } from '@headless-lms/types/editor';
 
 import { EditorKit } from './editor/editor-kit';
 import { PickAssetProvider } from './hooks/use-pick-asset';

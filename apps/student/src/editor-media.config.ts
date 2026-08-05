@@ -3,7 +3,7 @@
  * editors edit both files. Separate entry so player routes don't bundle the
  * editor itself.
  */
-import type { EditorMediaModule } from "@headless-lms/editor-contract";
+import type { EditorMediaModule } from "@headless-lms/types/editor";
 import { MediaProvider } from "@headless-lms/content-plate/media";
 
 const editorMedia: EditorMediaModule = { MediaProvider };

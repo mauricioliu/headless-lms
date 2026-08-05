@@ -1,7 +1,7 @@
 # @headless-lms/content-plate
 
 Notion-style [Plate](https://platejs.org) implementation of the swappable
-activity content editor (`@headless-lms/editor-contract`). Default-exports an
+activity content editor (`@headless-lms/types/editor`). Default-exports an
 `EditorModule` with `meta: { type: 'plate', version: 1 }`; the config blob is
 the Plate/Slate node array (`editor.children`), stored opaquely by the backend.
 

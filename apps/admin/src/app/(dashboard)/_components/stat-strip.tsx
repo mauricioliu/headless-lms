@@ -15,23 +15,18 @@ function colsClass(count: number): string {
 }
 
 /**
- * KPI strip rendered as a single bordered grid: the container background bleeds
- * through 1px gaps to draw hairline dividers between cells — no per-card chrome,
- * no icons. Values are large and tabular; labels truncate to a single line.
+ * KPI row, flat and editorial: no card, no border box, no shadow — each stat
+ * sits directly on the page behind a 2px hairline left rule. Values are large
+ * with proportional figures; labels stay one muted line above.
  */
 export function StatStrip({ stats }: { stats: Stat[] }) {
   return (
     <div className="@container">
-      <dl
-        className={cn(
-          "grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line shadow-card",
-          colsClass(stats.length),
-        )}
-      >
+      <dl className={cn("grid grid-cols-2 gap-x-6 gap-y-6", colsClass(stats.length))}>
         {stats.map((s) => (
-          <div key={s.label} className="flex flex-col gap-1.5 bg-surface px-4 py-3.5">
+          <div key={s.label} className="flex flex-col gap-1 border-l-2 border-line pl-4">
             <dt className="truncate text-[0.8125rem] text-ink-3">{s.label}</dt>
-            <dd className="text-2xl font-semibold tracking-tight text-ink tabular-nums">
+            <dd className="text-[1.75rem] leading-9 font-semibold tracking-tight text-ink proportional-nums">
               {formatNumber(s.value)}
             </dd>
           </div>
@@ -44,16 +39,11 @@ export function StatStrip({ stats }: { stats: Stat[] }) {
 export function StatStripSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className="@container">
-      <dl
-        className={cn(
-          "grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line shadow-card",
-          colsClass(count),
-        )}
-      >
+      <dl className={cn("grid grid-cols-2 gap-x-6 gap-y-6", colsClass(count))}>
         {Array.from({ length: count }).map((_, i) => (
-          <div key={i} className="flex flex-col gap-2.5 bg-surface px-4 py-3.5">
+          <div key={i} className="flex flex-col gap-2 border-l-2 border-line pl-4">
             <Skeleton className="h-3.5 w-20" />
-            <Skeleton className="h-7 w-12" />
+            <Skeleton className="h-8 w-14" />
           </div>
         ))}
       </dl>

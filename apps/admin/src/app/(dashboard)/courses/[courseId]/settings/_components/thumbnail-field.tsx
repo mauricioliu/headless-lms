@@ -11,6 +11,7 @@ import { useRef, useState } from "react";
 import { ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
+import { SettingsSection } from "@/components/forms/settings-section";
 import { Button } from "@/components/ui/button";
 import { AssetPickerDialog } from "@/app/(dashboard)/media/_components/asset-picker-dialog";
 import {
@@ -93,78 +94,83 @@ export function ThumbnailField({
   const disabled = busy !== null;
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-      <div className="relative grid aspect-video w-56 shrink-0 place-items-center overflow-hidden rounded-card border border-line bg-well">
-        {preview ? (
-          // Presigned URLs are short-lived and host-varying — next/image would
-          // need every storage host allowlisted, so this stays a plain img.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview.url} alt="" className="size-full object-cover" />
-        ) : (
-          <ImageIcon className="size-6 text-ink-4" aria-hidden />
-        )}
-        {uploading && (
-          <div className="absolute inset-0 grid place-items-center gap-2 bg-surface/80 text-xs text-ink-3">
-            <Loader2 className="size-4 animate-spin" />
-            {Math.round(progress * 100)}%
-          </div>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap gap-2">
-          <input
-            ref={fileInput}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (file) void onUpload(file);
-            }}
-          />
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={disabled}
-            onClick={() => fileInput.current?.click()}
-          >
-            <Upload />
-            Upload
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={disabled}
-            onClick={() => setPickerOpen(true)}
-          >
-            <ImageIcon />
-            Choose from library
-          </Button>
-          {preview && (
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={disabled}
-              onClick={() => void save(null)}
-            >
-              <Trash2 />
-              Remove
-            </Button>
+    <SettingsSection
+      title="Thumbnail"
+      description="The cover image for this course. Upload a new one or link an image already in your media library."
+    >
+      <div className="flex flex-col gap-4">
+        <div className="relative grid aspect-video w-56 shrink-0 place-items-center overflow-hidden rounded-card border border-line bg-well">
+          {preview ? (
+            // Presigned URLs are short-lived and host-varying — next/image would
+            // need every storage host allowlisted, so this stays a plain img.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={preview.url} alt="" className="size-full object-cover" />
+          ) : (
+            <ImageIcon className="size-6 text-ink-4" aria-hidden />
+          )}
+          {uploading && (
+            <div className="absolute inset-0 grid place-items-center gap-2 bg-surface/80 text-xs text-ink-3">
+              <Loader2 className="size-4 animate-spin" />
+              {Math.round(progress * 100)}%
+            </div>
           )}
         </div>
-        <p className="text-sm text-ink-3">
-          A wide image works best — it is cropped to 16:9 on the course card.
-        </p>
-      </div>
 
-      <AssetPickerDialog
-        open={pickerOpen}
-        kind="content"
-        onOpenChange={setPickerOpen}
-        onSelect={onSelect}
-      />
-    </div>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2">
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) void onUpload(file);
+              }}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={disabled}
+              onClick={() => fileInput.current?.click()}
+            >
+              <Upload />
+              Upload
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={disabled}
+              onClick={() => setPickerOpen(true)}
+            >
+              <ImageIcon />
+              Choose from library
+            </Button>
+            {preview && (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={disabled}
+                onClick={() => void save(null)}
+              >
+                <Trash2 />
+                Remove
+              </Button>
+            )}
+          </div>
+          <p className="text-sm text-ink-3">
+            A wide image works best — it is cropped to 16:9 on the course card.
+          </p>
+        </div>
+
+        <AssetPickerDialog
+          open={pickerOpen}
+          kind="content"
+          onOpenChange={setPickerOpen}
+          onSelect={onSelect}
+        />
+      </div>
+    </SettingsSection>
   );
 }

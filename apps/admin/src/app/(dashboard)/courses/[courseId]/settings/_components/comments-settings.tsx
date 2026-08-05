@@ -4,10 +4,10 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import type { CommentSettings } from "@/lib/api/types";
+import { SettingRow, SettingsSection } from "@/components/forms/settings-section";
 import { Switch } from "@/components/ui/switch";
 
 import { setCommentsSettingsAction } from "../actions";
-import { SettingsRow } from "./settings-section";
 
 const FIELDS = [
   { key: "enabled", label: "Enabled", hint: "Show comments on this course's lessons." },
@@ -55,24 +55,18 @@ export function CommentsSettings({
   }
 
   return (
-    <div className="divide-y divide-line">
+    <SettingsSection title="Comments" description="Discussion on this course's lessons.">
       {FIELDS.map(({ key, label, hint }) => (
-        <SettingsRow
-          key={key}
-          htmlFor={`comments-${key}`}
-          label={label}
-          hint={hint}
-          control={
-            <Switch
-              id={`comments-${key}`}
-              checked={value[key]}
-              // The other three have no effect while comments are off.
-              disabled={isPending || (key !== "enabled" && !value.enabled)}
-              onCheckedChange={(next) => update(key, next)}
-            />
-          }
-        />
+        <SettingRow key={key} id={`comments-${key}`} label={label} hint={hint}>
+          <Switch
+            id={`comments-${key}`}
+            checked={value[key]}
+            // The other three have no effect while comments are off.
+            disabled={isPending || (key !== "enabled" && !value.enabled)}
+            onCheckedChange={(next) => update(key, next)}
+          />
+        </SettingRow>
       ))}
-    </div>
+    </SettingsSection>
   );
 }

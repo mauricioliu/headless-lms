@@ -8,6 +8,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 
 import { Field } from "@/components/forms/field";
+import { SettingsSection } from "@/components/forms/settings-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -83,43 +84,47 @@ export function BasicsForm({ course }: { course: Course }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onValid)} className="flex flex-col gap-5">
-      <Field id="title" label="Title" required error={errors.title?.message}>
-        <Input id="title" {...register("title")} />
-      </Field>
-      <Field id="category" label="Category" required error={errors.category?.message}>
-        <Select
-          value={category || undefined}
-          onValueChange={(v) =>
-            setValue("category", v, { shouldValidate: true, shouldDirty: true })
-          }
-        >
-          <SelectTrigger id="category" aria-invalid={Boolean(errors.category)}>
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent>
-            {CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Field>
-      <Field
-        id="description"
-        label="Description"
-        hint="A short summary shown on the course card."
-        error={errors.description?.message}
+    <form onSubmit={handleSubmit(onValid)}>
+      <SettingsSection
+        title="Details"
+        description="How this course is titled and categorised across the product."
+        footer={
+          <Button type="submit" variant="primary" disabled={isPending || !isDirty}>
+            {isPending ? "Saving…" : "Save"}
+          </Button>
+        }
       >
-        <Textarea id="description" rows={5} {...register("description")} />
-      </Field>
-
-      <div className="flex justify-end">
-        <Button type="submit" variant="primary" disabled={isPending || !isDirty}>
-          {isPending ? "Saving…" : "Save"}
-        </Button>
-      </div>
+        <Field id="title" label="Title" required error={errors.title?.message}>
+          <Input id="title" {...register("title")} />
+        </Field>
+        <Field id="category" label="Category" required error={errors.category?.message}>
+          <Select
+            value={category || undefined}
+            onValueChange={(v) =>
+              setValue("category", v, { shouldValidate: true, shouldDirty: true })
+            }
+          >
+            <SelectTrigger id="category" aria-invalid={Boolean(errors.category)}>
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field
+          id="description"
+          label="Description"
+          hint="A short summary shown on the course card."
+          error={errors.description?.message}
+        >
+          <Textarea id="description" rows={5} {...register("description")} />
+        </Field>
+      </SettingsSection>
     </form>
   );
 }

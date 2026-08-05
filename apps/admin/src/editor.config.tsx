@@ -7,7 +7,7 @@
  * The `EditorModule` annotation is the enforcement: a default export that
  * doesn't satisfy the contract fails `next build` typecheck at this file.
  */
-import type { EditorModule } from "@headless-lms/editor-contract";
+import type { EditorModule } from "@headless-lms/types/editor";
 import plateEditor from "@headless-lms/content-plate";
 
 const editorModule: EditorModule = plateEditor;

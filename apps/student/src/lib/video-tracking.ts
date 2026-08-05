@@ -1,6 +1,6 @@
 // Watch-reporting policy: what to send and when. The island emits raw facts;
 // this module turns them into report items for the progress endpoint.
-import type { MediaTrackingEvent } from "@headless-lms/editor-contract";
+import type { MediaTrackingEvent } from "@headless-lms/types/editor";
 import type { ReportProgressData } from "@headless-lms/sdk";
 
 export interface VideoReportItem {

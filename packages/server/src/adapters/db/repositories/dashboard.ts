@@ -5,7 +5,7 @@
 import { and, eq, gte, isNull, or, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { DashboardReportRepository } from '../../../reporting/dashboard/index.js';
-import type { OverviewStats } from '../../../reporting/dashboard/index.js';
+import type { EnrollmentPoint, OverviewStats } from '../../../reporting/dashboard/index.js';
 import { courses, entitlements } from '../schema/index.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
@@ -33,7 +33,6 @@ export class DrizzleDashboardRepository implements DashboardReportRepository {
 
     const [entitlementCounts] = await this.db
       .select({
-        activeEntitlements: sql<number>`count(*)`,
         activeStudents: sql<number>`count(distinct ${entitlements.orgUserId})`,
         expiringSoon: sql<number>`count(*) filter (where ${entitlements.expiresAt} is not null and ${entitlements.expiresAt} < now() + interval '14 days')`,
       })
@@ -44,8 +43,29 @@ export class DrizzleDashboardRepository implements DashboardReportRepository {
       publishedCourses: Number(courseCounts?.published ?? 0),
       draftCourses: Number(courseCounts?.draft ?? 0),
       activeStudents: Number(entitlementCounts?.activeStudents ?? 0),
-      activeEntitlements: Number(entitlementCounts?.activeEntitlements ?? 0),
       expiringSoon: Number(entitlementCounts?.expiringSoon ?? 0),
     };
+  }
+
+  // Grants per day over the trailing window, zero-filled so the series has one
+  // point per calendar day (UTC) even when nothing was granted.
+  async enrollments(orgId: string, days: number): Promise<EnrollmentPoint[]> {
+    const result = await this.db.execute(sql`
+      select
+        to_char(d.day, 'YYYY-MM-DD') as date,
+        count(${entitlements.id})::int as count
+      from generate_series(
+        (now() at time zone 'utc')::date - (${days} - 1),
+        (now() at time zone 'utc')::date,
+        interval '1 day'
+      ) as d(day)
+      left join ${entitlements}
+        on ${entitlements.orgId} = ${orgId}
+        and (${entitlements.grantedAt} at time zone 'utc')::date = d.day::date
+      group by d.day
+      order by d.day
+    `);
+    const rows = result.rows as { date: string; count: number }[];
+    return rows.map((r) => ({ date: r.date, count: Number(r.count) }));
   }
 }

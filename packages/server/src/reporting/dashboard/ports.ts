@@ -1,10 +1,12 @@
 // reporting/dashboard — ports.
-import type { OverviewStats } from './model.js';
+import type { EnrollmentPoint, OverviewStats } from './model.js';
 
 export interface DashboardReportService {
   overview(orgId: string): Promise<OverviewStats>;
+  enrollments(orgId: string, days: number): Promise<EnrollmentPoint[]>;
 }
 
 export interface DashboardReportRepository {
   overview(orgId: string): Promise<OverviewStats>;
+  enrollments(orgId: string, days: number): Promise<EnrollmentPoint[]>;
 }

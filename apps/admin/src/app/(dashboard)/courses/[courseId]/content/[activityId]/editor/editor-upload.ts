@@ -10,7 +10,7 @@
  * it at render time (see `lib/api/resolve-asset-urls.ts`).
  */
 
-import type { UploadedEditorFile } from "@headless-lms/editor-contract";
+import type { UploadedEditorFile } from "@headless-lms/types/editor";
 
 import {
   confirmAssetAction,

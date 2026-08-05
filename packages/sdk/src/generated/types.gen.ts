@@ -2956,12 +2956,33 @@ export type GetOverviewResponses = {
     publishedCourses: number;
     draftCourses: number;
     activeStudents: number;
-    activeEntitlements: number;
     expiringSoon: number;
   };
 };
 
 export type GetOverviewResponse = GetOverviewResponses[keyof GetOverviewResponses];
+
+export type GetEnrollmentSeriesData = {
+  body?: never;
+  path?: never;
+  query?: {
+    days?: number;
+  };
+  url: "/api/overview/enrollments";
+};
+
+export type GetEnrollmentSeriesResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    date: string;
+    count: number;
+  }>;
+};
+
+export type GetEnrollmentSeriesResponse =
+  GetEnrollmentSeriesResponses[keyof GetEnrollmentSeriesResponses];
 
 export type RequestUploadData = {
   body: {
@@ -3286,76 +3307,6 @@ export type RequestAssetDownloadResponses = {
 
 export type RequestAssetDownloadResponse =
   RequestAssetDownloadResponses[keyof RequestAssetDownloadResponses];
-
-export type ListConnectedAppsData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/api/connected-apps";
-};
-
-export type ListConnectedAppsErrors = {
-  /**
-   * Default Response
-   */
-  401: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type ListConnectedAppsError = ListConnectedAppsErrors[keyof ListConnectedAppsErrors];
-
-export type ListConnectedAppsResponses = {
-  /**
-   * Default Response
-   */
-  200: Array<{
-    id: string;
-    clientName: string;
-    scopes: Array<string>;
-    createdAt: string;
-    expiresAt: string | null;
-  }>;
-};
-
-export type ListConnectedAppsResponse =
-  ListConnectedAppsResponses[keyof ListConnectedAppsResponses];
-
-export type RevokeConnectedAppData = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: "/api/connected-apps/{id}";
-};
-
-export type RevokeConnectedAppErrors = {
-  /**
-   * Default Response
-   */
-  401: {
-    error: string;
-    message?: string;
-  };
-  /**
-   * Default Response
-   */
-  404: {
-    error: string;
-    message?: string;
-  };
-};
-
-export type RevokeConnectedAppError = RevokeConnectedAppErrors[keyof RevokeConnectedAppErrors];
-
-export type RevokeConnectedAppResponses = {
-  /**
-   * Default Response
-   */
-  204: unknown;
-};
 
 export type ListAvailableIntegrationsData = {
   body?: never;
@@ -3722,45 +3673,3 @@ export type ReconnectIntegrationResponses = {
 
 export type ReconnectIntegrationResponse =
   ReconnectIntegrationResponses[keyof ReconnectIntegrationResponses];
-
-export type DeleteMcpData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/mcp";
-};
-
-export type DeleteMcpResponses = {
-  /**
-   * Default Response
-   */
-  200: unknown;
-};
-
-export type GetMcpData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/mcp";
-};
-
-export type GetMcpResponses = {
-  /**
-   * Default Response
-   */
-  200: unknown;
-};
-
-export type PostMcpData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/mcp";
-};
-
-export type PostMcpResponses = {
-  /**
-   * Default Response
-   */
-  200: unknown;
-};

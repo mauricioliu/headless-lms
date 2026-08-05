@@ -4,6 +4,10 @@ export interface OverviewStats {
   publishedCourses: number;
   draftCourses: number;
   activeStudents: number;
-  activeEntitlements: number;
   expiringSoon: number;
+}
+
+export interface EnrollmentPoint {
+  date: string;
+  count: number;
 }

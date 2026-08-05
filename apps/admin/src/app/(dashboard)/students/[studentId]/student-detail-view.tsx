@@ -95,7 +95,7 @@ export function StudentDetailView({
           <TabsTrigger value="access">Access</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details">
+        <TabsContent value="details" className="w-full max-w-3xl">
           <StudentDetailsForm student={student} />
         </TabsContent>
 
@@ -115,7 +115,7 @@ export function StudentDetailView({
           {entitlements.length === 0 ? (
             <EmptyEntitlements />
           ) : (
-            <ul className="divide-y divide-line rounded-card border border-line bg-surface px-4 sm:px-5">
+            <ul className="divide-y divide-line">
               {entitlements.map((e) => (
                 <EntitlementRow key={e.id} entitlement={e} />
               ))}
@@ -137,8 +137,9 @@ export function StudentDetailView({
         title="Delete student?"
         description={
           <>
-            This permanently deletes <span className="font-medium text-ink">{fullName(student)}</span>,
-            along with their entitlements and progress. This can&apos;t be undone.
+            This permanently deletes{" "}
+            <span className="font-medium text-ink">{fullName(student)}</span>, along with their
+            entitlements and progress. This can&apos;t be undone.
           </>
         }
         confirmLabel="Delete student"
@@ -204,9 +205,12 @@ function StudentHeader({
       </div>
 
       <div className="@container">
-        <dl className="grid grid-cols-1 divide-y divide-line rounded-card border border-line @sm:grid-cols-3 @sm:divide-x @sm:divide-y-0">
+        <dl className="grid grid-cols-1 divide-y divide-line @sm:grid-cols-3 @sm:divide-x @sm:divide-y-0">
           {stats.map((s) => (
-            <div key={s.label} className="flex flex-col gap-1 px-5 py-4">
+            <div
+              key={s.label}
+              className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 @sm:px-8 @sm:py-1 @sm:first:pl-0 @sm:last:pr-0"
+            >
               <dt className="truncate text-xs text-ink-3">{s.label}</dt>
               <dd className="text-2xl font-semibold tracking-tight text-ink">{s.value}</dd>
             </div>
@@ -219,7 +223,7 @@ function StudentHeader({
 
 function EntitlementRow({ entitlement: e }: { entitlement: Entitlement }) {
   return (
-    <li className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+    <li className="flex flex-col gap-3 py-4 first:pt-1 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="truncate font-medium text-ink">{e.content.title}</span>

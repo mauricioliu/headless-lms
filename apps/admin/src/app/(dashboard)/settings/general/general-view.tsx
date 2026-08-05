@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/forms/field";
+import { SettingsSection } from "@/components/forms/settings-section";
 
 import { updateOrganizationAction } from "./actions";
 
@@ -48,12 +49,17 @@ export function GeneralView({ name, slug }: { name: string; slug: string }) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="flex max-w-xl flex-col rounded-card border border-line bg-surface"
-      noValidate
-    >
-      <div className="flex flex-col gap-5 p-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-3xl" noValidate>
+      <SettingsSection
+        title="Organization"
+        description="Your organization's name and URL slug."
+        footer={
+          <Button type="submit" variant="primary" disabled={isSubmitting || !isDirty}>
+            {isSubmitting && <Loader2 className="animate-spin" />}
+            Save
+          </Button>
+        }
+      >
         <Field id="org-name" label="Name" error={errors.name?.message} required>
           <Input id="org-name" {...register("name")} />
         </Field>
@@ -66,13 +72,7 @@ export function GeneralView({ name, slug }: { name: string; slug: string }) {
         >
           <Input id="org-slug" {...register("slug")} />
         </Field>
-      </div>
-      <div className="flex justify-end border-t border-line px-6 py-4">
-        <Button type="submit" variant="primary" disabled={isSubmitting || !isDirty}>
-          {isSubmitting && <Loader2 className="animate-spin" />}
-          Save
-        </Button>
-      </div>
+      </SettingsSection>
     </form>
   );
 }

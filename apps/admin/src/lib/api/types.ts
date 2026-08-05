@@ -13,6 +13,7 @@ import type {
   GetCourseResponse,
   ListCommentsResponse,
   GetDownloadResponse,
+  GetEnrollmentSeriesResponse,
   GetOverviewResponse,
   GetStudentResponse,
   ListAssetsResponse,
@@ -103,6 +104,8 @@ export type MemberStatus = Member["status"];
 export type Role = Member["role"];
 
 export type OverviewStats = GetOverviewResponse;
+export type EnrollmentSeries = GetEnrollmentSeriesResponse;
+export type EnrollmentPoint = EnrollmentSeries[number];
 
 // --- media library (assets) ------------------------------------------------
 
