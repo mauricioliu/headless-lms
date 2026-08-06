@@ -19,6 +19,18 @@ export default defineConfig({
         replacement: r("./packages/editor/src/index.ts"),
       },
       {
+        find: "@headless-lms/utils",
+        replacement: r("./packages/utils/src/index.ts"),
+      },
+      {
+        find: "@headless-lms/server",
+        replacement: r("./packages/server/src/index.ts"),
+      },
+      {
+        find: "@headless-lms/plugin-slack",
+        replacement: r("./plugins/slack/src/index.ts"),
+      },
+      {
         find: "@headless-lms/adapter-auth",
         replacement: r("./adapters/auth/src/index.ts"),
       },
