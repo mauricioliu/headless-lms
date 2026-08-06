@@ -80,6 +80,8 @@ import type {
   GetStudentErrors,
   GetStudentResponses,
   GrantEntitlementResponses,
+  InvokeConnectionActionErrors,
+  InvokeConnectionActionResponses,
   ListActivityCommentsErrors,
   ListActivityCommentsResponses,
   ListAssetsErrors,
@@ -2995,6 +2997,54 @@ export class Integrations {
     >({
       responseStyle: "data",
       url: "/api/integrations/{id}/reconnect",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * Invoke one of a connection's actions (e.g. a listing that feeds a picker)
+   */
+  public static invokeConnectionAction<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+      actionId: string;
+      input?: {
+        [key: string]: unknown;
+      };
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<
+    InvokeConnectionActionResponses,
+    InvokeConnectionActionErrors,
+    ThrowOnError,
+    "data"
+  > {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "path", key: "actionId" },
+            { in: "body", key: "input" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).post<
+      InvokeConnectionActionResponses,
+      InvokeConnectionActionErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/integrations/{id}/actions/{actionId}",
       ...options,
       ...params,
       headers: {

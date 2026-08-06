@@ -3673,3 +3673,72 @@ export type ReconnectIntegrationResponses = {
 
 export type ReconnectIntegrationResponse =
   ReconnectIntegrationResponses[keyof ReconnectIntegrationResponses];
+
+export type InvokeConnectionActionData = {
+  body: {
+    input?: {
+      [key: string]: unknown;
+    };
+  };
+  path: {
+    id: string;
+    actionId: string;
+  };
+  query?: never;
+  url: "/api/integrations/{id}/actions/{actionId}";
+};
+
+export type InvokeConnectionActionErrors = {
+  /**
+   * Default Response
+   */
+  400: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  401: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  409: {
+    error: string;
+    message?: string;
+  };
+  /**
+   * Default Response
+   */
+  502: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type InvokeConnectionActionError =
+  InvokeConnectionActionErrors[keyof InvokeConnectionActionErrors];
+
+export type InvokeConnectionActionResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    output: {
+      [key: string]: unknown;
+    };
+  };
+};
+
+export type InvokeConnectionActionResponse =
+  InvokeConnectionActionResponses[keyof InvokeConnectionActionResponses];
