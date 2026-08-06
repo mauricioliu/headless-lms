@@ -10,7 +10,7 @@ import type {
 } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import type { EventOutbox } from '@headless-lms/core/schemas';
-import type { DbExecutor } from '../index.js';
+import type { DbExecutor } from '../client.js';
 import { eventOutbox } from '../schema/outbox.js';
 
 /** A message that fails this many dispatches is parked: fetchBatch stops

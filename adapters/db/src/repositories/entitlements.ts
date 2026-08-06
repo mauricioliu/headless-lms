@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
-import type { DbExecutor } from '../index.js';
+import type { DbExecutor } from '../client.js';
 import type { EntitlementsRepository } from '@headless-lms/core/entitlements';
 import type {
   Entitlement,

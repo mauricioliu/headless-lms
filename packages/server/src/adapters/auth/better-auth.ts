@@ -8,7 +8,7 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { APIError, betterAuth } from 'better-auth';
 import type { CreateAuthOptions } from './types.js';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import * as authSchema from './schema.js';
+import * as authSchema from '@headless-lms/adapter-db/schema/better-auth';
 import { prefixId } from '@headless-lms/core/shared/id';
 import { customSession, magicLink, organization } from 'better-auth/plugins';
 import { eq } from 'drizzle-orm';

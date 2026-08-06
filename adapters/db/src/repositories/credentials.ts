@@ -7,7 +7,7 @@
 // store/reveal — it is never logged, listed, or returned elsewhere.
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
-import type { DbExecutor } from '../index.js';
+import type { DbExecutor } from '../client.js';
 import type { CredentialStore, Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import { genId } from '@headless-lms/core/shared/id';

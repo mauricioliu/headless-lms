@@ -8,7 +8,7 @@ import type { Member, MembersQuery, Page, StaffRole } from '@headless-lms/core/o
 import { isStaffRole, STUDENT_ROLE } from '@headless-lms/core/organizations';
 import { orgUsers, invites } from '../schema/organizations.js';
 import { users } from '../schema/identity.js';
-import { user } from '../../auth/schema.js';
+import { user } from '../schema/better-auth.js';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import { orgUserProfileColumns } from './org-user-profile.js';

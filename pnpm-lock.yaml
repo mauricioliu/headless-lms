@@ -38,6 +38,40 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@26.1.2)(jsdom@25.0.1)(lightningcss@1.32.0)
 
+  adapters/db:
+    dependencies:
+      '@headless-lms/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@types/pg@8.20.0)(gel@2.2.0)(kysely@0.29.2)(pg@8.22.0)
+      pg:
+        specifier: ^8.13.1
+        version: 8.22.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.0
+      '@types/pg':
+        specifier: ^8.11.10
+        version: 8.20.0
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
+      tsdown:
+        specifier: ^0.22.9
+        version: 0.22.9(tsx@4.22.4)(typescript@5.9.3)(unrun@0.3.1)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.0)(jsdom@25.0.1)(lightningcss@1.32.0)
+
   adapters/email-resend:
     dependencies:
       '@headless-lms/core':
@@ -574,6 +608,9 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^6.0.0
         version: 6.0.0
+      '@headless-lms/adapter-db':
+        specifier: workspace:*
+        version: link:../../adapters/db
       '@headless-lms/core':
         specifier: workspace:*
         version: link:../core
@@ -611,9 +648,6 @@ importers:
       '@types/pg':
         specifier: ^8.11.10
         version: 8.20.0
-      drizzle-kit:
-        specifier: ^0.31.10
-        version: 0.31.10
       tsdown:
         specifier: ^0.22.9
         version: 0.22.9(tsx@4.22.4)(typescript@5.9.3)(unrun@0.3.1)
@@ -1205,11 +1239,11 @@ packages:
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild-kit/esm-loader@2.6.5':
     resolution: {integrity: sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}

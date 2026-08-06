@@ -1,6 +1,6 @@
 // integrations — Drizzle repository (implements the core outbound port).
 import { and, asc, eq } from 'drizzle-orm';
-import type { DbExecutor } from '../index.js';
+import type { DbExecutor } from '../client.js';
 import type { ConnectionsRepository } from '@headless-lms/core/integrations';
 import type { Connection } from '@headless-lms/core/integrations';
 import { connections } from '../schema/integrations.js';

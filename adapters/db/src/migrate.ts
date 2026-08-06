@@ -6,9 +6,9 @@ import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 
-/** drizzle/ sits at the package root: ../../drizzle from src/app AND dist/app. */
+/** drizzle/ sits at the package root: ../drizzle from src/ AND dist/. */
 export function migrationsFolder(): string {
-  return fileURLToPath(new URL('../../drizzle/', import.meta.url));
+  return fileURLToPath(new URL('../drizzle/', import.meta.url));
 }
 
 export async function runMigrations(databaseUrl: string): Promise<void> {

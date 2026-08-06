@@ -11,7 +11,7 @@ import type {
 import { assets } from '../schema/assets.js';
 import type { Logger } from '@headless-lms/core/types';
 import { noopLogger } from '@headless-lms/core/shared/logger';
-import type { DbExecutor } from '../index.js';
+import type { DbExecutor } from '../client.js';
 
 type Row = typeof assets.$inferSelect;
 

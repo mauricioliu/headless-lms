@@ -1,13 +1,32 @@
 // Wires adapters + services in dependency order. Starts nothing.
-import { createDb } from '../adapters/db/index.js';
-import { DrizzleUnitOfWork } from '../adapters/db/unit-of-work.js';
+import {
+  createDb,
+  DrizzleAssetsRepository,
+  DrizzleAutomationRunsRepository,
+  DrizzleAutomationsRepository,
+  DrizzleConnectionsRepository,
+  DrizzleContentRepository,
+  DrizzleCredentialStore,
+  DrizzleDashboardRepository,
+  DrizzleDiscussionRepository,
+  DrizzleEntitlementsRepository,
+  DrizzleIdentityRepository,
+  DrizzleLearnRepository,
+  DrizzleMembersRepository,
+  DrizzleOrganizationsRepository,
+  DrizzleOutboxAppender,
+  DrizzleOutboxStore,
+  DrizzleProgressRepository,
+  DrizzleSettingsRepository,
+  DrizzleStudentsRepository,
+  DrizzleUnitOfWork,
+} from '@headless-lms/adapter-db';
 import { InMemoryEventBus } from '../adapters/events/index.js';
 import {
   PollingOutboxRelay,
   type PollingOutboxRelayConfig,
 } from '../adapters/events/outbox-relay.js';
 import { InlineAutomationEngine } from '../adapters/workflows/index.js';
-import { DrizzleOutboxAppender, DrizzleOutboxStore } from '../adapters/db/repositories/outbox.js';
 import { EmailAdapter, StubTemplateRenderer } from '../adapters/email/index.js';
 import {
   createRootLogger,
@@ -36,24 +55,6 @@ import { LearnReportServiceImpl } from '@headless-lms/core/reporting/learn';
 import { Mailer, type MailerLookups } from '@headless-lms/core/shared/mailer';
 import { SettingsService } from '@headless-lms/core/shared/settings';
 
-import { DrizzleEntitlementsRepository } from '../adapters/db/repositories/entitlements.js';
-import { DrizzleProgressRepository } from '../adapters/db/repositories/progress.js';
-import { DrizzleDiscussionRepository } from '../adapters/db/repositories/discussion.js';
-import { DrizzleIdentityRepository } from '../adapters/db/repositories/identity.js';
-import { DrizzleOrganizationsRepository } from '../adapters/db/repositories/organizations.js';
-import { DrizzleMembersRepository } from '../adapters/db/repositories/members.js';
-import { DrizzleContentRepository } from '../adapters/db/repositories/content.js';
-import { DrizzleAssetsRepository } from '../adapters/db/repositories/assets.js';
-import { DrizzleStudentsRepository } from '../adapters/db/repositories/students.js';
-import { DrizzleDashboardRepository } from '../adapters/db/repositories/dashboard.js';
-import { DrizzleLearnRepository } from '../adapters/db/repositories/learn.js';
-import { DrizzleCredentialStore } from '../adapters/db/repositories/credentials.js';
-import { DrizzleSettingsRepository } from '../adapters/db/repositories/settings.js';
-import { DrizzleConnectionsRepository } from '../adapters/db/repositories/integrations.js';
-import {
-  DrizzleAutomationRunsRepository,
-  DrizzleAutomationsRepository,
-} from '../adapters/db/repositories/automations.js';
 import type {
   CredentialStore,
   EmailSender,

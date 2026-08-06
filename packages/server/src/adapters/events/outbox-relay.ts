@@ -14,7 +14,7 @@ import type {
   OutboxRelay,
   OutboxStore,
 } from '@headless-lms/core/shared/ports';
-import { OUTBOX_MAX_ATTEMPTS } from '../db/repositories/outbox.js';
+import { OUTBOX_MAX_ATTEMPTS } from '@headless-lms/adapter-db';
 
 /** Backoff base: first retry 5s after the first failure, doubling per attempt. */
 export const OUTBOX_BACKOFF_BASE_MS = 5_000;

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleOutboxAppender, DrizzleOutboxStore, OUTBOX_MAX_ATTEMPTS } from './outbox.js';
-import type { DbExecutor } from '../index.js';
+import type { DbExecutor } from '../client.js';
 
 function fakeTx() {
   const values = vi.fn().mockResolvedValue(undefined);

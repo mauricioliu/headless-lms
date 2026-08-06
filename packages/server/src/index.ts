@@ -12,7 +12,7 @@ export { buildServer } from './http/server.js';
 export { loadIntegrations } from './app/integrations.js';
 export { InlineAutomationEngine } from './adapters/workflows/index.js';
 // Operational functions consumed by the @headless-lms/cli bin.
-export { runMigrations } from './app/migrate.js';
+export { runMigrations } from '@headless-lms/adapter-db';
 export type { ServerConfig } from './http/config.js';
 // Re-exporting AuthUser also pulls its module into any program that imports
 // this file (directly or via the workspace path mapping), which is what

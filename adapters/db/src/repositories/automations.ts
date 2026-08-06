@@ -5,7 +5,7 @@
 // `AutomationRun` is the one exception, since it's the run's own `orgId`
 // field the service reads back off `handle`'s event.
 import { and, asc, desc, eq, sql, type SQL } from 'drizzle-orm';
-import type { DbExecutor } from '../index.js';
+import type { DbExecutor } from '../client.js';
 import type { AutomationRunsRepository, AutomationsRepository, NewAutomationRun } from '@headless-lms/core/automations';
 import type { Automation, AutomationRun, Page } from '@headless-lms/core/automations';
 import type { AutomationRunsQuery, CreateAutomationInput, UpdateAutomationInput } from '@headless-lms/core/automations';

@@ -14,7 +14,7 @@
 // two joins inline instead.
 import { orgUsers } from '../schema/organizations.js';
 import { users } from '../schema/identity.js';
-import { user } from '../../auth/schema.js';
+import { user } from '../schema/better-auth.js';
 
 /** Spread into a `.select({ ... })` to get the profile columns. */
 export const orgUserProfileColumns = {

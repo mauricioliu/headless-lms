@@ -16,7 +16,7 @@ import {
   type AnyColumn,
 } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { DbExecutor, Tx } from '../index.js';
+import type { DbExecutor, Tx } from '../client.js';
 import type { ContentRepository } from '@headless-lms/core/content';
 import type {
   Activity,

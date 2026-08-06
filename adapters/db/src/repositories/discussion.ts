@@ -19,7 +19,7 @@ import { commentReactions, commentReports, comments } from '../schema/index.js';
 import { activities } from '../schema/content.js';
 import { orgUsers } from '../schema/organizations.js';
 import { users } from '../schema/identity.js';
-import { user } from '../../auth/schema.js';
+import { user } from '../schema/better-auth.js';
 import { orgUserProfileColumns } from './org-user-profile.js';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 

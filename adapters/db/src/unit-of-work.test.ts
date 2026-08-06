@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleUnitOfWork } from './unit-of-work.js';
 import { DrizzleOutboxAppender } from './repositories/outbox.js';
-import type { Tx } from './index.js';
+import type { Tx } from './client.js';
 
 function fakeDb() {
   const values = vi.fn().mockResolvedValue(undefined);
