@@ -53,7 +53,11 @@ module.exports = {
       },
     },
     {
-      files: CONTEXTS.map((c) => `packages/core/src/${c}/**/*.ts`),
+      files: [
+        ...CONTEXTS.map((c) => `packages/core/src/${c}/**/*.ts`),
+        "packages/core/src/shared/**/*.ts",
+        "packages/core/src/types/**/*.ts",
+      ],
       rules: {
         "no-restricted-imports": [
           "error",
@@ -96,6 +100,12 @@ module.exports = {
         "no-restricted-imports": [
           "error",
           {
+            paths: [
+              {
+                name: "@headless-lms/editor",
+                message: "the editor contract is React-bound; server-side code never imports it",
+              },
+            ],
             patterns: [
               {
                 group: [
@@ -121,6 +131,12 @@ module.exports = {
         "no-restricted-imports": [
           "error",
           {
+            paths: [
+              {
+                name: "@headless-lms/editor",
+                message: "the editor contract is React-bound; server-side code never imports it",
+              },
+            ],
             patterns: [
               {
                 group: ["@headless-lms/server", "@headless-lms/server/*"],
