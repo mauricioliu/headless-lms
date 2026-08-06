@@ -9,18 +9,21 @@ import { EventBody } from "../notifications/schema.js";
 export const postToChannel = zodAction({
   id: "postToChannel",
   description:
-    "Post a domain event (e.g. a student enrollment) to a Slack channel, formatted by event type.",
+    "Post a message to a Slack channel.",
   input: z.object({
     channel: z
       .string()
       .min(1)
       .optional()
-      .describe("Falls back to the connection's configured defaultChannel."),
+      .meta({
+        description: "The channel to post to; the connection's default channel when omitted.",
+        "x-options": { action: "listChannels", items: "channels", value: "id", label: "name" },
+      }),
     body: EventBody,
   }),
   output: z.object({
     channel: z.string(),
-    ts: z.string().describe("Slack's message timestamp — its id within the channel."),
+    ts: z.string().describe("Slack's message timestamp."),
   }),
   run(ctx, input) {
     const channel = input.channel ?? (ctx.config.defaultChannel as string);
