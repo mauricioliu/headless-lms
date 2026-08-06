@@ -19,6 +19,10 @@ export default defineConfig({
         replacement: r("./packages/editor/src/index.ts"),
       },
       {
+        find: "@headless-lms/adapter-auth",
+        replacement: r("./adapters/auth/src/index.ts"),
+      },
+      {
         find: "@headless-lms/adapter-db/schema/better-auth",
         replacement: r("./adapters/db/src/schema/better-auth.ts"),
       },

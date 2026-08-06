@@ -38,6 +38,34 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@26.1.2)(jsdom@25.0.1)(lightningcss@1.32.0)
 
+  adapters/auth:
+    dependencies:
+      '@headless-lms/adapter-db':
+        specifier: workspace:*
+        version: link:../db
+      '@headless-lms/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      better-auth:
+        specifier: ^1.6.25
+        version: 1.6.25(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@types/pg@8.20.0)(gel@2.2.0)(kysely@0.29.2)(pg@8.22.0))(next@16.2.9(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.22.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@2.1.9(@types/node@22.20.0)(jsdom@25.0.1)(lightningcss@1.32.0))
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@types/pg@8.20.0)(gel@2.2.0)(kysely@0.29.2)(pg@8.22.0)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.0
+      tsdown:
+        specifier: ^0.22.9
+        version: 0.22.9(tsx@4.22.4)(typescript@5.9.3)(unrun@0.3.1)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.0)(jsdom@25.0.1)(lightningcss@1.32.0)
+
   adapters/db:
     dependencies:
       '@headless-lms/core':
@@ -608,6 +636,9 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^6.0.0
         version: 6.0.0
+      '@headless-lms/adapter-auth':
+        specifier: workspace:*
+        version: link:../../adapters/auth
       '@headless-lms/adapter-db':
         specifier: workspace:*
         version: link:../../adapters/db

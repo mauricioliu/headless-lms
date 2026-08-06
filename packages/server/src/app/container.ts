@@ -36,7 +36,7 @@ import {
   type RequestLogContext,
 } from '../adapters/logging/index.js';
 import { StorageAdapter } from '../adapters/storage/index.js';
-import { BetterAuth } from '../adapters/auth/index.js';
+import { BetterAuth } from '@headless-lms/adapter-auth';
 
 import { ContentServiceImpl } from '@headless-lms/core/content';
 import { EntitlementsServiceImpl } from '@headless-lms/core/entitlements';
