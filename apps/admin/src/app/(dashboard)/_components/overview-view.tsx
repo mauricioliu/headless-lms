@@ -7,7 +7,8 @@ import type { EnrollmentSeries, OverviewStats, SessionUser } from "@/lib/api/typ
 import type { ServerRole } from "@/lib/auth/server-session";
 import { can, isManager } from "@/lib/roles";
 
-import { EnrollmentsChart, type EnrollmentRangeKey } from "./enrollments-chart";
+import { type EnrollmentRangeKey } from "./enrollment-ranges";
+import { EnrollmentsChart } from "./enrollments-chart";
 import { FocusPanel } from "./focus-panel";
 import { StatStrip, type Stat } from "./stat-strip";
 

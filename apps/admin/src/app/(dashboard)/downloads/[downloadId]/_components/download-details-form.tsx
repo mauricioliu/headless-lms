@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { ImageIcon, Loader2 } from "lucide-react";
 
 import { Field } from "@/components/forms/field";
-import { SettingsSection } from "@/components/forms/settings-section";
+import { SettingsSection, SettingsSurface } from "@/components/forms/settings-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,34 +71,34 @@ export function DownloadDetailsForm({ download }: { download: Download }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onValid)} className="w-full max-w-3xl">
-      <SettingsSection
-        title="Details"
-        description="How this download appears to students."
-        footer={
-          <Button type="submit" variant="primary" disabled={isPending || !isDirty}>
-            {isPending ? "Saving…" : "Save"}
-          </Button>
-        }
-      >
-        <Field id="title" label="Title" required error={errors.title?.message}>
-          <Input id="title" {...register("title")} />
-        </Field>
-        <Field id="category" label="Category" error={errors.category?.message}>
-          <Input id="category" placeholder="e.g. Templates" {...register("category")} />
-        </Field>
-        <Field
-          id="description"
-          label="Description"
-          hint="A short summary shown on the download card."
-          error={errors.description?.message}
+    <SettingsSurface>
+      <form onSubmit={handleSubmit(onValid)}>
+        <SettingsSection
+          footer={
+            <Button type="submit" variant="primary" disabled={isPending || !isDirty}>
+              {isPending ? "Saving…" : "Save"}
+            </Button>
+          }
         >
-          <Textarea id="description" rows={5} {...register("description")} />
-        </Field>
+          <Field id="title" label="Title" required error={errors.title?.message}>
+            <Input id="title" {...register("title")} />
+          </Field>
+          <Field id="category" label="Category" error={errors.category?.message}>
+            <Input id="category" placeholder="e.g. Templates" {...register("category")} />
+          </Field>
+          <Field
+            id="description"
+            label="Description"
+            hint="A short summary shown on the download card."
+            error={errors.description?.message}
+          >
+            <Textarea id="description" rows={5} {...register("description")} />
+          </Field>
 
-        <ThumbnailField downloadId={download.id} thumbnailAssetId={download.thumbnailAssetId} />
-      </SettingsSection>
-    </form>
+          <ThumbnailField downloadId={download.id} thumbnailAssetId={download.thumbnailAssetId} />
+        </SettingsSection>
+      </form>
+    </SettingsSurface>
   );
 }
 

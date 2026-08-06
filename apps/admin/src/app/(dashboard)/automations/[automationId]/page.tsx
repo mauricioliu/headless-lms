@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 import { requireManager } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
 import { ApiError } from "@/lib/api/http";
-import type { Automation, AutomationTriggerInfo, AvailableAction } from "@/lib/api/types";
+import type {
+  Automation,
+  AutomationTriggerInfo,
+  AvailableAction,
+  IntegrationConnection,
+} from "@/lib/api/types";
 
 import { AutomationEditor } from "../_components/automation-editor";
 
@@ -19,18 +24,27 @@ export default async function EditAutomationPage({
     serverApi.automationTriggers(),
     serverApi.automationActions(),
     serverApi.getAutomation(automationId),
+    serverApi.listConnections(),
   ]);
   await requireManager(dataPromise);
 
   let triggers: AutomationTriggerInfo[];
   let actions: AvailableAction[];
   let automation: Automation;
+  let connections: IntegrationConnection[];
   try {
-    [triggers, actions, automation] = await dataPromise;
+    [triggers, actions, automation, connections] = await dataPromise;
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) notFound();
     throw err;
   }
 
-  return <AutomationEditor automation={automation} triggers={triggers} availableActions={actions} />;
+  return (
+    <AutomationEditor
+      automation={automation}
+      triggers={triggers}
+      availableActions={actions}
+      connections={connections}
+    />
+  );
 }

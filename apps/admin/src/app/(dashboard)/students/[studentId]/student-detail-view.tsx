@@ -72,7 +72,7 @@ export function StudentDetailView({
     });
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
       <div>
         <Button asChild variant="ghost" size="sm" className="-ml-2 text-ink-3">
           <Link href="/students">
@@ -95,7 +95,7 @@ export function StudentDetailView({
           <TabsTrigger value="access">Access</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details" className="w-full max-w-3xl">
+        <TabsContent value="details">
           <StudentDetailsForm student={student} />
         </TabsContent>
 

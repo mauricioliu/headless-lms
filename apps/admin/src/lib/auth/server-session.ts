@@ -11,6 +11,10 @@ import "server-only";
  * `crossSubDomainCookies` changes don't break SSR validation. No proxy, no
  * rewrite, no better-auth running inside Next.
  *
+ * The API enriches get-session via `customSession` with the caller's active
+ * role, active org, and memberships, so the whole resolution is a single call —
+ * no fan-out to get-active-member / get-full-organization / organization/list.
+ *
  * Wrapped in `React.cache` so the `(dashboard)` layout and every page in the
  * same request share a single resolution (no duplicate fetches).
  */
@@ -62,6 +66,9 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
   const data = (await res.json()) as {
     user?: SessionPerson;
     session?: { activeOrganizationId?: string | null };
+    activeMemberRole?: unknown;
+    activeOrganization?: { id?: string; name?: string; slug?: string } | null;
+    organizations?: unknown;
   } | null;
   if (!data?.user) {
     log.debug("no session on request");
@@ -70,53 +77,33 @@ export const getServerSession = cache(async (): Promise<ServerSession | null> =>
 
   const activeOrgId = data.session?.activeOrganizationId ?? null;
 
-  let role: ServerRole | null = null;
-  let organization: ServerSession["organization"] = null;
-  let status: ServerSession["status"] = "no-organization";
+  // Authenticated only when the active org resolved AND the user holds a
+  // known staff role in it. Student logins get their org stamped onto the
+  // session (`activeOrganizationId`) with no membership row — without the
+  // role check they'd resolve as dashboard users.
+  const role = toRole(data.activeMemberRole);
+  if (!role && data.activeMemberRole != null)
+    log.debug({ rawRole: data.activeMemberRole }, "active member holds no staff role");
+
+  let organization: ServerSession["organization"] = data.activeOrganization?.id
+    ? {
+        id: data.activeOrganization.id,
+        name: data.activeOrganization.name ?? "",
+        slug: data.activeOrganization.slug ?? "",
+      }
+    : null;
+
+  let status: ServerSession["status"];
   let organizations: ServerSession["organizations"] = [];
-
-  if (activeOrgId) {
-    // get-session alone lacks the org role; the org plugin's active-member does.
-    const [memberRes, orgRes] = await Promise.all([
-      fetch(`${API_URL}/api/auth/organization/get-active-member`, {
-        headers: { cookie },
-        cache: "no-store",
-      }),
-      fetch(`${API_URL}/api/auth/organization/get-full-organization`, {
-        headers: { cookie },
-        cache: "no-store",
-      }),
-    ]);
-    if (memberRes.ok) {
-      const m = (await memberRes.json()) as { role?: unknown } | null;
-      role = toRole(m?.role);
-      if (!role) log.debug({ rawRole: m?.role }, "active member holds no staff role");
-    } else {
-      log.debug({ status: memberRes.status }, "active member lookup failed");
-    }
-    if (orgRes.ok) {
-      const o = (await orgRes.json()) as { id?: string; name?: string; slug?: string } | null;
-      if (o?.id) organization = { id: o.id, name: o.name ?? "", slug: o.slug ?? "" };
-    }
-    // Authenticated only when the active org resolved AND the user holds a
-    // known staff role in it. Student logins get their org stamped onto the
-    // session (`activeOrganizationId`) with no membership row — without the
-    // role check they'd resolve as dashboard users.
-    if (organization && role) status = "authenticated";
-  }
-
-  if (status !== "authenticated") {
+  if (organization && role) {
+    status = "authenticated";
+  } else {
     // Valid cookie but no usable active org + staff membership. Distinguish:
     //  - member of ≥1 org, none active → the picker can offer them
     //  - no memberships, but the session carries a stamped org → a student
     //    (or otherwise non-staff) cookie: deny
     //  - no memberships, nothing stamped → fresh staff signup, prompt to create
-    const listRes = await fetch(`${API_URL}/api/auth/organization/list`, {
-      headers: { cookie },
-      cache: "no-store",
-    });
-    if (!listRes.ok) log.warn({ status: listRes.status }, "organization list failed");
-    const raw = listRes.ok ? ((await listRes.json()) as unknown) : [];
+    const raw = data.organizations;
     organizations = Array.isArray(raw)
       ? raw
           .filter(

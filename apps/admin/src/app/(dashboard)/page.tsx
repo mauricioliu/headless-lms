@@ -2,7 +2,7 @@ import { serverApi } from "@/lib/api/server";
 import { requireAuth } from "@/lib/auth/server-session";
 import { isManager } from "@/lib/roles";
 
-import { ENROLLMENT_RANGES } from "./_components/enrollments-chart";
+import { ENROLLMENT_RANGES } from "./_components/enrollment-ranges";
 import { OverviewView } from "./_components/overview-view";
 
 // Dashboard overview. `requireAuth` shares the layout's cached session (free)

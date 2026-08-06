@@ -4,8 +4,10 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 /**
- * The stack for a settings/form surface: constrains the column and puts a
- * single hairline between stacked sections (or the forms wrapping them).
+ * The outermost wrapper of every form/settings surface: one narrow column
+ * (centered in whatever container it sits in) with a single hairline between
+ * stacked sections (or the forms wrapping them). Content fills the column
+ * edge to edge — no rails, no extra width caps anywhere inside.
  */
 export function SettingsSurface({
   className,
@@ -17,7 +19,7 @@ export function SettingsSurface({
   return (
     <div
       className={cn(
-        "flex w-full max-w-3xl flex-col divide-y divide-line",
+        "mx-auto flex w-full max-w-3xl flex-col divide-y divide-line",
         "[&>*]:py-8 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0",
         className,
       )}
@@ -28,9 +30,8 @@ export function SettingsSurface({
 }
 
 /**
- * One borderless settings section, shared by every form surface: heading and
- * description in a left rail, the fields filling the right column, the form's
- * actions right-aligned under the fields.
+ * One borderless settings section: an optional heading above the fields, the
+ * fields filling the column, and the form's actions right-aligned under them.
  */
 export function SettingsSection({
   title,
@@ -38,20 +39,22 @@ export function SettingsSection({
   footer,
   children,
 }: {
-  title: string;
+  title?: string;
   description?: string;
   footer?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-6 md:grid md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-x-12">
-      <header className="flex flex-col gap-1">
-        <h2 className="text-sm font-semibold text-ink">{title}</h2>
-        {description ? <p className="text-sm text-ink-3 text-pretty">{description}</p> : null}
-      </header>
-      <div className="flex min-w-0 flex-col gap-5">
+    <section className="flex flex-col gap-6">
+      {title || description ? (
+        <header className="flex flex-col gap-1">
+          {title ? <h2 className="text-sm font-semibold text-ink">{title}</h2> : null}
+          {description ? <p className="text-sm text-ink-3 text-pretty">{description}</p> : null}
+        </header>
+      ) : null}
+      <div className="flex flex-col gap-5">
         {children}
-        {footer ? <div className="flex items-center justify-end gap-3 pt-1">{footer}</div> : null}
+        {footer ? <div className="flex items-center justify-end gap-3 pt-2">{footer}</div> : null}
       </div>
     </section>
   );

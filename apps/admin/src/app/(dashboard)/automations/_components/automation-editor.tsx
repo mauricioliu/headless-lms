@@ -14,7 +14,12 @@ import { schemaDefaults } from "@/components/forms/schema-fields";
 import { useCurrentUser } from "@/lib/auth/session-context";
 import { isManager } from "@/lib/roles";
 import { cn } from "@/lib/utils";
-import type { Automation, AutomationTriggerInfo, AvailableAction } from "@/lib/api/types";
+import type {
+  Automation,
+  AutomationTriggerInfo,
+  AvailableAction,
+  IntegrationConnection,
+} from "@/lib/api/types";
 
 import { createAutomationAction, deleteAutomationAction, updateAutomationAction } from "../actions";
 import {
@@ -37,10 +42,12 @@ export function AutomationEditor({
   automation,
   triggers,
   availableActions,
+  connections,
 }: {
   automation: Automation | null;
   triggers: AutomationTriggerInfo[];
   availableActions: AvailableAction[];
+  connections: IntegrationConnection[];
 }) {
   const router = useRouter();
   const user = useCurrentUser();
@@ -259,6 +266,7 @@ export function AutomationEditor({
             selection={selection}
             triggers={triggers}
             availableActions={availableActions}
+            connections={connections}
             defs={defs}
             onTriggerChange={setTrigger}
             onActionTypeChange={changeActionType}

@@ -11,6 +11,13 @@ export interface AutomationDraft {
 
 export type EditorSelection = { kind: "trigger" } | { kind: "action"; index: number } | null;
 
+/** "slack.postToChannel" → "Post to channel", "sendEmail" → "Send email". */
+export function actionLabel(type: string): string {
+  const id = type.includes(".") ? type.slice(type.indexOf(".") + 1) : type;
+  const words = id.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export function draftFromAutomation(automation: Automation | null): AutomationDraft {
   if (!automation) return { name: "", description: "", trigger: "", actions: [], enabled: true };
   return {
@@ -50,7 +57,7 @@ export function validateDraft(
   for (const [i, action] of draft.actions.entries()) {
     if (!action.type) return `Step ${i + 1} needs an action.`;
     if (!isActionComplete(action, defs.get(action.type))) {
-      return `Step ${i + 1} (${action.type}) is missing required configuration.`;
+      return `Step ${i + 1} (${actionLabel(action.type)}) is missing required configuration.`;
     }
   }
   return null;

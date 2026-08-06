@@ -73,8 +73,6 @@ export function StudentDetailsForm({ student }: { student: Student }) {
   return (
     <form onSubmit={onSubmit}>
       <SettingsSection
-        title="Profile"
-        description="The student's name and the email they sign in with."
         footer={
           <>
             <Button

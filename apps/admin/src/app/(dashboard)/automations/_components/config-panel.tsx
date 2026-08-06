@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { ChevronDown, ChevronUp, MousePointerClick, Trash2 } from "lucide-react";
 
@@ -15,15 +16,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SchemaFields, schemaDefaults } from "@/components/forms/schema-fields";
-import type { AutomationAction, AutomationTriggerInfo, AvailableAction } from "@/lib/api/types";
-import type { AutomationDraft, EditorSelection } from "./draft";
+import {
+  SchemaFields,
+  schemaDefaults,
+  type RemoteOptionsSource,
+} from "@/components/forms/schema-fields";
+import type {
+  AutomationAction,
+  AutomationTriggerInfo,
+  AvailableAction,
+  IntegrationConnection,
+} from "@/lib/api/types";
+import { invokeConnectionActionAction } from "../actions";
+import { actionLabel, type AutomationDraft, type EditorSelection } from "./draft";
 
 interface ConfigPanelProps {
   draft: AutomationDraft;
   selection: EditorSelection;
   triggers: AutomationTriggerInfo[];
   availableActions: AvailableAction[];
+  connections: IntegrationConnection[];
   defs: Map<string, AvailableAction>;
   onTriggerChange: (trigger: string) => void;
   onActionTypeChange: (index: number, type: string) => void;
@@ -31,6 +43,7 @@ interface ConfigPanelProps {
   onMoveStep: (index: number, delta: -1 | 1) => void;
   onRemoveStep: (index: number) => void;
 }
+
 
 /** Right-hand configuration for whatever is selected on the canvas. */
 export function ConfigPanel(props: ConfigPanelProps) {
@@ -69,11 +82,11 @@ function TriggerPanel({ draft, triggers, onTriggerChange }: ConfigPanelProps) {
   const selected = triggers.find((t) => t.type === draft.trigger);
   return (
     <div className="flex flex-col gap-5 p-5">
-      <PanelHeading overline="Trigger" title="When this happens" />
+      <p className="text-sm text-ink-2">Choose the event that starts this automation.</p>
       <Field id="trigger" label="Event" required>
         <Select value={draft.trigger || undefined} onValueChange={onTriggerChange}>
           <SelectTrigger id="trigger">
-            <SelectValue placeholder="Choose an event" />
+            <SelectValue placeholder="Choose an event">{selected?.type}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {triggers.map((t) => (
@@ -95,6 +108,7 @@ function TriggerPanel({ draft, triggers, onTriggerChange }: ConfigPanelProps) {
 function ActionPanel({
   draft,
   availableActions,
+  connections,
   defs,
   index,
   action,
@@ -105,6 +119,33 @@ function ActionPanel({
 }: ConfigPanelProps & { index: number; action: AutomationAction }) {
   const def = defs.get(action.type);
   const count = draft.actions.length;
+
+  const connection = useMemo(
+    () =>
+      def && def.source !== "system"
+        ? (connections.find((c) => c.integrationId === def.source && c.active) ?? null)
+        : null,
+    [connections, def],
+  );
+
+  const remote = useMemo<RemoteOptionsSource>(() => {
+    const source = def?.source ?? "";
+    const name = source.charAt(0).toUpperCase() + source.slice(1);
+    const unavailable = (
+      <>
+        {name} isn&apos;t connected — connect it in{" "}
+        <Link href="/settings/integrations" className="text-ink underline underline-offset-2">
+          Settings → Integrations
+        </Link>{" "}
+        to pick from a list.
+      </>
+    );
+    if (!connection) return { unavailable };
+    return {
+      load: (actionId: string) => invokeConnectionActionAction(connection.id, actionId),
+      unavailable,
+    };
+  }, [connection, def?.source]);
 
   const groups = useMemo(() => {
     const bySource = new Map<string, AvailableAction[]>();
@@ -164,7 +205,9 @@ function ActionPanel({
       <Field id="action-type" label="Action" required>
         <Select value={action.type || undefined} onValueChange={(t) => onActionTypeChange(index, t)}>
           <SelectTrigger id="action-type">
-            <SelectValue placeholder="Choose an action" />
+            <SelectValue placeholder="Choose an action">
+              {action.type ? actionLabel(action.type) : undefined}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {groups.map(([source, actions]) => (
@@ -175,9 +218,9 @@ function ActionPanel({
                     : source.charAt(0).toUpperCase() + source.slice(1)}
                 </SelectLabel>
                 {actions.map((a) => (
-                  <SelectItem key={a.type} value={a.type} textValue={a.type}>
+                  <SelectItem key={a.type} value={a.type} textValue={actionLabel(a.type)}>
                     <div className="flex flex-col items-start gap-0.5">
-                      <span className="font-medium">{a.type}</span>
+                      <span className="font-medium">{actionLabel(a.type)}</span>
                       <span className="text-xs text-ink-3">{a.description}</span>
                     </div>
                   </SelectItem>
@@ -191,7 +234,7 @@ function ActionPanel({
       {!def ? (
         <p className="text-sm text-ink-4">Choose an action to configure it.</p>
       ) : hasInputs ? (
-        <ActionInputForm def={def} input={action.input} onChange={onInputChange} />
+        <ActionInputForm def={def} input={action.input} onChange={onInputChange} remote={remote} />
       ) : (
         <p className="text-sm text-ink-4">This action needs no configuration.</p>
       )}
@@ -204,10 +247,12 @@ function ActionInputForm({
   def,
   input,
   onChange,
+  remote,
 }: {
   def: AvailableAction;
   input: Record<string, unknown>;
   onChange: (input: Record<string, unknown>) => void;
+  remote: RemoteOptionsSource;
 }) {
   const { control, watch } = useForm<{ input: Record<string, unknown> }>({
     defaultValues: { input: schemaDefaults(def.inputSchema, input) },
@@ -220,7 +265,7 @@ function ActionInputForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <SchemaFields schema={def.inputSchema} control={control} namePrefix="input" />
+      <SchemaFields schema={def.inputSchema} control={control} namePrefix="input" remote={remote} />
     </div>
   );
 }

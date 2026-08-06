@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/forms/field";
-import { SettingsSection } from "@/components/forms/settings-section";
+import { SettingsSection, SettingsSurface } from "@/components/forms/settings-section";
 
 import { updateOrganizationAction } from "./actions";
 
@@ -49,30 +49,32 @@ export function GeneralView({ name, slug }: { name: string; slug: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-3xl" noValidate>
-      <SettingsSection
-        title="Organization"
-        description="Your organization's name and URL slug."
-        footer={
-          <Button type="submit" variant="primary" disabled={isSubmitting || !isDirty}>
-            {isSubmitting && <Loader2 className="animate-spin" />}
-            Save
-          </Button>
-        }
-      >
-        <Field id="org-name" label="Name" error={errors.name?.message} required>
-          <Input id="org-name" {...register("name")} />
-        </Field>
-        <Field
-          id="org-slug"
-          label="Slug"
-          error={errors.slug?.message}
-          hint="Used to identify your organization in URLs."
-          required
+    <SettingsSurface>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <SettingsSection
+          title="Organization"
+          description="Your organization's name and URL slug."
+          footer={
+            <Button type="submit" variant="primary" disabled={isSubmitting || !isDirty}>
+              {isSubmitting && <Loader2 className="animate-spin" />}
+              Save
+            </Button>
+          }
         >
-          <Input id="org-slug" {...register("slug")} />
-        </Field>
-      </SettingsSection>
-    </form>
+          <Field id="org-name" label="Name" error={errors.name?.message} required>
+            <Input id="org-name" {...register("name")} />
+          </Field>
+          <Field
+            id="org-slug"
+            label="Slug"
+            error={errors.slug?.message}
+            hint="Used to identify your organization in URLs."
+            required
+          >
+            <Input id="org-slug" {...register("slug")} />
+          </Field>
+        </SettingsSection>
+      </form>
+    </SettingsSurface>
   );
 }

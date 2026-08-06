@@ -13,16 +13,19 @@ Canonical examples: `src/app/(dashboard)/courses/[courseId]/settings/_components
 - Every field is wrapped in `Field` from `@/components/forms/field` — it owns the
   label, required marker, hint, and error line. Never hand-roll a
   `<Label>` + control + `<p>{error}</p>` group.
-- **Page forms are borderless two-column sections** — no cards, no bordered
-  wrappers. The `<form>` wraps a `SettingsSection` from
-  `@/components/forms/settings-section`: heading + description in the left rail,
-  the fields as children (they fill the right column), and the submit button(s)
-  in the `footer` prop (right-aligned under the fields, `disabled={isPending || !isDirty}`).
-- A surface with several sections stacks them (each section or its wrapping
-  `<form>` a direct child) inside `SettingsSurface`, which owns the `max-w-3xl`
-  width and the single hairline between sections. A lone section instead gets
-  `w-full max-w-3xl` on its `<form>` or tab panel. No other width caps on form
-  surfaces.
+- **Page forms are borderless single-column sections** — no cards, no bordered
+  wrappers, no rails. The `<form>` wraps a `SettingsSection` from
+  `@/components/forms/settings-section`: optional heading + description above,
+  fields filling the column, and the submit button(s) in the `footer` prop
+  (right-aligned under the fields, `disabled={isPending || !isDirty}`). Omit the
+  heading when it would repeat the active tab's label.
+- **`SettingsSurface` is the outermost element of every form surface**, even a
+  single-section one. It is the one centered `max-w-3xl` column and owns the
+  single hairline between stacked sections (each section or its wrapping
+  `<form>` a direct child). Never add another `max-w-*` inside it.
+- A detail page whose content is form-first (e.g. the student page) constrains
+  the whole page — header, stats, tabs, and tab panels — to the same
+  `mx-auto w-full max-w-3xl` column, so every edge lines up.
 - Label-left/control-right settings (switches, compact selects) are `SettingRow`s
   as section children. Stacked inputs are `Field`s; side-by-side pairs use a
   `grid grid-cols-1 gap-5 sm:grid-cols-2`.
