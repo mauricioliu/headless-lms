@@ -64,7 +64,7 @@ export class DrizzleOutboxStore implements OutboxStore {
       payload: {
         ...row.payload,
         id: row.id,
-        createdAt: row.createdAt.toISOString(),
+        occurredAt: row.createdAt.toISOString(),
       } as unknown as DomainEvent,
     }));
   }

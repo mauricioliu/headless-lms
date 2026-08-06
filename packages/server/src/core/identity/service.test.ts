@@ -61,10 +61,10 @@ describe('linkOrCreateUser', () => {
     });
 
     expect(repo.insertUser).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'usr_new', externalId: 'usr_new', email: 'new@example.com' }),
+      expect.objectContaining({ id: 'usr_new', email: 'new@example.com' }),
     );
     expect(user.id).toBe('usr_new');
-    expect(appended.map((e) => e.type)).toEqual(['user.created']);
+    expect(appended.map((e) => e.type)).toEqual(['identity.user.created']);
   });
 
   it('links a provisioned user instead of inserting a duplicate', async () => {
@@ -86,7 +86,7 @@ describe('linkOrCreateUser', () => {
     });
     expect(user.id).toBe('usr_invited');
     expect(user.externalId).toBe('usr_invited');
-    expect(appended.map((e) => e.type)).toEqual(['user.updated']);
+    expect(appended.map((e) => e.type)).toEqual(['identity.user.updated']);
   });
 
   it('rejects an email already linked to an account', async () => {

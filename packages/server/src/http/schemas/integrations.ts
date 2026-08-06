@@ -62,3 +62,18 @@ export const ConfigureRequest = z.object({
   active: z.boolean().optional(),
 });
 export type ConfigureRequest = z.infer<typeof ConfigureRequest>;
+
+export const ConnectionActionParams = z.object({ id: z.string(), actionId: z.string() });
+export type ConnectionActionParams = z.infer<typeof ConnectionActionParams>;
+
+/** The action's input, per its declared inputSchema. */
+export const InvokeActionRequest = z.object({
+  input: z.record(z.string(), z.unknown()).optional(),
+});
+export type InvokeActionRequest = z.infer<typeof InvokeActionRequest>;
+
+/** Whatever the action resolved with, per its declared outputSchema. */
+export const ActionInvocationResult = z.object({
+  output: z.record(z.string(), z.unknown()),
+});
+export type ActionInvocationResult = z.infer<typeof ActionInvocationResult>;

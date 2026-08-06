@@ -35,7 +35,6 @@ import { DashboardReportServiceImpl } from '../reporting/dashboard/index.js';
 import { LearnReportServiceImpl } from '../reporting/learn/index.js';
 import { Mailer } from '../core/shared/mailer.js';
 import { SettingsService } from '../core/shared/settings.js';
-import { genId } from '../core/shared/id.js';
 
 import { DrizzleEntitlementsRepository } from '../adapters/db/repositories/entitlements.js';
 import { DrizzleProgressRepository } from '../adapters/db/repositories/progress.js';
@@ -44,7 +43,6 @@ import { DrizzleIdentityRepository } from '../adapters/db/repositories/identity.
 import { DrizzleOrganizationsRepository } from '../adapters/db/repositories/organizations.js';
 import { DrizzleMembersRepository } from '../adapters/db/repositories/members.js';
 import { DrizzleContentRepository } from '../adapters/db/repositories/content.js';
-import { DrizzleContentStructureRepository } from '../adapters/db/repositories/structure.js';
 import { DrizzleAssetsRepository } from '../adapters/db/repositories/assets.js';
 import { DrizzleStudentsRepository } from '../adapters/db/repositories/students.js';
 import { DrizzleDashboardRepository } from '../adapters/db/repositories/dashboard.js';
@@ -269,7 +267,6 @@ export async function buildContainer(
   }));
   const content = new ContentServiceImpl({
     repo: new DrizzleContentRepository(db, contentLogger),
-    structureRepo: new DrizzleContentStructureRepository(db, contentLogger),
     uow: contentUow,
     settings,
     logger: contentLogger,
@@ -354,6 +351,7 @@ export async function buildContainer(
     registry: integrationsRegistry,
     repo: new DrizzleConnectionsRepository(db, integrationsLogger),
     uow: integrationsUow,
+    credentials: credentialStore,
     logger: integrationsLogger,
   });
 

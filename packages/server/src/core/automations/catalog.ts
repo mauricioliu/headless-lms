@@ -2,6 +2,13 @@
 // `availableTriggers()` serve: built-in action definitions and the domain
 // event types automations may react to.
 import type { EmailTemplateId } from '@headless-lms/types';
+import { contentEvents } from '../content/index.js';
+import { discussionEvents } from '../discussion/index.js';
+import { entitlementEvents } from '../entitlements/index.js';
+import { identityEvents } from '../identity/index.js';
+import { integrationEvents } from '../integrations/index.js';
+import { organizationEvents } from '../organizations/index.js';
+import { progressEvents } from '../progress/index.js';
 import type { AvailableActions, AvailableTriggers } from './types.js';
 
 /** Every EmailTemplateId — a missing key here is a compile error, kept exhaustive by construction. */
@@ -33,30 +40,38 @@ export function catalogActions(): AvailableActions {
   ];
 }
 
-// Every domain event type in @headless-lms/types except the automation.*
-// family (unauthorable as triggers — the service guards them).
 export function catalogTriggers(): AvailableTriggers['triggers'] {
   return [
-    { type: 'student.created', description: 'a student was created' },
-    { type: 'student.deleted', description: 'a student was deleted' },
-    { type: 'student.linked', description: 'a pending student was linked to an auth account' },
-    { type: 'invite.created', description: 'an invite was created or re-issued' },
-    { type: 'invite.canceled', description: 'a pending invite was canceled' },
-    { type: 'invite.accepted', description: 'an invite was accepted' },
-    { type: 'course.created', description: 'a course was created' },
-    { type: 'course.updated', description: 'a course was updated' },
-    { type: 'course.deleted', description: 'a course was deleted' },
-    { type: 'download.created', description: 'a download was created' },
-    { type: 'download.updated', description: 'a download was updated' },
-    { type: 'download.deleted', description: 'a download was deleted' },
-    { type: 'entitlement.created', description: 'a student was granted access to content' },
-    { type: 'entitlement.updated', description: "an entitlement's status or expiry changed" },
-    { type: 'entitlement.deleted', description: "a student's access to content was revoked" },
-    { type: 'entitlement.expired', description: 'an entitlement passed its expiry' },
-    { type: 'progress.started', description: 'a student started a piece of content' },
-    { type: 'progress.completed', description: 'a student completed a piece of content' },
-    { type: 'connection.created', description: 'an integration connection was established' },
-    { type: 'connection.updated', description: "an integration connection's credentials or configuration changed" },
-    { type: 'connection.removed', description: 'an integration connection was removed' },
+    { type: identityEvents.userCreated.type, description: 'a user was created' },
+    { type: identityEvents.userUpdated.type, description: 'a user was updated' },
+    { type: organizationEvents.organizationCreated.type, description: 'an organization was created' },
+    { type: organizationEvents.organizationUpdated.type, description: 'an organization was updated' },
+    { type: organizationEvents.organizationDeleted.type, description: 'an organization was deleted' },
+    { type: organizationEvents.orgUserLinked.type, description: 'a user was linked to an organization' },
+    { type: organizationEvents.orgUserDeleted.type, description: 'a user was removed from an organization' },
+    { type: organizationEvents.inviteCreated.type, description: 'an invite was created or re-issued' },
+    { type: organizationEvents.inviteAccepted.type, description: 'an invite was accepted' },
+    { type: organizationEvents.studentCreated.type, description: 'a student was created' },
+    { type: organizationEvents.studentDeleted.type, description: 'a student was deleted' },
+    { type: organizationEvents.studentLinked.type, description: 'a pending student was linked to an auth account' },
+    { type: contentEvents.courseCreated.type, description: 'a course was created' },
+    { type: contentEvents.courseUpdated.type, description: 'a course was updated' },
+    { type: contentEvents.courseDeleted.type, description: 'a course was deleted' },
+    { type: contentEvents.downloadCreated.type, description: 'a download was created' },
+    { type: contentEvents.downloadUpdated.type, description: 'a download was updated' },
+    { type: contentEvents.downloadDeleted.type, description: 'a download was deleted' },
+    { type: entitlementEvents.entitlementCreated.type, description: 'a student was granted access to content' },
+    { type: entitlementEvents.entitlementUpdated.type, description: "an entitlement's status or expiry changed" },
+    { type: entitlementEvents.entitlementDeleted.type, description: "a student's access to content was revoked" },
+    { type: entitlementEvents.entitlementExpired.type, description: 'an entitlement passed its expiry' },
+    { type: progressEvents.progressStarted.type, description: 'a student started a progress record' },
+    { type: progressEvents.progressCompleted.type, description: 'a student completed a progress record' },
+    { type: integrationEvents.connectionCreated.type, description: 'an integration connection was established' },
+    { type: integrationEvents.connectionUpdated.type, description: "an integration connection changed" },
+    { type: integrationEvents.connectionRemoved.type, description: 'an integration connection was removed' },
+    { type: discussionEvents.commentCreated.type, description: 'a comment was created' },
+    { type: discussionEvents.commentPublished.type, description: 'a comment was published' },
+    { type: discussionEvents.commentRemoved.type, description: 'a comment was removed' },
+    { type: discussionEvents.commentReported.type, description: 'a comment was reported' },
   ];
 }

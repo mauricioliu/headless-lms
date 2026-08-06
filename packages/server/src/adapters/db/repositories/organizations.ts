@@ -145,11 +145,13 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return toInvite(row);
   }
 
-  async setInviteStatus(orgId: string, id: string, status: string): Promise<void> {
-    await this.db
+  async setInviteStatus(orgId: string, id: string, status: string): Promise<Invite | null> {
+    const [row] = await this.db
       .update(invites)
       .set({ status: toStatus(status) })
-      .where(and(eq(invites.orgId, orgId), eq(invites.id, id)));
+      .where(and(eq(invites.orgId, orgId), eq(invites.id, id)))
+      .returning();
+    return row ? toInvite(row) : null;
   }
 
   async findInviteByTokenHash(tokenHash: string): Promise<Invite | null> {

@@ -1,8 +1,14 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { IntegrationsServiceImpl } from './service.js';
 import { createIntegrationsRegistry } from './registry.js';
-import { AlreadyConnectedError, InvalidConfigError, UnknownIntegrationError } from './model.js';
+import {
+  ActionInvocationError,
+  AlreadyConnectedError,
+  InvalidConfigError,
+  UnknownIntegrationError,
+} from './model.js';
 import type { Connection } from './model.js';
+import { ConflictError, NotFoundError } from '../shared/errors.js';
 import type { ConnectionsRepository, Integration, IntegrationsUnitOfWork } from './ports.js';
 import type { CredentialStore, NewDomainEvent } from '../shared/ports.js';
 
@@ -84,6 +90,7 @@ function build(repo = fakeRepo(), credentials = fakeCredentials()) {
     registry,
     repo,
     uow,
+    credentials,
   });
   return { svc, repo, credentials, append, appended };
 }
@@ -136,9 +143,10 @@ describe('IntegrationsService', () => {
     expect(repo.insert).toHaveBeenCalled();
     expect(appended).toEqual([
       expect.objectContaining({
-        type: 'connection.created',
+        type: 'integration.connection.created',
         orgId: 'org-1',
-        integrationId: 'stripe',
+        subject: conn.id,
+        data: conn,
       }),
     ]);
   });
@@ -190,7 +198,11 @@ describe('IntegrationsService', () => {
     await svc.reconnect('org-1', 'con_1', { apiKey: 'sk_live_new' });
     expect(credentials.update).toHaveBeenCalledWith('org-1', 'crd_1', { apiKey: 'sk_live_new' });
     expect(appended).toEqual([
-      expect.objectContaining({ type: 'connection.updated', changed: 'credentials' }),
+      expect.objectContaining({
+        type: 'integration.connection.updated',
+        subject: SAMPLE.id,
+        data: SAMPLE,
+      }),
     ]);
   });
 
@@ -209,7 +221,11 @@ describe('IntegrationsService', () => {
       updatedAt: '2026-01-02T00:00:00.000Z',
     });
     expect(appended).toEqual([
-      expect.objectContaining({ type: 'connection.updated', changed: 'configuration' }),
+      expect.objectContaining({
+        type: 'integration.connection.updated',
+        subject: SAMPLE.id,
+        data: SAMPLE,
+      }),
     ]);
   });
 
@@ -224,7 +240,13 @@ describe('IntegrationsService', () => {
     const destroyOrder = (credentials.destroy as ReturnType<typeof vi.fn>).mock
       .invocationCallOrder[0]!;
     expect(deleteOrder).toBeLessThan(destroyOrder);
-    expect(appended).toEqual([expect.objectContaining({ type: 'connection.removed' })]);
+    expect(appended).toEqual([
+      expect.objectContaining({
+        type: 'integration.connection.removed',
+        subject: SAMPLE.id,
+        data: SAMPLE,
+      }),
+    ]);
   });
 
   it('reconnect/disconnect return null/false for an unknown connection', async () => {
@@ -244,6 +266,61 @@ describe('IntegrationsService', () => {
     const conn = await svc.getByIntegration('org-1', 'stripe');
     expect(conn?.credentialRef).toBe('crd_1');
     expect(repo.findByIntegration).toHaveBeenCalledWith('org-1', 'stripe');
+  });
+
+  const SLACK_CONNECTION: Connection = {
+    ...SAMPLE,
+    id: 'con_2',
+    integrationId: 'slack',
+    config: { defaultChannel: '#general' },
+    credentialRef: 'crd_2',
+  };
+
+  it('invoke reveals the credential and runs the action with the connection config', async () => {
+    const invoke = vi.spyOn(slack.actions[0]!, 'invoke').mockResolvedValue({ channels: [] });
+    const { svc, credentials } = build(
+      fakeRepo({ findById: vi.fn().mockResolvedValue(SLACK_CONNECTION) }),
+      fakeCredentials({ reveal: vi.fn().mockResolvedValue({ botToken: 't' }) }),
+    );
+    const output = await svc.invoke('org-1', 'con_2', 'postMessageToChannel', { limit: 5 });
+    expect(credentials.reveal).toHaveBeenCalledWith('org-1', 'crd_2');
+    expect(invoke).toHaveBeenCalledWith(
+      { secrets: { botToken: 't' }, config: { defaultChannel: '#general' } },
+      { limit: 5 },
+    );
+    expect(output).toEqual({ channels: [] });
+    invoke.mockRestore();
+  });
+
+  it('invoke rejects a missing connection, an inactive one, and an unknown action', async () => {
+    const { svc } = build(fakeRepo({ findById: vi.fn().mockResolvedValue(null) }));
+    await expect(svc.invoke('org-1', 'nope', 'x', {})).rejects.toThrow(NotFoundError);
+
+    const inactive = build(
+      fakeRepo({ findById: vi.fn().mockResolvedValue({ ...SLACK_CONNECTION, active: false }) }),
+    );
+    await expect(inactive.svc.invoke('org-1', 'con_2', 'x', {})).rejects.toThrow(ConflictError);
+
+    const unknownAction = build(
+      fakeRepo({ findById: vi.fn().mockResolvedValue(SLACK_CONNECTION) }),
+    );
+    await expect(unknownAction.svc.invoke('org-1', 'con_2', 'nope', {})).rejects.toThrow(
+      NotFoundError,
+    );
+  });
+
+  it('invoke wraps an action failure in ActionInvocationError', async () => {
+    const invoke = vi
+      .spyOn(slack.actions[0]!, 'invoke')
+      .mockRejectedValue(new Error('slack said no'));
+    const { svc } = build(fakeRepo({ findById: vi.fn().mockResolvedValue(SLACK_CONNECTION) }));
+    await expect(svc.invoke('org-1', 'con_2', 'postMessageToChannel', {})).rejects.toThrow(
+      /slack said no/,
+    );
+    await expect(svc.invoke('org-1', 'con_2', 'postMessageToChannel', {})).rejects.toBeInstanceOf(
+      ActionInvocationError,
+    );
+    invoke.mockRestore();
   });
 });
 
@@ -266,6 +343,7 @@ describe('logging', () => {
       registry,
       repo,
       uow,
+      credentials,
       logger,
     });
 

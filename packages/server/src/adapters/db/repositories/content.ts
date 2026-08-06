@@ -3,16 +3,32 @@
 // `organizations.id` and constrains its queries to that tenant. The `Course`
 // model carries DERIVED fields (module / activity / enrolled counts) computed via
 // correlated subqueries.
-import { eq, and, sql, count, asc, desc, ilike, or, type SQL, type AnyColumn } from 'drizzle-orm';
-import type { DbExecutor } from '../index.js';
+import {
+  eq,
+  and,
+  sql,
+  count,
+  asc,
+  desc,
+  ilike,
+  or,
+  inArray,
+  type SQL,
+  type AnyColumn,
+} from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { DbExecutor, Tx } from '../index.js';
 import type { ContentRepository } from '../../../core/content/ports.js';
 import type {
+  Activity,
   Course,
   CourseSettings,
   CourseStatus,
   Download,
   DownloadAsset,
   DownloadStatus,
+  Module,
+  SaveActivityInput,
 } from '../../../core/content/model.js';
 import type {
   AddDownloadAssetInput,
@@ -29,6 +45,7 @@ import {
   courses,
   modules,
   activities,
+  activityAssets,
   downloads,
   downloadAssets,
 } from '../schema/content.js';
@@ -245,6 +262,12 @@ export class DrizzleContentRepository implements ContentRepository {
     private readonly logger: Logger = noopLogger,
   ) {}
 
+  /** On the root db this opens a transaction; tx-bound (ContentUnitOfWork) it
+   *  nests as a savepoint inside the surrounding transaction. */
+  private tx<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+    return (this.db as NodePgDatabase).transaction(fn);
+  }
+
   async list(orgId: string, query: ListCoursesQuery): Promise<Page<Course>> {
     const conditions: SQL[] = [eq(courses.orgId, orgId)];
     if (query.status) {
@@ -378,6 +401,352 @@ export class DrizzleContentRepository implements ContentRepository {
       )
       .returning({ id: contentItems.id });
     return deleted.length > 0;
+  }
+
+  // --- modules & activities ----------------------------------------------
+  // Every mutation returns the course's full ordered module list (modules by
+  // `seq`, each with its `activities` by `seq`), so `listModules` runs at the
+  // end of every mutation within the same transaction. An Activity's media is
+  // the many-to-many `activity_assets` join: `saveActivity` upserts the row
+  // and replaces its asset links; deletes drop the links first (they FK the
+  // activity), then the activity rows.
+
+  listForCourse(orgId: string, courseId: string): Promise<Module[]> {
+    return this.tx((tx) => this.listModules(tx, orgId, courseId));
+  }
+
+  async findActivity(orgId: string, activityId: string): Promise<Activity | null> {
+    const [row] = await this.db
+      .select()
+      .from(activities)
+      .where(and(eq(activities.orgId, orgId), eq(activities.id, activityId)))
+      .limit(1);
+    if (!row) {
+      return null;
+    }
+    const assetRows = await this.db
+      .select()
+      .from(activityAssets)
+      .where(and(eq(activityAssets.orgId, orgId), eq(activityAssets.activityId, activityId)))
+      .orderBy(activityAssets.seq);
+    return {
+      id: row.id,
+      moduleId: row.moduleId,
+      courseId: row.courseId,
+      seq: row.seq,
+      settings: (row.settings ?? null) as Activity['settings'],
+      assetIds: assetRows.map((r) => r.assetId),
+    };
+  }
+
+  async findModule(orgId: string, moduleId: string): Promise<Module | null> {
+    return this.tx(async (tx) => {
+      const [m] = await tx
+        .select()
+        .from(modules)
+        .where(and(eq(modules.orgId, orgId), eq(modules.id, moduleId)))
+        .limit(1);
+      if (!m) {
+        return null;
+      }
+      const all = await this.listModules(tx, orgId, m.courseId);
+      return all.find((x) => x.id === moduleId) ?? null;
+    });
+  }
+
+  /** The course's full ordered module list, each module's activities ordered too. */
+  private async listModules(tx: Tx, orgId: string, courseId: string): Promise<Module[]> {
+    const moduleRows = await tx
+      .select()
+      .from(modules)
+      .where(and(eq(modules.orgId, orgId), eq(modules.courseId, courseId)))
+      .orderBy(modules.seq);
+
+    const moduleIds = moduleRows.map((m) => m.id);
+    const activityRows = moduleIds.length
+      ? await tx
+          .select()
+          .from(activities)
+          .where(and(eq(activities.orgId, orgId), inArray(activities.moduleId, moduleIds)))
+          .orderBy(activities.seq)
+      : [];
+
+    const activityIds = activityRows.map((a) => a.id);
+    const assetLinkRows = activityIds.length
+      ? await tx
+          .select()
+          .from(activityAssets)
+          .where(
+            and(eq(activityAssets.orgId, orgId), inArray(activityAssets.activityId, activityIds)),
+          )
+          .orderBy(activityAssets.seq)
+      : [];
+
+    const assetIdsByActivity = new Map<string, string[]>();
+    for (const row of assetLinkRows) {
+      const arr = assetIdsByActivity.get(row.activityId) ?? [];
+      arr.push(row.assetId);
+      assetIdsByActivity.set(row.activityId, arr);
+    }
+
+    const activitiesByModule = new Map<string, Activity[]>();
+    for (const row of activityRows) {
+      const list = activitiesByModule.get(row.moduleId) ?? [];
+      list.push({
+        id: row.id,
+        moduleId: row.moduleId,
+        courseId: row.courseId,
+        seq: row.seq,
+        settings: (row.settings ?? null) as Activity['settings'],
+        assetIds: assetIdsByActivity.get(row.id) ?? [],
+      });
+      activitiesByModule.set(row.moduleId, list);
+    }
+
+    return moduleRows.map((m) => ({
+      id: m.id,
+      courseId: m.courseId,
+      title: m.title,
+      seq: m.seq,
+      activities: activitiesByModule.get(m.id) ?? [],
+    }));
+  }
+
+  /** Assert the module belongs to the org + course; throw otherwise. */
+  private async assertModule(
+    tx: Tx,
+    orgId: string,
+    courseId: string,
+    moduleId: string,
+  ): Promise<void> {
+    const [row] = await tx
+      .select({ id: modules.id })
+      .from(modules)
+      .where(
+        and(eq(modules.orgId, orgId), eq(modules.id, moduleId), eq(modules.courseId, courseId)),
+      )
+      .limit(1);
+    if (!row) {
+      throw new NotFoundError('Module', moduleId);
+    }
+  }
+
+  /** Replace an activity's ordered asset links with `assetIds`. */
+  private async replaceActivityAssets(
+    tx: Tx,
+    orgId: string,
+    activityId: string,
+    assetIds: string[],
+  ): Promise<void> {
+    await tx
+      .delete(activityAssets)
+      .where(and(eq(activityAssets.orgId, orgId), eq(activityAssets.activityId, activityId)));
+    if (assetIds.length) {
+      await tx
+        .insert(activityAssets)
+        .values(assetIds.map((assetId, i) => ({ orgId, activityId, assetId, seq: i })));
+    }
+  }
+
+  createModule(orgId: string, courseId: string, title: string): Promise<Module[]> {
+    return this.tx(async (tx) => {
+      const existing = await tx
+        .select({ seq: modules.seq })
+        .from(modules)
+        .where(and(eq(modules.orgId, orgId), eq(modules.courseId, courseId)));
+      const nextSeq = existing.reduce((max, r) => Math.max(max, r.seq), -1) + 1;
+      await tx.insert(modules).values({ orgId, courseId, title, seq: nextSeq });
+      return this.listModules(tx, orgId, courseId);
+    });
+  }
+
+  updateModule(
+    orgId: string,
+    courseId: string,
+    moduleId: string,
+    title: string,
+  ): Promise<Module[]> {
+    return this.tx(async (tx) => {
+      await this.assertModule(tx, orgId, courseId, moduleId);
+      await tx
+        .update(modules)
+        .set({ title })
+        .where(
+          and(eq(modules.orgId, orgId), eq(modules.id, moduleId), eq(modules.courseId, courseId)),
+        );
+      return this.listModules(tx, orgId, courseId);
+    });
+  }
+
+  deleteModule(orgId: string, courseId: string, moduleId: string): Promise<Module[]> {
+    return this.tx(async (tx) => {
+      await this.assertModule(tx, orgId, courseId, moduleId);
+
+      // Drop the module's activities: their asset links first (they FK the
+      // activity), then the activity rows, then the module.
+      const activityRows = await tx
+        .select({ id: activities.id })
+        .from(activities)
+        .where(and(eq(activities.orgId, orgId), eq(activities.moduleId, moduleId)));
+      const activityIds = activityRows.map((a) => a.id);
+
+      if (activityIds.length) {
+        await tx
+          .delete(activityAssets)
+          .where(
+            and(eq(activityAssets.orgId, orgId), inArray(activityAssets.activityId, activityIds)),
+          );
+        await tx
+          .delete(activities)
+          .where(and(eq(activities.orgId, orgId), eq(activities.moduleId, moduleId)));
+      }
+
+      await tx
+        .delete(modules)
+        .where(
+          and(eq(modules.orgId, orgId), eq(modules.id, moduleId), eq(modules.courseId, courseId)),
+        );
+      return this.listModules(tx, orgId, courseId);
+    });
+  }
+
+  reorderModules(orgId: string, courseId: string, orderedIds: string[]): Promise<Module[]> {
+    return this.tx(async (tx) => {
+      // Two-phase to dodge the unique(org_id, id) is fine, but modules have no
+      // unique(seq); still, park then assign to stay consistent with activities.
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx
+          .update(modules)
+          .set({ seq: i })
+          .where(
+            and(
+              eq(modules.orgId, orgId),
+              eq(modules.courseId, courseId),
+              eq(modules.id, orderedIds[i]!),
+            ),
+          );
+      }
+      return this.listModules(tx, orgId, courseId);
+    });
+  }
+
+  reorderActivities(
+    orgId: string,
+    courseId: string,
+    moduleId: string,
+    orderedIds: string[],
+  ): Promise<Module[]> {
+    return this.tx(async (tx) => {
+      await this.assertModule(tx, orgId, courseId, moduleId);
+      // Two-phase to dodge the unique(org_id, module_id, seq) constraint mid-swap:
+      // park rows at negative seqs, then assign the final 0..n-1.
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx
+          .update(activities)
+          .set({ seq: -(i + 1) })
+          .where(
+            and(
+              eq(activities.orgId, orgId),
+              eq(activities.moduleId, moduleId),
+              eq(activities.id, orderedIds[i]!),
+            ),
+          );
+      }
+      for (let i = 0; i < orderedIds.length; i++) {
+        await tx
+          .update(activities)
+          .set({ seq: i })
+          .where(
+            and(
+              eq(activities.orgId, orgId),
+              eq(activities.moduleId, moduleId),
+              eq(activities.id, orderedIds[i]!),
+            ),
+          );
+      }
+      return this.listModules(tx, orgId, courseId);
+    });
+  }
+
+  saveActivity(
+    orgId: string,
+    courseId: string,
+    moduleId: string,
+    input: SaveActivityInput,
+    activityId?: string,
+  ): Promise<Module[]> {
+    return this.tx(async (tx) => {
+      await this.assertModule(tx, orgId, courseId, moduleId);
+
+      if (activityId) {
+        const [existing] = await tx
+          .select({ id: activities.id })
+          .from(activities)
+          .where(
+            and(
+              eq(activities.orgId, orgId),
+              eq(activities.id, activityId),
+              eq(activities.moduleId, moduleId),
+            ),
+          )
+          .limit(1);
+        if (!existing) {
+          throw new NotFoundError('Activity', activityId);
+        }
+
+        await tx
+          .update(activities)
+          .set({ settings: input.settings ?? null })
+          .where(and(eq(activities.orgId, orgId), eq(activities.id, activityId)));
+        if (input.assetIds !== undefined) {
+          await this.replaceActivityAssets(tx, orgId, activityId, input.assetIds);
+        }
+      } else {
+        const existing = await tx
+          .select({ seq: activities.seq })
+          .from(activities)
+          .where(and(eq(activities.orgId, orgId), eq(activities.moduleId, moduleId)));
+        const nextSeq = existing.reduce((max, r) => Math.max(max, r.seq), -1) + 1;
+
+        const [ins] = await tx
+          .insert(activities)
+          .values({ orgId, moduleId, courseId, seq: nextSeq, settings: input.settings ?? null })
+          .returning({ id: activities.id });
+        if (!ins) {
+          throw new Error('failed to insert activity');
+        }
+        await this.replaceActivityAssets(tx, orgId, ins.id, input.assetIds ?? []);
+      }
+
+      return this.listModules(tx, orgId, courseId);
+    });
+  }
+
+  deleteActivity(
+    orgId: string,
+    courseId: string,
+    moduleId: string,
+    activityId: string,
+  ): Promise<Module[]> {
+    return this.tx(async (tx) => {
+      await this.assertModule(tx, orgId, courseId, moduleId);
+
+      // Drop the asset links first (they FK the activity), then the activity.
+      await tx
+        .delete(activityAssets)
+        .where(and(eq(activityAssets.orgId, orgId), eq(activityAssets.activityId, activityId)));
+      await tx
+        .delete(activities)
+        .where(
+          and(
+            eq(activities.orgId, orgId),
+            eq(activities.id, activityId),
+            eq(activities.moduleId, moduleId),
+          ),
+        );
+
+      return this.listModules(tx, orgId, courseId);
+    });
   }
 
   // --- downloads --------------------------------------------------------

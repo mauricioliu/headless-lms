@@ -1,5 +1,6 @@
 // organizations context — public surface.
 export { OrganizationServiceImpl } from './service.js';
+export { organizationEvents } from './events.js';
 
 export type {
   OrganizationService,
@@ -43,3 +44,16 @@ export type {
   LinkOrgUserInput,
   UnlinkOrgUserInput,
 } from './types.js';
+export type {
+  OrganizationEvent,
+  OrganizationCreated,
+  OrganizationUpdated,
+  OrganizationDeleted,
+  OrgUserLinked,
+  OrgUserDeleted,
+  InviteCreated,
+  InviteAccepted,
+  StudentCreated,
+  StudentDeleted,
+  StudentLinked,
+} from './events.js';

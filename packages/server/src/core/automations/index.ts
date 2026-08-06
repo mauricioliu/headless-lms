@@ -1,5 +1,6 @@
 // automations context — public surface. Re-export only what other contexts may use.
 export { AutomationsServiceImpl } from './service.js';
+export { automationEvents } from './events.js';
 export { InvalidTriggerError } from './model.js';
 export type {
   AutomationsService,

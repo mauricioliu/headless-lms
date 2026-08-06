@@ -12,6 +12,7 @@ import type {
 } from './ports.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
+import { entitlementEvents } from './events.js';
 
 export type EntitlementsServiceParams = {
   /** Read-only access (list) — runs outside any transaction. */
@@ -39,7 +40,13 @@ export class EntitlementsServiceImpl implements EntitlementsService {
   async grant(orgId: string, input: GrantEntitlementInput): Promise<Entitlement> {
     const entitlement = await this.uow.run(async ({ entitlements, outbox }) => {
       const created = await entitlements.insert(orgId, input);
-      await outbox.append([{ type: 'entitlement.created', orgId, entitlement: created }]);
+      await outbox.append([
+        entitlementEvents.entitlementCreated.make({
+          orgId,
+          subject: created.id,
+          data: created,
+        }),
+      ]);
       return created;
     });
     this.logger.info('entitlement granted', {
@@ -64,8 +71,16 @@ export class EntitlementsServiceImpl implements EntitlementsService {
       }
       await outbox.append([
         status === 'revoked'
-          ? { type: 'entitlement.deleted', orgId, entitlement: updated }
-          : { type: 'entitlement.updated', orgId, entitlement: updated },
+          ? entitlementEvents.entitlementDeleted.make({
+              orgId,
+              subject: updated.id,
+              data: updated,
+            })
+          : entitlementEvents.entitlementUpdated.make({
+              orgId,
+              subject: updated.id,
+              data: updated,
+            }),
       ]);
       return updated;
     });

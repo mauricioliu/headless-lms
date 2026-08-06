@@ -4,19 +4,19 @@
 // dropped.
 import type { EventBus } from '../core/shared/ports.js';
 import type { Mailer } from '@headless-lms/server';
-import type { EntitlementCreated, EntitlementDeleted } from '@headless-lms/types';
+import { entitlementEvents } from '../core/entitlements/index.js';
 
 export function registerNotificationSubscribers(bus: EventBus, mailer: Pick<Mailer, 'send'>): void {
-  bus.subscribe('entitlement.created', async (event) => {
-    const { entitlement } = event as EntitlementCreated;
+  bus.subscribe(entitlementEvents.entitlementCreated, async (event) => {
+    const entitlement = event.data;
     await mailer.send(entitlement.email, 'accessGranted', {
       contentTitle: entitlement.content.title,
       contentId: entitlement.content.id,
     });
   });
 
-  bus.subscribe('entitlement.deleted', async (event) => {
-    const { entitlement } = event as EntitlementDeleted;
+  bus.subscribe(entitlementEvents.entitlementDeleted, async (event) => {
+    const entitlement = event.data;
     await mailer.send(entitlement.email, 'accessRevoked', {
       contentTitle: entitlement.content.title,
     });

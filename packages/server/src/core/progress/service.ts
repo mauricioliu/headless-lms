@@ -16,7 +16,7 @@ import type {
   ProgressWriteScope,
 } from './ports.js';
 import type { ProgressReportItem, ProgressTarget, ReportProgressInput } from './types.js';
-import type { NewProgressEvent } from './events.js';
+import { progressEvents, type NewProgressEvent } from './events.js';
 import type { ContentService, Module } from '../content/index.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
@@ -109,7 +109,9 @@ export class ProgressServiceImpl implements ProgressService {
           (await scope.progress.update(orgId, record.id, {
             completedAt: new Date().toISOString(),
           })) ?? record;
-        events.push({ type: 'progress.completed', orgId, record });
+        events.push(
+          progressEvents.progressCompleted.make({ orgId, subject: record.id, data: record }),
+        );
         await this.completeContainers(orgId, input, courseId, modules, scope, events);
         this.logger.info('progress completed', { orgId, recordId: record.id });
       }
@@ -154,7 +156,7 @@ export class ProgressServiceImpl implements ProgressService {
       }
       return winner;
     }
-    events.push({ type: 'progress.started', orgId, record });
+    events.push(progressEvents.progressStarted.make({ orgId, subject: record.id, data: record }));
     this.logger.info('progress started', { orgId, recordId: record.id });
     return record;
   }
@@ -212,7 +214,9 @@ export class ProgressServiceImpl implements ProgressService {
         completedAt: new Date().toISOString(),
       });
       if (inserted) {
-        events.push({ type: 'progress.completed', orgId, record: inserted });
+        events.push(
+          progressEvents.progressCompleted.make({ orgId, subject: inserted.id, data: inserted }),
+        );
         return;
       }
       // Lost a concurrent insert: re-read the winner's row.
@@ -228,7 +232,7 @@ export class ProgressServiceImpl implements ProgressService {
       (await scope.progress.update(orgId, existing.id, {
         completedAt: new Date().toISOString(),
       })) ?? existing;
-    events.push({ type: 'progress.completed', orgId, record });
+    events.push(progressEvents.progressCompleted.make({ orgId, subject: record.id, data: record }));
   }
 
   get(orgId: string, target: ProgressTarget): Promise<ProgressRecord | null> {

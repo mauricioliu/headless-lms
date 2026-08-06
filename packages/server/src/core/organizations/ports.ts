@@ -17,8 +17,8 @@ import type {
 } from './types.js';
 
 // Sessions are identity's, so the header shape it forwards is declared there.
-export type { AuthHeaders } from '../identity/ports.js';
-import type { AuthHeaders } from '../identity/ports.js';
+export type { AuthHeaders } from '../identity/index.js';
+import type { AuthHeaders } from '../identity/index.js';
 
 // Inbound port (use cases the service exposes).
 export interface OrganizationService {
@@ -100,7 +100,7 @@ export interface OrganizationsRepository {
   /** Inserts a pending invite, or re-issues the org's existing pending one
    *  for this email (fresh token/expiry/role) — atomic upsert. */
   upsertPendingInvite(orgId: string, input: NewInviteRow): Promise<Invite>;
-  setInviteStatus(orgId: string, id: string, status: string): Promise<void>;
+  setInviteStatus(orgId: string, id: string, status: string): Promise<Invite | null>;
   findInviteByTokenHash(tokenHash: string): Promise<Invite | null>;
   /** The person's row in one org. `(org_id, user_id)` is unique. */
   findOrgUser(orgId: string, userId: string): Promise<OrgUser | null>;

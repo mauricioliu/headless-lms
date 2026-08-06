@@ -1,5 +1,6 @@
 // discussion context — public surface. Re-export only what other layers may use.
 export { DiscussionServiceImpl, DEFAULT_SETTINGS } from './service.js';
+export { discussionEvents } from './events.js';
 export type {
   DiscussionService,
   DiscussionRepository,

@@ -71,7 +71,12 @@ describe('EntitlementsService', () => {
     const { svc, appended } = build();
     await svc.grant('org-1', { orgUserId: 's1', contentId: 'c1', expiresAt: null });
     expect(appended).toEqual([
-      { type: 'entitlement.created', orgId: 'org-1', entitlement: SAMPLE },
+      expect.objectContaining({
+        type: 'entitlement.created',
+        orgId: 'org-1',
+        subject: SAMPLE.id,
+        data: SAMPLE,
+      }),
     ]);
   });
 
@@ -85,7 +90,12 @@ describe('EntitlementsService', () => {
     const { svc, appended } = build();
     await svc.setStatus('org-1', 'e1', 'revoked');
     expect(appended).toEqual([
-      { type: 'entitlement.deleted', orgId: 'org-1', entitlement: SAMPLE },
+      expect.objectContaining({
+        type: 'entitlement.deleted',
+        orgId: 'org-1',
+        subject: SAMPLE.id,
+        data: SAMPLE,
+      }),
     ]);
   });
 
@@ -93,7 +103,12 @@ describe('EntitlementsService', () => {
     const { svc, appended } = build();
     await svc.setStatus('org-1', 'e1', 'active');
     expect(appended).toEqual([
-      { type: 'entitlement.updated', orgId: 'org-1', entitlement: SAMPLE },
+      expect.objectContaining({
+        type: 'entitlement.updated',
+        orgId: 'org-1',
+        subject: SAMPLE.id,
+        data: SAMPLE,
+      }),
     ]);
   });
 

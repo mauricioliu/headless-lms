@@ -18,6 +18,22 @@ export class UnknownIntegrationError extends Error {
   }
 }
 
+/** An action's external call failed (or the action rejected its input). */
+export class ActionInvocationError extends Error {
+  constructor(
+    readonly integrationId: string,
+    readonly actionId: string,
+    cause: unknown,
+  ) {
+    super(
+      `action "${integrationId}.${actionId}" failed: ${
+        cause instanceof Error ? cause.message : String(cause)
+      }`,
+    );
+    this.name = 'ActionInvocationError';
+  }
+}
+
 /** The config was rejected by the integration's validator. */
 export class InvalidConfigError extends Error {
   constructor(

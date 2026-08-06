@@ -6,13 +6,16 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import {
+  ActionInvocationResult,
   AvailableIntegrationsList,
   ConfigureRequest,
   ConnectRequest,
   Connection,
+  ConnectionActionParams,
   ConnectionIdParam,
   ConnectionsList,
   ErrorBody,
+  InvokeActionRequest,
   ReconnectRequest,
 } from '../schemas/index.js';
 import type { Connection as DomainConnection } from '../../core/integrations/index.js';
@@ -168,6 +171,40 @@ export async function integrationsRoutes(
         throw new NotFoundError('Connection', req.params.id);
       }
       return toApi(connection);
+    },
+  });
+
+  r.route({
+    method: 'POST',
+    url: '/api/integrations/:id/actions/:actionId',
+    preHandler: app.requireOrgSession,
+    schema: {
+      operationId: 'invokeConnectionAction',
+      tags,
+      summary: "Invoke one of a connection's actions (e.g. a listing that feeds a picker)",
+      params: ConnectionActionParams,
+      body: InvokeActionRequest,
+      response: {
+        200: ActionInvocationResult,
+        400: ErrorBody,
+        401: ErrorBody,
+        404: ErrorBody,
+        409: ErrorBody,
+        502: ErrorBody,
+      },
+    },
+    handler: async (req, reply) => {
+      const orgId = await resolveOrgId(req, reply);
+      if (!orgId) {
+        return;
+      }
+      const output = await integrations.invoke(
+        orgId,
+        req.params.id,
+        req.params.actionId,
+        req.body.input ?? {},
+      );
+      return { output: output as Record<string, unknown> };
     },
   });
 

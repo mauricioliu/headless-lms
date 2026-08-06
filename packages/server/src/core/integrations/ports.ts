@@ -47,6 +47,14 @@ export interface IntegrationsService {
   get(orgId: string, id: string): Promise<Connection | null>;
   /** The connection consumers (billing, automations) resolve an integration by id. */
   getByIntegration(orgId: string, integrationId: string): Promise<Connection | null>;
+  /** Invoke one of a connection's actions with its credential revealed at point
+   *  of use (e.g. a listing action that feeds a client-side picker). */
+  invoke(
+    orgId: string,
+    connectionId: string,
+    actionId: string,
+    input: Record<string, unknown>,
+  ): Promise<unknown>;
 }
 
 // Outbound port (persistence contract the repository fulfils).

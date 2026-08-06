@@ -59,14 +59,13 @@ function fakeReader(refs: ContentRef[]): LearnEntitlementReader {
   };
 }
 
-// Minimal ContentService fake: only get() and listForCourse() are exercised.
 function fakeContent(
   courses: Record<string, Course>,
   modules: Record<string, Module[]>,
 ): ContentService {
   return {
-    get: async (_org: string, id: string) => courses[id] ?? null,
-    listForCourse: async (_org: string, courseId: string) => modules[courseId] ?? [],
+    getCourse: async (_org: string, id: string) => courses[id] ?? null,
+    listCourseModules: async (_org: string, courseId: string) => modules[courseId] ?? [],
   } as unknown as ContentService;
 }
 

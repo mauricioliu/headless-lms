@@ -25,8 +25,9 @@ import type {
   UpdateOrganizationInput,
   UpdateStudentInput,
 } from './types.js';
-import type { DomainEvent, NewDomainEvent, OrganizationEvent } from '@headless-lms/types';
-import type { Logger } from '../shared/ports.js';
+import { organizationEvents } from './events.js';
+import type { OrganizationEvent } from './events.js';
+import type { Logger, NewDomainEvent } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 import type { Mailer } from '../shared/mailer.js';
 import { generateInviteToken, hashInviteToken } from '../shared/invite-token.js';
@@ -36,14 +37,7 @@ import { genId } from '../shared/id.js';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-// Outbox-shaped organizations event — `id` and `createdAt` are stamped on
-// append. Distributed member by member: a bare `Omit<OrganizationEvent, ...>`
-// would collapse the union to the keys its members share.
-type NewOrganizationEvent = OrganizationEvent extends infer E
-  ? E extends DomainEvent
-    ? NewDomainEvent<E>
-    : never
-  : never;
+type NewOrganizationEvent = NewDomainEvent<OrganizationEvent>;
 
 export interface InviteUrls {
   studentPortalUrl: string;
@@ -107,7 +101,11 @@ export class OrganizationServiceImpl implements OrganizationService {
         ownerId: input.ownerId,
       });
       await outbox.append([
-        { type: 'organization.created', orgId: created.id, organization: created },
+        organizationEvents.organizationCreated.make({
+          orgId: created.id,
+          subject: created.id,
+          data: created,
+        }),
       ]);
       return created;
     });
@@ -121,7 +119,12 @@ export class OrganizationServiceImpl implements OrganizationService {
         name: input.name,
         slug: input.slug,
       });
-      await outbox.append([{ type: 'organization.updated', orgId: id, organization: updated }]);
+      if (!updated) {
+        throw new NotFoundError('Organization', id);
+      }
+      await outbox.append([
+        organizationEvents.organizationUpdated.make({ orgId: id, subject: id, data: updated }),
+      ]);
       return updated;
     });
 
@@ -134,7 +137,11 @@ export class OrganizationServiceImpl implements OrganizationService {
       const deleted = await organizations.delete(id);
 
       await outbox.append([
-        { type: 'organization.deleted', orgId: deleted.id, organization: deleted },
+        organizationEvents.organizationDeleted.make({
+          orgId: deleted.id,
+          subject: deleted.id,
+          data: deleted,
+        }),
       ]);
       return deleted;
     });
@@ -145,7 +152,9 @@ export class OrganizationServiceImpl implements OrganizationService {
   async addOrgUser({ orgId, userId, role }: AddOrgUserInput): Promise<OrgUser> {
     const orgUser = await this.uow.run(async ({ organizations, outbox }) => {
       const created = await organizations.createOrgUser({ orgId, role, userId, status: 'active' });
-      await outbox.append([{ type: 'organization.user.linked', orgId, org_user: created }]);
+      await outbox.append([
+        organizationEvents.orgUserLinked.make({ orgId, subject: created.id, data: created }),
+      ]);
       return created;
     });
     this.logger.info('user added to organization', { orgId, userId, role });
@@ -159,7 +168,11 @@ export class OrganizationServiceImpl implements OrganizationService {
         throw new NotFoundError('OrgUser', id);
       }
       await outbox.append([
-        { type: 'organization.user.deleted', orgId: deleted.id, org_user: deletedUser },
+        organizationEvents.orgUserDeleted.make({
+          orgId,
+          subject: deletedUser.id,
+          data: deletedUser,
+        }),
       ]);
       return deletedUser;
     });
@@ -194,7 +207,9 @@ export class OrganizationServiceImpl implements OrganizationService {
         tokenHash,
         expiresAt,
       });
-      const events: NewOrganizationEvent[] = [{ type: 'invite.created', orgId, invite: row }];
+      const events: NewOrganizationEvent[] = [
+        organizationEvents.inviteCreated.make({ orgId, subject: row.id, data: row }),
+      ];
       if (person) {
         // Idempotent: re-inviting an address rotates the token without
         // producing a second org user or a second student.created.
@@ -205,7 +220,9 @@ export class OrganizationServiceImpl implements OrganizationService {
           status: 'invited',
         });
         if (created) {
-          events.push({ type: 'student.created', orgId, student: orgUser });
+          events.push(
+            organizationEvents.studentCreated.make({ orgId, subject: orgUser.id, data: orgUser }),
+          );
         }
       }
       await outbox.append(events);
@@ -317,10 +334,41 @@ export class OrganizationServiceImpl implements OrganizationService {
         role: invite.role,
         status: 'active',
       });
-      await organizations.setInviteStatus(invite.orgId, invite.id, 'accepted');
-      if (created) {
-        await outbox.append([{ type: 'student.created', orgId: invite.orgId, student: row }]);
+      const acceptedInvite = await organizations.setInviteStatus(invite.orgId, invite.id, 'accepted');
+      if (!acceptedInvite) {
+        throw new NotFoundError('Invite', invite.id);
       }
+      const events: NewOrganizationEvent[] = [
+        organizationEvents.inviteAccepted.make({
+          orgId: invite.orgId,
+          subject: acceptedInvite.id,
+          data: acceptedInvite,
+        }),
+      ];
+      if (row.role === STUDENT_ROLE) {
+        events.push(
+          created
+            ? organizationEvents.studentCreated.make({
+                orgId: invite.orgId,
+                subject: row.id,
+                data: row,
+              })
+            : organizationEvents.studentLinked.make({
+                orgId: invite.orgId,
+                subject: row.id,
+                data: row,
+              }),
+        );
+      } else if (created) {
+        events.push(
+          organizationEvents.orgUserLinked.make({
+            orgId: invite.orgId,
+            subject: row.id,
+            data: row,
+          }),
+        );
+      }
+      await outbox.append(events);
       return row;
     });
     this.logger.info('invite accepted', { orgId: invite.orgId, userId: input.userId });
@@ -346,7 +394,9 @@ export class OrganizationServiceImpl implements OrganizationService {
       }
       const events: NewOrganizationEvent[] = [];
       if (deletedUser.role === STUDENT_ROLE) {
-        events.push({ type: 'student.deleted', orgId, student: orgUser });
+        events.push(
+          organizationEvents.studentDeleted.make({ orgId, subject: orgUser.id, data: orgUser }),
+        );
       }
 
       await outbox.append(events);

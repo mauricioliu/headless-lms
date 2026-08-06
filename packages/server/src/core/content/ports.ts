@@ -39,14 +39,18 @@ export interface ContentService {
   getModule(orgId: string, moduleId: string): Promise<Module | null>;
   reorderModules(orgId: string, courseId: string, orderedIds: string[]): Promise<Module[]>;
   createModule(orgId: string, courseId: string, title: string): Promise<Module[]>;
+  /** @throws NotFoundError when no such module exists in this course. */
   updateModule(orgId: string, courseId: string, moduleId: string, title: string): Promise<Module[]>;
+  /** @throws NotFoundError when no such module exists in this course. */
   deleteModule(orgId: string, courseId: string, moduleId: string): Promise<Module[]>;
+  /** @throws NotFoundError when no such module exists in this course. */
   reorderActivities(
     orgId: string,
     courseId: string,
     moduleId: string,
     orderedIds: string[],
   ): Promise<Module[]>;
+  /** @throws NotFoundError when the module — or, on update, the activity — does not exist. */
   saveActivity(
     orgId: string,
     courseId: string,
@@ -54,6 +58,7 @@ export interface ContentService {
     input: SaveActivityInput,
     activityId?: string,
   ): Promise<Module[]>;
+  /** @throws NotFoundError when no such activity exists in this module. */
   deleteActivity(
     orgId: string,
     courseId: string,
@@ -86,14 +91,39 @@ export interface ContentService {
   reorderDownloadAssets(orgId: string, downloadId: string, assetIds: string[]): Promise<DownloadAsset[]>;
 }
 
-// TODO
-// Combine repository and structure repo into a single port.
 export interface ContentRepository {
   list(orgId: string, query: ListCoursesQuery): Promise<Page<Course>>;
   findById(orgId: string, id: string): Promise<Course | null>;
   create(orgId: string, input: CreateCourseInput, slug: string): Promise<Course>;
   update(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course | null>;
   delete(orgId: string, id: string): Promise<boolean>;
+
+  listForCourse(orgId: string, courseId: string): Promise<Module[]>;
+  findActivity(orgId: string, activityId: string): Promise<Activity | null>;
+  findModule(orgId: string, moduleId: string): Promise<Module | null>;
+  reorderModules(orgId: string, courseId: string, orderedIds: string[]): Promise<Module[]>;
+  createModule(orgId: string, courseId: string, title: string): Promise<Module[]>;
+  updateModule(orgId: string, courseId: string, moduleId: string, title: string): Promise<Module[]>;
+  deleteModule(orgId: string, courseId: string, moduleId: string): Promise<Module[]>;
+  reorderActivities(
+    orgId: string,
+    courseId: string,
+    moduleId: string,
+    orderedIds: string[],
+  ): Promise<Module[]>;
+  saveActivity(
+    orgId: string,
+    courseId: string,
+    moduleId: string,
+    input: SaveActivityInput,
+    activityId?: string,
+  ): Promise<Module[]>;
+  deleteActivity(
+    orgId: string,
+    courseId: string,
+    moduleId: string,
+    activityId: string,
+  ): Promise<Module[]>;
 
   listDownloads(orgId: string, query: ListDownloadsQuery): Promise<Page<Download>>;
   getDownload(orgId: string, id: string): Promise<Download | null>;
@@ -123,32 +153,3 @@ export interface ContentTxScope {
 }
 
 export type ContentUnitOfWork = UnitOfWork<ContentTxScope>;
-
-export interface CourseRepository {
-  listForCourse(orgId: string, courseId: string): Promise<Module[]>;
-  findActivity(orgId: string, activityId: string): Promise<Activity | null>;
-  findModule(orgId: string, moduleId: string): Promise<Module | null>;
-  reorderModules(orgId: string, courseId: string, orderedIds: string[]): Promise<Module[]>;
-  createModule(orgId: string, courseId: string, title: string): Promise<Module[]>;
-  updateModule(orgId: string, courseId: string, moduleId: string, title: string): Promise<Module[]>;
-  deleteModule(orgId: string, courseId: string, moduleId: string): Promise<Module[]>;
-  reorderActivities(
-    orgId: string,
-    courseId: string,
-    moduleId: string,
-    orderedIds: string[],
-  ): Promise<Module[]>;
-  saveActivity(
-    orgId: string,
-    courseId: string,
-    moduleId: string,
-    input: SaveActivityInput,
-    activityId?: string,
-  ): Promise<Module[]>;
-  deleteActivity(
-    orgId: string,
-    courseId: string,
-    moduleId: string,
-    activityId: string,
-  ): Promise<Module[]>;
-}

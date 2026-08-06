@@ -1,6 +1,7 @@
 export type {
   ProgressTargetType,
 } from "./schemas/progress.js";
+import type { ProgressTargetType } from "./schemas/progress.js";
 
 export type ProgressId = string;
 

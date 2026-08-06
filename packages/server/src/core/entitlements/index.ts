@@ -1,5 +1,6 @@
 // entitlements context — public surface. Re-export only what other contexts may use.
 export { EntitlementsServiceImpl } from "./service.js";
+export { entitlementEvents } from "./events.js";
 export type { EntitlementsService, EntitlementsRepository } from "./ports.js";
 export type {
   Entitlement,

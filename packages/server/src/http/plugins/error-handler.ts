@@ -1,6 +1,7 @@
 import { ConflictError, ForbiddenError, NotFoundError } from '../../core/shared/errors.js';
 import { OrganizationRuleError } from '../../core/organizations/index.js';
 import {
+  ActionInvocationError,
   AlreadyConnectedError,
   InvalidConfigError,
   UnknownIntegrationError,
@@ -8,8 +9,9 @@ import {
 import { InvalidTriggerError } from '../../core/automations/index.js';
 import { NoActiveOrgError } from '../scope.js';
 import { UnauthorizedError } from './auth.js';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 
-export function errorHandler(error: any, request: any, reply: any) {
+export function errorHandler(error: unknown, _request: FastifyRequest, reply: FastifyReply) {
   if (error instanceof NotFoundError) {
     return reply.status(404).send({ error: 'not_found', message: error.message });
   }
@@ -31,6 +33,9 @@ export function errorHandler(error: any, request: any, reply: any) {
   if (error instanceof InvalidConfigError) {
     return reply.status(400).send({ error: 'invalid_config', message: error.message });
   }
+  if (error instanceof ActionInvocationError) {
+    return reply.status(502).send({ error: 'action_failed', message: error.message });
+  }
   if (error instanceof InvalidTriggerError) {
     return reply.status(400).send({ error: 'invalid_trigger', message: error.message });
   }
@@ -47,6 +52,6 @@ export function errorHandler(error: any, request: any, reply: any) {
       .status(err.statusCode)
       .send({ error: err.code ?? 'bad_request', message: err.message ?? 'Bad request' });
   }
-  request.log.error(error);
+  _request.log.error(error);
   return reply.status(500).send({ error: 'internal_error' });
 }

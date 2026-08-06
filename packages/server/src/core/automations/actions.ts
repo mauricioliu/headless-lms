@@ -6,7 +6,7 @@
 // (e.g. courseCompleted) makes `executeAction` throw a named error, recorded
 // by the engine as a failed action.
 import type { EmailTemplateId, EmailTemplateParams } from '@headless-lms/types';
-import type { Entitlement } from '../entitlements/index.js';
+import { entitlementEvents } from '../entitlements/index.js';
 import type { Mailer } from '../shared/mailer.js';
 import type { DomainEvent } from '../shared/ports.js';
 import type { AutomationAction } from './model.js';
@@ -21,40 +21,32 @@ interface SendEmailDerivation<K extends EmailTemplateId> {
 
 type SendEmailDerivations = { [K in EmailTemplateId]?: SendEmailDerivation<K> };
 
-/** An entitlement-carrying event, as emitted by entitlement.created|deleted. */
-interface EntitlementEventLike extends DomainEvent {
-  entitlement: Entitlement;
-}
-
-function hasEntitlement(event: DomainEvent): event is EntitlementEventLike {
-  return (
-    typeof (event as { entitlement?: unknown }).entitlement === 'object' &&
-    (event as { entitlement?: unknown }).entitlement !== null
-  );
-}
-
 export const SEND_EMAIL_DERIVATIONS: SendEmailDerivations = {
   accessGranted: {
     trigger: 'entitlement.created',
     derive: (event) => {
-      if (!hasEntitlement(event)) {
+      const result = entitlementEvents.entitlementCreated.safeParse(event);
+      if (!result.success) {
         return undefined;
       }
+      const entitlement = result.data.data;
       return {
-        to: event.entitlement.email,
-        params: { contentTitle: event.entitlement.content.title, contentId: event.entitlement.content.id },
+        to: entitlement.email,
+        params: { contentTitle: entitlement.content.title, contentId: entitlement.content.id },
       };
     },
   },
   accessRevoked: {
     trigger: 'entitlement.deleted',
     derive: (event) => {
-      if (!hasEntitlement(event)) {
+      const result = entitlementEvents.entitlementDeleted.safeParse(event);
+      if (!result.success) {
         return undefined;
       }
+      const entitlement = result.data.data;
       return {
-        to: event.entitlement.email,
-        params: { contentTitle: event.entitlement.content.title },
+        to: entitlement.email,
+        params: { contentTitle: entitlement.content.title },
       };
     },
   },

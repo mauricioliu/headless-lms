@@ -29,6 +29,7 @@ import type { DomainEvent, Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 import type { Mailer } from '../shared/mailer.js';
 import type { IntegrationsService } from '../integrations/index.js';
+import { automationEvents } from './events.js';
 
 /** True only when `input` sets `enabled` and nothing else — emits automation.enabled|disabled instead of automation.updated. */
 function isEnabledOnlyUpdate(input: UpdateAutomationInput): input is { enabled: boolean } {
@@ -113,7 +114,11 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
           return null;
         }
         await outbox.append([
-          { type: 'automation.run.started', orgId: event.orgId, run: inserted },
+          automationEvents.runStarted.make({
+            orgId: event.orgId,
+            subject: inserted.id,
+            data: inserted,
+          }),
         ]);
         return inserted;
       });
@@ -151,7 +156,13 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
           finishedAt: new Date().toISOString(),
         });
         if (failed) {
-          await outbox.append([{ type: 'automation.run.failed', orgId: run.orgId, run: failed }]);
+          await outbox.append([
+            automationEvents.runFailed.make({
+              orgId: run.orgId,
+              subject: failed.id,
+              data: failed,
+            }),
+          ]);
         }
       });
     } catch (err) {
@@ -187,19 +198,18 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
       if (!run) {
         return;
       }
-      const runEventType =
+      const runEvent =
         status === 'completed'
-          ? ('automation.run.completed' as const)
-          : ('automation.run.failed' as const);
-      const runEvent = { type: runEventType, orgId: d.orgId, run };
+          ? automationEvents.runCompleted.make({ orgId: d.orgId, subject: run.id, data: run })
+          : automationEvents.runFailed.make({ orgId: d.orgId, subject: run.id, data: run });
       const actionFailedEvents = results
         .filter((r) => r.status === 'failed')
         .map((result) => ({
-          type: 'automation.action.failed' as const,
-          orgId: d.orgId,
-          runId: d.runId,
-          automationId: d.automationId,
-          result,
+          ...automationEvents.actionFailed.make({
+            orgId: d.orgId,
+            subject: d.runId,
+            data: result,
+          }),
         }));
       await outbox.append([runEvent, ...actionFailedEvents]);
     });
@@ -211,7 +221,9 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
     }
     const automation = await this.uow.run(async ({ automations, outbox }) => {
       const created = await automations.insert(orgId, input);
-      await outbox.append([{ type: 'automation.created', orgId, automation: created }]);
+      await outbox.append([
+        automationEvents.automationCreated.make({ orgId, subject: created.id, data: created }),
+      ]);
       return created;
     });
     this.logger.info('automation created', { orgId, automationId: automation.id });
@@ -233,14 +245,22 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
       }
       if (isEnabledOnlyUpdate(input)) {
         await outbox.append([
-          {
-            type: input.enabled ? 'automation.enabled' : 'automation.disabled',
-            orgId,
-            automationId: id,
-          },
+          input.enabled
+            ? automationEvents.automationEnabled.make({
+                orgId,
+                subject: updated.id,
+                data: updated,
+              })
+            : automationEvents.automationDisabled.make({
+                orgId,
+                subject: updated.id,
+                data: updated,
+              }),
         ]);
       } else {
-        await outbox.append([{ type: 'automation.updated', orgId, automation: updated }]);
+        await outbox.append([
+          automationEvents.automationUpdated.make({ orgId, subject: updated.id, data: updated }),
+        ]);
       }
       return updated;
     });
@@ -256,7 +276,9 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
       if (!removed) {
         return null;
       }
-      await outbox.append([{ type: 'automation.deleted', orgId, automation: removed }]);
+      await outbox.append([
+        automationEvents.automationDeleted.make({ orgId, subject: removed.id, data: removed }),
+      ]);
       return removed;
     });
     if (deleted) {

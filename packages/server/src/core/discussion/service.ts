@@ -30,6 +30,7 @@ import type {
   DiscussionUnitOfWork,
   PostCommentInput,
 } from './ports.js';
+import { discussionEvents } from './events.js';
 
 /** A course with no stored settings. Discussion is opt-in, so the common case
  *  persists no row at all and every existing course stays silent. */
@@ -82,13 +83,16 @@ export class DiscussionServiceImpl implements DiscussionService {
 
   async resolveConfig(orgId: string, activityId: string): Promise<CommentsConfig> {
     const activity = await this.content.getActivity(orgId, activityId);
+    if (!activity) {
+      throw new NotFoundError('Activity', activityId);
+    }
 
     // The `content` namespace row is the whole CourseSettings; comment settings
     // are one key inside it, written there by content.patchSettings.
     const stored = await this.settings.get<StoredCourseSettings>(
       orgId,
       SettingsNamespace.content,
-      activity?.courseId!,
+      activity.courseId,
     );
     const settings = { ...DEFAULT_SETTINGS, ...stored?.comments };
     // Comments off for the course cannot be overridden back on by an activity:
@@ -172,7 +176,7 @@ export class DiscussionServiceImpl implements DiscussionService {
       this.isStaff(actor) ||
       (await (async () => {
         const activity = await this.content.getActivity(orgId, activityId);
-        return this.access.hasCourseAccess(orgId, actor.id, activity?.courseId!);
+        return activity ? this.access.hasCourseAccess(orgId, actor.id, activity.courseId) : false;
       })())
     );
   }
@@ -223,7 +227,9 @@ export class DiscussionServiceImpl implements DiscussionService {
     };
     const saved = await this.uow.run(async (scope) => {
       const row = await scope.discussion.insertComment(orgId, comment);
-      await scope.outbox.append([{ type: 'comment.created', orgId, comment: row }]);
+      await scope.outbox.append([
+        discussionEvents.commentCreated.make({ orgId, subject: row.id, data: row }),
+      ]);
       this.logger.info('comment created', { orgId, commentId: row.id, status });
       return row;
     });
@@ -328,7 +334,7 @@ export class DiscussionServiceImpl implements DiscussionService {
         throw new NotFoundError('Comment', commentId);
       }
       await scope.outbox.append([
-        { type: 'comment.removed', orgId, comment: updated, removedBy: actor.id },
+        discussionEvents.commentRemoved.make({ orgId, subject: updated.id, data: updated }),
       ]);
       this.logger.info('comment removed', { orgId, commentId, by: actor.id });
       return updated;
@@ -418,7 +424,9 @@ export class DiscussionServiceImpl implements DiscussionService {
         // Roll back rather than emit an event for a transition that didn't happen.
         throw new NotFoundError('Comment', commentId);
       }
-      await scope.outbox.append([{ type: 'comment.published', orgId, comment: updated }]);
+      await scope.outbox.append([
+        discussionEvents.commentPublished.make({ orgId, subject: updated.id, data: updated }),
+      ]);
       this.logger.info('comment published', { orgId, commentId });
       return updated;
     });
@@ -492,7 +500,9 @@ export class DiscussionServiceImpl implements DiscussionService {
         }
         return report;
       }
-      await scope.outbox.append([{ type: 'comment.reported', orgId, report: saved }]);
+      await scope.outbox.append([
+        discussionEvents.commentReported.make({ orgId, subject: saved.id, data: saved }),
+      ]);
       this.logger.info('comment reported', { orgId, commentId });
       return saved;
     });

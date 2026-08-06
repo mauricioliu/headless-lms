@@ -7,12 +7,7 @@ import type {
   Module,
   SaveActivityInput,
 } from './model.js';
-import type {
-  ContentService,
-  ContentRepository,
-  CourseRepository,
-  ContentUnitOfWork,
-} from './ports.js';
+import type { ContentService, ContentRepository, ContentUnitOfWork } from './ports.js';
 import type {
   AddDownloadAssetInput,
   CreateCourseInput,
@@ -23,6 +18,7 @@ import type {
   UpdateCourseInput,
   UpdateDownloadInput,
 } from './types.js';
+import { contentEvents } from './events.js';
 import type { Logger } from '../shared/ports.js';
 import { SettingsNamespace, type SettingsService } from '../shared/settings.js';
 import { NotFoundError, ConflictError } from '../shared/errors.js';
@@ -38,7 +34,6 @@ function slugify(title: string): string {
 
 export type ContentServiceParams = {
   repo: ContentRepository;
-  structureRepo: CourseRepository;
   uow: ContentUnitOfWork;
   settings: SettingsService;
   logger?: Logger;
@@ -46,14 +41,12 @@ export type ContentServiceParams = {
 
 export class ContentServiceImpl implements ContentService {
   private readonly repo: ContentRepository;
-  private readonly structureRepo: CourseRepository;
   private readonly uow: ContentUnitOfWork;
   private readonly settings: SettingsService;
   private readonly logger: Logger;
 
   constructor(params: ContentServiceParams) {
     this.repo = params.repo;
-    this.structureRepo = params.structureRepo;
     this.uow = params.uow;
     this.settings = params.settings;
     this.logger = params.logger ?? noopLogger;
@@ -86,10 +79,12 @@ export class ContentServiceImpl implements ContentService {
   async createCourse(orgId: string, input: CreateCourseInput): Promise<Course> {
     const course = await this.uow.run(async ({ content, outbox }) => {
       const created = await content.create(orgId, input, slugify(input.title));
-      await outbox.append([{ type: 'course.created', orgId, course: created }]);
+      await outbox.append([
+        contentEvents.courseCreated.make({ orgId, subject: created.id, data: created }),
+      ]);
       return created;
     });
-    this.logger.info('course created', { orgId, courseId: course.id });
+    this.logger.info('course created', { orgId, courseId: course.id, title: course.title });
     return course;
   }
 
@@ -97,12 +92,15 @@ export class ContentServiceImpl implements ContentService {
     const course = await this.uow.run(async ({ content, outbox }) => {
       const updated = await content.update(orgId, id, patch);
       if (!updated) {
+        this.logger.warn('course update rejected — not found', { orgId, courseId: id });
         throw new NotFoundError('Course', id);
       }
-      await outbox.append([{ type: 'course.updated', orgId, course: updated }]);
+      await outbox.append([
+        contentEvents.courseUpdated.make({ orgId, subject: updated.id, data: updated }),
+      ]);
       return updated;
     });
-    this.logger.info('course updated', { orgId, courseId: id });
+    this.logger.info('course updated', { orgId, courseId: id, fields: Object.keys(patch) });
     return course;
   }
 
@@ -113,6 +111,7 @@ export class ContentServiceImpl implements ContentService {
   ): Promise<CourseSettings> {
     const course = await this.repo.findById(orgId, id);
     if (!course) {
+      this.logger.warn('course settings patch rejected — not found', { orgId, courseId: id });
       throw new NotFoundError('Course', id);
     }
     const merged = await this.settings.patch<Partial<CourseSettings>>(
@@ -126,72 +125,134 @@ export class ContentServiceImpl implements ContentService {
   }
 
   async deleteCourse(orgId: string, id: string): Promise<void> {
-    return this.uow.run(async ({ content, outbox }) => {
+    await this.uow.run(async ({ content, outbox }) => {
       // Snapshot before the delete — the event carries the last known state.
       const course = await content.findById(orgId, id);
       if (!course) {
+        this.logger.warn('course delete rejected — not found', { orgId, courseId: id });
         throw new NotFoundError('Course', id);
       }
       const ok = await content.delete(orgId, id);
       if (!ok) {
         throw new NotFoundError('Course', id);
       }
-      await outbox.append([{ type: 'course.deleted', orgId, course }]);
-      this.logger.info('course deleted', { orgId, courseId: id });
+      await outbox.append([contentEvents.courseDeleted.make({ orgId, subject: course.id, data: course })]);
     });
+    this.logger.info('course deleted', { orgId, courseId: id });
   }
 
-  // --- modules & activities (delegated to the structure repository) -------
+  // --- modules & activities ------------------------------------------------
 
   listCourseModules(orgId: string, courseId: string): Promise<Module[]> {
-    return this.structureRepo.listForCourse(orgId, courseId);
+    return this.repo.listForCourse(orgId, courseId);
   }
   getActivity(orgId: string, activityId: string): Promise<Activity | null> {
-    return this.structureRepo.findActivity(orgId, activityId);
+    return this.repo.findActivity(orgId, activityId);
   }
   getModule(orgId: string, moduleId: string): Promise<Module | null> {
-    return this.structureRepo.findModule(orgId, moduleId);
+    return this.repo.findModule(orgId, moduleId);
   }
+
   async reorderModules(orgId: string, courseId: string, orderedIds: string[]): Promise<Module[]> {
-    const modules = await this.structureRepo.reorderModules(orgId, courseId, orderedIds);
-    this.logger.debug('modules reordered', { orgId, courseId });
+    const modules = await this.uow.run(async ({ content, outbox }) => {
+      const reordered = await content.reorderModules(orgId, courseId, orderedIds);
+      await outbox.append([
+        contentEvents.modulesReordered.make({ orgId, subject: courseId, data: reordered }),
+      ]);
+      return reordered;
+    });
+    this.logger.debug('modules reordered', {
+      orgId,
+      courseId,
+      moduleIds: modules.map((m) => m.id),
+    });
     return modules;
   }
+
   async createModule(orgId: string, courseId: string, title: string): Promise<Module[]> {
-    const modules = await this.structureRepo.createModule(orgId, courseId, title);
-    this.logger.info('module created', { orgId, courseId });
+    const { modules, created } = await this.uow.run(async ({ content, outbox }) => {
+      const all = await content.createModule(orgId, courseId, title);
+      // The list is ordered by seq and the new module is appended at max(seq)+1.
+      const module = all.at(-1);
+      if (!module) {
+        throw new Error('failed to load created module');
+      }
+      await outbox.append([contentEvents.moduleCreated.make({ orgId, subject: module.id, data: module })]);
+      return { modules: all, created: module };
+    });
+    this.logger.info('module created', { orgId, courseId, moduleId: created.id, title });
     return modules;
   }
+
   async updateModule(
     orgId: string,
     courseId: string,
     moduleId: string,
     title: string,
   ): Promise<Module[]> {
-    const modules = await this.structureRepo.updateModule(orgId, courseId, moduleId, title);
-    this.logger.info('module updated', { orgId, courseId, moduleId });
+    const modules = await this.uow.run(async ({ content, outbox }) => {
+      const existing = await content.findModule(orgId, moduleId);
+      if (!existing || existing.courseId !== courseId) {
+        this.logger.warn('module update rejected — not found in course', {
+          orgId,
+          courseId,
+          moduleId,
+        });
+        throw new NotFoundError('Module', moduleId);
+      }
+      const all = await content.updateModule(orgId, courseId, moduleId, title);
+      const module = all.find((m) => m.id === moduleId);
+      if (!module) {
+        throw new NotFoundError('Module', moduleId);
+      }
+      await outbox.append([contentEvents.moduleUpdated.make({ orgId, subject: module.id, data: module })]);
+      return all;
+    });
+    this.logger.info('module updated', { orgId, courseId, moduleId, title });
     return modules;
   }
+
   async deleteModule(orgId: string, courseId: string, moduleId: string): Promise<Module[]> {
-    const modules = await this.structureRepo.deleteModule(orgId, courseId, moduleId);
+    const modules = await this.uow.run(async ({ content, outbox }) => {
+      // Snapshot before the delete — the event carries the last known state.
+      const module = await content.findModule(orgId, moduleId);
+      if (!module || module.courseId !== courseId) {
+        this.logger.warn('module delete rejected — not found in course', {
+          orgId,
+          courseId,
+          moduleId,
+        });
+        throw new NotFoundError('Module', moduleId);
+      }
+      const remaining = await content.deleteModule(orgId, courseId, moduleId);
+      await outbox.append([contentEvents.moduleDeleted.make({ orgId, subject: module.id, data: module })]);
+      return remaining;
+    });
     this.logger.info('module deleted', { orgId, courseId, moduleId });
     return modules;
   }
+
   async reorderActivities(
     orgId: string,
     courseId: string,
     moduleId: string,
     orderedIds: string[],
   ): Promise<Module[]> {
-    const modules = await this.structureRepo.reorderActivities(
-      orgId,
-      courseId,
-      moduleId,
-      orderedIds,
-    );
+    const modules = await this.uow.run(async ({ content, outbox }) => {
+      const reordered = await content.reorderActivities(orgId, courseId, moduleId, orderedIds);
+      const module = reordered.find((m) => m.id === moduleId);
+      if (!module) {
+        throw new NotFoundError('Module', moduleId);
+      }
+      await outbox.append([
+        contentEvents.activitiesReordered.make({ orgId, subject: moduleId, data: module }),
+      ]);
+      return reordered;
+    });
     this.logger.debug('activities reordered', { orgId, courseId, moduleId });
     return modules;
   }
+
   async saveActivity(
     orgId: string,
     courseId: string,
@@ -199,28 +260,79 @@ export class ContentServiceImpl implements ContentService {
     input: SaveActivityInput,
     activityId?: string,
   ): Promise<Module[]> {
-    const modules = await this.structureRepo.saveActivity(
+    const { modules, activity } = await this.uow.run(async ({ content, outbox }) => {
+      if (activityId) {
+        const existing = await content.findActivity(orgId, activityId);
+        if (!existing || existing.moduleId !== moduleId || existing.courseId !== courseId) {
+          this.logger.warn('activity update rejected — not found in module', {
+            orgId,
+            courseId,
+            moduleId,
+            activityId,
+          });
+          throw new NotFoundError('Activity', activityId);
+        }
+      } else {
+        const module = await content.findModule(orgId, moduleId);
+        if (!module || module.courseId !== courseId) {
+          this.logger.warn('activity create rejected — module not found in course', {
+            orgId,
+            courseId,
+            moduleId,
+          });
+          throw new NotFoundError('Module', moduleId);
+        }
+      }
+
+      const all = await content.saveActivity(orgId, courseId, moduleId, input, activityId);
+      const module = all.find((m) => m.id === moduleId);
+      // Activities are ordered by seq and a new activity is appended at max(seq)+1.
+      const saved = activityId
+        ? module?.activities.find((a) => a.id === activityId)
+        : module?.activities.at(-1);
+      if (!saved) {
+        throw new Error('failed to load saved activity');
+      }
+      await outbox.append([
+        activityId
+          ? contentEvents.activityUpdated.make({ orgId, subject: saved.id, data: saved })
+          : contentEvents.activityCreated.make({ orgId, subject: saved.id, data: saved }),
+      ]);
+      return { modules: all, activity: saved };
+    });
+    this.logger.info(activityId ? 'activity updated' : 'activity created', {
       orgId,
       courseId,
       moduleId,
-      input,
-      activityId,
-    );
-    this.logger.info('activity saved', {
-      orgId,
-      courseId,
-      moduleId,
-      activityId: activityId ?? null,
+      activityId: activity.id,
     });
     return modules;
   }
+
   async deleteActivity(
     orgId: string,
     courseId: string,
     moduleId: string,
     activityId: string,
   ): Promise<Module[]> {
-    const modules = await this.structureRepo.deleteActivity(orgId, courseId, moduleId, activityId);
+    const modules = await this.uow.run(async ({ content, outbox }) => {
+      // Snapshot before the delete — the event carries the last known state.
+      const activity = await content.findActivity(orgId, activityId);
+      if (!activity || activity.moduleId !== moduleId || activity.courseId !== courseId) {
+        this.logger.warn('activity delete rejected — not found in module', {
+          orgId,
+          courseId,
+          moduleId,
+          activityId,
+        });
+        throw new NotFoundError('Activity', activityId);
+      }
+      const remaining = await content.deleteActivity(orgId, courseId, moduleId, activityId);
+      await outbox.append([
+        contentEvents.activityDeleted.make({ orgId, subject: activity.id, data: activity }),
+      ]);
+      return remaining;
+    });
     this.logger.info('activity deleted', { orgId, courseId, moduleId, activityId });
     return modules;
   }
@@ -238,10 +350,12 @@ export class ContentServiceImpl implements ContentService {
   async createDownload(orgId: string, input: CreateDownloadInput): Promise<Download> {
     const download = await this.uow.run(async ({ content, outbox }) => {
       const created = await content.createDownload(orgId, input, slugify(input.title));
-      await outbox.append([{ type: 'download.created', orgId, download: created }]);
+      await outbox.append([
+        contentEvents.downloadCreated.make({ orgId, subject: created.id, data: created }),
+      ]);
       return created;
     });
-    this.logger.info('download created', { orgId, downloadId: download.id });
+    this.logger.info('download created', { orgId, downloadId: download.id, title: download.title });
     return download;
   }
 
@@ -249,12 +363,15 @@ export class ContentServiceImpl implements ContentService {
     const download = await this.uow.run(async ({ content, outbox }) => {
       const updated = await content.updateDownload(orgId, id, patch);
       if (!updated) {
+        this.logger.warn('download update rejected — not found', { orgId, downloadId: id });
         throw new NotFoundError('Download', id);
       }
-      await outbox.append([{ type: 'download.updated', orgId, download: updated }]);
+      await outbox.append([
+        contentEvents.downloadUpdated.make({ orgId, subject: updated.id, data: updated }),
+      ]);
       return updated;
     });
-    this.logger.info('download updated', { orgId, downloadId: id });
+    this.logger.info('download updated', { orgId, downloadId: id, fields: Object.keys(patch) });
     return download;
   }
 
@@ -263,13 +380,16 @@ export class ContentServiceImpl implements ContentService {
       // Snapshot before the delete — the event carries the last known state.
       const download = await content.getDownload(orgId, id);
       if (!download) {
+        this.logger.warn('download delete rejected — not found', { orgId, downloadId: id });
         throw new NotFoundError('Download', id);
       }
       const ok = await content.deleteDownload(orgId, id);
       if (!ok) {
         throw new NotFoundError('Download', id);
       }
-      await outbox.append([{ type: 'download.deleted', orgId, download }]);
+      await outbox.append([
+        contentEvents.downloadDeleted.make({ orgId, subject: download.id, data: download }),
+      ]);
     });
     this.logger.info('download deleted', { orgId, downloadId: id });
   }
@@ -326,6 +446,12 @@ export class ContentServiceImpl implements ContentService {
       requestedIds.size !== currentIds.size ||
       !assetIds.every((id) => currentIds.has(id))
     ) {
+      this.logger.warn('download asset reorder rejected — id set mismatch', {
+        orgId,
+        downloadId,
+        assetIds,
+        currentIds: [...currentIds],
+      });
       throw new ConflictError("Ordered asset ids does not match the download's current assets");
     }
     const assets = await this.repo.reorderDownloadAssets(orgId, downloadId, assetIds);

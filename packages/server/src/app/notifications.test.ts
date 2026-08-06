@@ -1,12 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { registerNotificationSubscribers } from './notifications.js';
 import { InMemoryEventBus } from '../adapters/events/index.js';
-import type {
-  Entitlement,
-  EntitlementCreated,
-  EntitlementDeleted,
-  EntitlementUpdated,
-} from '@headless-lms/types';
+import type { Entitlement } from '@headless-lms/types';
+import { entitlementEvents } from '../core/entitlements/index.js';
 
 const ENTITLEMENT: Entitlement = {
   id: 'e1',
@@ -21,21 +17,30 @@ const ENTITLEMENT: Entitlement = {
   source: 'manual',
 };
 
-const meta = { id: 'ev1', orgId: 'org-1', createdAt: '2026-01-01T00:00:00Z' };
-const created: EntitlementCreated = {
+const meta = { id: 'ev1', occurredAt: '2026-01-01T00:00:00Z' };
+const created = {
+  ...entitlementEvents.entitlementCreated.make({
+    orgId: 'org-1',
+    subject: ENTITLEMENT.id,
+    data: ENTITLEMENT,
+  }),
   ...meta,
-  type: 'entitlement.created',
-  entitlement: ENTITLEMENT,
 };
-const deleted: EntitlementDeleted = {
+const deleted = {
+  ...entitlementEvents.entitlementDeleted.make({
+    orgId: 'org-1',
+    subject: ENTITLEMENT.id,
+    data: ENTITLEMENT,
+  }),
   ...meta,
-  type: 'entitlement.deleted',
-  entitlement: ENTITLEMENT,
 };
-const updated: EntitlementUpdated = {
+const updated = {
+  ...entitlementEvents.entitlementUpdated.make({
+    orgId: 'org-1',
+    subject: ENTITLEMENT.id,
+    data: ENTITLEMENT,
+  }),
   ...meta,
-  type: 'entitlement.updated',
-  entitlement: ENTITLEMENT,
 };
 
 function build() {

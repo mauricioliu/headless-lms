@@ -2,26 +2,16 @@
 // of activities directly; each activity is a uniform, orderable unit placing an
 // opaque settings blob at a position (`seq`) with a set of linked assets.
 import { z } from "zod";
+import {
+  activitySchema,
+  moduleSchema,
+  saveActivityInputSchema,
+} from "@headless-lms/types/schemas";
 
-// Activity: a uniform, orderable unit within a module. `settings` is an opaque
-// per-activity blob; `assetIds` links the activity to its assets.
-export const Activity = z.object({
-  id: z.string(),
-  moduleId: z.string(),
-  courseId: z.string(),
-  seq: z.number().int(),
-  settings: z.unknown(),
-  assetIds: z.array(z.string()),
-});
+export const Activity = activitySchema;
 export type Activity = z.infer<typeof Activity>;
 
-export const Module = z.object({
-  id: z.string(),
-  courseId: z.string(),
-  title: z.string(),
-  seq: z.number().int(),
-  activities: z.array(Activity),
-});
+export const Module = moduleSchema;
 export type Module = z.infer<typeof Module>;
 
 /** Module/activity-write endpoints return the full, reordered module list. */
@@ -50,9 +40,5 @@ export type UpdateModule = z.infer<typeof UpdateModule>;
 export const ReorderInput = z.object({ orderedIds: z.array(z.string()) });
 export type ReorderInput = z.infer<typeof ReorderInput>;
 
-/** Create/update an activity within a module. */
-export const SaveActivity = z.object({
-  settings: z.unknown().optional(),
-  assetIds: z.array(z.string()).optional(),
-});
+export const SaveActivity = saveActivityInputSchema;
 export type SaveActivity = z.infer<typeof SaveActivity>;

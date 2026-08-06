@@ -388,7 +388,7 @@ describe('post', () => {
       parentId: null,
       body: 'hello',
     });
-    expect(appended.map((e) => e.type)).toEqual(['comment.created']);
+    expect(appended.map((e) => e.type)).toEqual(['discussion.comment.created']);
   });
 
   it('refuses to post when the activity has comments switched off', async () => {
@@ -741,7 +741,7 @@ describe('edit, remove, restore, approve', () => {
     });
     await service.remove('o1', c.id, learner);
     await service.remove('o1', c.id, learner);
-    expect(appended.filter((e) => e.type === 'comment.removed')).toHaveLength(1);
+    expect(appended.filter((e) => e.type === 'discussion.comment.removed')).toHaveLength(1);
   });
 
   it('lets only a moderator restore or approve', async () => {
@@ -882,7 +882,7 @@ describe('reports', () => {
     const { service, appended, commentId } = await seeded();
     const report = await service.reportComment('o1', commentId, other, 'spam');
     expect(report.reason).toBe('spam');
-    expect(appended.filter((e) => e.type === 'comment.reported')).toHaveLength(1);
+    expect(appended.filter((e) => e.type === 'discussion.comment.reported')).toHaveLength(1);
   });
 
   it('returns the existing report and emits nothing on a duplicate', async () => {
@@ -890,7 +890,7 @@ describe('reports', () => {
     const first = await service.reportComment('o1', commentId, other, 'spam');
     const second = await service.reportComment('o1', commentId, other, 'again');
     expect(second.id).toBe(first.id);
-    expect(appended.filter((e) => e.type === 'comment.reported')).toHaveLength(1);
+    expect(appended.filter((e) => e.type === 'discussion.comment.reported')).toHaveLength(1);
   });
 
   it('refuses a report on an activity with comments switched off', async () => {

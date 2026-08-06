@@ -10,7 +10,8 @@ import type { CreateAuthOptions } from './types.js';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import * as authSchema from './schema.js';
 import { prefixId } from '../../core/shared/id.js';
-import { magicLink, organization } from 'better-auth/plugins';
+import { customSession, magicLink, organization } from 'better-auth/plugins';
+import { eq } from 'drizzle-orm';
 import { ac, roles } from './access.js';
 import  { type AuthHeaders, type AuthOrganization, type MemberWriteContext, type OrgAdmin, OrganizationRuleError, parseRole, type Role, type UpdateOrganizationInput } from '../../core/organizations/index.js';
 import type { SessionAdmin } from '../../core/identity/index.js';
@@ -73,6 +74,32 @@ export function createAuth(opts: CreateAuthOptions) {
         creatorRole: 'owner',
         organizationHooks: opts.hooks,
       }),
+      // Enrich get-session with the caller's memberships (role + org) so BFFs
+      // resolve auth in one call instead of fanning out to get-active-member /
+      // get-full-organization / organization/list. Custom fields bypass the
+      // cookie cache, so this costs one indexed query per get-session.
+      customSession(async ({ user, session }) => {
+        const memberships = await opts.db
+          .select({
+            role: authSchema.member.role,
+            id: authSchema.organization.id,
+            name: authSchema.organization.name,
+            slug: authSchema.organization.slug,
+          })
+          .from(authSchema.member)
+          .innerJoin(authSchema.organization, eq(authSchema.member.organizationId, authSchema.organization.id))
+          .where(eq(authSchema.member.userId, user.id));
+        const activeOrgId =
+          (session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
+        const active = memberships.find((m) => m.id === activeOrgId) ?? null;
+        return {
+          user,
+          session,
+          activeMemberRole: active?.role ?? null,
+          activeOrganization: active ? { id: active.id, name: active.name, slug: active.slug } : null,
+          organizations: memberships.map(({ id, name, slug }) => ({ id, name, slug })),
+        };
+      }),
     ],
     databaseHooks: {
       user: {
@@ -121,7 +148,10 @@ export class BetterAuth implements SessionVerifier, OrgAdmin, SessionAdmin {
         updatedAt: res.user.updatedAt,
       },
       session: {
-        activeOrganizationId: res.session.activeOrganizationId,
+        // customSession erases the org plugin's session extension from the
+        // inferred type; the field is still present at runtime.
+        activeOrganizationId:
+          (res.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null,
       },
     };
   }

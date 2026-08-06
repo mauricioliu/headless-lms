@@ -127,8 +127,12 @@ export class DrizzleMembersRepository implements MembersRepository {
     const byName = (a: string | null, b: string | null): number =>
       a === b ? 0 : a === null ? 1 : b === null ? -1 : a.localeCompare(b);
     rows.sort((a, b) => {
-      if (key === 'email') return desc ? -a.email.localeCompare(b.email) : a.email.localeCompare(b.email);
-      if (key === 'role') return desc ? -a.role.localeCompare(b.role) : a.role.localeCompare(b.role);
+      if (key === 'email') {
+        return desc ? -a.email.localeCompare(b.email) : a.email.localeCompare(b.email);
+      }
+      if (key === 'role') {
+        return desc ? -a.role.localeCompare(b.role) : a.role.localeCompare(b.role);
+      }
       if (key === 'lastName') {
         const cmp = byName(a.lastName, b.lastName) || byName(a.firstName, b.firstName);
         return desc ? -cmp : cmp;

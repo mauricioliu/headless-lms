@@ -3,7 +3,15 @@ import { InMemoryEventBus } from './index.js';
 import type { DomainEvent } from '../../core/shared/ports.js';
 
 function event(type: string, id: string): DomainEvent {
-  return { type, id, orgId: 'org-1', createdAt: '2026-07-22T00:00:00.000Z' } as DomainEvent;
+  return {
+    type,
+    version: 1,
+    id,
+    orgId: 'org-1',
+    subject: id,
+    occurredAt: '2026-07-22T00:00:00.000Z',
+    data: {},
+  };
 }
 
 describe('InMemoryEventBus.subscribeAll', () => {

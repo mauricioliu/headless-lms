@@ -72,7 +72,7 @@ function structure(overrides?: { a1Settings?: unknown }): Module[] {
           moduleId: 'm1',
           courseId: 'c1',
           seq: 0,
-          settings: overrides?.a1Settings ?? {},
+          settings: (overrides?.a1Settings ?? {}) as Module['activities'][number]['settings'],
           assetIds: [],
         },
         { id: 'a2', moduleId: 'm1', courseId: 'c1', seq: 1, settings: {}, assetIds: [] },
@@ -93,7 +93,7 @@ function structure(overrides?: { a1Settings?: unknown }): Module[] {
 function fakeContent(modules: Module[]): ContentService {
   const all = modules.flatMap((m) => m.activities);
   return {
-    listForCourse: async () => modules,
+    listCourseModules: async () => modules,
     getActivity: async (_orgId: string, id: string) => all.find((a) => a.id === id) ?? null,
     getModule: async (_orgId: string, id: string) => modules.find((m) => m.id === id) ?? null,
   } as unknown as ContentService;
@@ -133,7 +133,7 @@ describe('ProgressService.report', () => {
     expect(records).toHaveLength(1);
     expect(records[0]?.startedAt).toBe('2026-07-23T10:00:00.000Z');
     expect(appended).toHaveLength(1);
-    expect(appended[0]).toMatchObject({ type: 'progress.started', orgId: 'org-1' });
+    expect(appended[0]).toMatchObject({ type: 'progress.record.started', orgId: 'org-1' });
     expect(appended[0]).not.toHaveProperty('courseId');
   });
 
@@ -153,7 +153,7 @@ describe('ProgressService.report', () => {
       self: { page: 3 },
     });
     expect(record.completedAt).toBeNull();
-    expect(appended.filter((e) => e.type === 'progress.completed')).toHaveLength(0);
+    expect(appended.filter((e) => e.type === 'progress.record.completed')).toHaveLength(0);
   });
 
   it('a later report replaces its subject and preserves the others', async () => {
@@ -177,9 +177,9 @@ describe('ProgressService.report', () => {
     const { svc, appended } = makeService(structure());
     const record = await svc.report('org-1', input('a1', [{ completed: true }]));
     expect(record.completedAt).toBe('2026-07-23T10:00:00.000Z');
-    const completed = appended.filter((e) => e.type === 'progress.completed');
+    const completed = appended.filter((e) => e.type === 'progress.record.completed');
     expect(completed).toHaveLength(1);
-    expect((completed[0] as { record: ProgressRecord }).record.targetId).toBe('a1');
+    expect(completed[0]?.data.targetId).toBe('a1');
   });
 
   it('completed claim with an unmet rule records nothing', async () => {
@@ -188,7 +188,7 @@ describe('ProgressService.report', () => {
     );
     const record = await svc.report('org-1', input('a1', [{ completed: true }]));
     expect(record.completedAt).toBeNull();
-    expect(appended.filter((e) => e.type === 'progress.completed')).toHaveLength(0);
+    expect(appended.filter((e) => e.type === 'progress.record.completed')).toHaveLength(0);
   });
 
   it('re-claiming a completed activity changes nothing and emits nothing', async () => {
@@ -216,8 +216,8 @@ describe('ProgressService.report', () => {
       records.find((r) => r.targetType === 'course' && r.targetId === 'c1')?.completedAt,
     ).toBeTruthy();
     const completedTargets = appended
-      .filter((e) => e.type === 'progress.completed')
-      .map((e) => (e as { record: ProgressRecord }).record.targetType);
+      .filter((e) => e.type === 'progress.record.completed')
+      .map((e) => e.data.targetType);
     // a1, a2+m1, a3+m2+course
     expect(completedTargets).toEqual([
       'activity',
@@ -255,7 +255,7 @@ describe('ProgressService.report', () => {
     );
     const record = await svc.report('org-1', input('a1', [{ completed: true }]));
     expect(record.completedAt).toBe('2026-07-23T10:00:00.000Z');
-    expect(appended.filter((e) => e.type === 'progress.completed')).toHaveLength(1);
+    expect(appended.filter((e) => e.type === 'progress.record.completed')).toHaveLength(1);
   });
 });
 

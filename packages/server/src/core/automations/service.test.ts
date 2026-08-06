@@ -10,10 +10,12 @@ import type {
   AutomationsRepository,
   AutomationsUnitOfWork,
 } from './ports.js';
-import type { DomainEvent, NewDomainEvent, OutboxAppender } from '../shared/ports.js';
+import type { NewDomainEvent, OutboxAppender } from '../shared/ports.js';
 import type { Entitlement } from '../entitlements/index.js';
 import type { IntegrationsService } from '../integrations/index.js';
 import type { Mailer } from '../shared/mailer.js';
+import { entitlementEvents } from '../entitlements/index.js';
+import { automationEvents } from './events.js';
 
 const SAMPLE_ENTITLEMENT: Entitlement = {
   id: 'e1',
@@ -29,19 +31,23 @@ const SAMPLE_ENTITLEMENT: Entitlement = {
 };
 
 const ENTITLEMENT_CREATED_EVENT = {
-  type: 'entitlement.created',
+  ...entitlementEvents.entitlementCreated.make({
+    orgId: 'org-1',
+    subject: SAMPLE_ENTITLEMENT.id,
+    data: SAMPLE_ENTITLEMENT,
+  }),
   id: 'evt_1',
-  orgId: 'org-1',
-  createdAt: '2026-01-01T00:00:00Z',
-  entitlement: SAMPLE_ENTITLEMENT,
+  occurredAt: '2026-01-01T00:00:00Z',
 };
 
 const ENTITLEMENT_DELETED_EVENT = {
-  type: 'entitlement.deleted',
+  ...entitlementEvents.entitlementDeleted.make({
+    orgId: 'org-1',
+    subject: SAMPLE_ENTITLEMENT.id,
+    data: SAMPLE_ENTITLEMENT,
+  }),
   id: 'evt_2',
-  orgId: 'org-1',
-  createdAt: '2026-01-01T00:00:00Z',
-  entitlement: SAMPLE_ENTITLEMENT,
+  occurredAt: '2026-01-01T00:00:00Z',
 };
 
 const AUTOMATION: Automation = {
@@ -177,7 +183,12 @@ describe('AutomationsService.handle', () => {
       }),
     );
     expect(appended).toEqual([
-      expect.objectContaining({ type: 'automation.run.started', orgId: 'org-1', run: RUN }),
+      expect.objectContaining({
+        type: 'automation.run.started',
+        orgId: 'org-1',
+        subject: RUN.id,
+        data: RUN,
+      }),
     ]);
     expect(engine.dispatch).toHaveBeenCalledWith({
       runId: RUN.id,
@@ -201,8 +212,8 @@ describe('AutomationsService.handle', () => {
     const { svc, repo, runsRepo, engine } = build(
       fakeRepo({ listByTrigger: vi.fn().mockResolvedValue([]) }),
     );
-    await svc.handle({ ...ENTITLEMENT_CREATED_EVENT, type: 'progress.completed' });
-    expect(repo.listByTrigger).toHaveBeenCalledWith('org-1', 'progress.completed');
+    await svc.handle({ ...ENTITLEMENT_CREATED_EVENT, type: 'progress.record.completed' });
+    expect(repo.listByTrigger).toHaveBeenCalledWith('org-1', 'progress.record.completed');
     expect(runsRepo.insert).not.toHaveBeenCalled();
     expect(engine.dispatch).not.toHaveBeenCalled();
   });
@@ -247,12 +258,14 @@ describe('AutomationsService.handle', () => {
       fakeRepo({ listByTrigger: vi.fn().mockResolvedValue([selfTriggering]) }),
     );
     await svc.handle({
-      type: 'automation.run.started',
+      type: automationEvents.runStarted.type,
+      version: 1,
       id: 'evt_loop',
       orgId: 'org-1',
-      createdAt: '2026-01-01T00:00:00Z',
-      run: RUN,
-    } as DomainEvent);
+      subject: RUN.id,
+      occurredAt: '2026-01-01T00:00:00Z',
+      data: RUN,
+    });
     // The guard returns before even loading trigger matches.
     expect(repo.listByTrigger).not.toHaveBeenCalled();
     expect(runsRepo.insert).not.toHaveBeenCalled();
@@ -271,7 +284,12 @@ describe('AutomationsService.handle', () => {
     expect(runsRepo.insert).toHaveBeenCalledTimes(2);
     expect(engine.dispatch).toHaveBeenCalledTimes(1);
     expect(appended).toEqual([
-      expect.objectContaining({ type: 'automation.run.started', orgId: 'org-1', run: RUN }),
+      expect.objectContaining({
+        type: 'automation.run.started',
+        orgId: 'org-1',
+        subject: RUN.id,
+        data: RUN,
+      }),
     ]);
   });
 });
@@ -401,7 +419,8 @@ describe('AutomationsService.finalize', () => {
       expect.objectContaining({
         type: 'automation.run.completed',
         orgId: 'org-1',
-        run: completedRun,
+        subject: completedRun.id,
+        data: completedRun,
       }),
     ]);
   });
@@ -417,13 +436,17 @@ describe('AutomationsService.finalize', () => {
     await svc.finalize(dispatch, results);
 
     expect(appended).toEqual([
-      expect.objectContaining({ type: 'automation.run.failed', orgId: 'org-1', run: failedRun }),
+      expect.objectContaining({
+        type: 'automation.run.failed',
+        orgId: 'org-1',
+        subject: failedRun.id,
+        data: failedRun,
+      }),
       expect.objectContaining({
         type: 'automation.action.failed',
         orgId: 'org-1',
-        runId: 'run_1',
-        automationId: 'atm_1',
-        result: results[0],
+        subject: 'run_1',
+        data: results[0],
       }),
     ]);
   });
@@ -461,7 +484,12 @@ describe('AutomationsService CRUD', () => {
     expect(created).toEqual(AUTOMATION);
     expect(repo.insert).toHaveBeenCalledWith('org-1', input);
     expect(appended).toEqual([
-      { type: 'automation.created', orgId: 'org-1', automation: AUTOMATION },
+      expect.objectContaining({
+        type: 'automation.created',
+        orgId: 'org-1',
+        subject: AUTOMATION.id,
+        data: AUTOMATION,
+      }),
     ]);
   });
 
@@ -492,7 +520,12 @@ describe('AutomationsService CRUD', () => {
     expect(updated).toEqual(AUTOMATION);
     expect(repo.update).toHaveBeenCalledWith('org-1', 'atm_1', { name: 'New name' });
     expect(appended).toEqual([
-      { type: 'automation.updated', orgId: 'org-1', automation: AUTOMATION },
+      expect.objectContaining({
+        type: 'automation.updated',
+        orgId: 'org-1',
+        subject: AUTOMATION.id,
+        data: AUTOMATION,
+      }),
     ]);
   });
 
@@ -500,7 +533,12 @@ describe('AutomationsService CRUD', () => {
     const { svc, appended } = build();
     await svc.update('org-1', 'atm_1', { enabled: true });
     expect(appended).toEqual([
-      { type: 'automation.enabled', orgId: 'org-1', automationId: 'atm_1' },
+      expect.objectContaining({
+        type: 'automation.enabled',
+        orgId: 'org-1',
+        subject: AUTOMATION.id,
+        data: AUTOMATION,
+      }),
     ]);
   });
 
@@ -508,7 +546,12 @@ describe('AutomationsService CRUD', () => {
     const { svc, appended } = build();
     await svc.update('org-1', 'atm_1', { enabled: false });
     expect(appended).toEqual([
-      { type: 'automation.disabled', orgId: 'org-1', automationId: 'atm_1' },
+      expect.objectContaining({
+        type: 'automation.disabled',
+        orgId: 'org-1',
+        subject: AUTOMATION.id,
+        data: AUTOMATION,
+      }),
     ]);
   });
 
@@ -525,7 +568,12 @@ describe('AutomationsService CRUD', () => {
     expect(ok).toBe(true);
     expect(repo.delete).toHaveBeenCalledWith('org-1', 'atm_1');
     expect(appended).toEqual([
-      { type: 'automation.deleted', orgId: 'org-1', automation: AUTOMATION },
+      expect.objectContaining({
+        type: 'automation.deleted',
+        orgId: 'org-1',
+        subject: AUTOMATION.id,
+        data: AUTOMATION,
+      }),
     ]);
   });
 

@@ -1,12 +1,33 @@
-// discussion context — domain events, owned by @headless-lms/types.
+import { commentReportSchema, commentSchema } from '@headless-lms/types/schemas';
+import { defineEvent, type EventOf, type EventOfValues } from '../shared/ports.js';
 import type { NewDomainEvent } from '../shared/ports.js';
-import type { CommentEvent } from '@headless-lms/types';
 
-export type {
-  CommentEvent,
-  CommentCreated,
-  CommentPublished,
-  CommentReported,
-  CommentRemoved,
-} from '@headless-lms/types';
+export const discussionEvents = {
+  commentCreated: defineEvent({
+    type: 'discussion.comment.created',
+    version: 1,
+    data: commentSchema,
+  }),
+  commentPublished: defineEvent({
+    type: 'discussion.comment.published',
+    version: 1,
+    data: commentSchema,
+  }),
+  commentRemoved: defineEvent({
+    type: 'discussion.comment.removed',
+    version: 1,
+    data: commentSchema,
+  }),
+  commentReported: defineEvent({
+    type: 'discussion.comment.reported',
+    version: 1,
+    data: commentReportSchema,
+  }),
+};
+
+export type CommentCreated = EventOf<typeof discussionEvents.commentCreated>;
+export type CommentPublished = EventOf<typeof discussionEvents.commentPublished>;
+export type CommentRemoved = EventOf<typeof discussionEvents.commentRemoved>;
+export type CommentReported = EventOf<typeof discussionEvents.commentReported>;
+export type CommentEvent = EventOfValues<typeof discussionEvents>;
 export type NewDiscussionEvent = NewDomainEvent<CommentEvent>;

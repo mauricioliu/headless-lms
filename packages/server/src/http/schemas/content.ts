@@ -1,42 +1,24 @@
-// Content resource schemas (courses). The single source of truth for the Course
-// payload: the Fastify routes validate requests/responses against these, the
-// OpenAPI spec is built from them, and the frontend SDK is generated off that spec.
-import type { CourseSettings as DomainCourseSettings } from "@headless-lms/types";
+// Content resource schemas (courses). The Course payload shape is owned by
+// @headless-lms/types/schemas; route-local schemas define endpoint-only
+// concerns such as defaults, params, and pagination envelopes.
 import { z } from "zod";
-import { CommentSettings } from "./discussion.js";
-import { ListQuery, type Matches, paginated } from "./shared.js";
+import {
+  courseSchema,
+  courseSettingsSchema,
+  courseStatusSchema,
+} from "@headless-lms/types/schemas";
+import { ListQuery, paginated } from "./shared.js";
 
-export const CourseStatus = z.enum(["draft", "published"]);
+export const CourseStatus = courseStatusSchema;
 export type CourseStatus = z.infer<typeof CourseStatus>;
 
-/** Course-wide delivery settings. Always returned complete; patched partially. */
-export const CourseSettings = z.object({
-  transcriptDownloads: z.boolean(),
-  comments: CommentSettings.optional(),
-});
+export const CourseSettings = courseSettingsSchema;
 export type CourseSettings = z.infer<typeof CourseSettings>;
-type _CourseSettingsMatchesDomain = Matches<DomainCourseSettings, CourseSettings> &
-  Matches<CourseSettings, DomainCourseSettings>;
 
-/** Settings patch body — omitted keys keep their stored value. */
 export const PatchCourseSettings = CourseSettings.partial();
 export type PatchCourseSettings = z.infer<typeof PatchCourseSettings>;
 
-export const Course = z.object({
-  id: z.string(),
-  title: z.string(),
-  slug: z.string(),
-  description: z.string(),
-  status: CourseStatus,
-  category: z.string(),
-  thumbnailAssetId: z.string().nullable(),
-  settings: CourseSettings,
-  moduleCount: z.number().int(),
-  activityCount: z.number().int(),
-  enrolledCount: z.number().int(),
-  updatedAt: z.string(),
-  createdAt: z.string(),
-});
+export const Course = courseSchema;
 export type Course = z.infer<typeof Course>;
 
 export const CreateCourse = z.object({

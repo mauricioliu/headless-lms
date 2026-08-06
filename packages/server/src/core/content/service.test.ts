@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { NotFoundError } from '../shared/errors.js';
 import { ContentServiceImpl } from './service.js';
-import type { ContentRepository, CourseRepository, ContentUnitOfWork } from './ports.js';
-import type { Course, Download, DownloadAsset, Module } from './model.js';
+import type { ContentRepository, ContentUnitOfWork } from './ports.js';
+import type { Activity, Course, Download, DownloadAsset, Module } from './model.js';
 import type { NewDomainEvent, OutboxAppender } from '../shared/ports.js';
 import { SettingsService, type SettingsRepository } from '../shared/settings.js';
 
@@ -44,21 +44,6 @@ function makeRepo(): ContentRepository {
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
-    listDownloads: vi.fn(),
-    getDownload: vi.fn(),
-    createDownload: vi.fn(),
-    updateDownload: vi.fn(),
-    deleteDownload: vi.fn(),
-    listDownloadAssets: vi.fn(),
-    addDownloadAsset: vi.fn(),
-    removeDownloadAsset: vi.fn(),
-    renameDownloadAsset: vi.fn(),
-    reorderDownloadAssets: vi.fn(),
-  };
-}
-
-function makeStructureRepo(): CourseRepository {
-  return {
     listForCourse: vi.fn(),
     findActivity: vi.fn(),
     findModule: vi.fn(),
@@ -69,6 +54,16 @@ function makeStructureRepo(): CourseRepository {
     reorderActivities: vi.fn(),
     saveActivity: vi.fn(),
     deleteActivity: vi.fn(),
+    listDownloads: vi.fn(),
+    getDownload: vi.fn(),
+    createDownload: vi.fn(),
+    updateDownload: vi.fn(),
+    deleteDownload: vi.fn(),
+    listDownloadAssets: vi.fn(),
+    addDownloadAsset: vi.fn(),
+    removeDownloadAsset: vi.fn(),
+    renameDownloadAsset: vi.fn(),
+    reorderDownloadAssets: vi.fn(),
   };
 }
 
@@ -86,11 +81,27 @@ function fakeUow(repo: ContentRepository) {
   return { uow, append, appended };
 }
 
-function build(repo = makeRepo(), structure = makeStructureRepo()) {
+function build(repo = makeRepo()) {
   const { uow, append, appended } = fakeUow(repo);
   const { settings, settingsRepo } = makeSettings();
-  const svc = new ContentServiceImpl({ repo, structureRepo: structure, uow, settings });
-  return { svc, repo, structure, append, appended, settingsRepo };
+  const svc = new ContentServiceImpl({ repo, uow, settings });
+  return { svc, repo, append, appended, settingsRepo };
+}
+
+function makeActivity(over: Partial<Activity> = {}): Activity {
+  return {
+    id: 'act1',
+    moduleId: 'm1',
+    courseId: 'c1',
+    seq: 0,
+    settings: {},
+    assetIds: [],
+    ...over,
+  };
+}
+
+function makeModule(over: Partial<Module> = {}): Module {
+  return { id: 'm1', courseId: 'c1', title: 'Module 1', seq: 0, activities: [], ...over };
 }
 
 describe('ContentServiceImpl', () => {
@@ -175,7 +186,9 @@ describe('ContentServiceImpl', () => {
     const { svc, appended } = build(repo);
     await svc.createCourse('org1', { title: 'Intro' });
 
-    expect(appended).toEqual([{ type: 'course.created', orgId: 'org1', course: created }]);
+    expect(appended).toEqual([
+      { type: 'content.course.created', version: 1, orgId: 'org1', subject: 'c1', data: created },
+    ]);
   });
 
   it('appends course.updated with the updated snapshot', async () => {
@@ -188,7 +201,9 @@ describe('ContentServiceImpl', () => {
 
     expect(repo.update).toHaveBeenCalledWith('org1', 'c1', { title: 'Renamed' });
     expect(result).toBe(updated);
-    expect(appended).toEqual([{ type: 'course.updated', orgId: 'org1', course: updated }]);
+    expect(appended).toEqual([
+      { type: 'content.course.updated', version: 1, orgId: 'org1', subject: 'c1', data: updated },
+    ]);
   });
 
   it('forwards a partial settings patch untouched (the repository merges it)', async () => {
@@ -227,7 +242,9 @@ describe('ContentServiceImpl', () => {
     const { svc, appended } = build(repo);
     await svc.deleteCourse('org1', 'c1');
 
-    expect(appended).toEqual([{ type: 'course.deleted', orgId: 'org1', course }]);
+    expect(appended).toEqual([
+      { type: 'content.course.deleted', version: 1, orgId: 'org1', subject: 'c1', data: course },
+    ]);
   });
 
   it('throws NotFoundError and appends nothing when remove finds no course', async () => {
@@ -258,18 +275,127 @@ describe('ContentServiceImpl', () => {
     await expect(svc.createCourse('org1', { title: 'Intro' })).rejects.toThrow('boom');
     expect(append).not.toHaveBeenCalled();
   });
+});
 
-  it('delegates structure writes to the structure repository without appending events', async () => {
-    const structure = makeStructureRepo();
-    const modules: Module[] = [
-      { id: 'm1', courseId: 'c1', title: 'Module 1', seq: 0, activities: [] },
-    ];
-    (structure.saveActivity as ReturnType<typeof vi.fn>).mockResolvedValue(modules);
+describe('modules', () => {
+  it('appends course.module.created with the new module snapshot', async () => {
+    const repo = makeRepo();
+    const created = makeModule({ id: 'm2', title: 'New Module', seq: 1 });
+    const modules = [makeModule(), created];
+    vi.mocked(repo.createModule).mockResolvedValue(modules);
 
-    const { svc, append } = build(makeRepo(), structure);
+    const { svc, appended } = build(repo);
+    const result = await svc.createModule('org1', 'c1', 'New Module');
+
+    expect(repo.createModule).toHaveBeenCalledWith('org1', 'c1', 'New Module');
+    expect(result).toBe(modules);
+    expect(appended).toEqual([
+      {
+        type: 'content.course.module.created',
+        version: 1,
+        orgId: 'org1',
+        subject: 'm2',
+        data: created,
+      },
+    ]);
+  });
+
+  it('appends course.module.updated with the updated snapshot', async () => {
+    const repo = makeRepo();
+    const updated = makeModule({ title: 'Renamed' });
+    vi.mocked(repo.findModule).mockResolvedValue(makeModule());
+    vi.mocked(repo.updateModule).mockResolvedValue([updated]);
+
+    const { svc, appended } = build(repo);
+    await svc.updateModule('org1', 'c1', 'm1', 'Renamed');
+
+    expect(repo.updateModule).toHaveBeenCalledWith('org1', 'c1', 'm1', 'Renamed');
+    expect(appended).toEqual([
+      {
+        type: 'content.course.module.updated',
+        version: 1,
+        orgId: 'org1',
+        subject: 'm1',
+        data: updated,
+      },
+    ]);
+  });
+
+  it('throws NotFoundError and appends nothing when updating a module outside the course', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.findModule).mockResolvedValue(makeModule({ courseId: 'other' }));
+
+    const { svc, append } = build(repo);
+    await expect(svc.updateModule('org1', 'c1', 'm1', 'Renamed')).rejects.toThrow(NotFoundError);
+    expect(repo.updateModule).not.toHaveBeenCalled();
+    expect(append).not.toHaveBeenCalled();
+  });
+
+  it('appends course.module.deleted with the pre-delete snapshot', async () => {
+    const repo = makeRepo();
+    const module = makeModule({ activities: [makeActivity()] });
+    vi.mocked(repo.findModule).mockResolvedValue(module);
+    vi.mocked(repo.deleteModule).mockResolvedValue([]);
+
+    const { svc, appended } = build(repo);
+    const result = await svc.deleteModule('org1', 'c1', 'm1');
+
+    expect(repo.deleteModule).toHaveBeenCalledWith('org1', 'c1', 'm1');
+    expect(result).toEqual([]);
+    expect(appended).toEqual([
+      {
+        type: 'content.course.module.deleted',
+        version: 1,
+        orgId: 'org1',
+        subject: 'm1',
+        data: module,
+      },
+    ]);
+  });
+
+  it('throws NotFoundError and appends nothing when deleting a missing module', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.findModule).mockResolvedValue(null);
+
+    const { svc, append } = build(repo);
+    await expect(svc.deleteModule('org1', 'c1', 'missing')).rejects.toThrow(NotFoundError);
+    expect(repo.deleteModule).not.toHaveBeenCalled();
+    expect(append).not.toHaveBeenCalled();
+  });
+
+  it('appends course.modules.reordered with the resulting order', async () => {
+    const repo = makeRepo();
+    const reordered = [makeModule({ id: 'm2', seq: 0 }), makeModule({ id: 'm1', seq: 1 })];
+    vi.mocked(repo.reorderModules).mockResolvedValue(reordered);
+
+    const { svc, appended } = build(repo);
+    const result = await svc.reorderModules('org1', 'c1', ['m2', 'm1']);
+
+    expect(result).toBe(reordered);
+    expect(appended).toEqual([
+      {
+        type: 'content.course.modules.reordered',
+        version: 1,
+        orgId: 'org1',
+        subject: 'c1',
+        data: reordered,
+      },
+    ]);
+  });
+});
+
+describe('activities', () => {
+  it('appends course.activity.created with the new activity snapshot', async () => {
+    const repo = makeRepo();
+    const created = makeActivity({ id: 'act2', seq: 1 });
+    const modules = [makeModule({ activities: [makeActivity(), created] })];
+    vi.mocked(repo.findModule).mockResolvedValue(makeModule());
+    vi.mocked(repo.saveActivity).mockResolvedValue(modules);
+
+    const { svc, appended } = build(repo);
     const result = await svc.saveActivity('org1', 'c1', 'm1', { settings: { title: 'A' } });
 
-    expect(structure.saveActivity).toHaveBeenCalledWith(
+    expect(repo.saveActivity).toHaveBeenCalledWith(
       'org1',
       'c1',
       'm1',
@@ -277,52 +403,139 @@ describe('ContentServiceImpl', () => {
       undefined,
     );
     expect(result).toBe(modules);
+    expect(appended).toEqual([
+      {
+        type: 'content.course.activity.created',
+        version: 1,
+        orgId: 'org1',
+        subject: 'act2',
+        data: created,
+      },
+    ]);
+  });
+
+  it('throws NotFoundError when creating an activity in a missing module', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.findModule).mockResolvedValue(null);
+
+    const { svc, append } = build(repo);
+    await expect(svc.saveActivity('org1', 'c1', 'missing', {})).rejects.toThrow(NotFoundError);
+    expect(repo.saveActivity).not.toHaveBeenCalled();
     expect(append).not.toHaveBeenCalled();
   });
 
-  it('passes an activity id through on update', async () => {
-    const structure = makeStructureRepo();
-    (structure.saveActivity as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+  it('appends course.activity.updated with the saved snapshot on update', async () => {
+    const repo = makeRepo();
+    const saved = makeActivity({ assetIds: ['a1'] });
+    vi.mocked(repo.findActivity).mockResolvedValue(makeActivity());
+    vi.mocked(repo.saveActivity).mockResolvedValue([makeModule({ activities: [saved] })]);
 
-    const { svc } = build(makeRepo(), structure);
+    const { svc, appended } = build(repo);
     await svc.saveActivity('org1', 'c1', 'm1', { assetIds: ['a1'] }, 'act1');
 
-    expect(structure.saveActivity).toHaveBeenCalledWith(
+    expect(repo.saveActivity).toHaveBeenCalledWith(
       'org1',
       'c1',
       'm1',
       { assetIds: ['a1'] },
       'act1',
     );
+    expect(appended).toEqual([
+      {
+        type: 'content.course.activity.updated',
+        version: 1,
+        orgId: 'org1',
+        subject: 'act1',
+        data: saved,
+      },
+    ]);
+  });
+
+  it('throws NotFoundError when updating an activity that lives in another module', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.findActivity).mockResolvedValue(makeActivity({ moduleId: 'other' }));
+
+    const { svc, append } = build(repo);
+    await expect(svc.saveActivity('org1', 'c1', 'm1', {}, 'act1')).rejects.toThrow(NotFoundError);
+    expect(repo.saveActivity).not.toHaveBeenCalled();
+    expect(append).not.toHaveBeenCalled();
+  });
+
+  it('appends course.activity.deleted with the pre-delete snapshot', async () => {
+    const repo = makeRepo();
+    const activity = makeActivity();
+    vi.mocked(repo.findActivity).mockResolvedValue(activity);
+    vi.mocked(repo.deleteActivity).mockResolvedValue([makeModule()]);
+
+    const { svc, appended } = build(repo);
+    await svc.deleteActivity('org1', 'c1', 'm1', 'act1');
+
+    expect(repo.deleteActivity).toHaveBeenCalledWith('org1', 'c1', 'm1', 'act1');
+    expect(appended).toEqual([
+      {
+        type: 'content.course.activity.deleted',
+        version: 1,
+        orgId: 'org1',
+        subject: 'act1',
+        data: activity,
+      },
+    ]);
+  });
+
+  it('throws NotFoundError and appends nothing when deleting a missing activity', async () => {
+    const repo = makeRepo();
+    vi.mocked(repo.findActivity).mockResolvedValue(null);
+
+    const { svc, append } = build(repo);
+    await expect(svc.deleteActivity('org1', 'c1', 'm1', 'missing')).rejects.toThrow(NotFoundError);
+    expect(repo.deleteActivity).not.toHaveBeenCalled();
+    expect(append).not.toHaveBeenCalled();
+  });
+
+  it('appends course.activities.reordered with the resulting order', async () => {
+    const repo = makeRepo();
+    const reordered = [
+      makeModule({
+        activities: [makeActivity({ id: 'act2', seq: 0 }), makeActivity({ id: 'act1', seq: 1 })],
+      }),
+    ];
+    vi.mocked(repo.reorderActivities).mockResolvedValue(reordered);
+
+    const { svc, appended } = build(repo);
+    const result = await svc.reorderActivities('org1', 'c1', 'm1', ['act2', 'act1']);
+
+    expect(result).toBe(reordered);
+    expect(appended).toEqual([
+      {
+        type: 'content.course.activities.reordered',
+        version: 1,
+        orgId: 'org1',
+        subject: 'm1',
+        data: reordered[0],
+      },
+    ]);
   });
 });
 
 describe('hierarchy reads', () => {
-  it('getActivity and getModule delegate to the structure repository', async () => {
-    const structure = makeStructureRepo();
-    const activity = {
-      id: 'a1',
-      moduleId: 'm1',
-      courseId: 'c1',
-      seq: 0,
-      settings: {},
-      assetIds: [],
-    };
-    const module = { id: 'm1', courseId: 'c1', title: 'M1', seq: 0, activities: [activity] };
-    vi.mocked(structure.findActivity).mockResolvedValue(activity);
-    vi.mocked(structure.findModule).mockResolvedValue(module);
-    const { svc } = build(makeRepo(), structure);
-    expect(await svc.getActivity('o1', 'a1')).toEqual(activity);
+  it('getActivity and getModule delegate to the content repository', async () => {
+    const repo = makeRepo();
+    const activity = makeActivity({ settings: {} });
+    const module = makeModule({ title: 'M1', activities: [activity] });
+    vi.mocked(repo.findActivity).mockResolvedValue(activity);
+    vi.mocked(repo.findModule).mockResolvedValue(module);
+    const { svc } = build(repo);
+    expect(await svc.getActivity('o1', 'act1')).toEqual(activity);
     expect(await svc.getModule('o1', 'm1')).toEqual(module);
-    expect(structure.findActivity).toHaveBeenCalledWith('o1', 'a1');
-    expect(structure.findModule).toHaveBeenCalledWith('o1', 'm1');
+    expect(repo.findActivity).toHaveBeenCalledWith('o1', 'act1');
+    expect(repo.findModule).toHaveBeenCalledWith('o1', 'm1');
   });
 
   it('resolve unknown ids to null', async () => {
-    const structure = makeStructureRepo();
-    vi.mocked(structure.findActivity).mockResolvedValue(null);
-    vi.mocked(structure.findModule).mockResolvedValue(null);
-    const { svc } = build(makeRepo(), structure);
+    const repo = makeRepo();
+    vi.mocked(repo.findActivity).mockResolvedValue(null);
+    vi.mocked(repo.findModule).mockResolvedValue(null);
+    const { svc } = build(repo);
     expect(await svc.getActivity('o1', 'nope')).toBeNull();
     expect(await svc.getModule('o1', 'nope')).toBeNull();
   });
@@ -341,7 +554,6 @@ describe('logging', () => {
     const { uow } = fakeUow(repo);
     const svc = new ContentServiceImpl({
       repo,
-      structureRepo: makeStructureRepo(),
       uow,
       settings: makeSettings().settings,
       logger,
@@ -357,6 +569,59 @@ describe('logging', () => {
       'course deleted',
     ]);
     expect(entries[0]?.meta).toMatchObject({ orgId: 'org-1', courseId: course.id });
+  });
+
+  it('logs module and activity mutations with ids', async () => {
+    const { createCapturingLogger } = await import('../shared/logger.js');
+    const { logger, entries } = createCapturingLogger();
+    const repo = makeRepo();
+    const module = makeModule();
+    const activity = makeActivity();
+    vi.mocked(repo.createModule).mockResolvedValue([module]);
+    vi.mocked(repo.findActivity).mockResolvedValue(activity);
+    vi.mocked(repo.deleteActivity).mockResolvedValue([module]);
+    const { uow } = fakeUow(repo);
+    const svc = new ContentServiceImpl({
+      repo,
+      uow,
+      settings: makeSettings().settings,
+      logger,
+    });
+
+    await svc.createModule('org-1', 'c1', 'Module 1');
+    await svc.deleteActivity('org-1', 'c1', 'm1', 'act1');
+
+    expect(entries.filter((e) => e.level === 'info').map((e) => e.msg)).toEqual([
+      'module created',
+      'activity deleted',
+    ]);
+    expect(entries[0]?.meta).toMatchObject({ orgId: 'org-1', courseId: 'c1', moduleId: 'm1' });
+    expect(entries[1]?.meta).toMatchObject({
+      orgId: 'org-1',
+      courseId: 'c1',
+      moduleId: 'm1',
+      activityId: 'act1',
+    });
+  });
+
+  it('logs a warn when a structure mutation is rejected', async () => {
+    const { createCapturingLogger } = await import('../shared/logger.js');
+    const { logger, entries } = createCapturingLogger();
+    const repo = makeRepo();
+    vi.mocked(repo.findModule).mockResolvedValue(null);
+    const { uow } = fakeUow(repo);
+    const svc = new ContentServiceImpl({
+      repo,
+      uow,
+      settings: makeSettings().settings,
+      logger,
+    });
+
+    await expect(svc.deleteModule('org-1', 'c1', 'missing')).rejects.toThrow(NotFoundError);
+
+    expect(entries.filter((e) => e.level === 'warn').map((e) => e.msg)).toEqual([
+      'module delete rejected — not found in course',
+    ]);
   });
 });
 
@@ -383,14 +648,8 @@ describe('downloads', () => {
     const repo = makeRepo();
     const download = makeDownload({ title: 'My Great Workbook', slug: 'my-great-workbook' });
     vi.mocked(repo.createDownload).mockResolvedValue(download);
-    const { uow, appended } = fakeUow(repo);
-    const svc = new ContentServiceImpl({
-      repo,
-      structureRepo: makeStructureRepo(),
-      uow,
-      settings: makeSettings().settings,
-    });
 
+    const { svc, appended } = build(repo);
     const result = await svc.createDownload('o1', { title: 'My Great Workbook' });
 
     expect(repo.createDownload).toHaveBeenCalledWith(
@@ -399,19 +658,16 @@ describe('downloads', () => {
       'my-great-workbook',
     );
     expect(result).toEqual(download);
-    expect(appended).toEqual([{ type: 'download.created', orgId: 'o1', download }]);
+    expect(appended).toEqual([
+      { type: 'content.download.created', version: 1, orgId: 'o1', subject: 'd1', data: download },
+    ]);
   });
 
   it('throws NotFoundError when updating a download that does not exist', async () => {
     const repo = makeRepo();
     vi.mocked(repo.updateDownload).mockResolvedValue(null);
-    const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl({
-      repo,
-      structureRepo: makeStructureRepo(),
-      uow,
-      settings: makeSettings().settings,
-    });
+
+    const { svc } = build(repo);
 
     await expect(svc.updateDownload('o1', 'missing', { title: 'x' })).rejects.toThrow(
       NotFoundError,
@@ -423,29 +679,20 @@ describe('downloads', () => {
     const download = makeDownload();
     vi.mocked(repo.getDownload).mockResolvedValue(download);
     vi.mocked(repo.deleteDownload).mockResolvedValue(true);
-    const { uow, appended } = fakeUow(repo);
-    const svc = new ContentServiceImpl({
-      repo,
-      structureRepo: makeStructureRepo(),
-      uow,
-      settings: makeSettings().settings,
-    });
 
+    const { svc, appended } = build(repo);
     await svc.removeDownload('o1', 'd1');
 
-    expect(appended).toEqual([{ type: 'download.deleted', orgId: 'o1', download }]);
+    expect(appended).toEqual([
+      { type: 'content.download.deleted', version: 1, orgId: 'o1', subject: 'd1', data: download },
+    ]);
   });
 
   it('throws NotFoundError when deleting a download that does not exist', async () => {
     const repo = makeRepo();
     vi.mocked(repo.getDownload).mockResolvedValue(null);
-    const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl({
-      repo,
-      structureRepo: makeStructureRepo(),
-      uow,
-      settings: makeSettings().settings,
-    });
+
+    const { svc } = build(repo);
 
     await expect(svc.removeDownload('o1', 'missing')).rejects.toThrow(NotFoundError);
     expect(repo.deleteDownload).not.toHaveBeenCalled();
@@ -472,13 +719,7 @@ describe('download assets', () => {
       makeDownloadAsset({ id: 'da1', assetId: 'a1', seq: 0 }),
       makeDownloadAsset({ id: 'da2', assetId: 'a2', seq: 1 }),
     ]);
-    const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl({
-      repo,
-      structureRepo: makeStructureRepo(),
-      uow,
-      settings: makeSettings().settings,
-    });
+    const { svc } = build(repo);
 
     // Drops a2 — a stale client must not be able to silently unlink it.
     await expect(svc.reorderDownloadAssets('o1', 'd1', ['a1'])).rejects.toThrow(/does not match/i);
@@ -490,13 +731,7 @@ describe('download assets', () => {
     vi.mocked(repo.listDownloadAssets).mockResolvedValue([
       makeDownloadAsset({ id: 'da1', assetId: 'a1', seq: 0 }),
     ]);
-    const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl({
-      repo,
-      structureRepo: makeStructureRepo(),
-      uow,
-      settings: makeSettings().settings,
-    });
+    const { svc } = build(repo);
 
     await expect(svc.reorderDownloadAssets('o1', 'd1', ['a1', 'a9'])).rejects.toThrow(
       /does not match/i,
@@ -510,13 +745,7 @@ describe('download assets', () => {
       makeDownloadAsset({ id: 'da1', assetId: 'a1', seq: 0 }),
       makeDownloadAsset({ id: 'da2', assetId: 'a2', seq: 1 }),
     ]);
-    const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl({
-      repo,
-      structureRepo: makeStructureRepo(),
-      uow,
-      settings: makeSettings().settings,
-    });
+    const { svc } = build(repo);
 
     await expect(svc.reorderDownloadAssets('o1', 'd1', ['a1', 'a1'])).rejects.toThrow(
       /does not match/i,
@@ -535,13 +764,7 @@ describe('download assets', () => {
       makeDownloadAsset({ id: 'da2', assetId: 'a2', seq: 1 }),
     ]);
     vi.mocked(repo.reorderDownloadAssets).mockResolvedValue(reordered);
-    const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl({
-      repo,
-      structureRepo: makeStructureRepo(),
-      uow,
-      settings: makeSettings().settings,
-    });
+    const { svc } = build(repo);
 
     const result = await svc.reorderDownloadAssets('o1', 'd1', ['a2', 'a1']);
 
@@ -553,17 +776,38 @@ describe('download assets', () => {
     const repo = makeRepo();
     const list = [makeDownloadAsset()];
     vi.mocked(repo.addDownloadAsset).mockResolvedValue(list);
-    const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl({
-      repo,
-      structureRepo: makeStructureRepo(),
-      uow,
-      settings: makeSettings().settings,
-    });
+    const { svc } = build(repo);
 
     const result = await svc.addDownloadAsset('o1', 'd1', { assetId: 'a1' });
 
     expect(repo.addDownloadAsset).toHaveBeenCalledWith('o1', 'd1', { assetId: 'a1' });
     expect(result).toEqual(list);
+  });
+});
+
+describe('contentEvents validation', () => {
+  it('rejects a blank orgId', async () => {
+    const { contentEvents } = await import('./events.js');
+    expect(() =>
+      contentEvents.courseCreated.make({ orgId: '', subject: 'c1', data: makeCourse() }),
+    ).toThrow(/orgId/);
+  });
+
+  it('rejects a snapshot without an id', async () => {
+    const { contentEvents } = await import('./events.js');
+    expect(() =>
+      contentEvents.moduleCreated.make({ orgId: 'org1', subject: 'm1', data: makeModule({ id: '' }) }),
+    ).toThrow(/data\.id/);
+  });
+
+  it('rejects reorder events carrying blank ids', async () => {
+    const { contentEvents } = await import('./events.js');
+    expect(() =>
+      contentEvents.modulesReordered.make({
+        orgId: 'org1',
+        subject: 'c1',
+        data: [makeModule({ id: 'm1' }), makeModule({ id: '' })],
+      }),
+    ).toThrow(/data/);
   });
 });

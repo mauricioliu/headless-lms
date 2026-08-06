@@ -13,8 +13,8 @@ describe('DrizzleOutboxAppender', () => {
   it('inserts one row per event, mirroring type/orgId, with the event as payload', async () => {
     const { tx, values } = fakeTx();
     const events = [
-      { type: 'entitlement.created' as const, orgId: 'org-1' },
-      { type: 'connection.removed' as const, orgId: 'org-2' },
+      { type: 'entitlement.created' as const, version: 1, orgId: 'org-1', subject: 'ent_1', data: {} },
+      { type: 'integration.connection.removed' as const, version: 1, orgId: 'org-2', subject: 'conn_1', data: {} },
     ];
     await new DrizzleOutboxAppender(tx).append(events);
     const rows = values.mock.calls[0]![0] as Array<Record<string, unknown>>;
@@ -29,7 +29,9 @@ describe('DrizzleOutboxAppender', () => {
 
   it('leaves id and createdAt to the column defaults', async () => {
     const { tx, values } = fakeTx();
-    await new DrizzleOutboxAppender(tx).append([{ type: 'entitlement.created', orgId: 'org-1' }]);
+    await new DrizzleOutboxAppender(tx).append([
+      { type: 'entitlement.created', version: 1, orgId: 'org-1', subject: 'ent_1', data: {} },
+    ]);
     const rows = values.mock.calls[0]![0] as Array<Record<string, unknown>>;
     expect(rows[0]).not.toHaveProperty('id');
     expect(rows[0]).not.toHaveProperty('createdAt');
@@ -63,14 +65,14 @@ describe('DrizzleOutboxStore', () => {
     expect(OUTBOX_MAX_ATTEMPTS).toBe(10);
   });
 
-  it('maps rows to messages: attempts alongside the payload, id/createdAt stamped in', async () => {
+  it('maps rows to messages: attempts alongside the payload, id/occurredAt stamped in', async () => {
     const createdAt = new Date('2026-07-22T00:00:00.000Z');
     const { db } = fakeSelectDb([
       {
         id: 'evt_1',
         type: 'entitlement.created',
         orgId: 'org-1',
-        payload: { type: 'entitlement.created', orgId: 'org-1' },
+        payload: { type: 'entitlement.created', version: 1, orgId: 'org-1', subject: 'ent_1', data: {} },
         attempts: 3,
         nextAttemptAt: createdAt,
         lastError: 'boom',
@@ -85,9 +87,12 @@ describe('DrizzleOutboxStore', () => {
         attempts: 3,
         payload: {
           type: 'entitlement.created',
+          version: 1,
           orgId: 'org-1',
+          subject: 'ent_1',
+          data: {},
           id: 'evt_1',
-          createdAt: '2026-07-22T00:00:00.000Z',
+          occurredAt: '2026-07-22T00:00:00.000Z',
         },
       },
     ]);

@@ -11,6 +11,7 @@ import type {
   PresignedUpload,
   StoredObjectInfo,
   PresignDownloadInput,
+  EventDefinition,
   TemplateContext,
   TemplateRenderer,
 } from '@headless-lms/types';
@@ -28,9 +29,18 @@ export type {
   PresignedUpload,
   StoredObjectInfo,
   PresignDownloadInput,
+  EventDefinition,
   TemplateContext,
   TemplateRenderer,
 };
+export {
+  InvalidDomainEventError,
+  defineEvent,
+  eventIdSchema,
+  eventJsonValueSchema,
+  eventMetadataSchema,
+} from './events.js';
+export type { EventOf, EventOfValues, RuntimeEventDefinition } from './events.js';
 
 export interface Clock {
   now(): Date;
@@ -38,9 +48,11 @@ export interface Clock {
 
 export interface EventBus {
   publish(event: DomainEvent): Promise<void>;
+  subscribe<E extends DomainEvent>(
+    definition: EventDefinition<E>,
+    handler: (event: E) => Promise<void>,
+  ): void;
   subscribe(type: string, handler: (event: DomainEvent) => Promise<void>): void;
-  /** Runs for every published event, regardless of type — after the
-   *  type-specific handlers for that event. */
   subscribeAll(handler: (event: DomainEvent) => Promise<void>): void;
 }
 

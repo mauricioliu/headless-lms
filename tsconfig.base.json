@@ -17,6 +17,7 @@
     "paths": {
       "@headless-lms/types": ["./packages/types/src/index.ts"],
       "@headless-lms/types/editor": ["./packages/types/src/editor/index.ts"],
+      "@headless-lms/types/schemas": ["./packages/types/src/schemas/index.ts"],
       "@headless-lms/utils": ["./packages/utils/src/index.ts"],
       "@headless-lms/api-contract": ["./packages/api-contract/src/index.ts"],
       "@headless-lms/server": ["./packages/server/src/index.ts"],

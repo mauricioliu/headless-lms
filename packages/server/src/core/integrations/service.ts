@@ -11,7 +11,12 @@
 // outbox; this also closed the historical orphan-credential window). The
 // outbox relay — not this service — publishes to the EventBus.
 import { genId } from '../shared/id.js';
-import { AlreadyConnectedError, InvalidConfigError, UnknownIntegrationError } from './model.js';
+import {
+  ActionInvocationError,
+  AlreadyConnectedError,
+  InvalidConfigError,
+  UnknownIntegrationError,
+} from './model.js';
 import type { ConfigureInput, ConnectInput, Connection } from './model.js';
 import type {
   ConnectionsRepository,
@@ -19,8 +24,10 @@ import type {
   IntegrationsService,
   IntegrationsUnitOfWork,
 } from './ports.js';
-import type { Logger } from '../shared/ports.js';
+import type { CredentialStore, Logger } from '../shared/ports.js';
+import { ConflictError, NotFoundError } from '../shared/errors.js';
 import { noopLogger } from '../shared/logger.js';
+import { integrationEvents } from './events.js';
 
 export type IntegrationsServiceParams = {
   registry: IntegrationsRegistry;
@@ -28,6 +35,8 @@ export type IntegrationsServiceParams = {
   repo: ConnectionsRepository;
   /** Atomic write scope: tx-bound connections repo + credential store + outbox. */
   uow: IntegrationsUnitOfWork;
+  /** Point-of-use credential reveal for action invocation — reads only. */
+  credentials: CredentialStore;
   logger?: Logger;
 };
 
@@ -35,12 +44,14 @@ export class IntegrationsServiceImpl implements IntegrationsService {
   private readonly registry: IntegrationsRegistry;
   private readonly repo: ConnectionsRepository;
   private readonly uow: IntegrationsUnitOfWork;
+  private readonly credentials: CredentialStore;
   private readonly logger: Logger;
 
   constructor(params: IntegrationsServiceParams) {
     this.registry = params.registry;
     this.repo = params.repo;
     this.uow = params.uow;
+    this.credentials = params.credentials;
     this.logger = params.logger ?? noopLogger;
   }
 
@@ -98,12 +109,11 @@ export class IntegrationsServiceImpl implements IntegrationsService {
         updatedAt: at,
       });
       await outbox.append([
-        {
-          type: 'connection.created',
+        integrationEvents.connectionCreated.make({
           orgId,
-          connectionId: created.id,
-          integrationId: created.integrationId,
-        },
+          subject: created.id,
+          data: created,
+        }),
       ]);
       return created;
     });
@@ -127,15 +137,11 @@ export class IntegrationsServiceImpl implements IntegrationsService {
     const updated = await this.uow.run(async ({ connections, credentials, outbox }) => {
       await credentials.update(orgId, connection.credentialRef, secrets);
       const result = await connections.update(orgId, id, { updatedAt: new Date().toISOString() });
-      await outbox.append([
-        {
-          type: 'connection.updated',
-          orgId,
-          connectionId: id,
-          integrationId: connection.integrationId,
-          changed: 'credentials',
-        },
-      ]);
+      if (result) {
+        await outbox.append([
+          integrationEvents.connectionUpdated.make({ orgId, subject: result.id, data: result }),
+        ]);
+      }
       return result;
     });
     this.logger.info('integration credentials rotated', {
@@ -160,15 +166,11 @@ export class IntegrationsServiceImpl implements IntegrationsService {
         ...(input.active !== undefined ? { active: input.active } : {}),
         updatedAt: new Date().toISOString(),
       });
-      await outbox.append([
-        {
-          type: 'connection.updated',
-          orgId,
-          connectionId: id,
-          integrationId: connection.integrationId,
-          changed: 'configuration',
-        },
-      ]);
+      if (result) {
+        await outbox.append([
+          integrationEvents.connectionUpdated.make({ orgId, subject: result.id, data: result }),
+        ]);
+      }
       return result;
     });
     this.logger.info('integration configured', {
@@ -189,12 +191,7 @@ export class IntegrationsServiceImpl implements IntegrationsService {
       const ok = await connections.delete(orgId, id);
       await credentials.destroy(orgId, connection.credentialRef);
       await outbox.append([
-        {
-          type: 'connection.removed',
-          orgId,
-          connectionId: id,
-          integrationId: connection.integrationId,
-        },
+        integrationEvents.connectionRemoved.make({ orgId, subject: connection.id, data: connection }),
       ]);
       return ok;
     });
@@ -216,5 +213,44 @@ export class IntegrationsServiceImpl implements IntegrationsService {
 
   getByIntegration(orgId: string, integrationId: string): Promise<Connection | null> {
     return this.repo.findByIntegration(orgId, integrationId);
+  }
+
+  async invoke(
+    orgId: string,
+    connectionId: string,
+    actionId: string,
+    input: Record<string, unknown>,
+  ): Promise<unknown> {
+    const connection = await this.repo.findById(orgId, connectionId);
+    if (!connection) {
+      throw new NotFoundError('Connection', connectionId);
+    }
+    if (!connection.active) {
+      throw new ConflictError(`connection "${connectionId}" is inactive`);
+    }
+    const integration = this.registry.get(connection.integrationId);
+    if (!integration) {
+      throw new UnknownIntegrationError(connection.integrationId);
+    }
+    const action = integration.actions.find((a) => a.id === actionId);
+    if (!action) {
+      throw new NotFoundError('Action', actionId);
+    }
+    const secrets = await this.credentials.reveal(orgId, connection.credentialRef);
+    if (!secrets) {
+      throw new NotFoundError('Credential', connectionId);
+    }
+    try {
+      return await action.invoke({ secrets, config: connection.config }, input);
+    } catch (err) {
+      this.logger.warn('integration action failed', {
+        orgId,
+        connectionId,
+        integrationId: connection.integrationId,
+        actionId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw new ActionInvocationError(connection.integrationId, actionId, err);
+    }
   }
 }

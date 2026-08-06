@@ -11,6 +11,7 @@ export type {
   ListCommentsQuery,
 } from "./schemas/discussion.js";
 import type { Role } from "./organizations.js";
+import type { CommentStatus } from "./schemas/discussion.js";
 
 export interface Comment {
   readonly id: string;

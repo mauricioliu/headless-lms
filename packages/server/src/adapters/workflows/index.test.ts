@@ -15,7 +15,15 @@ function dispatch(): AutomationDispatch {
       { type: 'sendEmail', input: { template: 'magicLink' } },
       { type: 'sendEmail', input: { template: 'magicLink' } },
     ],
-    event: { type: 'student.enrolled' } as AutomationDispatch['event'],
+    event: {
+      type: 'organization.student.created',
+      version: 1,
+      id: 'evt_1',
+      orgId: 'org-1',
+      subject: 'student_1',
+      occurredAt: '2026-01-01T00:00:00.000Z',
+      data: {},
+    },
   };
 }
 
