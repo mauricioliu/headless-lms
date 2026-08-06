@@ -10,7 +10,7 @@ Read [this](docs/architecture.md)
 
 ### Import boundaries
 
-- The contexts are listed in ./docs/domains. They live in `packages/core`.
+- The contexts are listed in ./docs/domain. They live in `packages/core`.
 - A context imports another context **only** through its `index.ts` — enforced by the
   `@headless-lms/core` exports map for external consumers and by lint inside the package.
   `core/shared` is the exception (cross-cutting, allowed, imported per-file:

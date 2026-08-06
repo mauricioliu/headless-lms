@@ -63,8 +63,10 @@ depending on the server.
 
 ## Writing an adapter
 
-An `adapters/*` package implements a deployment port from `@headless-lms/core/types`
-and depends only on `@headless-lms/core` (plus its vendor SDK). The installation parses the
+An `adapters/*` package implements a deployment port from `@headless-lms/core/types`.
+A new leaf adapter typically needs nothing beyond `@headless-lms/core` and its vendor
+SDK; an adapter may also depend on another adapter (`adapter-auth` and
+`adapter-defaults` both build on `adapter-db`). The installation parses the
 adapter's env in its `config.ts`, constructs the adapter, and injects it:
 
 ```ts

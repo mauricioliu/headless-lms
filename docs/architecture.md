@@ -86,7 +86,7 @@ with that data.
 It defines the content structure - e.g. a **Course** 
 
 I like Slate.js, and I've done other work using Plate.js, so the default course content builder is an engine built
-on Plate.js. Some people love TipTap, some people has existing SCORM frontends. The [editor contract](packages/editor/src/index.ts)
+on Plate.js. Some people love TipTap, some people has existing SCORM frontends. The [editor contract](../packages/editor/src/index.ts)
 (`@headless-lms/editor`) is what you'll use to implement your frontend.
 
 

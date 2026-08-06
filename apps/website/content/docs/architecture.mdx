@@ -18,7 +18,7 @@ The inbound entry point is the HTTP layer. It calls into the core's services and
 
 ## Bounded contexts
 
-The core is split into eight self-contained contexts. Each exposes one public surface, and contexts talk to each other only through those surfaces — never by reaching into another context's internals. A use case that spans contexts lives in the context whose responsibility it is; there is no orchestration tier above them.
+The core is split into nine self-contained contexts. Each exposes one public surface, and contexts talk to each other only through those surfaces — never by reaching into another context's internals. A use case that spans contexts lives in the context whose responsibility it is; there is no orchestration tier above them.
 
 | Context | Owns |
 | --- | --- |
