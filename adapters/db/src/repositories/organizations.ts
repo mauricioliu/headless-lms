@@ -1,17 +1,18 @@
 // organizations — Drizzle repository (implements the core outbound port).
 import { and, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type {
-  NewInviteRow,
-  NewOrganizationRow,
-  OrganizationsRepository,
-} from '@headless-lms/core/organizations';
-import type { Invite, Organization, OrgUser } from '@headless-lms/core/organizations';
-import { normalizeRole, parseRole } from '@headless-lms/core/organizations';
-import type {
-  AddOrgUserInput,
-  CreateOrgUserInput,
-  UpdateOrganizationInput,
+import {
+  normalizeRole,
+  parseRole,
+  type AddOrgUserInput,
+  type CreateOrgUserInput,
+  type Invite,
+  type NewInviteRow,
+  type NewOrganizationRow,
+  type Organization,
+  type OrganizationsRepository,
+  type OrgUser,
+  type UpdateOrganizationInput,
 } from '@headless-lms/core/organizations';
 import { invites, organizations, orgUsers } from '../schema/organizations.js';
 import type { Logger } from '@headless-lms/core/shared/ports';

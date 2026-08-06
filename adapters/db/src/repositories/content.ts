@@ -17,24 +17,22 @@ import {
 } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { DbExecutor, Tx } from '../client.js';
-import type { ContentRepository } from '@headless-lms/core/content';
 import type {
   Activity,
+  AddDownloadAssetInput,
+  ContentRepository,
   Course,
   CourseStatus,
+  CreateCourseInput,
+  CreateDownloadInput,
   Download,
   DownloadAsset,
   DownloadStatus,
-  Module,
-  SaveActivityInput,
-} from '@headless-lms/core/content';
-import type {
-  AddDownloadAssetInput,
-  CreateCourseInput,
-  CreateDownloadInput,
   ListCoursesQuery,
   ListDownloadsQuery,
+  Module,
   Page,
+  SaveActivityInput,
   UpdateCourseInput,
   UpdateDownloadInput,
 } from '@headless-lms/core/content';

@@ -1,9 +1,12 @@
 // progress — Drizzle repository (implements the core outbound port).
 import { and, eq, inArray } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { ProgressRepository } from '@headless-lms/core/progress';
-import type { ProgressRecord, ProgressTargetType } from '@headless-lms/core/progress';
-import type { ProgressTarget } from '@headless-lms/core/progress';
+import type {
+  ProgressRecord,
+  ProgressRepository,
+  ProgressTarget,
+  ProgressTargetType,
+} from '@headless-lms/core/progress';
 import { progressRecords } from '../schema/progress.js';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';

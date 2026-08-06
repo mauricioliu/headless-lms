@@ -7,8 +7,12 @@
 // LEFT JOINed via that same identity row.
 import { and, asc, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { StudentsReportRepository } from '@headless-lms/core/reporting/students';
-import type { Page, Student, StudentsQuery } from '@headless-lms/core/reporting/students';
+import type {
+  Page,
+  Student,
+  StudentsQuery,
+  StudentsReportRepository,
+} from '@headless-lms/core/reporting/students';
 import { orgUsers, users, entitlements } from '../schema/index.js';
 import { STUDENT_ROLE } from '@headless-lms/core/organizations';
 import { user } from '../schema/better-auth.js';

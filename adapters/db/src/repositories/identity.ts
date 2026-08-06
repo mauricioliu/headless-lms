@@ -5,10 +5,8 @@
 import { eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { IdentityRepository } from '@headless-lms/core/identity';
-import type { User } from '@headless-lms/core/types';
-import type { CreateUserInput, UpdateUserInput } from '@headless-lms/core/types';
+import type { CreateUserInput, Logger, UpdateUserInput, User } from '@headless-lms/core/types';
 import { users } from '../schema/identity.js';
-import type { Logger } from '@headless-lms/core/types';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 
 export class DrizzleIdentityRepository implements IdentityRepository {

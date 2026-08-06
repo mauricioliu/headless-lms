@@ -4,8 +4,11 @@
 // (expires_at null or in the future) — expiry is derived at read time.
 import { and, eq, gte, isNull, or, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { DashboardReportRepository } from '@headless-lms/core/reporting/dashboard';
-import type { EnrollmentPoint, OverviewStats } from '@headless-lms/core/reporting/dashboard';
+import type {
+  DashboardReportRepository,
+  EnrollmentPoint,
+  OverviewStats,
+} from '@headless-lms/core/reporting/dashboard';
 import { courses, entitlements } from '../schema/index.js';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';

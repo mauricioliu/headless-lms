@@ -1,8 +1,8 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { DrizzleStudentsRepository } from '@headless-lms/adapter-db';
-import { DrizzleMembersRepository } from '@headless-lms/adapter-db';
-import { DrizzleEntitlementsRepository } from '@headless-lms/adapter-db';
+import { DrizzleStudentsRepository } from './src/repositories/students.js';
+import { DrizzleMembersRepository } from './src/repositories/members.js';
+import { DrizzleEntitlementsRepository } from './src/repositories/entitlements.js';
 
 const ORG = 'org_3HGQMqWN2hqhCtoapiWJlTqxzxq';
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });

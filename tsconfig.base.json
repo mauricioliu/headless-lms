@@ -22,7 +22,6 @@
       "@headless-lms/core/shared/*": ["./packages/core/src/shared/*.ts"],
       "@headless-lms/core/reporting/*": ["./packages/core/src/reporting/*/index.ts"],
       "@headless-lms/core/*": ["./packages/core/src/*/index.ts"],
-      "@headless-lms/api-contract": ["./packages/api-contract/src/index.ts"],
       "@headless-lms/server": ["./packages/server/src/index.ts"],
       "@headless-lms/adapter-auth": ["./adapters/auth/src/index.ts"],
       "@headless-lms/adapter-db": ["./adapters/db/src/index.ts"],
