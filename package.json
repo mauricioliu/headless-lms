@@ -24,8 +24,6 @@
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
     "eslint": "^8.57.1",
-    "eslint-import-resolver-typescript": "^3.10.1",
-    "eslint-plugin-boundaries": "^5.0.1",
     "prettier": "^3.4.2",
     "typescript": "^5.9.3",
     "unrun": "^0.3.1",
