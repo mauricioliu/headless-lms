@@ -31,7 +31,7 @@ describe('DrizzleUnitOfWork', () => {
     const uow = new DrizzleUnitOfWork(db, (tx) => ({ outbox: new DrizzleOutboxAppender(tx) }));
     await uow.run(async ({ outbox }) => {
       await outbox.append([
-        { type: 'entitlement.created', version: 1, orgId: 'org-1', subject: 'ent_1', data: {} },
+        { type: 'entitlement.created', version: 1, orgId: 'org-1', data: {} },
       ]);
     });
     expect(insert).toHaveBeenCalledTimes(1);

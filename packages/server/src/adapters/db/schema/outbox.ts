@@ -1,6 +1,8 @@
 import { index, integer, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import type { EventOutbox } from '@headless-lms/types/schemas';
 import { genId } from '../../../core/shared/id.js';
+import type { Expect, NoDrift } from './drift.js';
 
 export const eventOutbox = pgTable(
   'event_outbox',
@@ -10,7 +12,7 @@ export const eventOutbox = pgTable(
       .primaryKey()
       .$defaultFn(() => genId('event')),
     type: text('type').notNull(),
-    payload: jsonb('payload').$type<Record<string, unknown>>().notNull(),
+    payload: jsonb('payload').$type<EventOutbox['payload']>().notNull(),
     attempts: integer('attempts').notNull().default(0),
     nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
     lastError: text('last_error'),
@@ -23,3 +25,5 @@ export const eventOutbox = pgTable(
       .where(sql`${t.processedAt} is null`),
   }),
 );
+
+type _EventOutboxDrift = Expect<NoDrift<typeof eventOutbox.$inferSelect, EventOutbox>>;

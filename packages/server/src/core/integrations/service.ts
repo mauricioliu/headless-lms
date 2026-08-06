@@ -98,8 +98,9 @@ export class IntegrationsServiceImpl implements IntegrationsService {
     }
     const connection = await this.uow.run(async ({ connections, credentials, outbox }) => {
       const credentialRef = await credentials.store(orgId, input.secrets);
-      const at = new Date().toISOString();
+      const at = new Date();
       const created = await connections.insert(orgId, {
+        orgId,
         id: genId('connection'),
         integrationId: input.integrationId,
         config,
@@ -111,7 +112,6 @@ export class IntegrationsServiceImpl implements IntegrationsService {
       await outbox.append([
         integrationEvents.connectionCreated.make({
           orgId,
-          subject: created.id,
           data: created,
         }),
       ]);
@@ -136,10 +136,10 @@ export class IntegrationsServiceImpl implements IntegrationsService {
     }
     const updated = await this.uow.run(async ({ connections, credentials, outbox }) => {
       await credentials.update(orgId, connection.credentialRef, secrets);
-      const result = await connections.update(orgId, id, { updatedAt: new Date().toISOString() });
+      const result = await connections.update(orgId, id, { updatedAt: new Date() });
       if (result) {
         await outbox.append([
-          integrationEvents.connectionUpdated.make({ orgId, subject: result.id, data: result }),
+          integrationEvents.connectionUpdated.make({ orgId, data: result }),
         ]);
       }
       return result;
@@ -164,11 +164,11 @@ export class IntegrationsServiceImpl implements IntegrationsService {
       const result = await connections.update(orgId, id, {
         ...(input.config !== undefined ? { config: input.config } : {}),
         ...(input.active !== undefined ? { active: input.active } : {}),
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date(),
       });
       if (result) {
         await outbox.append([
-          integrationEvents.connectionUpdated.make({ orgId, subject: result.id, data: result }),
+          integrationEvents.connectionUpdated.make({ orgId, data: result }),
         ]);
       }
       return result;
@@ -191,7 +191,7 @@ export class IntegrationsServiceImpl implements IntegrationsService {
       const ok = await connections.delete(orgId, id);
       await credentials.destroy(orgId, connection.credentialRef);
       await outbox.append([
-        integrationEvents.connectionRemoved.make({ orgId, subject: connection.id, data: connection }),
+        integrationEvents.connectionRemoved.make({ orgId, data: connection }),
       ]);
       return ok;
     });

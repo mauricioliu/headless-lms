@@ -1,29 +1,19 @@
 import { z } from "zod";
-import { contentTypeSchema } from "./content.js";
-import { idSchema, serializableDateSchema } from "./shared.js";
+import { idSchema } from "./shared.js";
 
-export const entitlementStatusSchema = z.enum(["active", "expired", "revoked"]);
+export const entitlementStatusSchema = z.enum(["active", "revoked"]);
 export type EntitlementStatus = z.infer<typeof entitlementStatusSchema>;
 
-export const contentRefSchema = z.object({
-  id: idSchema,
-  type: contentTypeSchema,
-  title: z.string(),
-});
-export type ContentRef = z.infer<typeof contentRefSchema>;
-
 export const entitlementSchema = z.object({
+  orgId: idSchema,
   id: idSchema,
   orgUserId: idSchema,
-  firstName: z.string().nullable(),
-  lastName: z.string().nullable(),
-  email: z.string().email(),
-  content: contentRefSchema,
+  contentId: idSchema,
   status: entitlementStatusSchema,
-  grantedAt: serializableDateSchema,
-  expiresAt: serializableDateSchema.nullable(),
   source: z.string(),
-});
+  grantedAt: z.coerce.date(),
+  expiresAt: z.coerce.date().nullable(),
+}).strict();
 export type Entitlement = z.output<typeof entitlementSchema>;
 export type EntitlementInput = z.input<typeof entitlementSchema>;
 
@@ -32,17 +22,17 @@ export const entitlementsQuerySchema = z.object({
   pageSize: z.number().int().min(1),
   search: z.string().optional(),
   sort: z.string().optional(),
-  status: entitlementStatusSchema.optional(),
+  status: z.enum(["active", "expired", "revoked"]).optional(),
   source: z.string().optional(),
   orgUserId: idSchema.optional(),
   contentId: idSchema.optional(),
-  type: contentTypeSchema.optional(),
-});
+  type: z.enum(["course", "download"]).optional(),
+}).strict();
 export type EntitlementsQuery = z.infer<typeof entitlementsQuerySchema>;
 
 export const grantEntitlementInputSchema = z.object({
   orgUserId: idSchema,
   contentId: idSchema,
-  expiresAt: serializableDateSchema.nullable(),
-});
-export type GrantEntitlementInput = z.input<typeof grantEntitlementInputSchema>;
+  expiresAt: z.coerce.date().nullable(),
+}).strict();
+export type GrantEntitlementInput = z.output<typeof grantEntitlementInputSchema>;

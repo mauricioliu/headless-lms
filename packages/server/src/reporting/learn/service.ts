@@ -62,11 +62,7 @@ export class LearnReportServiceImpl implements LearnReportService {
     if (!ref) {
       return null;
     }
-    const modules = await this.content.listCourseModules(ref.orgId, courseId);
-    return modules.map((m) => ({
-      ...m,
-      activities: m.activities.filter((a) => isActivityPublished(a.settings)),
-    }));
+    return this.content.listCourseModules(ref.orgId, courseId);
   }
 
   async courseProgress(
@@ -78,10 +74,8 @@ export class LearnReportServiceImpl implements LearnReportService {
     if (!ref) {
       return null;
     }
-    const modules = await this.content.listCourseModules(ref.orgId, courseId);
-    const ids = modules.flatMap((m) =>
-      m.activities.filter((a) => isActivityPublished(a.settings)).map((a) => a.id),
-    );
+    const courseActivities = await this.content.listCourseActivities(ref.orgId, courseId);
+    const ids = courseActivities.filter((a) => isActivityPublished(a.settings)).map((a) => a.id);
     const records = await this.progress.listByTargets(ref.orgId, orgUserId, ids);
     const activities: CourseProgressView['activities'] = {};
     const positions: CourseProgressView['positions'] = {};
@@ -159,7 +153,11 @@ export class LearnReportServiceImpl implements LearnReportService {
     if (!link) {
       return null;
     }
-    const filename = link.displayName ?? link.filename;
+    const asset = await this.assets.get(ref.orgId, assetId);
+    if (!asset) {
+      return null;
+    }
+    const filename = link.displayName ?? asset.filename;
     const ticket = await this.assets.requestDownload(
       ref.orgId,
       assetId,

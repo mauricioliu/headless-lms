@@ -145,8 +145,8 @@ export class DiscussionServiceImpl implements DiscussionService {
       removedBy: remover ? this.toAuthor(remover) : null,
       reactions: reactions.reactions,
       viewerReaction: reactions.viewerReaction,
-      createdAt: comment.createdAt.toISOString(),
-      updatedAt: comment.updatedAt.toISOString(),
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
     };
   }
 
@@ -228,7 +228,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     const saved = await this.uow.run(async (scope) => {
       const row = await scope.discussion.insertComment(orgId, comment);
       await scope.outbox.append([
-        discussionEvents.commentCreated.make({ orgId, subject: row.id, data: row }),
+        discussionEvents.commentCreated.make({ orgId, data: row }),
       ]);
       this.logger.info('comment created', { orgId, commentId: row.id, status });
       return row;
@@ -334,7 +334,7 @@ export class DiscussionServiceImpl implements DiscussionService {
         throw new NotFoundError('Comment', commentId);
       }
       await scope.outbox.append([
-        discussionEvents.commentRemoved.make({ orgId, subject: updated.id, data: updated }),
+        discussionEvents.commentRemoved.make({ orgId, data: updated }),
       ]);
       this.logger.info('comment removed', { orgId, commentId, by: actor.id });
       return updated;
@@ -425,7 +425,7 @@ export class DiscussionServiceImpl implements DiscussionService {
         throw new NotFoundError('Comment', commentId);
       }
       await scope.outbox.append([
-        discussionEvents.commentPublished.make({ orgId, subject: updated.id, data: updated }),
+        discussionEvents.commentPublished.make({ orgId, data: updated }),
       ]);
       this.logger.info('comment published', { orgId, commentId });
       return updated;
@@ -501,7 +501,7 @@ export class DiscussionServiceImpl implements DiscussionService {
         return report;
       }
       await scope.outbox.append([
-        discussionEvents.commentReported.make({ orgId, subject: saved.id, data: saved }),
+        discussionEvents.commentReported.make({ orgId, data: saved }),
       ]);
       this.logger.info('comment reported', { orgId, commentId });
       return saved;
@@ -553,11 +553,11 @@ export class DiscussionServiceImpl implements DiscussionService {
             return {
               reporter: this.toAuthor(reporter),
               reason: r.reason,
-              createdAt: r.createdAt.toISOString(),
+              createdAt: r.createdAt,
             };
           }),
-          createdAt: comment.createdAt.toISOString(),
-          updatedAt: comment.updatedAt.toISOString(),
+          createdAt: comment.createdAt,
+          updatedAt: comment.updatedAt,
         };
       }),
     };

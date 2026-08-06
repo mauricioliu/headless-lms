@@ -11,7 +11,7 @@ export type CourseStatus = z.infer<typeof courseStatusSchema>;
 export const courseSettingsSchema = z.object({
   transcriptDownloads: z.boolean(),
   comments: commentSettingsSchema.optional(),
-});
+}).strict();
 export type CourseSettings = z.infer<typeof courseSettingsSchema>;
 
 export const activityCommentsRuleSchema = z.enum(["inherit", "always", "never"]);
@@ -19,49 +19,74 @@ export type ActivityCommentsRule = z.infer<typeof activityCommentsRuleSchema>;
 
 export const activitySettingsSchema = z.object({
   comments: activityCommentsRuleSchema.optional(),
-});
+}).strict();
 export type ActivitySettings = z.infer<typeof activitySettingsSchema>;
 
-export const courseSchema = z.object({
+export const contentItemSchema = z.object({
+  orgId: idSchema,
   id: idSchema,
+  type: contentTypeSchema,
+  createdAt: z.coerce.date(),
+}).strict();
+export type ContentItem = z.output<typeof contentItemSchema>;
+export type ContentItemInput = z.input<typeof contentItemSchema>;
+
+export const courseSchema = z.object({
+  orgId: idSchema,
+  id: idSchema,
+  type: z.literal("course"),
   title: z.string(),
   slug: z.string(),
   description: z.string(),
   status: courseStatusSchema,
   category: z.string(),
   thumbnailAssetId: idSchema.nullable(),
-  settings: courseSettingsSchema,
-  moduleCount: z.number().int().min(0),
-  activityCount: z.number().int().min(0),
-  enrolledCount: z.number().int().min(0),
-  updatedAt: z.string().trim().min(1),
-  createdAt: z.string().trim().min(1),
-});
-export type Course = z.infer<typeof courseSchema>;
+  settings: jsonValueSchema,
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+}).strict();
+export type Course = z.output<typeof courseSchema>;
+export type CourseInput = z.input<typeof courseSchema>;
 
 export const activitySchema = z.object({
+  orgId: idSchema,
   id: idSchema,
   moduleId: idSchema,
   courseId: idSchema,
   seq: z.number().int().min(0),
-  settings: jsonValueSchema,
-  assetIds: z.array(idSchema),
-});
-export type Activity = z.infer<typeof activitySchema>;
+  settings: jsonValueSchema.nullable(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+}).strict();
+export type Activity = z.output<typeof activitySchema>;
+export type ActivityInput = z.input<typeof activitySchema>;
 
 export const moduleSchema = z.object({
+  orgId: idSchema,
   id: idSchema,
   courseId: idSchema,
   title: z.string(),
   seq: z.number().int().min(0),
-  activities: z.array(activitySchema),
-});
-export type Module = z.infer<typeof moduleSchema>;
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+}).strict();
+export type Module = z.output<typeof moduleSchema>;
+export type ModuleInput = z.input<typeof moduleSchema>;
+
+export const activityAssetSchema = z.object({
+  orgId: idSchema,
+  id: idSchema,
+  activityId: idSchema,
+  assetId: idSchema,
+  seq: z.number().int(),
+}).strict();
+export type ActivityAsset = z.output<typeof activityAssetSchema>;
+export type ActivityAssetInput = z.input<typeof activityAssetSchema>;
 
 export const saveActivityInputSchema = z.object({
   settings: jsonValueSchema.optional(),
   assetIds: z.array(idSchema).optional(),
-});
+}).strict();
 export type SaveActivityInput = z.infer<typeof saveActivityInputSchema>;
 
 export const listCoursesQuerySchema = z.object({
@@ -71,14 +96,14 @@ export const listCoursesQuerySchema = z.object({
   sort: z.string().optional(),
   status: courseStatusSchema.optional(),
   category: z.string().optional(),
-});
+}).strict();
 export type ListCoursesQuery = z.infer<typeof listCoursesQuerySchema>;
 
 export const createCourseInputSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   category: z.string().optional(),
-});
+}).strict();
 export type CreateCourseInput = z.infer<typeof createCourseInputSchema>;
 
 export const updateCourseInputSchema = z.object({
@@ -88,38 +113,38 @@ export const updateCourseInputSchema = z.object({
   status: courseStatusSchema.optional(),
   thumbnailAssetId: idSchema.nullable().optional(),
   settings: courseSettingsSchema.partial().optional(),
-});
+}).strict();
 export type UpdateCourseInput = z.infer<typeof updateCourseInputSchema>;
 
 export const downloadStatusSchema = z.enum(["draft", "published"]);
 export type DownloadStatus = z.infer<typeof downloadStatusSchema>;
 
 export const downloadSchema = z.object({
+  orgId: idSchema,
   id: idSchema,
+  type: z.literal("download"),
   title: z.string(),
   slug: z.string(),
   description: z.string(),
   status: downloadStatusSchema,
   category: z.string(),
   thumbnailAssetId: idSchema.nullable(),
-  assetCount: z.number().int().min(0),
-  totalSize: z.number().int().min(0),
-  entitledCount: z.number().int().min(0),
-  updatedAt: z.string().trim().min(1),
-  createdAt: z.string().trim().min(1),
-});
-export type Download = z.infer<typeof downloadSchema>;
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+}).strict();
+export type Download = z.output<typeof downloadSchema>;
+export type DownloadInput = z.input<typeof downloadSchema>;
 
 export const downloadAssetSchema = z.object({
+  orgId: idSchema,
   id: idSchema,
+  downloadId: idSchema,
   assetId: idSchema,
-  seq: z.number().int().min(0),
+  seq: z.number().int(),
   displayName: z.string().nullable(),
-  filename: z.string(),
-  contentType: z.string(),
-  size: z.number().int().min(0),
-});
-export type DownloadAsset = z.infer<typeof downloadAssetSchema>;
+}).strict();
+export type DownloadAsset = z.output<typeof downloadAssetSchema>;
+export type DownloadAssetInput = z.input<typeof downloadAssetSchema>;
 
 export const listDownloadsQuerySchema = z.object({
   page: z.number().int().min(1),
@@ -128,14 +153,14 @@ export const listDownloadsQuerySchema = z.object({
   sort: z.string().optional(),
   status: downloadStatusSchema.optional(),
   category: z.string().optional(),
-});
+}).strict();
 export type ListDownloadsQuery = z.infer<typeof listDownloadsQuerySchema>;
 
 export const createDownloadInputSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   category: z.string().optional(),
-});
+}).strict();
 export type CreateDownloadInput = z.infer<typeof createDownloadInputSchema>;
 
 export const updateDownloadInputSchema = z.object({
@@ -144,16 +169,16 @@ export const updateDownloadInputSchema = z.object({
   category: z.string().optional(),
   status: downloadStatusSchema.optional(),
   thumbnailAssetId: idSchema.nullable().optional(),
-});
+}).strict();
 export type UpdateDownloadInput = z.infer<typeof updateDownloadInputSchema>;
 
 export const addDownloadAssetInputSchema = z.object({
   assetId: idSchema,
   displayName: z.string().optional(),
-});
+}).strict();
 export type AddDownloadAssetInput = z.infer<typeof addDownloadAssetInputSchema>;
 
 export const reorderDownloadAssetsInputSchema = z.object({
   assetIds: z.array(idSchema),
-});
+}).strict();
 export type ReorderDownloadAssetsInput = z.infer<typeof reorderDownloadAssetsInputSchema>;

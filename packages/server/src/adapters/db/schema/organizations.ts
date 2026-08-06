@@ -7,8 +7,10 @@ import {
   unique,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import type { Invite, Organization, OrgUser } from '@headless-lms/types/schemas';
 import { genId } from '../../../core/shared/id.js';
 import { users } from './identity.js';
+import type { Expect, NoDrift } from './drift.js';
 
 export const organizations = pgTable('organizations', {
   id: text('id')
@@ -91,4 +93,8 @@ export const invites = pgTable(
       .where(sql`${t.status} = 'pending'`),
   }),
 );
+
+type _OrganizationsDrift = Expect<NoDrift<typeof organizations.$inferSelect, Organization>>;
+type _OrgUsersDrift = Expect<NoDrift<typeof orgUsers.$inferSelect, OrgUser>>;
+type _InvitesDrift = Expect<NoDrift<typeof invites.$inferSelect, Invite>>;
 

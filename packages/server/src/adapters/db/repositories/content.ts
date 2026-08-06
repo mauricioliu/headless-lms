@@ -1,8 +1,7 @@
 // content — Drizzle repository for the course aggregate root (implements the core
 // outbound `ContentRepository` port). Org-scoped: every method takes the domain
-// `organizations.id` and constrains its queries to that tenant. The `Course`
-// model carries DERIVED fields (module / activity / enrolled counts) computed via
-// correlated subqueries.
+// `organizations.id` and constrains its queries to that tenant. Rows come back
+// as stored — derived counts and cross-entity composition live in reporting.
 import {
   eq,
   and,
@@ -22,7 +21,6 @@ import type { ContentRepository } from '../../../core/content/ports.js';
 import type {
   Activity,
   Course,
-  CourseSettings,
   CourseStatus,
   Download,
   DownloadAsset,
@@ -49,99 +47,17 @@ import {
   downloads,
   downloadAssets,
 } from '../schema/content.js';
-import { entitlements } from '../schema/entitlements.js';
-import { assets } from '../schema/assets.js';
 import { genId } from '../../../core/shared/id.js';
 import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
 import { NotFoundError, ConflictError } from '../../../core/shared/errors.js';
 import { isUniqueViolation } from './pg-errors.js';
 
-// Derived counts as correlated subqueries against the current `courses` row.
-// NOTE: Drizzle does NOT table-qualify a Column interpolated into a raw `sql`
-// template (`${modules.orgId}` renders bare `"org_id"`), which collides with the
-// outer `courses.org_id` and yields a 42702 "ambiguous column" error. Qualify
-// every reference explicitly by interpolating the TABLE (`${modules}` → "modules")
-// and appending the column name.
-const moduleCountExpr = sql<number>`(
-  select count(*)::int from ${modules}
-  where ${modules}.org_id = ${courses}.org_id and ${modules}.course_id = ${courses}.id
-)`;
-
-const activityCountExpr = sql<number>`(
-  select count(*)::int from ${activities}
-  inner join ${modules}
-    on ${modules}.org_id = ${activities}.org_id and ${modules}.id = ${activities}.module_id
-  where ${modules}.org_id = ${courses}.org_id
-    and ${modules}.course_id = ${courses}.id
-)`;
-
-const enrolledCountExpr = sql<number>`(
-  select count(*)::int from ${entitlements}
-  where ${entitlements}.org_id = ${courses}.org_id
-    and ${entitlements}.content_id = ${courses}.id
-    and ${entitlements}.status = 'active'
-    and (${entitlements}.expires_at is null or ${entitlements}.expires_at >= now())
-)`;
-
-const selection = {
-  id: courses.id,
-  title: courses.title,
-  slug: courses.slug,
-  description: courses.description,
-  status: courses.status,
-  category: courses.category,
-  thumbnailAssetId: courses.thumbnailAssetId,
-  settings: courses.settings,
-  moduleCount: moduleCountExpr,
-  activityCount: activityCountExpr,
-  enrolledCount: enrolledCountExpr,
-  createdAt: courses.createdAt,
-  updatedAt: courses.updatedAt,
-};
-
-type CourseRow = {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  status: string;
-  category: string;
-  thumbnailAssetId: string | null;
-  settings: unknown;
-  moduleCount: number;
-  activityCount: number;
-  enrolledCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-/** Defaults for keys the stored blob doesn't carry (rows predating a setting). */
-const settingsDefaults: CourseSettings = { transcriptDownloads: false };
-
-function toSettings(stored: unknown): CourseSettings {
-  return { ...settingsDefaults, ...(stored as Partial<CourseSettings> | null) };
+function toCourse(row: typeof courses.$inferSelect): Course {
+  return { ...row, status: row.status as CourseStatus };
 }
 
-function toCourse(row: CourseRow): Course {
-  return {
-    id: row.id,
-    title: row.title,
-    slug: row.slug,
-    description: row.description,
-    status: row.status as CourseStatus,
-    category: row.category,
-    thumbnailAssetId: row.thumbnailAssetId,
-    settings: toSettings(row.settings),
-    moduleCount: Number(row.moduleCount),
-    activityCount: Number(row.activityCount),
-    enrolledCount: Number(row.enrolledCount),
-    updatedAt: row.updatedAt.toISOString(),
-    createdAt: row.createdAt.toISOString(),
-  };
-}
-
-// Columns/expressions a caller may sort by. Default falls back to createdAt desc.
+// Columns a caller may sort by. Default falls back to createdAt desc.
 const sortColumns: Record<string, AnyColumn | SQL> = {
   title: courses.title,
   slug: courses.slug,
@@ -149,48 +65,6 @@ const sortColumns: Record<string, AnyColumn | SQL> = {
   category: courses.category,
   createdAt: courses.createdAt,
   updatedAt: courses.updatedAt,
-  moduleCount: moduleCountExpr,
-  activityCount: activityCountExpr,
-  enrolledCount: enrolledCountExpr,
-};
-
-// Derived counts for downloads, same correlated-subquery shape as the course
-// expressions above.
-const assetCountExpr = sql<number>`(
-  select count(*)::int from ${downloadAssets}
-  where ${downloadAssets}.org_id = ${downloads}.org_id
-    and ${downloadAssets}.download_id = ${downloads}.id
-)`;
-
-const totalSizeExpr = sql<number>`(
-  select coalesce(sum(${assets}.size), 0)::bigint from ${downloadAssets}
-  inner join ${assets}
-    on ${assets}.org_id = ${downloadAssets}.org_id and ${assets}.id = ${downloadAssets}.asset_id
-  where ${downloadAssets}.org_id = ${downloads}.org_id
-    and ${downloadAssets}.download_id = ${downloads}.id
-)`;
-
-const downloadEntitledCountExpr = sql<number>`(
-  select count(*)::int from ${entitlements}
-  where ${entitlements}.org_id = ${downloads}.org_id
-    and ${entitlements}.content_id = ${downloads}.id
-    and ${entitlements}.status = 'active'
-    and (${entitlements}.expires_at is null or ${entitlements}.expires_at >= now())
-)`;
-
-const downloadSelection = {
-  id: downloads.id,
-  title: downloads.title,
-  slug: downloads.slug,
-  description: downloads.description,
-  status: downloads.status,
-  category: downloads.category,
-  thumbnailAssetId: downloads.thumbnailAssetId,
-  assetCount: assetCountExpr,
-  totalSize: totalSizeExpr,
-  entitledCount: downloadEntitledCountExpr,
-  createdAt: downloads.createdAt,
-  updatedAt: downloads.updatedAt,
 };
 
 const downloadSortColumns: Record<string, AnyColumn | SQL> = {
@@ -200,60 +74,10 @@ const downloadSortColumns: Record<string, AnyColumn | SQL> = {
   category: downloads.category,
   createdAt: downloads.createdAt,
   updatedAt: downloads.updatedAt,
-  assetCount: assetCountExpr,
-  totalSize: totalSizeExpr,
-  entitledCount: downloadEntitledCountExpr,
 };
 
-function toDownload(row: {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  status: string;
-  category: string;
-  thumbnailAssetId: string | null;
-  assetCount: number;
-  totalSize: number | string;
-  entitledCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-}): Download {
-  return {
-    id: row.id,
-    title: row.title,
-    slug: row.slug,
-    description: row.description,
-    status: row.status as DownloadStatus,
-    category: row.category,
-    thumbnailAssetId: row.thumbnailAssetId,
-    assetCount: Number(row.assetCount),
-    // sum() returns bigint, which pg hands back as a string.
-    totalSize: Number(row.totalSize),
-    entitledCount: Number(row.entitledCount),
-    updatedAt: row.updatedAt.toISOString(),
-    createdAt: row.createdAt.toISOString(),
-  };
-}
-
-function toDownloadAsset(row: {
-  id: string;
-  assetId: string;
-  seq: number;
-  displayName: string | null;
-  filename: string;
-  contentType: string;
-  size: number;
-}): DownloadAsset {
-  return {
-    id: row.id,
-    assetId: row.assetId,
-    seq: row.seq,
-    displayName: row.displayName,
-    filename: row.filename,
-    contentType: row.contentType,
-    size: Number(row.size),
-  };
+function toDownload(row: typeof downloads.$inferSelect): Download {
+  return { ...row, status: row.status as DownloadStatus };
 }
 
 export class DrizzleContentRepository implements ContentRepository {
@@ -303,7 +127,7 @@ export class DrizzleContentRepository implements ContentRepository {
     const orderBy = direction === 'desc' ? desc(sortExpr) : asc(sortExpr);
 
     const rows = await this.db
-      .select(selection)
+      .select()
       .from(courses)
       .where(where)
       .orderBy(orderBy)
@@ -322,7 +146,7 @@ export class DrizzleContentRepository implements ContentRepository {
 
   async findById(orgId: string, id: string): Promise<Course | null> {
     const [row] = await this.db
-      .select(selection)
+      .select()
       .from(courses)
       .where(and(eq(courses.orgId, orgId), eq(courses.id, id)))
       .limit(1);
@@ -404,15 +228,22 @@ export class DrizzleContentRepository implements ContentRepository {
   }
 
   // --- modules & activities ----------------------------------------------
-  // Every mutation returns the course's full ordered module list (modules by
-  // `seq`, each with its `activities` by `seq`), so `listModules` runs at the
-  // end of every mutation within the same transaction. An Activity's media is
-  // the many-to-many `activity_assets` join: `saveActivity` upserts the row
-  // and replaces its asset links; deletes drop the links first (they FK the
-  // activity), then the activity rows.
+  // Every mutation returns the course's full ordered module list (by `seq`),
+  // so `listModules` runs at the end of every mutation within the same
+  // transaction. An Activity's media is the many-to-many `activity_assets`
+  // join: `saveActivity` upserts the row and replaces its asset links; deletes
+  // drop the links first (they FK the activity), then the activity rows.
 
   listForCourse(orgId: string, courseId: string): Promise<Module[]> {
     return this.tx((tx) => this.listModules(tx, orgId, courseId));
+  }
+
+  async listActivitiesForCourse(orgId: string, courseId: string): Promise<Activity[]> {
+    return this.db
+      .select()
+      .from(activities)
+      .where(and(eq(activities.orgId, orgId), eq(activities.courseId, courseId)))
+      .orderBy(activities.moduleId, activities.seq);
   }
 
   async findActivity(orgId: string, activityId: string): Promise<Activity | null> {
@@ -421,95 +252,25 @@ export class DrizzleContentRepository implements ContentRepository {
       .from(activities)
       .where(and(eq(activities.orgId, orgId), eq(activities.id, activityId)))
       .limit(1);
-    if (!row) {
-      return null;
-    }
-    const assetRows = await this.db
-      .select()
-      .from(activityAssets)
-      .where(and(eq(activityAssets.orgId, orgId), eq(activityAssets.activityId, activityId)))
-      .orderBy(activityAssets.seq);
-    return {
-      id: row.id,
-      moduleId: row.moduleId,
-      courseId: row.courseId,
-      seq: row.seq,
-      settings: (row.settings ?? null) as Activity['settings'],
-      assetIds: assetRows.map((r) => r.assetId),
-    };
+    return row ?? null;
   }
 
   async findModule(orgId: string, moduleId: string): Promise<Module | null> {
-    return this.tx(async (tx) => {
-      const [m] = await tx
-        .select()
-        .from(modules)
-        .where(and(eq(modules.orgId, orgId), eq(modules.id, moduleId)))
-        .limit(1);
-      if (!m) {
-        return null;
-      }
-      const all = await this.listModules(tx, orgId, m.courseId);
-      return all.find((x) => x.id === moduleId) ?? null;
-    });
+    const [row] = await this.db
+      .select()
+      .from(modules)
+      .where(and(eq(modules.orgId, orgId), eq(modules.id, moduleId)))
+      .limit(1);
+    return row ?? null;
   }
 
-  /** The course's full ordered module list, each module's activities ordered too. */
+  /** The course's full ordered module list. */
   private async listModules(tx: Tx, orgId: string, courseId: string): Promise<Module[]> {
-    const moduleRows = await tx
+    return tx
       .select()
       .from(modules)
       .where(and(eq(modules.orgId, orgId), eq(modules.courseId, courseId)))
       .orderBy(modules.seq);
-
-    const moduleIds = moduleRows.map((m) => m.id);
-    const activityRows = moduleIds.length
-      ? await tx
-          .select()
-          .from(activities)
-          .where(and(eq(activities.orgId, orgId), inArray(activities.moduleId, moduleIds)))
-          .orderBy(activities.seq)
-      : [];
-
-    const activityIds = activityRows.map((a) => a.id);
-    const assetLinkRows = activityIds.length
-      ? await tx
-          .select()
-          .from(activityAssets)
-          .where(
-            and(eq(activityAssets.orgId, orgId), inArray(activityAssets.activityId, activityIds)),
-          )
-          .orderBy(activityAssets.seq)
-      : [];
-
-    const assetIdsByActivity = new Map<string, string[]>();
-    for (const row of assetLinkRows) {
-      const arr = assetIdsByActivity.get(row.activityId) ?? [];
-      arr.push(row.assetId);
-      assetIdsByActivity.set(row.activityId, arr);
-    }
-
-    const activitiesByModule = new Map<string, Activity[]>();
-    for (const row of activityRows) {
-      const list = activitiesByModule.get(row.moduleId) ?? [];
-      list.push({
-        id: row.id,
-        moduleId: row.moduleId,
-        courseId: row.courseId,
-        seq: row.seq,
-        settings: (row.settings ?? null) as Activity['settings'],
-        assetIds: assetIdsByActivity.get(row.id) ?? [],
-      });
-      activitiesByModule.set(row.moduleId, list);
-    }
-
-    return moduleRows.map((m) => ({
-      id: m.id,
-      courseId: m.courseId,
-      title: m.title,
-      seq: m.seq,
-      activities: activitiesByModule.get(m.id) ?? [],
-    }));
   }
 
   /** Assert the module belongs to the org + course; throw otherwise. */
@@ -674,10 +435,11 @@ export class DrizzleContentRepository implements ContentRepository {
     moduleId: string,
     input: SaveActivityInput,
     activityId?: string,
-  ): Promise<Module[]> {
+  ): Promise<{ modules: Module[]; activity: Activity }> {
     return this.tx(async (tx) => {
       await this.assertModule(tx, orgId, courseId, moduleId);
 
+      let savedId: string;
       if (activityId) {
         const [existing] = await tx
           .select({ id: activities.id })
@@ -701,6 +463,7 @@ export class DrizzleContentRepository implements ContentRepository {
         if (input.assetIds !== undefined) {
           await this.replaceActivityAssets(tx, orgId, activityId, input.assetIds);
         }
+        savedId = activityId;
       } else {
         const existing = await tx
           .select({ seq: activities.seq })
@@ -716,9 +479,18 @@ export class DrizzleContentRepository implements ContentRepository {
           throw new Error('failed to insert activity');
         }
         await this.replaceActivityAssets(tx, orgId, ins.id, input.assetIds ?? []);
+        savedId = ins.id;
       }
 
-      return this.listModules(tx, orgId, courseId);
+      const [activity] = await tx
+        .select()
+        .from(activities)
+        .where(and(eq(activities.orgId, orgId), eq(activities.id, savedId)))
+        .limit(1);
+      if (!activity) {
+        throw new Error('failed to load saved activity');
+      }
+      return { modules: await this.listModules(tx, orgId, courseId), activity };
     });
   }
 
@@ -786,7 +558,7 @@ export class DrizzleContentRepository implements ContentRepository {
     const orderBy = direction === 'desc' ? desc(sortExpr) : asc(sortExpr);
 
     const rows = await this.db
-      .select(downloadSelection)
+      .select()
       .from(downloads)
       .where(where)
       .orderBy(orderBy)
@@ -805,7 +577,7 @@ export class DrizzleContentRepository implements ContentRepository {
 
   async getDownload(orgId: string, id: string): Promise<Download | null> {
     const [row] = await this.db
-      .select(downloadSelection)
+      .select()
       .from(downloads)
       .where(and(eq(downloads.orgId, orgId), eq(downloads.id, id)))
       .limit(1);
@@ -886,24 +658,11 @@ export class DrizzleContentRepository implements ContentRepository {
   }
 
   async listDownloadAssets(orgId: string, downloadId: string): Promise<DownloadAsset[]> {
-    const rows = await this.db
-      .select({
-        id: downloadAssets.id,
-        assetId: downloadAssets.assetId,
-        seq: downloadAssets.seq,
-        displayName: downloadAssets.displayName,
-        filename: assets.filename,
-        contentType: assets.contentType,
-        size: assets.size,
-      })
+    return this.db
+      .select()
       .from(downloadAssets)
-      .innerJoin(
-        assets,
-        and(eq(assets.orgId, downloadAssets.orgId), eq(assets.id, downloadAssets.assetId)),
-      )
       .where(and(eq(downloadAssets.orgId, orgId), eq(downloadAssets.downloadId, downloadId)))
       .orderBy(asc(downloadAssets.seq));
-    return rows.map(toDownloadAsset);
   }
 
   /** Assert the download exists in the org; throw otherwise. */

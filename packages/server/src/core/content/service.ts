@@ -32,6 +32,13 @@ function slugify(title: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
+/** Defaults for keys the stored blob doesn't carry (rows predating a setting). */
+const settingsDefaults: CourseSettings = { transcriptDownloads: false };
+
+function toCourseSettings(stored: unknown): CourseSettings {
+  return { ...settingsDefaults, ...(stored as Partial<CourseSettings> | null) };
+}
+
 export type ContentServiceParams = {
   repo: ContentRepository;
   uow: ContentUnitOfWork;
@@ -70,9 +77,9 @@ export class ContentServiceImpl implements ContentService {
     return {
       ...course,
       settings: {
-        ...course.settings,
+        ...toCourseSettings(course.settings),
         ...settings,
-      },
+      } as Course['settings'],
     };
   }
 
@@ -80,7 +87,7 @@ export class ContentServiceImpl implements ContentService {
     const course = await this.uow.run(async ({ content, outbox }) => {
       const created = await content.create(orgId, input, slugify(input.title));
       await outbox.append([
-        contentEvents.courseCreated.make({ orgId, subject: created.id, data: created }),
+        contentEvents.courseCreated.make({ orgId, data: created }),
       ]);
       return created;
     });
@@ -96,7 +103,7 @@ export class ContentServiceImpl implements ContentService {
         throw new NotFoundError('Course', id);
       }
       await outbox.append([
-        contentEvents.courseUpdated.make({ orgId, subject: updated.id, data: updated }),
+        contentEvents.courseUpdated.make({ orgId, data: updated }),
       ]);
       return updated;
     });
@@ -121,7 +128,7 @@ export class ContentServiceImpl implements ContentService {
       value,
     );
     this.logger.info('course settings patched', { orgId, courseId: id, value });
-    return { ...course.settings, ...merged };
+    return { ...toCourseSettings(course.settings), ...merged };
   }
 
   async deleteCourse(orgId: string, id: string): Promise<void> {
@@ -136,7 +143,7 @@ export class ContentServiceImpl implements ContentService {
       if (!ok) {
         throw new NotFoundError('Course', id);
       }
-      await outbox.append([contentEvents.courseDeleted.make({ orgId, subject: course.id, data: course })]);
+      await outbox.append([contentEvents.courseDeleted.make({ orgId, data: course })]);
     });
     this.logger.info('course deleted', { orgId, courseId: id });
   }
@@ -145,6 +152,9 @@ export class ContentServiceImpl implements ContentService {
 
   listCourseModules(orgId: string, courseId: string): Promise<Module[]> {
     return this.repo.listForCourse(orgId, courseId);
+  }
+  listCourseActivities(orgId: string, courseId: string): Promise<Activity[]> {
+    return this.repo.listActivitiesForCourse(orgId, courseId);
   }
   getActivity(orgId: string, activityId: string): Promise<Activity | null> {
     return this.repo.findActivity(orgId, activityId);
@@ -157,7 +167,7 @@ export class ContentServiceImpl implements ContentService {
     const modules = await this.uow.run(async ({ content, outbox }) => {
       const reordered = await content.reorderModules(orgId, courseId, orderedIds);
       await outbox.append([
-        contentEvents.modulesReordered.make({ orgId, subject: courseId, data: reordered }),
+        contentEvents.modulesReordered.make({ orgId, data: reordered }),
       ]);
       return reordered;
     });
@@ -177,7 +187,7 @@ export class ContentServiceImpl implements ContentService {
       if (!module) {
         throw new Error('failed to load created module');
       }
-      await outbox.append([contentEvents.moduleCreated.make({ orgId, subject: module.id, data: module })]);
+      await outbox.append([contentEvents.moduleCreated.make({ orgId, data: module })]);
       return { modules: all, created: module };
     });
     this.logger.info('module created', { orgId, courseId, moduleId: created.id, title });
@@ -205,7 +215,7 @@ export class ContentServiceImpl implements ContentService {
       if (!module) {
         throw new NotFoundError('Module', moduleId);
       }
-      await outbox.append([contentEvents.moduleUpdated.make({ orgId, subject: module.id, data: module })]);
+      await outbox.append([contentEvents.moduleUpdated.make({ orgId, data: module })]);
       return all;
     });
     this.logger.info('module updated', { orgId, courseId, moduleId, title });
@@ -225,7 +235,7 @@ export class ContentServiceImpl implements ContentService {
         throw new NotFoundError('Module', moduleId);
       }
       const remaining = await content.deleteModule(orgId, courseId, moduleId);
-      await outbox.append([contentEvents.moduleDeleted.make({ orgId, subject: module.id, data: module })]);
+      await outbox.append([contentEvents.moduleDeleted.make({ orgId, data: module })]);
       return remaining;
     });
     this.logger.info('module deleted', { orgId, courseId, moduleId });
@@ -245,7 +255,7 @@ export class ContentServiceImpl implements ContentService {
         throw new NotFoundError('Module', moduleId);
       }
       await outbox.append([
-        contentEvents.activitiesReordered.make({ orgId, subject: moduleId, data: module }),
+        contentEvents.activitiesReordered.make({ orgId, data: module }),
       ]);
       return reordered;
     });
@@ -284,19 +294,17 @@ export class ContentServiceImpl implements ContentService {
         }
       }
 
-      const all = await content.saveActivity(orgId, courseId, moduleId, input, activityId);
-      const module = all.find((m) => m.id === moduleId);
-      // Activities are ordered by seq and a new activity is appended at max(seq)+1.
-      const saved = activityId
-        ? module?.activities.find((a) => a.id === activityId)
-        : module?.activities.at(-1);
-      if (!saved) {
-        throw new Error('failed to load saved activity');
-      }
+      const { modules: all, activity: saved } = await content.saveActivity(
+        orgId,
+        courseId,
+        moduleId,
+        input,
+        activityId,
+      );
       await outbox.append([
         activityId
-          ? contentEvents.activityUpdated.make({ orgId, subject: saved.id, data: saved })
-          : contentEvents.activityCreated.make({ orgId, subject: saved.id, data: saved }),
+          ? contentEvents.activityUpdated.make({ orgId, data: saved })
+          : contentEvents.activityCreated.make({ orgId, data: saved }),
       ]);
       return { modules: all, activity: saved };
     });
@@ -329,7 +337,7 @@ export class ContentServiceImpl implements ContentService {
       }
       const remaining = await content.deleteActivity(orgId, courseId, moduleId, activityId);
       await outbox.append([
-        contentEvents.activityDeleted.make({ orgId, subject: activity.id, data: activity }),
+        contentEvents.activityDeleted.make({ orgId, data: activity }),
       ]);
       return remaining;
     });
@@ -351,7 +359,7 @@ export class ContentServiceImpl implements ContentService {
     const download = await this.uow.run(async ({ content, outbox }) => {
       const created = await content.createDownload(orgId, input, slugify(input.title));
       await outbox.append([
-        contentEvents.downloadCreated.make({ orgId, subject: created.id, data: created }),
+        contentEvents.downloadCreated.make({ orgId, data: created }),
       ]);
       return created;
     });
@@ -367,7 +375,7 @@ export class ContentServiceImpl implements ContentService {
         throw new NotFoundError('Download', id);
       }
       await outbox.append([
-        contentEvents.downloadUpdated.make({ orgId, subject: updated.id, data: updated }),
+        contentEvents.downloadUpdated.make({ orgId, data: updated }),
       ]);
       return updated;
     });
@@ -388,13 +396,13 @@ export class ContentServiceImpl implements ContentService {
         throw new NotFoundError('Download', id);
       }
       await outbox.append([
-        contentEvents.downloadDeleted.make({ orgId, subject: download.id, data: download }),
+        contentEvents.downloadDeleted.make({ orgId, data: download }),
       ]);
     });
     this.logger.info('download deleted', { orgId, downloadId: id });
   }
 
-  // --- download asset links (structure edits — no events) -----------------
+  // --- download asset links ------------------------------------------------
 
   listDownloadAssets(orgId: string, downloadId: string): Promise<DownloadAsset[]> {
     return this.repo.listDownloadAssets(orgId, downloadId);
@@ -405,7 +413,13 @@ export class ContentServiceImpl implements ContentService {
     downloadId: string,
     input: AddDownloadAssetInput,
   ): Promise<DownloadAsset[]> {
-    const assets = await this.repo.addDownloadAsset(orgId, downloadId, input);
+    const assets = await this.uow.run(async ({ content, outbox }) => {
+      const assets = await content.addDownloadAsset(orgId, downloadId, input);
+      await outbox.append([
+        contentEvents.downloadAssetAdded.make({ orgId, data: { downloadId, assets } }),
+      ]);
+      return assets;
+    });
     this.logger.info('download asset added', { orgId, downloadId, assetId: input.assetId });
     return assets;
   }
@@ -415,7 +429,13 @@ export class ContentServiceImpl implements ContentService {
     downloadId: string,
     assetId: string,
   ): Promise<DownloadAsset[]> {
-    const assets = await this.repo.removeDownloadAsset(orgId, downloadId, assetId);
+    const assets = await this.uow.run(async ({ content, outbox }) => {
+      const assets = await content.removeDownloadAsset(orgId, downloadId, assetId);
+      await outbox.append([
+        contentEvents.downloadAssetRemoved.make({ orgId, data: { downloadId, assets } }),
+      ]);
+      return assets;
+    });
     this.logger.info('download asset removed', { orgId, downloadId, assetId });
     return assets;
   }
@@ -426,7 +446,13 @@ export class ContentServiceImpl implements ContentService {
     assetId: string,
     displayName: string | null,
   ): Promise<DownloadAsset[]> {
-    const assets = await this.repo.renameDownloadAsset(orgId, downloadId, assetId, displayName);
+    const assets = await this.uow.run(async ({ content, outbox }) => {
+      const assets = await content.renameDownloadAsset(orgId, downloadId, assetId, displayName);
+      await outbox.append([
+        contentEvents.downloadAssetRenamed.make({ orgId, data: { downloadId, assets } }),
+      ]);
+      return assets;
+    });
     this.logger.info('download asset renamed', { orgId, downloadId, assetId });
     return assets;
   }
@@ -438,23 +464,29 @@ export class ContentServiceImpl implements ContentService {
     downloadId: string,
     assetIds: string[],
   ): Promise<DownloadAsset[]> {
-    const current = await this.repo.listDownloadAssets(orgId, downloadId);
-    const currentIds = new Set(current.map((a) => a.assetId));
-    const requestedIds = new Set(assetIds);
-    if (
-      requestedIds.size !== assetIds.length ||
-      requestedIds.size !== currentIds.size ||
-      !assetIds.every((id) => currentIds.has(id))
-    ) {
-      this.logger.warn('download asset reorder rejected — id set mismatch', {
-        orgId,
-        downloadId,
-        assetIds,
-        currentIds: [...currentIds],
-      });
-      throw new ConflictError("Ordered asset ids does not match the download's current assets");
-    }
-    const assets = await this.repo.reorderDownloadAssets(orgId, downloadId, assetIds);
+    const assets = await this.uow.run(async ({ content, outbox }) => {
+      const current = await content.listDownloadAssets(orgId, downloadId);
+      const currentIds = new Set(current.map((a) => a.assetId));
+      const requestedIds = new Set(assetIds);
+      if (
+        requestedIds.size !== assetIds.length ||
+        requestedIds.size !== currentIds.size ||
+        !assetIds.every((id) => currentIds.has(id))
+      ) {
+        this.logger.warn('download asset reorder rejected — id set mismatch', {
+          orgId,
+          downloadId,
+          assetIds,
+          currentIds: [...currentIds],
+        });
+        throw new ConflictError("Ordered asset ids does not match the download's current assets");
+      }
+      const assets = await content.reorderDownloadAssets(orgId, downloadId, assetIds);
+      await outbox.append([
+        contentEvents.downloadAssetsReordered.make({ orgId, data: { downloadId, assets } }),
+      ]);
+      return assets;
+    });
     this.logger.debug('download assets reordered', { orgId, downloadId });
     return assets;
   }

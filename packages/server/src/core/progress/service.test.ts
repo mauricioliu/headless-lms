@@ -3,7 +3,7 @@ import { ProgressServiceImpl } from './service.js';
 import type { ProgressRepository, ProgressUnitOfWork } from './ports.js';
 import type { ProgressRecord } from './model.js';
 import type { NewProgressEvent } from './events.js';
-import type { ContentService, Module } from '../content/index.js';
+import type { Activity, ContentService, Module } from '../content/index.js';
 import type { ProgressReportItem } from './types.js';
 import { NotFoundError } from '../shared/errors.js';
 
@@ -58,53 +58,56 @@ function fakeUow(repo: ProgressRepository) {
   return { uow, appended };
 }
 
-/** One course, two modules: m1 = [a1 (manual), a2 (manual)], m2 = [a3 (manual)]. */
-function structure(overrides?: { a1Settings?: unknown }): Module[] {
-  return [
-    {
-      id: 'm1',
-      courseId: 'c1',
-      title: 'Module 1',
-      seq: 0,
-      activities: [
-        {
-          id: 'a1',
-          moduleId: 'm1',
-          courseId: 'c1',
-          seq: 0,
-          settings: (overrides?.a1Settings ?? {}) as Module['activities'][number]['settings'],
-          assetIds: [],
-        },
-        { id: 'a2', moduleId: 'm1', courseId: 'c1', seq: 1, settings: {}, assetIds: [] },
-      ],
-    },
-    {
-      id: 'm2',
-      courseId: 'c1',
-      title: 'Module 2',
-      seq: 1,
-      activities: [
-        { id: 'a3', moduleId: 'm2', courseId: 'c1', seq: 0, settings: {}, assetIds: [] },
-      ],
-    },
-  ];
+const AT = new Date('2026-01-01T00:00:00Z');
+
+function module(id: string, seq: number, title: string): Module {
+  return { orgId: 'org-1', id, courseId: 'c1', title, seq, createdAt: AT, updatedAt: AT };
 }
 
-function fakeContent(modules: Module[]): ContentService {
-  const all = modules.flatMap((m) => m.activities);
+function activity(id: string, moduleId: string, seq: number, settings: unknown = {}): Activity {
+  return {
+    orgId: 'org-1',
+    id,
+    moduleId,
+    courseId: 'c1',
+    seq,
+    settings: settings as Activity['settings'],
+    createdAt: AT,
+    updatedAt: AT,
+  };
+}
+
+/** One course, two modules: m1 = [a1 (manual), a2 (manual)], m2 = [a3 (manual)]. */
+function structure(overrides?: { a1Settings?: unknown }): {
+  modules: Module[];
+  activities: Activity[];
+} {
+  return {
+    modules: [module('m1', 0, 'Module 1'), module('m2', 1, 'Module 2')],
+    activities: [
+      activity('a1', 'm1', 0, overrides?.a1Settings ?? {}),
+      activity('a2', 'm1', 1),
+      activity('a3', 'm2', 0),
+    ],
+  };
+}
+
+function fakeContent(modules: Module[], activities: Activity[]): ContentService {
   return {
     listCourseModules: async () => modules,
-    getActivity: async (_orgId: string, id: string) => all.find((a) => a.id === id) ?? null,
+    listCourseActivities: async () => activities,
+    getActivity: async (_orgId: string, id: string) =>
+      activities.find((a) => a.id === id) ?? null,
     getModule: async (_orgId: string, id: string) => modules.find((m) => m.id === id) ?? null,
   } as unknown as ContentService;
 }
 
-function makeService(modules: Module[]) {
+function makeService(structure: { modules: Module[]; activities: Activity[] }) {
   const { repo, records } = fakeRepo();
   const { uow, appended } = fakeUow(repo);
   const svc = new ProgressServiceImpl({
     repo,
-    content: fakeContent(modules),
+    content: fakeContent(structure.modules, structure.activities),
     uow,
   });
   return { svc, records, appended };
@@ -131,7 +134,7 @@ describe('ProgressService.report', () => {
     const second = await svc.report('org-1', input('a1', []));
     expect(first.id).toBe(second.id);
     expect(records).toHaveLength(1);
-    expect(records[0]?.startedAt).toBe('2026-07-23T10:00:00.000Z');
+    expect(records[0]?.startedAt).toEqual(new Date('2026-07-23T10:00:00.000Z'));
     expect(appended).toHaveLength(1);
     expect(appended[0]).toMatchObject({ type: 'progress.record.started', orgId: 'org-1' });
     expect(appended[0]).not.toHaveProperty('courseId');
@@ -169,14 +172,14 @@ describe('ProgressService.report', () => {
       'org-1',
       input('a1', [{ asset: 'ast_v1', seconds: 612 }, { completed: true }]),
     );
-    expect(record.completedAt).toBe('2026-07-23T10:00:00.000Z');
+    expect(record.completedAt).toEqual(new Date('2026-07-23T10:00:00.000Z'));
     expect(record.position).toEqual({ ast_v1: { seconds: 612 } });
   });
 
   it('completed claim on a rule-less activity completes it and emits progress.completed', async () => {
     const { svc, appended } = makeService(structure());
     const record = await svc.report('org-1', input('a1', [{ completed: true }]));
-    expect(record.completedAt).toBe('2026-07-23T10:00:00.000Z');
+    expect(record.completedAt).toEqual(new Date('2026-07-23T10:00:00.000Z'));
     const completed = appended.filter((e) => e.type === 'progress.record.completed');
     expect(completed).toHaveLength(1);
     expect(completed[0]?.data.targetId).toBe('a1');
@@ -204,9 +207,9 @@ describe('ProgressService.report', () => {
     await svc.report('org-1', input('a1', [{ completed: true }]));
     await svc.report('org-1', input('a2', [{ completed: true }]));
     // m1 done, course not (a3 open)
-    expect(records.find((r) => r.targetType === 'module' && r.targetId === 'm1')?.completedAt).toBe(
-      '2026-07-23T10:00:00.000Z',
-    );
+    expect(
+      records.find((r) => r.targetType === 'module' && r.targetId === 'm1')?.completedAt,
+    ).toEqual(new Date('2026-07-23T10:00:00.000Z'));
     expect(records.find((r) => r.targetType === 'course')).toBeUndefined();
     await svc.report('org-1', input('a3', [{ completed: true }]));
     expect(
@@ -230,9 +233,9 @@ describe('ProgressService.report', () => {
   });
 
   it('draft activities (published: false) are excluded from the denominator', async () => {
-    const modules = structure();
-    (modules[0]!.activities[1]! as { settings: unknown }).settings = { published: false };
-    const { svc, records } = makeService(modules);
+    const s = structure();
+    (s.activities[1]! as { settings: unknown }).settings = { published: false };
+    const { svc, records } = makeService(s);
     await svc.report('org-1', input('a1', [{ completed: true }]));
     expect(
       records.find((r) => r.targetType === 'module' && r.targetId === 'm1')?.completedAt,
@@ -254,7 +257,7 @@ describe('ProgressService.report', () => {
       structure({ a1Settings: { completion: { rule: 'manual' } } }),
     );
     const record = await svc.report('org-1', input('a1', [{ completed: true }]));
-    expect(record.completedAt).toBe('2026-07-23T10:00:00.000Z');
+    expect(record.completedAt).toEqual(new Date('2026-07-23T10:00:00.000Z'));
     expect(appended.filter((e) => e.type === 'progress.record.completed')).toHaveLength(1);
   });
 });

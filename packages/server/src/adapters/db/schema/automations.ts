@@ -5,8 +5,14 @@
 import { pgTable, text, boolean, jsonb, timestamp, primaryKey, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { genId } from '../../../core/shared/id.js';
 import { organizations } from './organizations.js';
-import type { AutomationAction, AutomationActionResult } from '@headless-lms/types';
+import type {
+  Automation,
+  AutomationAction,
+  AutomationActionResult,
+  AutomationRun,
+} from '@headless-lms/types/schemas';
 import type { DomainEvent } from '../../../core/shared/ports.js';
+import type { Expect, NoDrift } from './drift.js';
 
 export const automations = pgTable(
   'automations',
@@ -60,3 +66,6 @@ export const automationRuns = pgTable(
     ),
   }),
 );
+
+type _AutomationsDrift = Expect<NoDrift<typeof automations.$inferSelect, Automation>>;
+type _AutomationRunsDrift = Expect<NoDrift<typeof automationRuns.$inferSelect, AutomationRun>>;

@@ -17,7 +17,6 @@ export interface DomainEvent<
   readonly id: string;
   readonly orgId: string;
   readonly version: TVersion;
-  readonly subject: string;
   readonly occurredAt: string;
   readonly data: TData;
   readonly metadata?: EventMetadata | undefined;

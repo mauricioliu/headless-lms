@@ -6,15 +6,21 @@
 // other's comments and the list must not be a directory of the cohort's
 // addresses. The staff-facing comment list carries `authorEmail` separately.
 import type { CommentSettings as DomainCommentSettings } from "@headless-lms/types";
+import {
+  commentAuthorSchema,
+  commentListItemSchema,
+  commentReportSummarySchema,
+  commentSchema,
+  commentStatusSchema,
+  commentViewSchema,
+} from "@headless-lms/types/schemas";
 import { z } from "zod";
-import { ListQuery, type Matches, OrgRole, OrgUserProfileSchema, paginated } from "./shared.js";
+import { ListQuery, type Matches, paginated } from "./shared.js";
 
-export const CommentStatus = z.enum(["pending", "published", "removed"]);
+export const CommentStatus = commentStatusSchema;
 export type CommentStatus = z.infer<typeof CommentStatus>;
 
-export const CommentAuthor = OrgUserProfileSchema.omit({ email: true }).extend({
-  role: OrgRole,
-});
+export const CommentAuthor = commentAuthorSchema;
 export type CommentAuthor = z.infer<typeof CommentAuthor>;
 
 /** Any single emoji. Open, so widening the picker needs no schema change. */
@@ -25,24 +31,7 @@ export type ReactionEmoji = z.infer<typeof ReactionEmoji>;
 export const ReactionCounts = z.record(z.string(), z.number().int());
 export type ReactionCounts = z.infer<typeof ReactionCounts>;
 
-export const CommentView = z.object({
-  id: z.string(),
-  activityId: z.string(),
-  /** null = a root comment. Replies nest one level. */
-  parentId: z.string().nullable(),
-  author: CommentAuthor,
-  /** null for a removed comment — the placeholder carries removedBy instead. */
-  body: z.string().nullable(),
-  status: CommentStatus,
-  /** Who removed it. null unless removed. */
-  removedBy: CommentAuthor.nullable(),
-  reactions: ReactionCounts,
-  /** This reader's own kind; absent when they have none. Ownership is not
-   *  served here — compare `author.id` against `getLearnViewer`. */
-  viewerReaction: ReactionEmoji.optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
+export const CommentView = commentViewSchema;
 export type CommentView = z.infer<typeof CommentView>;
 
 /** What the reaction write returns, so the client never recomputes a count. */
@@ -111,17 +100,7 @@ export const ReportComment = z.object({
 });
 export type ReportComment = z.infer<typeof ReportComment>;
 
-export const Comment = z.object({
-  id: z.string(),
-  activityId: z.string(),
-  parentId: z.string().nullable(),
-  orgUserId: z.string(),
-  body: z.string(),
-  status: CommentStatus,
-  removedBy: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
+export const Comment = commentSchema;
 export type Comment = z.infer<typeof Comment>;
 
 export const CommentReport = z.object({
@@ -136,34 +115,12 @@ export type CommentReport = z.infer<typeof CommentReport>;
 
 /** An unresolved report on a listed comment. Resolved ones are history and are
  *  never served here. */
-export const CommentReportSummary = z.object({
-  reporter: CommentAuthor,
-  reason: z.string(),
-  createdAt: z.string(),
-});
+export const CommentReportSummary = commentReportSummarySchema;
 export type CommentReportSummary = z.infer<typeof CommentReportSummary>;
 
 /** One row of the staff comment list: the comment plus the context a
  *  moderation decision needs, so the list needs no follow-up request. */
-export const CommentListItem = z.object({
-  id: z.string(),
-  parentId: z.string().nullable(),
-  activityId: z.string(),
-  activityTitle: z.string(),
-  /** Resolved from content at read time — a comment stores no course. */
-  courseId: z.string(),
-  /** Served whatever the status: judging a removal means reading what was
-   *  removed. The learner-facing CommentView nulls this instead. */
-  body: z.string(),
-  status: CommentStatus,
-  author: CommentAuthor,
-  /** Staff-scoped surface only. Identifying a spam account is the decision. */
-  authorEmail: z.string(),
-  removedBy: z.string().nullable(),
-  reports: z.array(CommentReportSummary),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
+export const CommentListItem = commentListItemSchema;
 export type CommentListItem = z.infer<typeof CommentListItem>;
 
 export const CommentsQuery = ListQuery.extend({

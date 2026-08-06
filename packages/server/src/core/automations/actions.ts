@@ -7,7 +7,7 @@
 // by the engine as a failed action.
 import type { EmailTemplateId, EmailTemplateParams } from '@headless-lms/types';
 import { entitlementEvents } from '../entitlements/index.js';
-import type { Mailer } from '../shared/mailer.js';
+import type { Mailer, MailerLookups } from '../shared/mailer.js';
 import type { DomainEvent } from '../shared/ports.js';
 import type { AutomationAction } from './model.js';
 import { ALL_EMAIL_TEMPLATE_IDS } from './catalog.js';
@@ -15,8 +15,11 @@ import { ALL_EMAIL_TEMPLATE_IDS } from './catalog.js';
 interface SendEmailDerivation<K extends EmailTemplateId> {
   /** The only event type this template's params can be derived from. */
   trigger: string;
-  /** Undefined = the event doesn't actually carry the expected snapshot. */
-  derive(event: DomainEvent): { to: string; params: EmailTemplateParams[K] } | undefined;
+  /** Undefined = the recipient or content behind the event's ids cannot be resolved. */
+  derive(
+    event: DomainEvent,
+    lookups: MailerLookups,
+  ): Promise<{ to: string; params: EmailTemplateParams[K] } | undefined>;
 }
 
 type SendEmailDerivations = { [K in EmailTemplateId]?: SendEmailDerivation<K> };
@@ -24,29 +27,43 @@ type SendEmailDerivations = { [K in EmailTemplateId]?: SendEmailDerivation<K> };
 export const SEND_EMAIL_DERIVATIONS: SendEmailDerivations = {
   accessGranted: {
     trigger: 'entitlement.created',
-    derive: (event) => {
+    derive: async (event, lookups) => {
       const result = entitlementEvents.entitlementCreated.safeParse(event);
       if (!result.success) {
         return undefined;
       }
       const entitlement = result.data.data;
+      const [to, content] = await Promise.all([
+        lookups.orgUserEmail(entitlement.orgId, entitlement.orgUserId),
+        lookups.contentInfo(entitlement.orgId, entitlement.contentId),
+      ]);
+      if (!to || !content) {
+        return undefined;
+      }
       return {
-        to: entitlement.email,
-        params: { contentTitle: entitlement.content.title, contentId: entitlement.content.id },
+        to,
+        params: { contentTitle: content.title, contentId: content.id },
       };
     },
   },
   accessRevoked: {
     trigger: 'entitlement.deleted',
-    derive: (event) => {
+    derive: async (event, lookups) => {
       const result = entitlementEvents.entitlementDeleted.safeParse(event);
       if (!result.success) {
         return undefined;
       }
       const entitlement = result.data.data;
+      const [to, content] = await Promise.all([
+        lookups.orgUserEmail(entitlement.orgId, entitlement.orgUserId),
+        lookups.contentInfo(entitlement.orgId, entitlement.contentId),
+      ]);
+      if (!to || !content) {
+        return undefined;
+      }
       return {
-        to: entitlement.email,
-        params: { contentTitle: entitlement.content.title },
+        to,
+        params: { contentTitle: content.title },
       };
     },
   },
@@ -61,6 +78,7 @@ export async function executeAction(
   action: AutomationAction,
   event: DomainEvent,
   mailer: Pick<Mailer, 'send'>,
+  lookups: MailerLookups,
 ): Promise<void> {
   switch (action.type) {
     case 'sendEmail': {
@@ -74,7 +92,7 @@ export async function executeAction(
           `sendEmail: template "${template}" cannot be derived from event "${event.type}"`,
         );
       }
-      const derived = derivation.derive(event);
+      const derived = await derivation.derive(event, lookups);
       if (!derived) {
         throw new Error(
           `sendEmail: event "${event.type}" is missing the data required to derive template "${template}"`,

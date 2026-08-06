@@ -2,7 +2,6 @@ import type { ContractNewDomainEvent, DomainEvent, EventMetadata } from "./share
 
 export interface MakeEventInput<TData> {
   readonly orgId: string;
-  readonly subject: string;
   readonly data: TData;
   readonly metadata?: EventMetadata | undefined;
 }

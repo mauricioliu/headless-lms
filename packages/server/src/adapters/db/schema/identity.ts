@@ -2,7 +2,9 @@
 //
 // One row per human, global, storing auth ID in `external_id`.
 import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import type { User } from '@headless-lms/types/schemas';
 import { genId } from '../../../core/shared/id.js';
+import type { Expect, NoDrift } from './drift.js';
 
 export const users = pgTable('users', {
   id: text('id')
@@ -19,3 +21,5 @@ export const users = pgTable('users', {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
+
+type _UsersDrift = Expect<NoDrift<typeof users.$inferSelect, User>>;

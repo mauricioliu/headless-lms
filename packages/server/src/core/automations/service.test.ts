@@ -10,53 +10,58 @@ import type {
   AutomationsRepository,
   AutomationsUnitOfWork,
 } from './ports.js';
-import type { NewDomainEvent, OutboxAppender } from '../shared/ports.js';
+import type { DomainEvent, NewDomainEvent, OutboxAppender } from '../shared/ports.js';
 import type { Entitlement } from '../entitlements/index.js';
 import type { IntegrationsService } from '../integrations/index.js';
-import type { Mailer } from '../shared/mailer.js';
-import { entitlementEvents } from '../entitlements/index.js';
+import type { Mailer, MailerLookups } from '../shared/mailer.js';
 import { automationEvents } from './events.js';
 
 const SAMPLE_ENTITLEMENT: Entitlement = {
+  orgId: 'org-1',
   id: 'e1',
   orgUserId: 's1',
-  firstName: 'Bob',
-  lastName: 'Smith',
-  email: 'bob@example.com',
-  content: { id: 'c1', type: 'course', title: 'Intro' },
+  contentId: 'c1',
   status: 'active',
-  grantedAt: '2026-01-01T00:00:00Z',
+  grantedAt: new Date('2026-01-01T00:00:00Z'),
   expiresAt: null,
   source: 'manual',
 };
 
-const ENTITLEMENT_CREATED_EVENT = {
-  ...entitlementEvents.entitlementCreated.make({
-    orgId: 'org-1',
-    subject: SAMPLE_ENTITLEMENT.id,
-    data: SAMPLE_ENTITLEMENT,
-  }),
-  id: 'evt_1',
-  occurredAt: '2026-01-01T00:00:00Z',
+// Trigger events reach the automations service through the outbox relay, so
+// their payloads are plain JSON — dates are ISO strings, not Date instances.
+const RELAYED_ENTITLEMENT = {
+  ...SAMPLE_ENTITLEMENT,
+  grantedAt: '2026-01-01T00:00:00.000Z',
 };
+
+const ENTITLEMENT_CREATED_EVENT = {
+  type: 'entitlement.created',
+  version: 1,
+  id: 'evt_1',
+  orgId: 'org-1',
+  occurredAt: '2026-01-01T00:00:00Z',
+  data: RELAYED_ENTITLEMENT,
+} as unknown as DomainEvent;
 
 const ENTITLEMENT_DELETED_EVENT = {
-  ...entitlementEvents.entitlementDeleted.make({
-    orgId: 'org-1',
-    subject: SAMPLE_ENTITLEMENT.id,
-    data: SAMPLE_ENTITLEMENT,
-  }),
+  type: 'entitlement.deleted',
+  version: 1,
   id: 'evt_2',
+  orgId: 'org-1',
   occurredAt: '2026-01-01T00:00:00Z',
-};
+  data: RELAYED_ENTITLEMENT,
+} as unknown as DomainEvent;
 
 const AUTOMATION: Automation = {
+  orgId: 'org-1',
   id: 'atm_1',
   name: 'Welcome email',
   description: 'Send a welcome email on access grant',
   trigger: 'entitlement.created',
   actions: [{ type: 'sendEmail', input: { template: 'accessGranted' } }],
   enabled: true,
+  createdAt: new Date('2026-01-01T00:00:00Z'),
+  updatedAt: new Date('2026-01-01T00:00:00Z'),
 };
 
 const DISABLED_AUTOMATION: Automation = { ...AUTOMATION, id: 'atm_2', enabled: false };
@@ -66,10 +71,11 @@ const RUN: AutomationRun = {
   orgId: 'org-1',
   automationId: 'atm_1',
   trigger: 'entitlement.created',
+  eventId: 'evt_1',
   event: ENTITLEMENT_CREATED_EVENT,
   status: 'running',
   actionResults: [],
-  startedAt: '2026-01-02T00:00:00Z',
+  startedAt: new Date('2026-01-02T00:00:00Z'),
   finishedAt: null,
 };
 
@@ -90,7 +96,7 @@ function fakeRunsRepo(over?: Partial<AutomationRunsRepository>): AutomationRunsR
     insert: vi.fn().mockResolvedValue(RUN),
     recordOutcome: vi
       .fn()
-      .mockResolvedValue({ ...RUN, status: 'completed', finishedAt: '2026-01-02T00:00:05Z' }),
+      .mockResolvedValue({ ...RUN, status: 'completed', finishedAt: new Date('2026-01-02T00:00:05Z') }),
     list: vi.fn().mockResolvedValue({ rows: [RUN], total: 1, page: 1, pageSize: 20 }),
     ...over,
   };
@@ -136,12 +142,21 @@ function fakeUow(repo: AutomationsRepository, runsRepo: AutomationRunsRepository
   return { uow, append, appended };
 }
 
+function fakeLookups(over?: Partial<MailerLookups>): MailerLookups {
+  return {
+    orgUserEmail: vi.fn().mockResolvedValue('bob@example.com'),
+    contentInfo: vi.fn().mockResolvedValue({ id: 'c1', title: 'Intro' }),
+    ...over,
+  };
+}
+
 function build(
   repo = fakeRepo(),
   runsRepo = fakeRunsRepo(),
   engine = fakeEngine(),
   mailer = fakeMailer(),
   integrations = fakeIntegrations(),
+  lookups = fakeLookups(),
 ) {
   const { uow, append, appended } = fakeUow(repo, runsRepo);
   const svc = new AutomationsServiceImpl({
@@ -150,6 +165,7 @@ function build(
     uow,
     engine,
     mailer,
+    lookups,
     integrations,
   });
   return { svc, repo, runsRepo, engine, mailer, integrations, append, appended };
@@ -177,7 +193,7 @@ describe('AutomationsService.handle', () => {
         trigger: 'entitlement.created',
         status: 'running',
         actionResults: [],
-        startedAt: '2026-01-02T00:00:00.000Z',
+        startedAt: new Date('2026-01-02T00:00:00.000Z'),
         finishedAt: null,
         event: ENTITLEMENT_CREATED_EVENT,
       }),
@@ -186,7 +202,6 @@ describe('AutomationsService.handle', () => {
       expect.objectContaining({
         type: 'automation.run.started',
         orgId: 'org-1',
-        subject: RUN.id,
         data: RUN,
       }),
     ]);
@@ -223,7 +238,7 @@ describe('AutomationsService.handle', () => {
     const runsRepo = fakeRunsRepo({
       recordOutcome: vi
         .fn()
-        .mockResolvedValue({ ...RUN, status: 'failed', finishedAt: '2026-01-02T00:00:01Z' }),
+        .mockResolvedValue({ ...RUN, status: 'failed', finishedAt: new Date('2026-01-02T00:00:01Z') }),
     });
     const { svc, appended } = build(fakeRepo(), runsRepo, engine);
 
@@ -231,7 +246,7 @@ describe('AutomationsService.handle', () => {
     expect(runsRepo.recordOutcome).toHaveBeenCalledWith('org-1', 'run_1', {
       status: 'failed',
       actionResults: [],
-      finishedAt: '2026-01-02T00:00:00.000Z',
+      finishedAt: new Date('2026-01-02T00:00:00.000Z'),
     });
     expect(appended).toEqual([
       expect.objectContaining({ type: 'automation.run.started' }),
@@ -262,7 +277,6 @@ describe('AutomationsService.handle', () => {
       version: 1,
       id: 'evt_loop',
       orgId: 'org-1',
-      subject: RUN.id,
       occurredAt: '2026-01-01T00:00:00Z',
       data: RUN,
     });
@@ -287,7 +301,6 @@ describe('AutomationsService.handle', () => {
       expect.objectContaining({
         type: 'automation.run.started',
         orgId: 'org-1',
-        subject: RUN.id,
         data: RUN,
       }),
     ]);
@@ -400,7 +413,7 @@ describe('AutomationsService.finalize', () => {
     const completedRun = {
       ...RUN,
       status: 'completed' as const,
-      finishedAt: '2026-01-02T00:00:05Z',
+      finishedAt: new Date('2026-01-02T00:00:05Z'),
     };
     const runsRepo = fakeRunsRepo({ recordOutcome: vi.fn().mockResolvedValue(completedRun) });
     const { svc, appended } = build(fakeRepo(), runsRepo);
@@ -413,20 +426,19 @@ describe('AutomationsService.finalize', () => {
     expect(runsRepo.recordOutcome).toHaveBeenCalledWith('org-1', 'run_1', {
       status: 'completed',
       actionResults: results,
-      finishedAt: '2026-01-02T00:00:00.000Z',
+      finishedAt: new Date('2026-01-02T00:00:00.000Z'),
     });
     expect(appended).toEqual([
       expect.objectContaining({
         type: 'automation.run.completed',
         orgId: 'org-1',
-        subject: completedRun.id,
         data: completedRun,
       }),
     ]);
   });
 
   it('records a failed run and appends automation.run.failed + one automation.action.failed per failed result', async () => {
-    const failedRun = { ...RUN, status: 'failed' as const, finishedAt: '2026-01-02T00:00:05Z' };
+    const failedRun = { ...RUN, status: 'failed' as const, finishedAt: new Date('2026-01-02T00:00:05Z') };
     const runsRepo = fakeRunsRepo({ recordOutcome: vi.fn().mockResolvedValue(failedRun) });
     const { svc, appended } = build(fakeRepo(), runsRepo);
     const results: AutomationActionResult[] = [
@@ -439,13 +451,11 @@ describe('AutomationsService.finalize', () => {
       expect.objectContaining({
         type: 'automation.run.failed',
         orgId: 'org-1',
-        subject: failedRun.id,
         data: failedRun,
       }),
       expect.objectContaining({
         type: 'automation.action.failed',
         orgId: 'org-1',
-        subject: 'run_1',
         data: results[0],
       }),
     ]);
@@ -487,7 +497,6 @@ describe('AutomationsService CRUD', () => {
       expect.objectContaining({
         type: 'automation.created',
         orgId: 'org-1',
-        subject: AUTOMATION.id,
         data: AUTOMATION,
       }),
     ]);
@@ -523,7 +532,6 @@ describe('AutomationsService CRUD', () => {
       expect.objectContaining({
         type: 'automation.updated',
         orgId: 'org-1',
-        subject: AUTOMATION.id,
         data: AUTOMATION,
       }),
     ]);
@@ -536,7 +544,6 @@ describe('AutomationsService CRUD', () => {
       expect.objectContaining({
         type: 'automation.enabled',
         orgId: 'org-1',
-        subject: AUTOMATION.id,
         data: AUTOMATION,
       }),
     ]);
@@ -549,7 +556,6 @@ describe('AutomationsService CRUD', () => {
       expect.objectContaining({
         type: 'automation.disabled',
         orgId: 'org-1',
-        subject: AUTOMATION.id,
         data: AUTOMATION,
       }),
     ]);
@@ -571,7 +577,6 @@ describe('AutomationsService CRUD', () => {
       expect.objectContaining({
         type: 'automation.deleted',
         orgId: 'org-1',
-        subject: AUTOMATION.id,
         data: AUTOMATION,
       }),
     ]);

@@ -5,6 +5,9 @@
 import type { Validation } from "./schemas/integrations.js";
 
 export type {
+  ConfigureInput,
+  ConnectInput,
+  Connection,
   Validation,
 } from "./schemas/integrations.js";
 
@@ -51,25 +54,4 @@ export interface Integration {
   validateConfig(config: unknown): Validation;
   /** The actions this integration can be invoked with (may be empty). */
   actions: Action[];
-}
-
-export interface Connection {
-  readonly id: string;
-  integrationId: string;
-  config: Record<string, unknown>;
-  active: boolean;
-  credentialRef: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ConnectInput {
-  integrationId: string;
-  secrets: Record<string, unknown>;
-  config?: Record<string, unknown> | undefined;
-}
-
-export interface ConfigureInput {
-  config?: Record<string, unknown> | undefined;
-  active?: boolean | undefined;
 }

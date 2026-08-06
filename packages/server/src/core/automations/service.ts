@@ -26,8 +26,9 @@ import type {
   AutomationsUnitOfWork,
 } from './ports.js';
 import type { DomainEvent, Logger } from '../shared/ports.js';
+import type { JsonValue } from '@headless-lms/types';
 import { noopLogger } from '../shared/logger.js';
-import type { Mailer } from '../shared/mailer.js';
+import type { Mailer, MailerLookups } from '../shared/mailer.js';
 import type { IntegrationsService } from '../integrations/index.js';
 import { automationEvents } from './events.js';
 
@@ -48,6 +49,7 @@ export type AutomationsServiceParams = {
   uow: AutomationsUnitOfWork;
   engine: AutomationEngine;
   mailer: Pick<Mailer, 'send'>;
+  lookups: MailerLookups;
   integrations: Pick<IntegrationsService, 'available'>;
   logger?: Logger;
 };
@@ -58,6 +60,7 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
   private readonly uow: AutomationsUnitOfWork;
   private readonly engine: AutomationEngine;
   private readonly mailer: Pick<Mailer, 'send'>;
+  private readonly lookups: MailerLookups;
   private readonly integrations: Pick<IntegrationsService, 'available'>;
   private readonly logger: Logger;
 
@@ -67,6 +70,7 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
     this.uow = params.uow;
     this.engine = params.engine;
     this.mailer = params.mailer;
+    this.lookups = params.lookups;
     this.integrations = params.integrations;
     this.logger = params.logger ?? noopLogger;
   }
@@ -106,7 +110,7 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
           event,
           status: 'running',
           actionResults: [],
-          startedAt: new Date().toISOString(),
+          startedAt: new Date(),
           finishedAt: null,
         });
         if (!inserted) {
@@ -116,7 +120,6 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
         await outbox.append([
           automationEvents.runStarted.make({
             orgId: event.orgId,
-            subject: inserted.id,
             data: inserted,
           }),
         ]);
@@ -153,13 +156,12 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
         const failed = await runs.recordOutcome(run.orgId, run.id, {
           status: 'failed',
           actionResults: run.actionResults,
-          finishedAt: new Date().toISOString(),
+          finishedAt: new Date(),
         });
         if (failed) {
           await outbox.append([
             automationEvents.runFailed.make({
               orgId: run.orgId,
-              subject: failed.id,
               data: failed,
             }),
           ]);
@@ -180,7 +182,7 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
     if (!action) {
       throw new Error(`automation ${d.automationId} run ${d.runId}: no action at index ${index}`);
     }
-    await executeAction(action, d.event, this.mailer);
+    await executeAction(action, d.event, this.mailer, this.lookups);
     return { index, type: action.type, status: 'completed' };
   }
 
@@ -193,21 +195,20 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
       const run = await runs.recordOutcome(d.orgId, d.runId, {
         status,
         actionResults: results,
-        finishedAt: new Date().toISOString(),
+        finishedAt: new Date(),
       });
       if (!run) {
         return;
       }
       const runEvent =
         status === 'completed'
-          ? automationEvents.runCompleted.make({ orgId: d.orgId, subject: run.id, data: run })
-          : automationEvents.runFailed.make({ orgId: d.orgId, subject: run.id, data: run });
+          ? automationEvents.runCompleted.make({ orgId: d.orgId, data: run })
+          : automationEvents.runFailed.make({ orgId: d.orgId, data: run });
       const actionFailedEvents = results
         .filter((r) => r.status === 'failed')
         .map((result) => ({
           ...automationEvents.actionFailed.make({
             orgId: d.orgId,
-            subject: d.runId,
             data: result,
           }),
         }));
@@ -222,7 +223,7 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
     const automation = await this.uow.run(async ({ automations, outbox }) => {
       const created = await automations.insert(orgId, input);
       await outbox.append([
-        automationEvents.automationCreated.make({ orgId, subject: created.id, data: created }),
+        automationEvents.automationCreated.make({ orgId, data: created }),
       ]);
       return created;
     });
@@ -248,18 +249,16 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
           input.enabled
             ? automationEvents.automationEnabled.make({
                 orgId,
-                subject: updated.id,
                 data: updated,
               })
             : automationEvents.automationDisabled.make({
                 orgId,
-                subject: updated.id,
                 data: updated,
               }),
         ]);
       } else {
         await outbox.append([
-          automationEvents.automationUpdated.make({ orgId, subject: updated.id, data: updated }),
+          automationEvents.automationUpdated.make({ orgId, data: updated }),
         ]);
       }
       return updated;
@@ -277,7 +276,7 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
         return null;
       }
       await outbox.append([
-        automationEvents.automationDeleted.make({ orgId, subject: removed.id, data: removed }),
+        automationEvents.automationDeleted.make({ orgId, data: removed }),
       ]);
       return removed;
     });
@@ -310,7 +309,7 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
         integration.actions.map((action) => ({
           type: `${integration.id}.${action.id}`,
           description: action.description,
-          inputSchema: action.inputSchema,
+          inputSchema: action.inputSchema as Record<string, JsonValue>,
           source: integration.id,
         })),
       ),

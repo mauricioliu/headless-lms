@@ -29,7 +29,7 @@ export class IdentityServiceImpl implements IdentityService {
     const created = await this.uow.run(async ({ identity, outbox }) => {
       const user = await identity.insertUser(input);
       await outbox.append([
-        identityEvents.userCreated.make({ orgId: '-', subject: user.id, data: user }),
+        identityEvents.userCreated.make({ orgId: '-', data: user }),
       ]);
       return user;
     });
@@ -54,7 +54,7 @@ export class IdentityServiceImpl implements IdentityService {
         ...(input.lastName !== undefined && { lastName: input.lastName }),
       });
       await outbox.append([
-        identityEvents.userUpdated.make({ orgId: '-', subject: user!.id, data: user! }),
+        identityEvents.userUpdated.make({ orgId: '-', data: user! }),
       ]);
       return user!;
     });
@@ -71,7 +71,7 @@ export class IdentityServiceImpl implements IdentityService {
     const updated = await this.uow.run(async ({ identity, outbox }) => {
       const user = await identity.updateUser(id, input);
       await outbox.append([
-        identityEvents.userUpdated.make({ orgId: '-', subject: user!.id, data: user! }),
+        identityEvents.userUpdated.make({ orgId: '-', data: user! }),
       ]);
       return user!;
     });

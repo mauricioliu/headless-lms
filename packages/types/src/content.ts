@@ -1,8 +1,10 @@
 export type {
   Activity,
+  ActivityAsset,
   ActivityCommentsRule,
   ActivitySettings,
   AddDownloadAssetInput,
+  ContentItem,
   ContentType,
   Course,
   CourseSettings,

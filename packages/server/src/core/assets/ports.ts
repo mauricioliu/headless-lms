@@ -7,6 +7,7 @@ import type {
   RequestUploadInput,
   UploadTicket,
 } from './model.js';
+import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 
 export interface AssetsService {
   /** Register an asset and return a presigned URL to upload its bytes. */
@@ -38,3 +39,10 @@ export interface AssetsRepository {
   ): Promise<Asset | null>;
   delete(id: string): Promise<boolean>;
 }
+
+export interface AssetsWriteScope {
+  assets: AssetsRepository;
+  outbox: OutboxAppender;
+}
+
+export type AssetsUnitOfWork = UnitOfWork<AssetsWriteScope>;

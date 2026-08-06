@@ -103,7 +103,6 @@ export class OrganizationServiceImpl implements OrganizationService {
       await outbox.append([
         organizationEvents.organizationCreated.make({
           orgId: created.id,
-          subject: created.id,
           data: created,
         }),
       ]);
@@ -123,7 +122,7 @@ export class OrganizationServiceImpl implements OrganizationService {
         throw new NotFoundError('Organization', id);
       }
       await outbox.append([
-        organizationEvents.organizationUpdated.make({ orgId: id, subject: id, data: updated }),
+        organizationEvents.organizationUpdated.make({ orgId: id, data: updated }),
       ]);
       return updated;
     });
@@ -139,7 +138,6 @@ export class OrganizationServiceImpl implements OrganizationService {
       await outbox.append([
         organizationEvents.organizationDeleted.make({
           orgId: deleted.id,
-          subject: deleted.id,
           data: deleted,
         }),
       ]);
@@ -153,7 +151,7 @@ export class OrganizationServiceImpl implements OrganizationService {
     const orgUser = await this.uow.run(async ({ organizations, outbox }) => {
       const created = await organizations.createOrgUser({ orgId, role, userId, status: 'active' });
       await outbox.append([
-        organizationEvents.orgUserLinked.make({ orgId, subject: created.id, data: created }),
+        organizationEvents.orgUserLinked.make({ orgId, data: created }),
       ]);
       return created;
     });
@@ -170,7 +168,6 @@ export class OrganizationServiceImpl implements OrganizationService {
       await outbox.append([
         organizationEvents.orgUserDeleted.make({
           orgId,
-          subject: deletedUser.id,
           data: deletedUser,
         }),
       ]);
@@ -208,7 +205,7 @@ export class OrganizationServiceImpl implements OrganizationService {
         expiresAt,
       });
       const events: NewOrganizationEvent[] = [
-        organizationEvents.inviteCreated.make({ orgId, subject: row.id, data: row }),
+        organizationEvents.inviteCreated.make({ orgId, data: row }),
       ];
       if (person) {
         // Idempotent: re-inviting an address rotates the token without
@@ -221,7 +218,7 @@ export class OrganizationServiceImpl implements OrganizationService {
         });
         if (created) {
           events.push(
-            organizationEvents.studentCreated.make({ orgId, subject: orgUser.id, data: orgUser }),
+            organizationEvents.studentCreated.make({ orgId, data: orgUser }),
           );
         }
       }
@@ -341,7 +338,6 @@ export class OrganizationServiceImpl implements OrganizationService {
       const events: NewOrganizationEvent[] = [
         organizationEvents.inviteAccepted.make({
           orgId: invite.orgId,
-          subject: acceptedInvite.id,
           data: acceptedInvite,
         }),
       ];
@@ -350,12 +346,10 @@ export class OrganizationServiceImpl implements OrganizationService {
           created
             ? organizationEvents.studentCreated.make({
                 orgId: invite.orgId,
-                subject: row.id,
                 data: row,
               })
             : organizationEvents.studentLinked.make({
                 orgId: invite.orgId,
-                subject: row.id,
                 data: row,
               }),
         );
@@ -363,7 +357,6 @@ export class OrganizationServiceImpl implements OrganizationService {
         events.push(
           organizationEvents.orgUserLinked.make({
             orgId: invite.orgId,
-            subject: row.id,
             data: row,
           }),
         );
@@ -395,7 +388,7 @@ export class OrganizationServiceImpl implements OrganizationService {
       const events: NewOrganizationEvent[] = [];
       if (deletedUser.role === STUDENT_ROLE) {
         events.push(
-          organizationEvents.studentDeleted.make({ orgId, subject: orgUser.id, data: orgUser }),
+          organizationEvents.studentDeleted.make({ orgId, data: orgUser }),
         );
       }
 

@@ -13,8 +13,8 @@ import type { DomainEvent, OutboxAppender, UnitOfWork } from '../shared/ports.js
 
 export type { AutomationDispatch, AutomationExecutor, AutomationEngine } from '@headless-lms/types';
 
-/** A run row before persistence assigns its id — mirrors `NewDomainEvent`. */
-export type NewAutomationRun = Omit<AutomationRun, 'id'>;
+/** A run row before persistence assigns its id and event_id. */
+export type NewAutomationRun = Omit<AutomationRun, 'id' | 'eventId'>;
 
 // Inbound port (use cases the service exposes).
 export interface AutomationsService {
@@ -57,7 +57,7 @@ export interface AutomationRunsRepository {
     outcome: {
       status: AutomationRun['status'];
       actionResults: AutomationRun['actionResults'];
-      finishedAt: string;
+      finishedAt: Date;
     },
   ): Promise<AutomationRun | null>;
   list(orgId: string, automationId: string, query: AutomationRunsQuery): Promise<Page<AutomationRun>>;

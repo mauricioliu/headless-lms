@@ -9,6 +9,7 @@ import type {
   Logger,
 } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
+import type { EventOutbox } from '@headless-lms/types/schemas';
 import type { DbExecutor } from '../index.js';
 import { eventOutbox } from '../schema/outbox.js';
 
@@ -30,7 +31,7 @@ export class DrizzleOutboxAppender implements OutboxAppender {
       events.map((event) => ({
         type: event.type,
         orgId: event.orgId,
-        payload: event as unknown as Record<string, unknown>,
+        payload: event as unknown as EventOutbox['payload'],
       })),
     );
   }

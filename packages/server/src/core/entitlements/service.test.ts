@@ -5,14 +5,12 @@ import type { Entitlement } from './model.js';
 import type { NewDomainEvent, OutboxAppender } from '../shared/ports.js';
 
 const SAMPLE: Entitlement = {
+  orgId: 'org-1',
   id: 'e1',
   orgUserId: 's1',
-  firstName: 'Bob',
-  lastName: 'Smith',
-  email: 'bob@example.com',
-  content: { id: 'c1', type: 'course', title: 'Intro' },
+  contentId: 'c1',
   status: 'active',
-  grantedAt: '2026-01-01T00:00:00Z',
+  grantedAt: new Date('2026-01-01T00:00:00Z'),
   expiresAt: null,
   source: 'manual',
 };
@@ -74,7 +72,6 @@ describe('EntitlementsService', () => {
       expect.objectContaining({
         type: 'entitlement.created',
         orgId: 'org-1',
-        subject: SAMPLE.id,
         data: SAMPLE,
       }),
     ]);
@@ -93,7 +90,6 @@ describe('EntitlementsService', () => {
       expect.objectContaining({
         type: 'entitlement.deleted',
         orgId: 'org-1',
-        subject: SAMPLE.id,
         data: SAMPLE,
       }),
     ]);
@@ -106,7 +102,6 @@ describe('EntitlementsService', () => {
       expect.objectContaining({
         type: 'entitlement.updated',
         orgId: 'org-1',
-        subject: SAMPLE.id,
         data: SAMPLE,
       }),
     ]);
@@ -173,7 +168,6 @@ describe('logging', () => {
       entitlementId: entitlement.id,
       orgUserId: 's1',
       contentId: 'c1',
-      contentType: 'course',
     });
     expect(entries[1]?.meta).toMatchObject({
       orgId: 'org-1',

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { AssetsServiceImpl } from './service.js';
-import type { AssetsRepository } from './ports.js';
+import type { AssetsRepository, AssetsUnitOfWork } from './ports.js';
 import type { Asset } from './model.js';
-import type { ObjectStorage } from '../shared/ports.js';
+import type { NewDomainEvent, ObjectStorage, OutboxAppender } from '../shared/ports.js';
 import { createCapturingLogger } from '../shared/logger.js';
 
 function fakeStorage(): ObjectStorage {
@@ -53,13 +53,27 @@ function fakeRepo() {
   return { repo, assets };
 }
 
+function fakeUow(repo: AssetsRepository) {
+  const appended: NewDomainEvent[] = [];
+  const append = vi.fn(async (events: NewDomainEvent[]) => {
+    appended.push(...events);
+  });
+  const outbox: OutboxAppender = { append };
+  const uow: AssetsUnitOfWork = {
+    run: (fn) => fn({ assets: repo, outbox }),
+  };
+  return { uow, appended };
+}
+
 describe('AssetsService logging', () => {
   it('logs upload request, confirm, and removal', async () => {
     const { logger, entries } = createCapturingLogger();
     const { repo } = fakeRepo();
+    const { uow, appended } = fakeUow(repo);
     const svc = new AssetsServiceImpl({
       storage: fakeStorage(),
       repo,
+      uow,
       logger,
     });
 
@@ -82,5 +96,25 @@ describe('AssetsService logging', () => {
       assetId: ticket.asset.id,
       kind: 'video',
     });
+    expect(appended).toEqual([
+      {
+        type: 'asset.created',
+        version: 1,
+        orgId: 'org-1',
+        data: expect.objectContaining({ id: ticket.asset.id, status: 'pending' }),
+      },
+      {
+        type: 'asset.ready',
+        version: 1,
+        orgId: 'org-1',
+        data: expect.objectContaining({ id: ticket.asset.id, status: 'ready', size: 42 }),
+      },
+      {
+        type: 'asset.deleted',
+        version: 1,
+        orgId: 'org-1',
+        data: expect.objectContaining({ id: ticket.asset.id, status: 'ready', size: 42 }),
+      },
+    ]);
   });
 });

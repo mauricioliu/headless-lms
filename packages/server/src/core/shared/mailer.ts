@@ -8,6 +8,13 @@ import type {
   TemplateRenderer,
 } from './ports.js';
 
+/** Resolves the recipient/content details a template needs when the
+ *  triggering event carries only row ids. Wired by the app layer. */
+export interface MailerLookups {
+  orgUserEmail(orgId: string, orgUserId: string): Promise<string | null>;
+  contentInfo(orgId: string, contentId: string): Promise<{ id: string; title: string } | null>;
+}
+
 export class Mailer {
   constructor(
     private readonly templates: TemplateRenderer,

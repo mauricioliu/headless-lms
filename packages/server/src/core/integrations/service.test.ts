@@ -43,13 +43,14 @@ const slack: Integration = {
 };
 
 const SAMPLE: Connection = {
+  orgId: 'org-1',
   id: 'con_1',
   integrationId: 'stripe',
   config: { mode: 'test' },
   active: true,
   credentialRef: 'crd_1',
-  createdAt: '2026-01-01T00:00:00Z',
-  updatedAt: '2026-01-01T00:00:00Z',
+  createdAt: new Date('2026-01-01T00:00:00Z'),
+  updatedAt: new Date('2026-01-01T00:00:00Z'),
 };
 
 const registry = createIntegrationsRegistry([stripe, slack]);
@@ -145,7 +146,6 @@ describe('IntegrationsService', () => {
       expect.objectContaining({
         type: 'integration.connection.created',
         orgId: 'org-1',
-        subject: conn.id,
         data: conn,
       }),
     ]);
@@ -200,7 +200,6 @@ describe('IntegrationsService', () => {
     expect(appended).toEqual([
       expect.objectContaining({
         type: 'integration.connection.updated',
-        subject: SAMPLE.id,
         data: SAMPLE,
       }),
     ]);
@@ -218,12 +217,11 @@ describe('IntegrationsService', () => {
     await svc.configure('org-1', 'con_1', { active: false });
     expect(repo.update).toHaveBeenCalledWith('org-1', 'con_1', {
       active: false,
-      updatedAt: '2026-01-02T00:00:00.000Z',
+      updatedAt: new Date('2026-01-02T00:00:00.000Z'),
     });
     expect(appended).toEqual([
       expect.objectContaining({
         type: 'integration.connection.updated',
-        subject: SAMPLE.id,
         data: SAMPLE,
       }),
     ]);
@@ -243,7 +241,6 @@ describe('IntegrationsService', () => {
     expect(appended).toEqual([
       expect.objectContaining({
         type: 'integration.connection.removed',
-        subject: SAMPLE.id,
         data: SAMPLE,
       }),
     ]);

@@ -17,9 +17,19 @@ import {
   check,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import type {
+  Activity,
+  ActivityAsset,
+  ContentItem,
+  Course,
+  Download,
+  DownloadAsset,
+  Module,
+} from '@headless-lms/types/schemas';
 import { genId } from '../../../core/shared/id.js';
 import { organizations } from './organizations.js';
 import { assets } from './assets.js';
+import type { Expect, NoDrift } from './drift.js';
 
 // The content registry (supertype table): one row per piece of content, any
 // type. A concrete content table shares its PK with a registry row (same id)
@@ -57,6 +67,7 @@ export const courses = pgTable(
     // Pinned to 'course' so the composite FK below cannot attach this row to a
     // registry row of another content type.
     type: text('type')
+      .$type<Course['type']>()
       .notNull()
       .generatedAlwaysAs(sql`'course'`),
     title: text('title').notNull(),
@@ -70,7 +81,7 @@ export const courses = pgTable(
     thumbnailAssetId: text('thumbnail_asset_id'),
     // Course-wide delivery toggles (CourseSettings). Modelled, unlike the
     // per-activity blob: a fixed surface the API validates.
-    settings: jsonb('settings').notNull().default({}),
+    settings: jsonb('settings').$type<Course['settings']>().notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
@@ -142,7 +153,7 @@ export const activities = pgTable(
     seq: integer('seq').notNull(),
     // Opaque per-activity blob: title, type, body, completion rule — whatever the
     // content needs. Assets are the one thing kept out of the blob.
-    settings: jsonb('settings'),
+    settings: jsonb('settings').$type<Activity['settings']>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
@@ -207,6 +218,7 @@ export const downloads = pgTable(
     // Pinned to 'download' so the composite FK below cannot attach this row to
     // a registry row of another content type.
     type: text('type')
+      .$type<Download['type']>()
       .notNull()
       .generatedAlwaysAs(sql`'download'`),
     title: text('title').notNull(),
@@ -271,3 +283,11 @@ export const downloadAssets = pgTable(
     downloadAssetUq: unique().on(t.orgId, t.downloadId, t.assetId),
   }),
 );
+
+type _ContentItemsDrift = Expect<NoDrift<typeof contentItems.$inferSelect, ContentItem>>;
+type _CoursesDrift = Expect<NoDrift<typeof courses.$inferSelect, Course>>;
+type _ModulesDrift = Expect<NoDrift<typeof modules.$inferSelect, Module>>;
+type _ActivitiesDrift = Expect<NoDrift<typeof activities.$inferSelect, Activity>>;
+type _ActivityAssetsDrift = Expect<NoDrift<typeof activityAssets.$inferSelect, ActivityAsset>>;
+type _DownloadsDrift = Expect<NoDrift<typeof downloads.$inferSelect, Download>>;
+type _DownloadAssetsDrift = Expect<NoDrift<typeof downloadAssets.$inferSelect, DownloadAsset>>;

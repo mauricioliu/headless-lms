@@ -2,6 +2,7 @@
 // a piece of content — generic over content types (course today) — its
 // validity + source. Distinct from payment and from completion.
 import { z } from "zod";
+import { entitlementSchema } from "@headless-lms/types/schemas";
 import { ListQuery, paginated } from "./shared.js";
 
 export const EntitlementStatus = z.enum(["active", "expired", "revoked"]);
@@ -19,19 +20,7 @@ export const ContentRef = z.object({
 });
 export type ContentRef = z.infer<typeof ContentRef>;
 
-export const Entitlement = z.object({
-  id: z.string(),
-  orgUserId: z.string(),
-  firstName: z.string().nullable(),
-  lastName: z.string().nullable(),
-  email: z.string(),
-  content: ContentRef,
-  status: EntitlementStatus,
-  grantedAt: z.string(),
-  expiresAt: z.string().nullable(),
-  /** Free text: "manual", "import", integration ids, … */
-  source: z.string(),
-});
+export const Entitlement = entitlementSchema;
 export type Entitlement = z.infer<typeof Entitlement>;
 
 export const EntitlementsQuery = ListQuery.extend({
@@ -52,7 +41,7 @@ export type EntitlementsPage = z.infer<typeof EntitlementsPage>;
 export const GrantEntitlement = z.object({
   orgUserId: z.string(),
   contentId: z.string(),
-  expiresAt: z.string().nullable(),
+  expiresAt: z.coerce.date().nullable(),
 });
 export type GrantEntitlement = z.infer<typeof GrantEntitlement>;
 

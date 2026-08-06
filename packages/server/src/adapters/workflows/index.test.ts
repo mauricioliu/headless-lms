@@ -20,7 +20,6 @@ function dispatch(): AutomationDispatch {
       version: 1,
       id: 'evt_1',
       orgId: 'org-1',
-      subject: 'student_1',
       occurredAt: '2026-01-01T00:00:00.000Z',
       data: {},
     },

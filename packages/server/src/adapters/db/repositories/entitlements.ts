@@ -2,7 +2,6 @@ import { and, asc, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import type { DbExecutor } from '../index.js';
 import type { EntitlementsRepository } from '../../../core/entitlements/ports.js';
 import type {
-  ContentRef,
   Entitlement,
   EntitlementStatus,
   EntitlementsQuery,
@@ -15,9 +14,11 @@ import { contentItems, courses, downloads } from '../schema/content.js';
 import type { Logger } from '@headless-lms/types';
 import { noopLogger } from '../../../core/shared/logger.js';
 
+type ResolvedStatus = 'active' | 'expired' | 'revoked';
+
 // CASE expression: revoked beats everything; otherwise an elapsed expiry reads as
 // expired; otherwise active.
-const derivedStatus = sql<EntitlementStatus>`case
+const derivedStatus = sql<ResolvedStatus>`case
   when ${entitlements.status} = 'revoked' then 'revoked'
   when ${entitlements.expiresAt} is not null and ${entitlements.expiresAt} < now() then 'expired'
   else 'active'
@@ -43,47 +44,37 @@ const sortColumns = {
 } as const;
 
 const selection = {
+  orgId: entitlements.orgId,
   id: entitlements.id,
   orgUserId: entitlements.orgUserId,
-  firstName: users.firstName,
-  lastName: users.lastName,
-  email: users.email,
   contentId: entitlements.contentId,
-  contentType: contentItems.type,
-  contentTitle,
-  status: derivedStatus,
+  status: entitlements.status,
+  source: entitlements.source,
   grantedAt: entitlements.grantedAt,
   expiresAt: entitlements.expiresAt,
-  source: entitlements.source,
 } as const;
 
 interface Row {
+  orgId: string;
   id: string;
   orgUserId: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string;
   contentId: string;
-  contentType: ContentRef['type'];
-  contentTitle: string;
   status: EntitlementStatus;
+  source: string;
   grantedAt: Date;
   expiresAt: Date | null;
-  source: string;
 }
 
 function toEntitlement(row: Row): Entitlement {
   return {
+    orgId: row.orgId,
     id: row.id,
     orgUserId: row.orgUserId,
-    firstName: row.firstName,
-    lastName: row.lastName,
-    email: row.email,
-    content: { id: row.contentId, type: row.contentType, title: row.contentTitle },
+    contentId: row.contentId,
     status: row.status,
-    grantedAt: row.grantedAt.toISOString(),
-    expiresAt: row.expiresAt ? row.expiresAt.toISOString() : null,
     source: row.source,
+    grantedAt: row.grantedAt,
+    expiresAt: row.expiresAt,
   };
 }
 
@@ -203,7 +194,7 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
         status: 'active',
         source: 'manual',
         grantedAt: new Date(),
-        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+        expiresAt: input.expiresAt,
       })
       .onConflictDoUpdate({
         target: [entitlements.orgId, entitlements.orgUserId, entitlements.contentId],
@@ -211,18 +202,14 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
           status: 'active',
           source: 'manual',
           grantedAt: new Date(),
-          expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+          expiresAt: input.expiresAt,
         },
       })
-      .returning({ id: entitlements.id });
+      .returning(selection);
     if (!row) {
       throw new Error('failed to insert entitlement');
     }
-    const entitlement = await this.findById(orgId, row.id);
-    if (!entitlement) {
-      throw new Error('failed to read inserted entitlement');
-    }
-    return entitlement;
+    return toEntitlement(row);
   }
 
   async setStatus(
@@ -234,19 +221,11 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
       .update(entitlements)
       .set({ status })
       .where(and(eq(entitlements.orgId, orgId), eq(entitlements.id, id)))
-      .returning({ id: entitlements.id });
+      .returning(selection);
     if (!row) {
       return null;
     }
-    return this.findById(orgId, row.id);
-  }
-
-  private async findById(orgId: string, id: string): Promise<Entitlement | null> {
-    const rows = await this.joined(
-      and(eq(entitlements.orgId, orgId), eq(entitlements.id, id)),
-    ).limit(1);
-    const [row] = rows;
-    return row ? toEntitlement(row) : null;
+    return toEntitlement(row);
   }
 
   /** Existence check scoped to the course case: same status predicate as

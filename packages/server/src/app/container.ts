@@ -33,7 +33,7 @@ import { registerNotificationSubscribers } from './notifications.js';
 import { StudentsReportServiceImpl } from '../reporting/students/index.js';
 import { DashboardReportServiceImpl } from '../reporting/dashboard/index.js';
 import { LearnReportServiceImpl } from '../reporting/learn/index.js';
-import { Mailer } from '../core/shared/mailer.js';
+import { Mailer, type MailerLookups } from '../core/shared/mailer.js';
 import { SettingsService } from '../core/shared/settings.js';
 
 import { DrizzleEntitlementsRepository } from '../adapters/db/repositories/entitlements.js';
@@ -308,6 +308,10 @@ export async function buildContainer(
   const assets = new AssetsServiceImpl({
     storage,
     repo: new DrizzleAssetsRepository(db, assetsLogger),
+    uow: new DrizzleUnitOfWork(db, (tx) => ({
+      assets: new DrizzleAssetsRepository(tx, assetsLogger),
+      outbox: new DrizzleOutboxAppender(tx, outboxLogger),
+    })),
     logger: assetsLogger,
   });
 
@@ -363,19 +367,35 @@ export async function buildContainer(
     runs: new DrizzleAutomationRunsRepository(tx, automationsLogger),
     outbox: new DrizzleOutboxAppender(tx, automationsLogger),
   }));
+  // Emails triggered by row-shaped events resolve their recipient and content
+  // details at send time — the event carries ids only.
+  const mailerLookups: MailerLookups = {
+    orgUserEmail: async (orgId, orgUserId) =>
+      (await reporting.students.get(orgId, orgUserId))?.email ?? null,
+    contentInfo: async (orgId, contentId) => {
+      const course = await content.getCourse(orgId, contentId);
+      if (course) {
+        return { id: course.id, title: course.title };
+      }
+      const download = await content.getDownload(orgId, contentId);
+      return download ? { id: download.id, title: download.title } : null;
+    },
+  };
+
   const automations = new AutomationsServiceImpl({
     repo: new DrizzleAutomationsRepository(db, automationsLogger),
     runsRepo: new DrizzleAutomationRunsRepository(db, automationsLogger),
     uow: automationsUow,
     engine: automationEngine,
     mailer,
+    lookups: mailerLookups,
     integrations,
     logger: automationsLogger,
   });
   automationEngine.register(automations);
 
   const eventBus = new InMemoryEventBus();
-  registerNotificationSubscribers(eventBus, mailer);
+  registerNotificationSubscribers(eventBus, mailer, mailerLookups);
   // handle() never throws — the EventBus fans out to every subscriber
   // sequentially, and a rejection here would break sibling subscribers.
   eventBus.subscribeAll((event) => automations.handle(event));

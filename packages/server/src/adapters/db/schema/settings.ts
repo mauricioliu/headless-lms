@@ -7,7 +7,9 @@
 // settings never learns what it is scoping. Rows orphaned by a deleted entity
 // are purged off that domain's *.deleted event, not by cascade.
 import { pgTable, text, jsonb, timestamp, primaryKey } from 'drizzle-orm/pg-core';
+import type { Setting } from '@headless-lms/types/schemas';
 import { organizations } from './organizations.js';
+import type { Expect, NoDrift } from './drift.js';
 
 export const settings = pgTable(
   'settings',
@@ -21,7 +23,7 @@ export const settings = pgTable(
     // Org-scoped rows carry the org id, so the column is never null and the
     // natural key can be the primary key.
     scopeId: text('scope_id').notNull(),
-    value: jsonb('value').$type<Record<string, unknown>>().notNull().default({}),
+    value: jsonb('value').$type<Setting['value']>().notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
@@ -32,3 +34,5 @@ export const settings = pgTable(
     pk: primaryKey({ columns: [t.orgId, t.namespace, t.scopeId] }),
   }),
 );
+
+type _SettingsDrift = Expect<NoDrift<typeof settings.$inferSelect, Setting>>;

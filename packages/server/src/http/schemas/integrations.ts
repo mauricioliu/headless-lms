@@ -3,6 +3,7 @@
 // connect/reconnect, stored encrypted server-side, and never appear in any
 // response — responses carry configuration and state only.
 import { z } from "zod";
+import { connectionSchema, jsonRecordSchema } from "@headless-lms/types/schemas";
 
 /** An action an integration can be invoked with; schemas are JSON Schema. */
 export const IntegrationActionInfo = z.object({
@@ -26,15 +27,8 @@ export type AvailableIntegration = z.infer<typeof AvailableIntegration>;
 export const AvailableIntegrationsList = z.array(AvailableIntegration);
 export type AvailableIntegrationsList = z.infer<typeof AvailableIntegrationsList>;
 
-export const Connection = z.object({
-  id: z.string(),
-  /** Which integration this connection links to (e.g. "stripe"). Must be declared server-side. */
-  integrationId: z.string(),
-  config: z.record(z.string(), z.unknown()),
-  active: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
+/** The connection row minus credentialRef — not even the reference leaks. */
+export const Connection = connectionSchema.omit({ credentialRef: true });
 export type Connection = z.infer<typeof Connection>;
 
 export const ConnectionsList = z.array(Connection);
@@ -47,18 +41,18 @@ export const ConnectRequest = z.object({
   integrationId: z.string().min(1),
   /** The connection's secrets (API keys, tokens, …). Write-only, never returned;
    *  stored as one encrypted JSON document. */
-  secrets: z.record(z.string(), z.unknown()),
-  config: z.record(z.string(), z.unknown()).optional(),
+  secrets: jsonRecordSchema,
+  config: jsonRecordSchema.optional(),
 });
 export type ConnectRequest = z.infer<typeof ConnectRequest>;
 
 export const ReconnectRequest = z.object({
-  secrets: z.record(z.string(), z.unknown()),
+  secrets: jsonRecordSchema,
 });
 export type ReconnectRequest = z.infer<typeof ReconnectRequest>;
 
 export const ConfigureRequest = z.object({
-  config: z.record(z.string(), z.unknown()).optional(),
+  config: jsonRecordSchema.optional(),
   active: z.boolean().optional(),
 });
 export type ConfigureRequest = z.infer<typeof ConfigureRequest>;

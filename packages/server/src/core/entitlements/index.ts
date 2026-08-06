@@ -5,7 +5,6 @@ export type { EntitlementsService, EntitlementsRepository } from "./ports.js";
 export type {
   Entitlement,
   EntitlementStatus,
-  ContentRef,
   EntitlementsQuery,
   GrantEntitlementInput,
   Page,

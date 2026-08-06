@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { LearnReportServiceImpl } from './service.js';
 import type { LearnEntitlementReader, ContentRef } from './index.js';
-import type { ContentService, Course, Module } from '../../core/content/index.js';
+import type { Activity, ContentService, Course, Module } from '../../core/content/index.js';
 import type { ProgressRecord, ProgressService } from '../../core/progress/index.js';
 import type { AssetsService } from '../../core/assets/index.js';
+import type { Asset } from '../../core/assets/model.js';
+
+const AT = new Date('2026-01-01T00:00:00.000Z');
 
 function fakeProgress(records: ProgressRecord[]): ProgressService {
   return {
@@ -23,16 +26,19 @@ function progressRecord(
     id: `p_${partial.targetId}`,
     orgId: 'o1',
     orgUserId: 'stu_1',
-    startedAt: '2026-07-23T09:00:00Z',
+    startedAt: new Date('2026-07-23T09:00:00Z'),
     position: null,
     completedAt: null,
+    updatedAt: new Date('2026-07-23T09:00:00Z'),
     ...partial,
   };
 }
 
 function course(id: string, status: 'draft' | 'published' = 'published'): Course {
   return {
+    orgId: 'o1',
     id,
+    type: 'course',
     title: `C ${id}`,
     slug: id,
     description: '',
@@ -40,11 +46,21 @@ function course(id: string, status: 'draft' | 'published' = 'published'): Course
     category: '',
     thumbnailAssetId: null,
     settings: { transcriptDownloads: false },
-    moduleCount: 0,
-    activityCount: 0,
-    enrolledCount: 0,
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    createdAt: '2026-01-01T00:00:00.000Z',
+    createdAt: AT,
+    updatedAt: AT,
+  };
+}
+
+function activity(id: string, seq: number, settings: unknown = {}): Activity {
+  return {
+    orgId: 'o1',
+    id,
+    moduleId: 'm1',
+    courseId: 'c1',
+    seq,
+    settings: settings as Activity['settings'],
+    createdAt: AT,
+    updatedAt: AT,
   };
 }
 
@@ -62,12 +78,27 @@ function fakeReader(refs: ContentRef[]): LearnEntitlementReader {
 function fakeContent(
   courses: Record<string, Course>,
   modules: Record<string, Module[]>,
+  activities: Record<string, Activity[]> = {},
 ): ContentService {
   return {
     getCourse: async (_org: string, id: string) => courses[id] ?? null,
     listCourseModules: async (_org: string, courseId: string) => modules[courseId] ?? [],
+    listCourseActivities: async (_org: string, courseId: string) => activities[courseId] ?? [],
   } as unknown as ContentService;
 }
+
+const SIGNED_ASSET: Asset = {
+  orgId: 'o1',
+  id: 'a1',
+  key: 'k1',
+  kind: 'download',
+  filename: 'ch1.pdf',
+  contentType: 'application/pdf',
+  size: 10,
+  status: 'ready',
+  uploadedBy: 'u1',
+  createdAt: AT,
+};
 
 // Neutral AssetsService fake for tests that don't exercise download delivery —
 // the constructor now requires one, but only the "download delivery" suite below cares.
@@ -78,7 +109,7 @@ function fakeAssets(captured: { expiry?: number; filename?: string } = {}): Asse
     },
     confirm: async () => null,
     list: async () => ({ rows: [], total: 0, page: 1, pageSize: 20 }),
-    get: async () => null,
+    get: async () => SIGNED_ASSET,
     requestDownload: async (_orgId, _id, filename, expiresInSeconds) => {
       captured.expiry = expiresInSeconds;
       captured.filename = filename;
@@ -102,6 +133,7 @@ function fakeContentService(over: Partial<ContentService> = {}): ContentService 
     patchSettings: rejectMutation,
     deleteCourse: rejectMutation,
     listCourseModules: async () => [],
+    listCourseActivities: async () => [],
     getActivity: async () => null,
     getModule: async () => null,
     reorderModules: rejectMutation,
@@ -176,81 +208,27 @@ describe('LearnReportServiceImpl', () => {
     expect(await svc.listCourses('o1', 'stu_1')).toEqual([]);
     expect(await svc.getCourse('o1', 'stu_1', 'c1')).toBeNull();
   });
-
-  it('filters unpublished activities out of the module tree', async () => {
-    const modules: Module[] = [
-      {
-        id: 'm1',
-        courseId: 'c1',
-        title: 'M1',
-        seq: 0,
-        activities: [
-          {
-            id: 'a1',
-            moduleId: 'm1',
-            courseId: 'c1',
-            seq: 0,
-            settings: { published: true },
-            assetIds: [],
-          },
-          {
-            id: 'a2',
-            moduleId: 'm1',
-            courseId: 'c1',
-            seq: 1,
-            settings: { published: false },
-            assetIds: [],
-          },
-          {
-            id: 'a3',
-            moduleId: 'm1',
-            courseId: 'c1',
-            seq: 2,
-            settings: { title: 'no flag' },
-            assetIds: [],
-          },
-        ],
-      },
-    ];
-    const svc = new LearnReportServiceImpl({
-      reader: fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
-      content: fakeContent({ c1: course('c1') }, { c1: modules }),
-      progress: fakeProgress([]),
-      assets: fakeAssets(),
-      deliveryExpirySeconds: 300,
-    });
-    const result = await svc.listModules('o1', 'stu_1', 'c1');
-    expect(result?.[0]?.activities.map((a) => a.id)).toEqual(['a1', 'a3']);
-  });
 });
 
 // One module: a1 + a2 published, a3 a draft.
 const progressModules: Module[] = [
-  {
-    id: 'm1',
-    courseId: 'c1',
-    title: 'M1',
-    seq: 0,
-    activities: [
-      { id: 'a1', moduleId: 'm1', courseId: 'c1', seq: 0, settings: {}, assetIds: [] },
-      { id: 'a2', moduleId: 'm1', courseId: 'c1', seq: 1, settings: {}, assetIds: [] },
-      {
-        id: 'a3',
-        moduleId: 'm1',
-        courseId: 'c1',
-        seq: 2,
-        settings: { published: false },
-        assetIds: [],
-      },
-    ],
-  },
+  { orgId: 'o1', id: 'm1', courseId: 'c1', title: 'M1', seq: 0, createdAt: AT, updatedAt: AT },
+];
+const progressActivities: Activity[] = [
+  activity('a1', 0),
+  activity('a2', 1),
+  activity('a3', 2, { published: false }),
 ];
 
 describe('LearnReportServiceImpl.courseProgress', () => {
   it('returns null when the student is not enrolled', async () => {
     const svc = new LearnReportServiceImpl({
       reader: fakeReader([]),
-      content: fakeContent({ c1: course('c1') }, { c1: progressModules }),
+      content: fakeContent(
+        { c1: course('c1') },
+        { c1: progressModules },
+        { c1: progressActivities },
+      ),
       progress: fakeProgress([]),
       assets: fakeAssets(),
       deliveryExpirySeconds: 300,
@@ -261,18 +239,22 @@ describe('LearnReportServiceImpl.courseProgress', () => {
   it('maps records to statuses and derives percent from published activities only', async () => {
     const svc = new LearnReportServiceImpl({
       reader: fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
-      content: fakeContent({ c1: course('c1') }, { c1: progressModules }),
+      content: fakeContent(
+        { c1: course('c1') },
+        { c1: progressModules },
+        { c1: progressActivities },
+      ),
       progress: fakeProgress([
         progressRecord({
           targetType: 'activity',
           targetId: 'a1',
-          completedAt: '2026-07-23T09:30:00Z',
+          completedAt: new Date('2026-07-23T09:30:00Z'),
         }),
         progressRecord({ targetType: 'activity', targetId: 'a2' }),
         progressRecord({
           targetType: 'activity',
           targetId: 'a3',
-          completedAt: '2026-07-23T09:31:00Z',
+          completedAt: new Date('2026-07-23T09:31:00Z'),
         }),
       ]),
       assets: fakeAssets(),
@@ -291,22 +273,26 @@ describe('LearnReportServiceImpl.courseProgress', () => {
   it('completed reflects the course target record', async () => {
     const svc = new LearnReportServiceImpl({
       reader: fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
-      content: fakeContent({ c1: course('c1') }, { c1: progressModules }),
+      content: fakeContent(
+        { c1: course('c1') },
+        { c1: progressModules },
+        { c1: progressActivities },
+      ),
       progress: fakeProgress([
         progressRecord({
           targetType: 'activity',
           targetId: 'a1',
-          completedAt: '2026-07-23T09:30:00Z',
+          completedAt: new Date('2026-07-23T09:30:00Z'),
         }),
         progressRecord({
           targetType: 'activity',
           targetId: 'a2',
-          completedAt: '2026-07-23T09:32:00Z',
+          completedAt: new Date('2026-07-23T09:32:00Z'),
         }),
         progressRecord({
           targetType: 'course',
           targetId: 'c1',
-          completedAt: '2026-07-23T09:32:00Z',
+          completedAt: new Date('2026-07-23T09:32:00Z'),
         }),
       ]),
       assets: fakeAssets(),
@@ -319,7 +305,11 @@ describe('LearnReportServiceImpl.courseProgress', () => {
   it('includes stored positions keyed by activity, omitting recordless activities', async () => {
     const svc = new LearnReportServiceImpl({
       reader: fakeReader([{ orgId: 'o1', contentId: 'c1' }]),
-      content: fakeContent({ c1: course('c1') }, { c1: progressModules }),
+      content: fakeContent(
+        { c1: course('c1') },
+        { c1: progressModules },
+        { c1: progressActivities },
+      ),
       progress: fakeProgress([
         progressRecord({
           targetType: 'activity',
@@ -340,6 +330,15 @@ describe('LearnReportServiceImpl.courseProgress', () => {
 
 describe('download delivery', () => {
   const download = { id: 'd1', status: 'published' } as never;
+  const link = (over: Partial<{ assetId: string; displayName: string | null }> = {}) => ({
+    orgId: 'o1',
+    id: 'da1',
+    downloadId: 'd1',
+    assetId: 'a1',
+    seq: 0,
+    displayName: null,
+    ...over,
+  });
 
   it('returns null when the student has no entitlement', async () => {
     const captured: { expiry?: number; filename?: string } = {};
@@ -352,17 +351,7 @@ describe('download delivery', () => {
       }),
       content: fakeContentService({
         getDownload: async () => download,
-        listDownloadAssets: async () => [
-          {
-            id: 'da1',
-            assetId: 'a1',
-            seq: 0,
-            displayName: null,
-            filename: 'ch1.pdf',
-            contentType: 'application/pdf',
-            size: 10,
-          },
-        ],
+        listDownloadAssets: async () => [link()],
       }),
       progress: fakeProgress([]),
       assets: fakeAssets(captured),
@@ -384,17 +373,7 @@ describe('download delivery', () => {
         getDownload: async () => download,
         // The link lookup itself would succeed for the requested asset id —
         // only the downloadHasAsset gate can produce null here.
-        listDownloadAssets: async () => [
-          {
-            id: 'da1',
-            assetId: 'a_other',
-            seq: 0,
-            displayName: null,
-            filename: 'other.pdf',
-            contentType: 'application/pdf',
-            size: 10,
-          },
-        ],
+        listDownloadAssets: async () => [link({ assetId: 'a_other' })],
       }),
       progress: fakeProgress([]),
       assets: fakeAssets(captured),
@@ -414,17 +393,7 @@ describe('download delivery', () => {
       }),
       content: fakeContentService({
         getDownload: async () => download,
-        listDownloadAssets: async () => [
-          {
-            id: 'da1',
-            assetId: 'a1',
-            seq: 0,
-            displayName: 'Chapter One',
-            filename: 'ch1.pdf',
-            contentType: 'application/pdf',
-            size: 10,
-          },
-        ],
+        listDownloadAssets: async () => [link({ displayName: 'Chapter One' })],
       }),
       progress: fakeProgress([]),
       assets: fakeAssets(captured),
@@ -447,17 +416,7 @@ describe('download delivery', () => {
       }),
       content: fakeContentService({
         getDownload: async () => download,
-        listDownloadAssets: async () => [
-          {
-            id: 'da1',
-            assetId: 'a1',
-            seq: 0,
-            displayName: null,
-            filename: 'ch1.pdf',
-            contentType: 'application/pdf',
-            size: 10,
-          },
-        ],
+        listDownloadAssets: async () => [link()],
       }),
       progress: fakeProgress([]),
       assets: fakeAssets(captured),

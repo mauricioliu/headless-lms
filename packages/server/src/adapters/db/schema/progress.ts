@@ -13,8 +13,10 @@ import {
   unique,
   foreignKey,
 } from 'drizzle-orm/pg-core';
+import type { ProgressRecord } from '@headless-lms/types/schemas';
 import { genId } from '../../../core/shared/id.js';
 import { organizations, orgUsers } from './organizations.js';
+import type { Expect, NoDrift } from './drift.js';
 
 export const progressRecords = pgTable(
   'progress_records',
@@ -31,7 +33,7 @@ export const progressRecords = pgTable(
     }).notNull(),
     targetId: text('target_id').notNull(),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
-    position: jsonb('position'), // opaque typed payload; service interprets per target type
+    position: jsonb('position').$type<ProgressRecord['position']>(), // opaque typed payload; service interprets per target type
     completedAt: timestamp('completed_at', { withTimezone: true }), // null = in progress
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
@@ -48,3 +50,5 @@ export const progressRecords = pgTable(
     }),
   }),
 );
+
+type _ProgressRecordsDrift = Expect<NoDrift<typeof progressRecords.$inferSelect, ProgressRecord>>;

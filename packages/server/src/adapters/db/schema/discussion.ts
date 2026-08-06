@@ -22,9 +22,11 @@ import {
   check,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import type { Comment, CommentReaction, CommentReport } from '@headless-lms/types/schemas';
 import { genId } from '../../../core/shared/id.js';
 import { organizations, orgUsers } from './organizations.js';
 import { activities } from './content.js';
+import type { Expect, NoDrift } from './drift.js';
 
 export const comments = pgTable(
   'comments',
@@ -136,4 +138,8 @@ export const commentReports = pgTable(
     openIdx: index('comment_reports_open_idx').on(t.orgId, t.commentId, t.resolvedAt),
   }),
 );
+
+type _CommentsDrift = Expect<NoDrift<typeof comments.$inferSelect, Comment>>;
+type _CommentReactionsDrift = Expect<NoDrift<typeof commentReactions.$inferSelect, CommentReaction>>;
+type _CommentReportsDrift = Expect<NoDrift<typeof commentReports.$inferSelect, CommentReport>>;
 

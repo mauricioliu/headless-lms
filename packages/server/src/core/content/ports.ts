@@ -35,6 +35,7 @@ export interface ContentService {
   deleteCourse(orgId: string, id: string): Promise<void>;
 
   listCourseModules(orgId: string, courseId: string): Promise<Module[]>;
+  listCourseActivities(orgId: string, courseId: string): Promise<Activity[]>;
   getActivity(orgId: string, activityId: string): Promise<Activity | null>;
   getModule(orgId: string, moduleId: string): Promise<Module | null>;
   reorderModules(orgId: string, courseId: string, orderedIds: string[]): Promise<Module[]>;
@@ -99,6 +100,7 @@ export interface ContentRepository {
   delete(orgId: string, id: string): Promise<boolean>;
 
   listForCourse(orgId: string, courseId: string): Promise<Module[]>;
+  listActivitiesForCourse(orgId: string, courseId: string): Promise<Activity[]>;
   findActivity(orgId: string, activityId: string): Promise<Activity | null>;
   findModule(orgId: string, moduleId: string): Promise<Module | null>;
   reorderModules(orgId: string, courseId: string, orderedIds: string[]): Promise<Module[]>;
@@ -117,7 +119,7 @@ export interface ContentRepository {
     moduleId: string,
     input: SaveActivityInput,
     activityId?: string,
-  ): Promise<Module[]>;
+  ): Promise<{ modules: Module[]; activity: Activity }>;
   deleteActivity(
     orgId: string,
     courseId: string,

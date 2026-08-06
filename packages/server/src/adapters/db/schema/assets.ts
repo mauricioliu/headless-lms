@@ -1,8 +1,10 @@
 // assets table — the org's media library. Org-scoped: composite (org_id, id) PK
 // with org_id → organizations.id, mirroring the multi-tenant table shape.
 import { pgTable, text, bigint, timestamp, primaryKey } from 'drizzle-orm/pg-core';
+import type { Asset } from '@headless-lms/types/schemas';
 import { genId } from '../../../core/shared/id.js';
 import { organizations } from './organizations.js';
+import type { Expect, NoDrift } from './drift.js';
 
 export const assets = pgTable(
   'assets',
@@ -27,3 +29,5 @@ export const assets = pgTable(
   },
   (t) => ({ pk: primaryKey({ columns: [t.orgId, t.id] }) }),
 );
+
+type _AssetsDrift = Expect<NoDrift<typeof assets.$inferSelect, Asset>>;

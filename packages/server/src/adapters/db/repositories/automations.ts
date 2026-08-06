@@ -14,31 +14,40 @@ import type { Logger } from '../../../core/shared/ports.js';
 import { noopLogger } from '../../../core/shared/logger.js';
 
 const automationSelection = {
+  orgId: automations.orgId,
   id: automations.id,
   name: automations.name,
   description: automations.description,
   trigger: automations.trigger,
   actions: automations.actions,
   enabled: automations.enabled,
+  createdAt: automations.createdAt,
+  updatedAt: automations.updatedAt,
 };
 
 interface AutomationRow {
+  orgId: string;
   id: string;
   name: string;
   description: string | null;
   trigger: string;
   actions: Automation['actions'];
   enabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 function toAutomation(row: AutomationRow): Automation {
   return {
+    orgId: row.orgId,
     id: row.id,
     name: row.name,
-    ...(row.description !== null ? { description: row.description } : {}),
+    description: row.description,
     trigger: row.trigger,
     actions: row.actions,
     enabled: row.enabled,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 
@@ -139,6 +148,7 @@ const runSelection = {
   orgId: automationRuns.orgId,
   automationId: automationRuns.automationId,
   trigger: automationRuns.trigger,
+  eventId: automationRuns.eventId,
   event: automationRuns.event,
   status: automationRuns.status,
   actionResults: automationRuns.actionResults,
@@ -151,6 +161,7 @@ interface RunRow {
   orgId: string;
   automationId: string;
   trigger: string;
+  eventId: string;
   event: AutomationRun['event'];
   status: AutomationRun['status'];
   actionResults: AutomationRun['actionResults'];
@@ -164,11 +175,12 @@ function toAutomationRun(row: RunRow): AutomationRun {
     orgId: row.orgId,
     automationId: row.automationId,
     trigger: row.trigger,
+    eventId: row.eventId,
     event: row.event,
     status: row.status,
     actionResults: row.actionResults,
-    startedAt: row.startedAt.toISOString(),
-    finishedAt: row.finishedAt ? row.finishedAt.toISOString() : null,
+    startedAt: row.startedAt,
+    finishedAt: row.finishedAt,
   };
 }
 
@@ -196,8 +208,8 @@ export class DrizzleAutomationRunsRepository implements AutomationRunsRepository
         event: run.event,
         status: run.status,
         actionResults: run.actionResults,
-        startedAt: new Date(run.startedAt),
-        finishedAt: run.finishedAt ? new Date(run.finishedAt) : null,
+        startedAt: run.startedAt,
+        finishedAt: run.finishedAt,
       })
       // A redelivered trigger event hits the unique (org, automation, event) index; no row comes back.
       .onConflictDoNothing({
@@ -213,7 +225,7 @@ export class DrizzleAutomationRunsRepository implements AutomationRunsRepository
     outcome: {
       status: AutomationRun['status'];
       actionResults: AutomationRun['actionResults'];
-      finishedAt: string;
+      finishedAt: Date;
     },
   ): Promise<AutomationRun | null> {
     const [updated] = await this.db
@@ -221,7 +233,7 @@ export class DrizzleAutomationRunsRepository implements AutomationRunsRepository
       .set({
         status: outcome.status,
         actionResults: outcome.actionResults,
-        finishedAt: new Date(outcome.finishedAt),
+        finishedAt: outcome.finishedAt,
       })
       .where(and(eq(automationRuns.orgId, orgId), eq(automationRuns.id, id)))
       .returning(runSelection);

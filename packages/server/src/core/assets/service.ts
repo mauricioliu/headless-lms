@@ -13,8 +13,10 @@ import type {
   UploadTicket,
 } from './model.js';
 import type { AssetsRepository, AssetsService } from './ports.js';
+import type { AssetsUnitOfWork } from './ports.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
+import { assetEvents } from './events.js';
 
 function orgPrefix(orgId: string): string {
   return `org/${orgId}/`;
@@ -28,17 +30,20 @@ function sanitizeFilename(filename: string): string {
 export type AssetsServiceParams = {
   storage: ObjectStorage;
   repo: AssetsRepository;
+  uow: AssetsUnitOfWork;
   logger?: Logger;
 };
 
 export class AssetsServiceImpl implements AssetsService {
   private readonly storage: ObjectStorage;
   private readonly repo: AssetsRepository;
+  private readonly uow: AssetsUnitOfWork;
   private readonly logger: Logger;
 
   constructor(params: AssetsServiceParams) {
     this.storage = params.storage;
     this.repo = params.repo;
+    this.uow = params.uow;
     this.logger = params.logger ?? noopLogger;
   }
 
@@ -46,16 +51,21 @@ export class AssetsServiceImpl implements AssetsService {
     const id = genId('asset');
     const key = `${orgPrefix(orgId)}${input.kind}/${id}/${sanitizeFilename(input.filename)}`;
     const presigned = await this.storage.presignUpload({ key, contentType: input.contentType });
-    const asset = await this.repo.insert(orgId, {
-      id,
-      key,
-      kind: input.kind,
-      filename: input.filename,
-      contentType: input.contentType,
-      size: 0,
-      status: 'pending',
-      uploadedBy: input.uploadedBy,
-      createdAt: new Date().toISOString(),
+    const asset = await this.uow.run(async ({ assets, outbox }) => {
+      const asset = await assets.insert(orgId, {
+        orgId,
+        id,
+        key,
+        kind: input.kind,
+        filename: input.filename,
+        contentType: input.contentType,
+        size: 0,
+        status: 'pending',
+        uploadedBy: input.uploadedBy,
+        createdAt: new Date(),
+      });
+      await outbox.append([assetEvents.assetCreated.make({ orgId, data: asset })]);
+      return asset;
     });
     this.logger.info('asset upload requested', { orgId, assetId: id, kind: input.kind });
     return {
@@ -77,10 +87,16 @@ export class AssetsServiceImpl implements AssetsService {
       this.logger.debug('asset not yet uploaded', { orgId, assetId: id });
       return asset; // not uploaded yet — stays pending
     }
-    const updated = await this.repo.update(id, {
-      size: stat.size,
-      contentType: stat.contentType ?? asset.contentType,
-      status: 'ready',
+    const updated = await this.uow.run(async ({ assets, outbox }) => {
+      const updated = await assets.update(id, {
+        size: stat.size,
+        contentType: stat.contentType ?? asset.contentType,
+        status: 'ready',
+      });
+      if (updated) {
+        await outbox.append([assetEvents.assetReady.make({ orgId, data: updated })]);
+      }
+      return updated;
     });
     this.logger.info('asset confirmed', { orgId, assetId: id });
     return updated;
@@ -118,7 +134,13 @@ export class AssetsServiceImpl implements AssetsService {
       return false;
     }
     await this.storage.remove(asset.key);
-    const deleted = await this.repo.delete(id);
+    const deleted = await this.uow.run(async ({ assets, outbox }) => {
+      const deleted = await assets.delete(id);
+      if (deleted) {
+        await outbox.append([assetEvents.assetDeleted.make({ orgId, data: asset })]);
+      }
+      return deleted;
+    });
     this.logger.info('asset removed', { orgId, assetId: id });
     return deleted;
   }

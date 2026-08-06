@@ -11,8 +11,10 @@ import {
   foreignKey,
   unique,
 } from 'drizzle-orm/pg-core';
+import type { Connection } from '@headless-lms/types/schemas';
 import { organizations } from './organizations.js';
 import { credentials } from './credentials.js';
+import type { Expect, NoDrift } from './drift.js';
 
 export const connections = pgTable(
   'connections',
@@ -22,7 +24,7 @@ export const connections = pgTable(
       .references(() => organizations.id),
     id: text('id').notNull(),
     integrationId: text('integration_id').notNull(),
-    config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
+    config: jsonb('config').$type<Connection['config']>().notNull().default({}),
     active: boolean('active').notNull().default(true),
     credentialRef: text('credential_ref').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -37,3 +39,5 @@ export const connections = pgTable(
     }),
   }),
 );
+
+type _ConnectionsDrift = Expect<NoDrift<typeof connections.$inferSelect, Connection>>;

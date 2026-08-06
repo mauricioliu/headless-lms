@@ -4,7 +4,9 @@
 // row's payload cannot be decrypted if copied to another row or org.
 // `key_version` names the encryption key used, enabling rotation later.
 import { pgTable, text, integer, timestamp, primaryKey } from 'drizzle-orm/pg-core';
+import type { Credential } from '@headless-lms/types/schemas';
 import { organizations } from './organizations.js';
+import type { Expect, NoDrift } from './drift.js';
 
 export const credentials = pgTable(
   'credentials',
@@ -20,3 +22,5 @@ export const credentials = pgTable(
   },
   (t) => ({ pk: primaryKey({ columns: [t.orgId, t.id] }) }),
 );
+
+type _CredentialsDrift = Expect<NoDrift<typeof credentials.$inferSelect, Credential>>;

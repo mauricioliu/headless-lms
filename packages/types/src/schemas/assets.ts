@@ -8,6 +8,7 @@ export const assetStatusSchema = z.enum(["pending", "ready"]);
 export type AssetStatus = z.infer<typeof assetStatusSchema>;
 
 export const assetSchema = z.object({
+  orgId: idSchema,
   id: idSchema,
   key: z.string().trim().min(1),
   kind: assetKindSchema,
@@ -16,9 +17,10 @@ export const assetSchema = z.object({
   size: z.number().int().min(0),
   status: assetStatusSchema,
   uploadedBy: idSchema,
-  createdAt: z.string().trim().min(1),
+  createdAt: z.coerce.date(),
 }).strict();
-export type Asset = z.infer<typeof assetSchema>;
+export type Asset = z.output<typeof assetSchema>;
+export type AssetInput = z.input<typeof assetSchema>;
 
 export const requestUploadInputSchema = z.object({
   uploadedBy: idSchema,

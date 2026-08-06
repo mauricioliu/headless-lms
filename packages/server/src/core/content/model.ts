@@ -1,12 +1,16 @@
 // content context — domain entities, owned by @headless-lms/types.
 export type {
-  CourseStatus,
+  Activity,
+  ActivityAsset,
+  ActivitySettings,
+  ContentItem,
+  ContentType,
   Course,
   CourseSettings,
-  Activity,
-  Module,
-  SaveActivityInput,
-  DownloadStatus,
+  CourseStatus,
   Download,
   DownloadAsset,
+  DownloadStatus,
+  Module,
+  SaveActivityInput,
 } from '@headless-lms/types';

@@ -24,8 +24,6 @@ type InviteStatus = (typeof INVITE_STATUSES)[number];
 const toStatus = (s: string): InviteStatus =>
   (INVITE_STATUSES as readonly string[]).includes(s) ? (s as InviteStatus) : 'pending';
 
-// The Invite DTO deliberately omits token_hash — the row shape flows into
-// domain events, and the hash must never leave the persistence layer.
 function toInvite(row: typeof invites.$inferSelect): Invite {
   return {
     id: row.id,
@@ -34,6 +32,7 @@ function toInvite(row: typeof invites.$inferSelect): Invite {
     role: row.role,
     status: row.status,
     invitedBy: row.invitedBy,
+    tokenHash: row.tokenHash,
     expiresAt: row.expiresAt,
     createdAt: row.createdAt,
   };

@@ -1,14 +1,10 @@
-// entitlements table. Org-scoped: composite (org_id, id) key.
-// The student↔content access grant — generic over content types via the
-// content_items registry FK (real integrity, no polymorphic column). For a
-// Student (the learner identity), not a staff User. `status` is stored as
-// active | revoked; "expired" is DERIVED at read time from `expiresAt` (no cron
-// to flip rows). Completion is NOT held here — it belongs to progress and is
-// composed at access-resolution time.
+
 import { pgTable, text, timestamp, primaryKey, foreignKey, unique } from 'drizzle-orm/pg-core';
+import type { Entitlement } from '@headless-lms/types/schemas';
 import { genId } from '../../../core/shared/id.js';
 import { organizations, orgUsers } from './organizations.js';
 import { contentItems } from './content.js';
+import type { Expect, NoDrift } from './drift.js';
 
 export const entitlements = pgTable(
   'entitlements',
@@ -46,3 +42,5 @@ export const entitlements = pgTable(
     orgUserContentUq: unique().on(t.orgId, t.orgUserId, t.contentId),
   }),
 );
+
+type _EntitlementsDrift = Expect<NoDrift<typeof entitlements.$inferSelect, Entitlement>>;

@@ -8,7 +8,6 @@ function event(type: string, id: string): DomainEvent {
     version: 1,
     id,
     orgId: 'org-1',
-    subject: id,
     occurredAt: '2026-07-22T00:00:00.000Z',
     data: {},
   };

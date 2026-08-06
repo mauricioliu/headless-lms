@@ -40,7 +40,6 @@ export type VersionedDomainEvent<
   TVersion extends number = number,
 > = DomainEvent<TData, TType, TVersion> & {
   readonly version: TVersion;
-  readonly subject: string;
   readonly occurredAt: string;
   readonly data: TData;
 };
@@ -80,24 +79,20 @@ export function defineEvent<
   z.input<TDataSchema>
 > {
   type Event = VersionedDomainEvent<z.output<TDataSchema>, TType, TVersion>;
-  const newEventSchema = z.object({
-    type: z.literal(input.type),
-    version: z.literal(input.version),
+  const makeInputSchema = z.object({
     orgId: eventIdSchema,
-    subject: eventIdSchema,
     data: input.data,
     metadata: eventMetadataSchema.optional(),
-  });
+  }).strict();
   const eventSchema = z.object({
     type: z.literal(input.type),
     version: z.literal(input.version),
     id: eventIdSchema,
     orgId: eventIdSchema,
-    subject: eventIdSchema,
     occurredAt: z.string().trim().min(1),
     data: input.data,
     metadata: eventMetadataSchema.optional(),
-  });
+  }).strict();
 
   return {
     type: input.type,
@@ -105,18 +100,15 @@ export function defineEvent<
     dataSchema: input.data,
     eventSchema: eventSchema as unknown as z.ZodType<Event>,
     make(value: MakeEventInput<z.input<TDataSchema>>) {
-      const result = newEventSchema.safeParse({
-        type: input.type,
-        version: input.version,
-        orgId: value.orgId,
-        subject: value.subject,
-        data: value.data,
-        metadata: value.metadata,
-      });
+      const result = makeInputSchema.safeParse(value);
       if (!result.success) {
         throw invalidEvent(input.type, result.error);
       }
-      return result.data as ContractNewDomainEvent<Event>;
+      return {
+        type: input.type,
+        version: input.version,
+        ...result.data,
+      } as ContractNewDomainEvent<Event>;
     },
     is(event: unknown): event is Event {
       return eventSchema.safeParse(event).success;

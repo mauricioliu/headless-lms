@@ -19,7 +19,6 @@ function message(n: number, type = 'entitlement.created', attempts = 0): OutboxM
       version: 1,
       id,
       orgId: 'org-1',
-      subject: id,
       occurredAt: '2026-07-22T00:00:00.000Z',
       data: {},
     },

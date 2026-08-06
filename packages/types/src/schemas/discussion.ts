@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { roleSchema } from "./organizations.js";
-import { idSchema, serializableDateSchema } from "./shared.js";
+import { idSchema } from "./shared.js";
 
 export const commentStatusSchema = z.enum(["pending", "published", "removed"]);
 export type CommentStatus = z.infer<typeof commentStatusSchema>;
@@ -16,7 +16,7 @@ export const commentSettingsSchema = z.object({
   threaded: z.boolean(),
   requireReview: z.boolean(),
   reactions: z.boolean(),
-});
+}).strict();
 export type CommentSettings = z.infer<typeof commentSettingsSchema>;
 
 export type CommentsConfig = CommentSettings;
@@ -30,9 +30,9 @@ export const commentSchema = z.object({
   body: z.string(),
   status: commentStatusSchema,
   removedBy: idSchema.nullable(),
-  createdAt: serializableDateSchema,
-  updatedAt: serializableDateSchema,
-});
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+}).strict();
 export type Comment = z.output<typeof commentSchema>;
 export type CommentInput = z.input<typeof commentSchema>;
 
@@ -42,7 +42,7 @@ export const commentAuthorSchema = z.object({
   lastName: z.string().nullable(),
   image: z.string().nullable(),
   role: roleSchema,
-});
+}).strict();
 export type CommentAuthor = z.infer<typeof commentAuthorSchema>;
 
 export const commentReactionSchema = z.object({
@@ -50,8 +50,8 @@ export const commentReactionSchema = z.object({
   commentId: idSchema,
   orgUserId: idSchema,
   emoji: reactionEmojiSchema,
-  createdAt: serializableDateSchema,
-});
+  createdAt: z.coerce.date(),
+}).strict();
 export type CommentReaction = z.output<typeof commentReactionSchema>;
 
 export const commentReportSchema = z.object({
@@ -60,9 +60,9 @@ export const commentReportSchema = z.object({
   commentId: idSchema,
   orgUserId: idSchema,
   reason: z.string(),
-  resolvedAt: serializableDateSchema.nullable(),
-  createdAt: serializableDateSchema,
-});
+  resolvedAt: z.coerce.date().nullable(),
+  createdAt: z.coerce.date(),
+}).strict();
 export type CommentReport = z.output<typeof commentReportSchema>;
 export type CommentReportInput = z.input<typeof commentReportSchema>;
 
@@ -76,16 +76,16 @@ export const commentViewSchema = z.object({
   removedBy: commentAuthorSchema.nullable(),
   reactions: reactionCountsSchema,
   viewerReaction: reactionEmojiSchema.optional(),
-  createdAt: serializableDateSchema,
-  updatedAt: serializableDateSchema,
-});
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+}).strict();
 export type CommentView = z.output<typeof commentViewSchema>;
 
 export const commentReportSummarySchema = z.object({
   reporter: commentAuthorSchema,
   reason: z.string(),
-  createdAt: serializableDateSchema,
-});
+  createdAt: z.coerce.date(),
+}).strict();
 export type CommentReportSummary = z.output<typeof commentReportSummarySchema>;
 
 export const commentListItemSchema = z.object({
@@ -100,9 +100,9 @@ export const commentListItemSchema = z.object({
   authorEmail: z.string().email(),
   removedBy: idSchema.nullable(),
   reports: z.array(commentReportSummarySchema),
-  createdAt: serializableDateSchema,
-  updatedAt: serializableDateSchema,
-});
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+}).strict();
 export type CommentListItem = z.output<typeof commentListItemSchema>;
 
 export const listCommentsQuerySchema = z.object({
@@ -115,5 +115,5 @@ export const listCommentsQuerySchema = z.object({
   courseId: idSchema.optional(),
   activityId: idSchema.optional(),
   orgUserId: idSchema.optional(),
-});
+}).strict();
 export type ListCommentsQuery = z.infer<typeof listCommentsQuerySchema>;

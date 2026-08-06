@@ -17,9 +17,10 @@ function toRecord(row: Row): ProgressRecord {
     orgUserId: row.orgUserId,
     targetType: row.targetType as ProgressTargetType,
     targetId: row.targetId,
-    startedAt: row.startedAt.toISOString(),
+    startedAt: row.startedAt,
     position: row.position ?? null,
-    completedAt: row.completedAt ? row.completedAt.toISOString() : null,
+    completedAt: row.completedAt,
+    updatedAt: row.updatedAt,
   };
 }
 
@@ -41,6 +42,7 @@ export class DrizzleProgressRepository implements ProgressRepository {
         startedAt: new Date(record.startedAt),
         position: record.position ?? null,
         completedAt: record.completedAt ? new Date(record.completedAt) : null,
+        updatedAt: new Date(record.updatedAt),
       })
       .onConflictDoNothing()
       .returning();

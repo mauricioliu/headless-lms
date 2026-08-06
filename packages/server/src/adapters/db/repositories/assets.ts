@@ -1,6 +1,5 @@
 // assets — Drizzle repository (implements the core outbound port).
 import { and, eq, ilike, sql, asc, desc, type SQL } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { AssetsRepository } from '../../../core/assets/ports.js';
 import type {
   Asset,
@@ -8,15 +7,17 @@ import type {
   AssetStatus,
   AssetsQuery,
   Page,
-} from '../../../core/assets/model.js';
+} from '@headless-lms/types';
 import { assets } from '../schema/assets.js';
-import type { Logger } from '../../../core/shared/ports.js';
+import type { Logger } from '@headless-lms/types';
 import { noopLogger } from '../../../core/shared/logger.js';
+import type { DbExecutor } from '../index.js';
 
 type Row = typeof assets.$inferSelect;
 
 function toAsset(row: Row): Asset {
   return {
+    orgId: row.orgId,
     id: row.id,
     key: row.key,
     kind: row.kind as AssetKind,
@@ -25,7 +26,7 @@ function toAsset(row: Row): Asset {
     size: row.size,
     status: row.status as AssetStatus,
     uploadedBy: row.uploadedBy,
-    createdAt: row.createdAt.toISOString(),
+    createdAt: row.createdAt,
   };
 }
 
@@ -38,16 +39,19 @@ const SORT_COLUMNS = {
 
 export class DrizzleAssetsRepository implements AssetsRepository {
   constructor(
-    private readonly db: NodePgDatabase,
+    private readonly db: DbExecutor,
     private readonly logger: Logger = noopLogger,
   ) {}
 
   async insert(orgId: string, asset: Asset): Promise<Asset> {
+    if (asset.orgId !== orgId) {
+      throw new Error('asset org mismatch');
+    }
     const [row] = await this.db
       .insert(assets)
       .values({
         id: asset.id,
-        orgId,
+        orgId: asset.orgId,
         key: asset.key,
         kind: asset.kind,
         filename: asset.filename,

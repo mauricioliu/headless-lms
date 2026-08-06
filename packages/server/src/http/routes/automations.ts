@@ -170,15 +170,7 @@ export async function automationsRoutes(app: FastifyInstance, container: Contain
     handler: async (req) => {
       const scope = await resolveScope(container, req);
       // No existence pre-check: runs deliberately survive automation deletion (audit trail).
-      const page = await automations.listRuns(scope.orgId, req.params.id, req.query);
-      // DomainEvent has no index signature; the contract models the event loosely (z.record) — cast at the boundary.
-      return {
-        ...page,
-        rows: page.rows.map((run) => ({
-          ...run,
-          event: run.event as unknown as Record<string, unknown>,
-        })),
-      };
+      return automations.listRuns(scope.orgId, req.params.id, req.query);
     },
   });
 }

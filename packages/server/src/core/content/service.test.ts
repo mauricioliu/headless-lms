@@ -18,9 +18,13 @@ function makeSettings() {
   return { settings: new SettingsService(repo), settingsRepo: repo };
 }
 
+const AT = new Date('2026-01-01T00:00:00.000Z');
+
 function makeCourse(over: Partial<Course> = {}): Course {
   return {
+    orgId: 'org1',
     id: 'c1',
+    type: 'course',
     title: 'Intro',
     slug: 'intro',
     description: '',
@@ -28,11 +32,8 @@ function makeCourse(over: Partial<Course> = {}): Course {
     category: '',
     thumbnailAssetId: null,
     settings: { transcriptDownloads: false },
-    moduleCount: 0,
-    activityCount: 0,
-    enrolledCount: 0,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdAt: AT,
+    updatedAt: AT,
     ...over,
   };
 }
@@ -45,6 +46,7 @@ function makeRepo(): ContentRepository {
     update: vi.fn(),
     delete: vi.fn(),
     listForCourse: vi.fn(),
+    listActivitiesForCourse: vi.fn(),
     findActivity: vi.fn(),
     findModule: vi.fn(),
     reorderModules: vi.fn(),
@@ -90,18 +92,29 @@ function build(repo = makeRepo()) {
 
 function makeActivity(over: Partial<Activity> = {}): Activity {
   return {
+    orgId: 'org1',
     id: 'act1',
     moduleId: 'm1',
     courseId: 'c1',
     seq: 0,
     settings: {},
-    assetIds: [],
+    createdAt: AT,
+    updatedAt: AT,
     ...over,
   };
 }
 
 function makeModule(over: Partial<Module> = {}): Module {
-  return { id: 'm1', courseId: 'c1', title: 'Module 1', seq: 0, activities: [], ...over };
+  return {
+    orgId: 'org1',
+    id: 'm1',
+    courseId: 'c1',
+    title: 'Module 1',
+    seq: 0,
+    createdAt: AT,
+    updatedAt: AT,
+    ...over,
+  };
 }
 
 describe('ContentServiceImpl', () => {
@@ -187,7 +200,7 @@ describe('ContentServiceImpl', () => {
     await svc.createCourse('org1', { title: 'Intro' });
 
     expect(appended).toEqual([
-      { type: 'content.course.created', version: 1, orgId: 'org1', subject: 'c1', data: created },
+      { type: 'content.course.created', version: 1, orgId: 'org1', data: created },
     ]);
   });
 
@@ -202,7 +215,7 @@ describe('ContentServiceImpl', () => {
     expect(repo.update).toHaveBeenCalledWith('org1', 'c1', { title: 'Renamed' });
     expect(result).toBe(updated);
     expect(appended).toEqual([
-      { type: 'content.course.updated', version: 1, orgId: 'org1', subject: 'c1', data: updated },
+      { type: 'content.course.updated', version: 1, orgId: 'org1', data: updated },
     ]);
   });
 
@@ -243,7 +256,7 @@ describe('ContentServiceImpl', () => {
     await svc.deleteCourse('org1', 'c1');
 
     expect(appended).toEqual([
-      { type: 'content.course.deleted', version: 1, orgId: 'org1', subject: 'c1', data: course },
+      { type: 'content.course.deleted', version: 1, orgId: 'org1', data: course },
     ]);
   });
 
@@ -294,7 +307,6 @@ describe('modules', () => {
         type: 'content.course.module.created',
         version: 1,
         orgId: 'org1',
-        subject: 'm2',
         data: created,
       },
     ]);
@@ -315,7 +327,6 @@ describe('modules', () => {
         type: 'content.course.module.updated',
         version: 1,
         orgId: 'org1',
-        subject: 'm1',
         data: updated,
       },
     ]);
@@ -333,7 +344,7 @@ describe('modules', () => {
 
   it('appends course.module.deleted with the pre-delete snapshot', async () => {
     const repo = makeRepo();
-    const module = makeModule({ activities: [makeActivity()] });
+    const module = makeModule();
     vi.mocked(repo.findModule).mockResolvedValue(module);
     vi.mocked(repo.deleteModule).mockResolvedValue([]);
 
@@ -347,7 +358,6 @@ describe('modules', () => {
         type: 'content.course.module.deleted',
         version: 1,
         orgId: 'org1',
-        subject: 'm1',
         data: module,
       },
     ]);
@@ -377,7 +387,6 @@ describe('modules', () => {
         type: 'content.course.modules.reordered',
         version: 1,
         orgId: 'org1',
-        subject: 'c1',
         data: reordered,
       },
     ]);
@@ -388,9 +397,9 @@ describe('activities', () => {
   it('appends course.activity.created with the new activity snapshot', async () => {
     const repo = makeRepo();
     const created = makeActivity({ id: 'act2', seq: 1 });
-    const modules = [makeModule({ activities: [makeActivity(), created] })];
+    const modules = [makeModule()];
     vi.mocked(repo.findModule).mockResolvedValue(makeModule());
-    vi.mocked(repo.saveActivity).mockResolvedValue(modules);
+    vi.mocked(repo.saveActivity).mockResolvedValue({ modules, activity: created });
 
     const { svc, appended } = build(repo);
     const result = await svc.saveActivity('org1', 'c1', 'm1', { settings: { title: 'A' } });
@@ -408,7 +417,6 @@ describe('activities', () => {
         type: 'content.course.activity.created',
         version: 1,
         orgId: 'org1',
-        subject: 'act2',
         data: created,
       },
     ]);
@@ -426,9 +434,9 @@ describe('activities', () => {
 
   it('appends course.activity.updated with the saved snapshot on update', async () => {
     const repo = makeRepo();
-    const saved = makeActivity({ assetIds: ['a1'] });
+    const saved = makeActivity();
     vi.mocked(repo.findActivity).mockResolvedValue(makeActivity());
-    vi.mocked(repo.saveActivity).mockResolvedValue([makeModule({ activities: [saved] })]);
+    vi.mocked(repo.saveActivity).mockResolvedValue({ modules: [makeModule()], activity: saved });
 
     const { svc, appended } = build(repo);
     await svc.saveActivity('org1', 'c1', 'm1', { assetIds: ['a1'] }, 'act1');
@@ -445,7 +453,6 @@ describe('activities', () => {
         type: 'content.course.activity.updated',
         version: 1,
         orgId: 'org1',
-        subject: 'act1',
         data: saved,
       },
     ]);
@@ -476,7 +483,6 @@ describe('activities', () => {
         type: 'content.course.activity.deleted',
         version: 1,
         orgId: 'org1',
-        subject: 'act1',
         data: activity,
       },
     ]);
@@ -494,11 +500,7 @@ describe('activities', () => {
 
   it('appends course.activities.reordered with the resulting order', async () => {
     const repo = makeRepo();
-    const reordered = [
-      makeModule({
-        activities: [makeActivity({ id: 'act2', seq: 0 }), makeActivity({ id: 'act1', seq: 1 })],
-      }),
-    ];
+    const reordered = [makeModule()];
     vi.mocked(repo.reorderActivities).mockResolvedValue(reordered);
 
     const { svc, appended } = build(repo);
@@ -510,7 +512,6 @@ describe('activities', () => {
         type: 'content.course.activities.reordered',
         version: 1,
         orgId: 'org1',
-        subject: 'm1',
         data: reordered[0],
       },
     ]);
@@ -521,7 +522,7 @@ describe('hierarchy reads', () => {
   it('getActivity and getModule delegate to the content repository', async () => {
     const repo = makeRepo();
     const activity = makeActivity({ settings: {} });
-    const module = makeModule({ title: 'M1', activities: [activity] });
+    const module = makeModule({ title: 'M1' });
     vi.mocked(repo.findActivity).mockResolvedValue(activity);
     vi.mocked(repo.findModule).mockResolvedValue(module);
     const { svc } = build(repo);
@@ -627,18 +628,17 @@ describe('logging', () => {
 
 function makeDownload(over: Partial<Download> = {}): Download {
   return {
+    orgId: 'o1',
     id: 'd1',
+    type: 'download',
     title: 'Workbook',
     slug: 'workbook',
     description: '',
     status: 'draft',
     category: '',
     thumbnailAssetId: null,
-    assetCount: 0,
-    totalSize: 0,
-    entitledCount: 0,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
+    createdAt: AT,
+    updatedAt: AT,
     ...over,
   };
 }
@@ -659,7 +659,7 @@ describe('downloads', () => {
     );
     expect(result).toEqual(download);
     expect(appended).toEqual([
-      { type: 'content.download.created', version: 1, orgId: 'o1', subject: 'd1', data: download },
+      { type: 'content.download.created', version: 1, orgId: 'o1', data: download },
     ]);
   });
 
@@ -684,7 +684,7 @@ describe('downloads', () => {
     await svc.removeDownload('o1', 'd1');
 
     expect(appended).toEqual([
-      { type: 'content.download.deleted', version: 1, orgId: 'o1', subject: 'd1', data: download },
+      { type: 'content.download.deleted', version: 1, orgId: 'o1', data: download },
     ]);
   });
 
@@ -701,13 +701,12 @@ describe('downloads', () => {
 
 function makeDownloadAsset(over: Partial<DownloadAsset> = {}): DownloadAsset {
   return {
+    orgId: 'o1',
     id: 'da1',
+    downloadId: 'd1',
     assetId: 'a1',
     seq: 0,
     displayName: null,
-    filename: 'workbook.pdf',
-    contentType: 'application/pdf',
-    size: 1024,
     ...over,
   };
 }
@@ -764,24 +763,80 @@ describe('download assets', () => {
       makeDownloadAsset({ id: 'da2', assetId: 'a2', seq: 1 }),
     ]);
     vi.mocked(repo.reorderDownloadAssets).mockResolvedValue(reordered);
-    const { svc } = build(repo);
+    const { svc, appended } = build(repo);
 
     const result = await svc.reorderDownloadAssets('o1', 'd1', ['a2', 'a1']);
 
     expect(repo.reorderDownloadAssets).toHaveBeenCalledWith('o1', 'd1', ['a2', 'a1']);
     expect(result).toEqual(reordered);
+    expect(appended).toEqual([
+      {
+        type: 'content.download.assets.reordered',
+        version: 1,
+        orgId: 'o1',
+        data: { downloadId: 'd1', assets: reordered },
+      },
+    ]);
   });
 
   it('adds an asset and returns the ordered list', async () => {
     const repo = makeRepo();
     const list = [makeDownloadAsset()];
     vi.mocked(repo.addDownloadAsset).mockResolvedValue(list);
-    const { svc } = build(repo);
+    const { svc, appended } = build(repo);
 
     const result = await svc.addDownloadAsset('o1', 'd1', { assetId: 'a1' });
 
     expect(repo.addDownloadAsset).toHaveBeenCalledWith('o1', 'd1', { assetId: 'a1' });
     expect(result).toEqual(list);
+    expect(appended).toEqual([
+      {
+        type: 'content.download.asset.added',
+        version: 1,
+        orgId: 'o1',
+        data: { downloadId: 'd1', assets: list },
+      },
+    ]);
+  });
+
+  it('removes an asset and appends the updated ordered list', async () => {
+    const repo = makeRepo();
+    const list = [makeDownloadAsset({ id: 'da2', assetId: 'a2' })];
+    vi.mocked(repo.removeDownloadAsset).mockResolvedValue(list);
+    const { svc, appended } = build(repo);
+
+    const result = await svc.removeDownloadAsset('o1', 'd1', 'a1');
+
+    expect(repo.removeDownloadAsset).toHaveBeenCalledWith('o1', 'd1', 'a1');
+    expect(result).toEqual(list);
+    expect(appended).toEqual([
+      {
+        type: 'content.download.asset.removed',
+        version: 1,
+        orgId: 'o1',
+        data: { downloadId: 'd1', assets: list },
+      },
+    ]);
+  });
+
+  it('renames an asset and appends the updated ordered list', async () => {
+    const repo = makeRepo();
+    const list = [makeDownloadAsset({ displayName: 'Workbook' })];
+    vi.mocked(repo.renameDownloadAsset).mockResolvedValue(list);
+    const { svc, appended } = build(repo);
+
+    const result = await svc.renameDownloadAsset('o1', 'd1', 'a1', 'Workbook');
+
+    expect(repo.renameDownloadAsset).toHaveBeenCalledWith('o1', 'd1', 'a1', 'Workbook');
+    expect(result).toEqual(list);
+    expect(appended).toEqual([
+      {
+        type: 'content.download.asset.renamed',
+        version: 1,
+        orgId: 'o1',
+        data: { downloadId: 'd1', assets: list },
+      },
+    ]);
   });
 });
 
@@ -789,14 +844,14 @@ describe('contentEvents validation', () => {
   it('rejects a blank orgId', async () => {
     const { contentEvents } = await import('./events.js');
     expect(() =>
-      contentEvents.courseCreated.make({ orgId: '', subject: 'c1', data: makeCourse() }),
+      contentEvents.courseCreated.make({ orgId: '', data: makeCourse() }),
     ).toThrow(/orgId/);
   });
 
   it('rejects a snapshot without an id', async () => {
     const { contentEvents } = await import('./events.js');
     expect(() =>
-      contentEvents.moduleCreated.make({ orgId: 'org1', subject: 'm1', data: makeModule({ id: '' }) }),
+      contentEvents.moduleCreated.make({ orgId: 'org1', data: makeModule({ id: '' }) }),
     ).toThrow(/data\.id/);
   });
 
@@ -805,9 +860,29 @@ describe('contentEvents validation', () => {
     expect(() =>
       contentEvents.modulesReordered.make({
         orgId: 'org1',
-        subject: 'c1',
         data: [makeModule({ id: 'm1' }), makeModule({ id: '' })],
       }),
     ).toThrow(/data/);
+  });
+
+  it('rejects the old subject envelope field', async () => {
+    const { contentEvents } = await import('./events.js');
+    expect(() =>
+      contentEvents.courseCreated.make({
+        orgId: 'org1',
+        subject: 'c1',
+        data: makeCourse(),
+      } as Parameters<typeof contentEvents.courseCreated.make>[0]),
+    ).toThrow(/subject/);
+  });
+
+  it('rejects snapshot fields outside the content model', async () => {
+    const { contentEvents } = await import('./events.js');
+    expect(() =>
+      contentEvents.courseCreated.make({
+        orgId: 'org1',
+        data: { ...makeCourse(), extraField: true },
+      } as Parameters<typeof contentEvents.courseCreated.make>[0]),
+    ).toThrow(/extraField/);
   });
 });

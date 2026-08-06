@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { idSchema, serializableDateSchema } from "./shared.js";
+import { idSchema } from "./shared.js";
 
 export const userSchema = z.object({
   id: idSchema,
@@ -7,9 +7,9 @@ export const userSchema = z.object({
   email: z.string().email(),
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
-  createdAt: serializableDateSchema,
-  updatedAt: serializableDateSchema,
-});
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+}).strict();
 export type User = z.output<typeof userSchema>;
 export type UserInput = z.input<typeof userSchema>;
 
@@ -19,14 +19,14 @@ export const createUserInputSchema = z.object({
   email: z.string().email(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-});
+}).strict();
 export type CreateUserInput = z.infer<typeof createUserInputSchema>;
 
 export const provisionUserInputSchema = z.object({
   email: z.string().email(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-});
+}).strict();
 export type ProvisionUserInput = z.infer<typeof provisionUserInputSchema>;
 
 export const updateUserInputSchema = z.object({
@@ -34,5 +34,5 @@ export const updateUserInputSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   email: z.string().email().optional(),
-});
+}).strict();
 export type UpdateUserInput = z.infer<typeof updateUserInputSchema>;

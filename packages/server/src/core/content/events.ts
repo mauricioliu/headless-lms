@@ -2,7 +2,9 @@ import { z } from 'zod';
 import {
   activitySchema,
   courseSchema,
+  downloadAssetSchema,
   downloadSchema,
+  idSchema,
   moduleSchema,
 } from '@headless-lms/types/schemas';
 import {
@@ -10,6 +12,13 @@ import {
   type EventOf,
   type EventOfValues,
 } from '../shared/ports.js';
+
+const downloadAssetsEventSchema = z
+  .object({
+    downloadId: idSchema,
+    assets: z.array(downloadAssetSchema),
+  })
+  .strict();
 
 export const contentEvents = {
   courseCreated: defineEvent({
@@ -82,6 +91,26 @@ export const contentEvents = {
     version: 1,
     data: downloadSchema,
   }),
+  downloadAssetAdded: defineEvent({
+    type: 'content.download.asset.added',
+    version: 1,
+    data: downloadAssetsEventSchema,
+  }),
+  downloadAssetRemoved: defineEvent({
+    type: 'content.download.asset.removed',
+    version: 1,
+    data: downloadAssetsEventSchema,
+  }),
+  downloadAssetRenamed: defineEvent({
+    type: 'content.download.asset.renamed',
+    version: 1,
+    data: downloadAssetsEventSchema,
+  }),
+  downloadAssetsReordered: defineEvent({
+    type: 'content.download.assets.reordered',
+    version: 1,
+    data: downloadAssetsEventSchema,
+  }),
 };
 
 export type CourseCreated = EventOf<typeof contentEvents.courseCreated>;
@@ -98,4 +127,8 @@ export type CourseActivitiesReordered = EventOf<typeof contentEvents.activitiesR
 export type DownloadCreated = EventOf<typeof contentEvents.downloadCreated>;
 export type DownloadUpdated = EventOf<typeof contentEvents.downloadUpdated>;
 export type DownloadDeleted = EventOf<typeof contentEvents.downloadDeleted>;
+export type DownloadAssetAdded = EventOf<typeof contentEvents.downloadAssetAdded>;
+export type DownloadAssetRemoved = EventOf<typeof contentEvents.downloadAssetRemoved>;
+export type DownloadAssetRenamed = EventOf<typeof contentEvents.downloadAssetRenamed>;
+export type DownloadAssetsReordered = EventOf<typeof contentEvents.downloadAssetsReordered>;
 export type ContentEvent = EventOfValues<typeof contentEvents>;

@@ -2,6 +2,7 @@
 // and Module payloads (identical wire shape to the back-office API, including
 // the opaque activity `settings` blob) so one renderer path serves both.
 import { z } from "zod";
+import { progressReportItemSchema } from "@headless-lms/types/schemas";
 import { Course } from "./content.js";
 import { Module } from "./activities.js";
 import { Download, DownloadAsset } from "./downloads.js";
@@ -49,10 +50,7 @@ export type LearnViewer = z.infer<typeof LearnViewer>;
  *  activity (absent = the activity itself); `completed` is the learner's
  *  activity-level claim. Every other field is the asset type's own vocabulary,
  *  passed through opaquely. */
-export const ProgressReportItem = z.looseObject({
-  asset: z.string().optional(),
-  completed: z.boolean().optional(),
-});
+export const ProgressReportItem = progressReportItemSchema;
 export type ProgressReportItem = z.infer<typeof ProgressReportItem>;
 
 /** The report envelope: the target (key names the content type) and a batch of

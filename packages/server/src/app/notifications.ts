@@ -3,22 +3,40 @@
 // through publish, and the relay retries with backoff — no email is silently
 // dropped.
 import type { EventBus } from '../core/shared/ports.js';
-import type { Mailer } from '@headless-lms/server';
+import type { Mailer, MailerLookups } from '../core/shared/mailer.js';
 import { entitlementEvents } from '../core/entitlements/index.js';
 
-export function registerNotificationSubscribers(bus: EventBus, mailer: Pick<Mailer, 'send'>): void {
+export function registerNotificationSubscribers(
+  bus: EventBus,
+  mailer: Pick<Mailer, 'send'>,
+  lookups: MailerLookups,
+): void {
   bus.subscribe(entitlementEvents.entitlementCreated, async (event) => {
-    const entitlement = event.data;
-    await mailer.send(entitlement.email, 'accessGranted', {
-      contentTitle: entitlement.content.title,
-      contentId: entitlement.content.id,
+    const { orgUserId, contentId } = event.data;
+    const [to, content] = await Promise.all([
+      lookups.orgUserEmail(event.orgId, orgUserId),
+      lookups.contentInfo(event.orgId, contentId),
+    ]);
+    if (!to || !content) {
+      throw new Error(`entitlement notification lookups failed: ${event.data.id}`);
+    }
+    await mailer.send(to, 'accessGranted', {
+      contentTitle: content.title,
+      contentId: content.id,
     });
   });
 
   bus.subscribe(entitlementEvents.entitlementDeleted, async (event) => {
-    const entitlement = event.data;
-    await mailer.send(entitlement.email, 'accessRevoked', {
-      contentTitle: entitlement.content.title,
+    const { orgUserId, contentId } = event.data;
+    const [to, content] = await Promise.all([
+      lookups.orgUserEmail(event.orgId, orgUserId),
+      lookups.contentInfo(event.orgId, contentId),
+    ]);
+    if (!to || !content) {
+      throw new Error(`entitlement notification lookups failed: ${event.data.id}`);
+    }
+    await mailer.send(to, 'accessRevoked', {
+      contentTitle: content.title,
     });
   });
 }

@@ -11,13 +11,14 @@ type Row = typeof connections.$inferSelect;
 
 function toConnection(row: Row): Connection {
   return {
+    orgId: row.orgId,
     id: row.id,
     integrationId: row.integrationId,
     config: row.config,
     active: row.active,
     credentialRef: row.credentialRef,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 
@@ -28,10 +29,13 @@ export class DrizzleConnectionsRepository implements ConnectionsRepository {
   ) {}
 
   async insert(orgId: string, connection: Connection): Promise<Connection> {
+    if (connection.orgId !== orgId) {
+      throw new Error('connection org mismatch');
+    }
     const [row] = await this.db
       .insert(connections)
       .values({
-        orgId,
+        orgId: connection.orgId,
         id: connection.id,
         integrationId: connection.integrationId,
         config: connection.config,

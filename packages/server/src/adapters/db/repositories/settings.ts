@@ -1,4 +1,5 @@
 import { and, eq } from 'drizzle-orm';
+import type { Setting } from '@headless-lms/types/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { SettingsRecord, SettingsRepository } from '../../../core/shared/settings.js';
 import { settings } from '../schema/settings.js';
@@ -74,7 +75,7 @@ export class DrizzleSettingsRepository implements SettingsRepository {
       if (!existing) {
         const [inserted] = await tx
           .insert(settings)
-          .values({ orgId, namespace, scopeId, value: patch })
+          .values({ orgId, namespace, scopeId, value: patch as Setting['value'] })
           .onConflictDoNothing()
           .returning();
         if (inserted) {
@@ -91,7 +92,7 @@ export class DrizzleSettingsRepository implements SettingsRepository {
 
       const [updated] = await tx
         .update(settings)
-        .set({ value: deepMerge(existing.value, patch) as Record<string, unknown>, updatedAt: new Date() })
+        .set({ value: deepMerge(existing.value, patch) as Setting['value'], updatedAt: new Date() })
         .where(key)
         .returning();
       return updated;

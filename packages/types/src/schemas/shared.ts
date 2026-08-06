@@ -6,7 +6,7 @@ export const idSchema: z.ZodString = z.string().trim().min(1);
 export const isoDateStringSchema = z.string().trim().min(1);
 
 export const serializableDateSchema = z.union([
-  z.date().transform((value) => value.toISOString()),
+  z.coerce.date().transform((value) => value.toISOString()),
   isoDateStringSchema,
 ]);
 
@@ -30,8 +30,7 @@ export const domainEventSchema: z.ZodType<DomainEvent> = z.object({
   version: z.number().int().positive(),
   id: idSchema,
   orgId: idSchema,
-  subject: idSchema,
   occurredAt: isoDateStringSchema,
   data: jsonValueSchema,
   metadata: eventMetadataSchema.optional(),
-});
+}).strict();

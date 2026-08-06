@@ -1,6 +1,5 @@
 export type {
   EntitlementStatus,
-  ContentRef,
   Entitlement,
   EntitlementsQuery,
   GrantEntitlementInput,

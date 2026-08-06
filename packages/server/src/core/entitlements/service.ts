@@ -43,7 +43,6 @@ export class EntitlementsServiceImpl implements EntitlementsService {
       await outbox.append([
         entitlementEvents.entitlementCreated.make({
           orgId,
-          subject: created.id,
           data: created,
         }),
       ]);
@@ -53,8 +52,7 @@ export class EntitlementsServiceImpl implements EntitlementsService {
       orgId,
       entitlementId: entitlement.id,
       orgUserId: entitlement.orgUserId,
-      contentId: entitlement.content.id,
-      contentType: entitlement.content.type,
+      contentId: entitlement.contentId,
     });
     return entitlement;
   }
@@ -73,12 +71,10 @@ export class EntitlementsServiceImpl implements EntitlementsService {
         status === 'revoked'
           ? entitlementEvents.entitlementDeleted.make({
               orgId,
-              subject: updated.id,
               data: updated,
             })
           : entitlementEvents.entitlementUpdated.make({
               orgId,
-              subject: updated.id,
               data: updated,
             }),
       ]);
