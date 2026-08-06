@@ -1,9 +1,4 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    // Pure types + explicit annotations, so tsdown generates .d.ts via oxc
-    // (fast path) instead of tsc.
-    "isolatedDeclarations": true
-  },
   "include": ["src/**/*.ts"]
 }

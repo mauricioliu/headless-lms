@@ -2,7 +2,7 @@
   "name": "@headless-lms/types",
   "version": "0.0.0",
   "private": true,
-  "description": "Domain types for the platform: entities, DTOs, domain events, and the integration contract. Pure type declarations — no runtime code, no dependencies.",
+  "description": "Domain types for the platform, with runtime schemas available from @headless-lms/types/schemas.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,6 +12,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./schemas": {
+      "types": "./src/schemas/index.ts",
+      "default": "./src/schemas/index.ts"
+    },
     "./editor": {
       "types": "./dist/editor/index.d.ts",
       "default": "./dist/editor/index.js"
@@ -20,6 +24,9 @@
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
