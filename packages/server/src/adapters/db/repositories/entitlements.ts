@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import type { DbExecutor } from '../index.js';
-import type { EntitlementsRepository } from '../../../core/entitlements/ports.js';
+import type { EntitlementsRepository } from '@headless-lms/core/entitlements';
 import type {
   Entitlement,
   EntitlementStatus,
@@ -12,7 +12,7 @@ import { entitlements } from '../schema/index.js';
 import { orgUsers, users } from '../schema/index.js';
 import { contentItems, courses, downloads } from '../schema/content.js';
 import type { Logger } from '@headless-lms/types';
-import { noopLogger } from '../../../core/shared/logger.js';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 
 type ResolvedStatus = 'active' | 'expired' | 'revoked';
 

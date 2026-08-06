@@ -1,6 +1,6 @@
 import type { FastifyRequest } from 'fastify';
 import type { Container } from '../app/container.js';
-import { isStaffRole, type StaffRole } from '../core/organizations/index.js';
+import { isStaffRole, type StaffRole } from '@headless-lms/core/organizations';
 
 export interface OrgScope {
   /** Domain `organizations.id` for the session's active org. */

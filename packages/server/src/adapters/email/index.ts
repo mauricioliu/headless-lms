@@ -1,6 +1,6 @@
 // Default when no EmailSender is injected — fails loudly on use.
-import type { EmailSender, EmailMessage, EmailTemplateId, Logger, TemplateRenderer } from '../../core/shared/ports.js';
-import { noopLogger } from '../../core/shared/logger.js';
+import type { EmailSender, EmailMessage, EmailTemplateId, Logger, TemplateRenderer } from '@headless-lms/core/shared/ports';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 
 export class EmailAdapter implements EmailSender {
   constructor(private readonly logger: Logger = noopLogger) {}

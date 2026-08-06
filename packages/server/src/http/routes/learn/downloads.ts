@@ -8,7 +8,7 @@ import {
   LearnDownload,
   LearnDownloads,
 } from '../../schemas/index.js';
-import { NotFoundError } from '../../../core/shared/errors.js';
+import { NotFoundError } from '@headless-lms/core/shared/errors';
 import type { Container } from '../../../app/container.js';
 import { UnauthorizedError } from '../../plugins/auth.js';
 

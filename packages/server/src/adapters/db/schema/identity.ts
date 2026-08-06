@@ -3,7 +3,7 @@
 // One row per human, global, storing auth ID in `external_id`.
 import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import type { User } from '@headless-lms/types/schemas';
-import { genId } from '../../../core/shared/id.js';
+import { genId } from '@headless-lms/core/shared/id';
 import type { Expect, NoDrift } from './drift.js';
 
 export const users = pgTable('users', {

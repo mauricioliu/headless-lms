@@ -3,7 +3,7 @@
 // ordered jsonb blobs (contract types owned by @headless-lms/types); a run's
 // `event` is the triggering DomainEvent snapshot, stored verbatim.
 import { pgTable, text, boolean, jsonb, timestamp, primaryKey, index, uniqueIndex } from 'drizzle-orm/pg-core';
-import { genId } from '../../../core/shared/id.js';
+import { genId } from '@headless-lms/core/shared/id';
 import { organizations } from './organizations.js';
 import type {
   Automation,
@@ -11,7 +11,7 @@ import type {
   AutomationActionResult,
   AutomationRun,
 } from '@headless-lms/types/schemas';
-import type { DomainEvent } from '../../../core/shared/ports.js';
+import type { DomainEvent } from '@headless-lms/core/shared/ports';
 import type { Expect, NoDrift } from './drift.js';
 
 export const automations = pgTable(

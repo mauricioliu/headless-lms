@@ -16,7 +16,7 @@ import {
 } from '../schemas/index.js';
 import { z } from 'zod';
 import type { Container } from '../../app/container.js';
-import { NotFoundError } from '../../core/shared/errors.js';
+import { NotFoundError } from '@headless-lms/core/shared/errors';
 import { resolveScope } from '../scope.js';
 
 export async function coursesRoutes(app: FastifyInstance, container: Container): Promise<void> {

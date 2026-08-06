@@ -2,13 +2,13 @@
 // (which published courses the student is actively enrolled in) with the content
 // service (the Course/Module payload). Activities are filtered to published;
 // `settings.published === false` is the only draft signal (missing ⇒ published).
-import type { ContentService } from '../../core/content/index.js';
-import type { ProgressService } from '../../core/progress/index.js';
-import type { AssetsService } from '../../core/assets/index.js';
+import type { ContentService } from '../../content/index.js';
+import type { ProgressService } from '../../progress/index.js';
+import type { AssetsService } from '../../assets/index.js';
 import type { Course, Module, CourseProgressView, Download, DownloadAsset } from './model.js';
 import type { LearnEntitlementReader, LearnReportService } from './ports.js';
-import type { Logger } from '../../core/shared/ports.js';
-import { noopLogger } from '../../core/shared/logger.js';
+import type { Logger } from '../../shared/ports.js';
+import { noopLogger } from '../../shared/logger.js';
 
 function isActivityPublished(settings: unknown): boolean {
   return (settings as { published?: boolean } | null)?.published !== false;

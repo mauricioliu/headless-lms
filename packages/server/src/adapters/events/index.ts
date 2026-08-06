@@ -1,7 +1,7 @@
 // In-process event bus. Implements the shared EventBus port: publish invokes
 // every handler subscribed to the event's type, sequentially, awaiting each,
 // then every all-events handler (subscribeAll), also sequentially awaited.
-import type { DomainEvent, EventBus, EventDefinition } from '../../core/shared/ports.js';
+import type { DomainEvent, EventBus, EventDefinition } from '@headless-lms/core/shared/ports';
 
 export class InMemoryEventBus implements EventBus {
   private readonly handlers = new Map<string, Array<(e: DomainEvent) => Promise<void>>>();

@@ -1,7 +1,7 @@
 import { index, integer, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import type { EventOutbox } from '@headless-lms/types/schemas';
-import { genId } from '../../../core/shared/id.js';
+import { genId } from '@headless-lms/core/shared/id';
 import type { Expect, NoDrift } from './drift.js';
 
 export const eventOutbox = pgTable(

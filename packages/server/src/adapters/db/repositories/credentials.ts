@@ -8,9 +8,9 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import type { DbExecutor } from '../index.js';
-import type { CredentialStore, Logger } from '../../../core/shared/ports.js';
-import { noopLogger } from '../../../core/shared/logger.js';
-import { genId } from '../../../core/shared/id.js';
+import type { CredentialStore, Logger } from '@headless-lms/core/shared/ports';
+import { noopLogger } from '@headless-lms/core/shared/logger';
+import { genId } from '@headless-lms/core/shared/id';
 import { credentials } from '../schema/credentials.js';
 
 const IV_BYTES = 12;

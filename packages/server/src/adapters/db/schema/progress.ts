@@ -14,7 +14,7 @@ import {
   foreignKey,
 } from 'drizzle-orm/pg-core';
 import type { ProgressRecord } from '@headless-lms/types/schemas';
-import { genId } from '../../../core/shared/id.js';
+import { genId } from '@headless-lms/core/shared/id';
 import { organizations, orgUsers } from './organizations.js';
 import type { Expect, NoDrift } from './drift.js';
 

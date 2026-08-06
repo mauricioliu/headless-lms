@@ -1,5 +1,5 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { UnitOfWork } from '../../core/shared/ports.js';
+import type { UnitOfWork } from '@headless-lms/core/shared/ports';
 import type { Tx } from './index.js';
 
 export class DrizzleUnitOfWork<Scope> implements UnitOfWork<Scope> {

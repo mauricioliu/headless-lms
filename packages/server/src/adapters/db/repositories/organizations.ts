@@ -5,18 +5,18 @@ import type {
   NewInviteRow,
   NewOrganizationRow,
   OrganizationsRepository,
-} from '../../../core/organizations/ports.js';
-import type { Invite, Organization, OrgUser } from '../../../core/organizations/model.js';
-import { normalizeRole, parseRole } from '../../../core/organizations/index.js';
+} from '@headless-lms/core/organizations';
+import type { Invite, Organization, OrgUser } from '@headless-lms/core/organizations';
+import { normalizeRole, parseRole } from '@headless-lms/core/organizations';
 import type {
   AddOrgUserInput,
   CreateOrgUserInput,
   UpdateOrganizationInput,
-} from '../../../core/organizations/types.js';
+} from '@headless-lms/core/organizations';
 import { invites, organizations, orgUsers } from '../schema/organizations.js';
-import type { Logger } from '../../../core/shared/ports.js';
-import { noopLogger } from '../../../core/shared/logger.js';
-import { ConflictError } from '../../../core/shared/errors.js';
+import type { Logger } from '@headless-lms/core/shared/ports';
+import { noopLogger } from '@headless-lms/core/shared/logger';
+import { ConflictError } from '@headless-lms/core/shared/errors';
 import { isUniqueViolation } from './pg-errors.js';
 
 const INVITE_STATUSES = ['pending', 'accepted', 'rejected', 'canceled'] as const;

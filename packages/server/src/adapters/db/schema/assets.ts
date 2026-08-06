@@ -2,7 +2,7 @@
 // with org_id → organizations.id, mirroring the multi-tenant table shape.
 import { pgTable, text, bigint, timestamp, primaryKey } from 'drizzle-orm/pg-core';
 import type { Asset } from '@headless-lms/types/schemas';
-import { genId } from '../../../core/shared/id.js';
+import { genId } from '@headless-lms/core/shared/id';
 import { organizations } from './organizations.js';
 import type { Expect, NoDrift } from './drift.js';
 

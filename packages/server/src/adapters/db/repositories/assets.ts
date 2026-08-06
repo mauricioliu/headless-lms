@@ -1,6 +1,6 @@
 // assets — Drizzle repository (implements the core outbound port).
 import { and, eq, ilike, sql, asc, desc, type SQL } from 'drizzle-orm';
-import type { AssetsRepository } from '../../../core/assets/ports.js';
+import type { AssetsRepository } from '@headless-lms/core/assets';
 import type {
   Asset,
   AssetKind,
@@ -10,7 +10,7 @@ import type {
 } from '@headless-lms/types';
 import { assets } from '../schema/assets.js';
 import type { Logger } from '@headless-lms/types';
-import { noopLogger } from '../../../core/shared/logger.js';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 import type { DbExecutor } from '../index.js';
 
 type Row = typeof assets.$inferSelect;

@@ -6,12 +6,12 @@
 // field the service reads back off `handle`'s event.
 import { and, asc, desc, eq, sql, type SQL } from 'drizzle-orm';
 import type { DbExecutor } from '../index.js';
-import type { AutomationRunsRepository, AutomationsRepository, NewAutomationRun } from '../../../core/automations/ports.js';
-import type { Automation, AutomationRun, Page } from '../../../core/automations/model.js';
-import type { AutomationRunsQuery, CreateAutomationInput, UpdateAutomationInput } from '../../../core/automations/types.js';
+import type { AutomationRunsRepository, AutomationsRepository, NewAutomationRun } from '@headless-lms/core/automations';
+import type { Automation, AutomationRun, Page } from '@headless-lms/core/automations';
+import type { AutomationRunsQuery, CreateAutomationInput, UpdateAutomationInput } from '@headless-lms/core/automations';
 import { automations, automationRuns } from '../schema/index.js';
-import type { Logger } from '../../../core/shared/ports.js';
-import { noopLogger } from '../../../core/shared/logger.js';
+import type { Logger } from '@headless-lms/core/shared/ports';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 
 const automationSelection = {
   orgId: automations.orgId,

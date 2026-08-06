@@ -2,9 +2,9 @@
 // reach the bus via the outbox relay at-least-once: a mailer failure throws
 // through publish, and the relay retries with backoff — no email is silently
 // dropped.
-import type { EventBus } from '../core/shared/ports.js';
-import type { Mailer, MailerLookups } from '../core/shared/mailer.js';
-import { entitlementEvents } from '../core/entitlements/index.js';
+import type { EventBus } from '@headless-lms/core/shared/ports';
+import type { Mailer, MailerLookups } from '@headless-lms/core/shared/mailer';
+import { entitlementEvents } from '@headless-lms/core/entitlements';
 
 export function registerNotificationSubscribers(
   bus: EventBus,

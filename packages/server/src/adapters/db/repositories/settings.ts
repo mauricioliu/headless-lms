@@ -1,10 +1,10 @@
 import { and, eq } from 'drizzle-orm';
 import type { Setting } from '@headless-lms/types/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { SettingsRecord, SettingsRepository } from '../../../core/shared/settings.js';
+import type { SettingsRecord, SettingsRepository } from '@headless-lms/core/shared/settings';
 import { settings } from '../schema/settings.js';
 import type { Logger } from '@headless-lms/types';
-import { noopLogger } from '../../../core/shared/logger.js';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 
 type Row = typeof settings.$inferSelect;
 

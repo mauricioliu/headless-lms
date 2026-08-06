@@ -18,7 +18,7 @@ import {
   RequestUpload,
   UploadTicket,
 } from '../schemas/index.js';
-import { NotFoundError } from '../../core/shared/errors.js';
+import { NotFoundError } from '@headless-lms/core/shared/errors';
 import type { Container } from '../../app/container.js';
 
 /** Resolve the session's active org to the domain org id, or 400 and return null. */

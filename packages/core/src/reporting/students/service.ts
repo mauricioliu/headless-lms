@@ -1,8 +1,8 @@
 // reporting/students — service implementation (inbound port).
 import type { Page, Student, StudentsQuery } from './model.js';
 import type { StudentsReportRepository, StudentsReportService } from './ports.js';
-import type { Logger } from '../../core/shared/ports.js';
-import { noopLogger } from '../../core/shared/logger.js';
+import type { Logger } from '../../shared/ports.js';
+import { noopLogger } from '../../shared/logger.js';
 
 export type StudentsReportServiceParams = {
   repo: StudentsReportRepository;

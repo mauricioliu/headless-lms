@@ -26,7 +26,7 @@ import type {
   DownloadAsset,
   Module,
 } from '@headless-lms/types/schemas';
-import { genId } from '../../../core/shared/id.js';
+import { genId } from '@headless-lms/core/shared/id';
 import { organizations } from './organizations.js';
 import { assets } from './assets.js';
 import type { Expect, NoDrift } from './drift.js';

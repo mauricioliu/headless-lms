@@ -10,6 +10,7 @@ export type {
   AutomationDispatch,
   AutomationExecutor,
   AutomationEngine,
+  NewAutomationRun,
 } from './ports.js';
 export type {
   Automation,

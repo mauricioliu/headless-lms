@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { PollingOutboxRelay, type PollingOutboxRelayConfig } from './outbox-relay.js';
 import { InMemoryEventBus } from './index.js';
-import type { Logger, OutboxMessage, OutboxStore } from '../../core/shared/ports.js';
+import type { Logger, OutboxMessage, OutboxStore } from '@headless-lms/core/shared/ports';
 
 const CONFIG: PollingOutboxRelayConfig = {
   enabled: true,

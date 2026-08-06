@@ -27,9 +27,9 @@ export type {
   BuildContainerOptions,
   LoggingConfig,
 } from './app/container.js';
-export type { EmailSender, EmailMessage, ObjectStorage } from './core/shared/ports.js';
-export type { Mailer } from './core/shared/mailer.js';
-export type { AutomationEngine } from './core/automations/index.js';
+export type { EmailSender, EmailMessage, ObjectStorage } from '@headless-lms/core/shared/ports';
+export type { Mailer } from '@headless-lms/core/shared/mailer';
+export type { AutomationEngine } from '@headless-lms/core/automations';
 
 export async function createContainer(
   config: ServerConfig,

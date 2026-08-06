@@ -3,14 +3,14 @@
 // display. Writes go through the auth provider (see adapters/auth/org-admin.ts).
 import { and, eq, ne } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { MembersRepository, MemberRecord } from '../../../core/organizations/index.js';
-import type { Member, MembersQuery, Page, StaffRole } from '../../../core/organizations/index.js';
-import { isStaffRole, STUDENT_ROLE } from '../../../core/organizations/index.js';
+import type { MembersRepository, MemberRecord } from '@headless-lms/core/organizations';
+import type { Member, MembersQuery, Page, StaffRole } from '@headless-lms/core/organizations';
+import { isStaffRole, STUDENT_ROLE } from '@headless-lms/core/organizations';
 import { orgUsers, invites } from '../schema/organizations.js';
 import { users } from '../schema/identity.js';
 import { user } from '../../auth/schema.js';
-import type { Logger } from '../../../core/shared/ports.js';
-import { noopLogger } from '../../../core/shared/logger.js';
+import type { Logger } from '@headless-lms/core/shared/ports';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 import { orgUserProfileColumns } from './org-user-profile.js';
 
 // The member surface is staff-only; a student org user never reaches here

@@ -1,11 +1,11 @@
 // integrations — Drizzle repository (implements the core outbound port).
 import { and, asc, eq } from 'drizzle-orm';
 import type { DbExecutor } from '../index.js';
-import type { ConnectionsRepository } from '../../../core/integrations/ports.js';
-import type { Connection } from '../../../core/integrations/model.js';
+import type { ConnectionsRepository } from '@headless-lms/core/integrations';
+import type { Connection } from '@headless-lms/core/integrations';
 import { connections } from '../schema/integrations.js';
-import type { Logger } from '../../../core/shared/ports.js';
-import { noopLogger } from '../../../core/shared/logger.js';
+import type { Logger } from '@headless-lms/core/shared/ports';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 
 type Row = typeof connections.$inferSelect;
 

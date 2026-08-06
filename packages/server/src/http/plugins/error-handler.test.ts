@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
-import { NotFoundError, ConflictError } from '../../core/shared/errors.js';
-import { OrganizationRuleError } from '../../core/organizations/index.js';
+import { NotFoundError, ConflictError } from '@headless-lms/core/shared/errors';
+import { OrganizationRuleError } from '@headless-lms/core/organizations';
 import {
   AlreadyConnectedError,
   InvalidConfigError,
   UnknownIntegrationError,
-} from '../../core/integrations/index.js';
+} from '@headless-lms/core/integrations';
 import { errorHandler } from './error-handler.js';
 
 let app: FastifyInstance;

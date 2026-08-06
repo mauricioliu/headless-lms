@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { LearnReportServiceImpl } from './service.js';
 import type { LearnEntitlementReader, ContentRef } from './index.js';
-import type { Activity, ContentService, Course, Module } from '../../core/content/index.js';
-import type { ProgressRecord, ProgressService } from '../../core/progress/index.js';
-import type { AssetsService } from '../../core/assets/index.js';
-import type { Asset } from '../../core/assets/model.js';
+import type { Activity, ContentService, Course, Module } from '../../content/index.js';
+import type { ProgressRecord, ProgressService } from '../../progress/index.js';
+import type { AssetsService } from '../../assets/index.js';
+import type { Asset } from '../../assets/model.js';
 
 const AT = new Date('2026-01-01T00:00:00.000Z');
 

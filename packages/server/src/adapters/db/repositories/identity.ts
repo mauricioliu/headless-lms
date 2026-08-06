@@ -4,12 +4,12 @@
 // organizations context (`org_users`), not here.
 import { eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { IdentityRepository } from '../../../core/identity/ports.js';
+import type { IdentityRepository } from '@headless-lms/core/identity';
 import type { User } from '@headless-lms/types';
 import type { CreateUserInput, UpdateUserInput } from '@headless-lms/types';
 import { users } from '../schema/identity.js';
 import type { Logger } from '@headless-lms/types';
-import { noopLogger } from '../../../core/shared/logger.js';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 
 export class DrizzleIdentityRepository implements IdentityRepository {
   constructor(

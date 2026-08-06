@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { AssetIdParam, DownloadTicket, ErrorBody } from '../../schemas/index.js';
-import { NotFoundError } from '../../../core/shared/errors.js';
+import { NotFoundError } from '@headless-lms/core/shared/errors';
 import type { Container } from '@headless-lms/server';
 
 export async function learnAssetsRoutes(app: FastifyInstance, container: Container): Promise<void> {

@@ -7,14 +7,14 @@
 // LEFT JOINed via that same identity row.
 import { and, asc, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { StudentsReportRepository } from '../../../reporting/students/index.js';
-import type { Page, Student, StudentsQuery } from '../../../reporting/students/index.js';
+import type { StudentsReportRepository } from '@headless-lms/core/reporting/students';
+import type { Page, Student, StudentsQuery } from '@headless-lms/core/reporting/students';
 import { orgUsers, users, entitlements } from '../schema/index.js';
-import { STUDENT_ROLE } from '../../../core/organizations/index.js';
+import { STUDENT_ROLE } from '@headless-lms/core/organizations';
 import { user } from '../../auth/schema.js';
 import type { OrgUserStatus } from '@headless-lms/types';
-import type { Logger } from '../../../core/shared/ports.js';
-import { noopLogger } from '../../../core/shared/logger.js';
+import type { Logger } from '@headless-lms/core/shared/ports';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 import { orgUserProfileColumns } from './org-user-profile.js';
 
 const entitlementCountExpr = sql<number>`count(${entitlements.id})`;

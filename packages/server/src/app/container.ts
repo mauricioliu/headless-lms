@@ -19,22 +19,22 @@ import {
 import { StorageAdapter } from '../adapters/storage/index.js';
 import { BetterAuth } from '../adapters/auth/index.js';
 
-import { ContentServiceImpl } from '../core/content/index.js';
-import { EntitlementsServiceImpl } from '../core/entitlements/index.js';
-import { ProgressServiceImpl } from '../core/progress/index.js';
-import { DiscussionServiceImpl } from '../core/discussion/index.js';
-import { IdentityServiceImpl, type SessionAdmin } from '../core/identity/index.js';
-import { type OrgAdmin, OrganizationServiceImpl, parseRole } from '../core/organizations/index.js';
-import { AssetsServiceImpl } from '../core/assets/index.js';
-import { IntegrationsServiceImpl } from '../core/integrations/index.js';
-import { AutomationsServiceImpl } from '../core/automations/index.js';
+import { ContentServiceImpl } from '@headless-lms/core/content';
+import { EntitlementsServiceImpl } from '@headless-lms/core/entitlements';
+import { ProgressServiceImpl } from '@headless-lms/core/progress';
+import { DiscussionServiceImpl } from '@headless-lms/core/discussion';
+import { IdentityServiceImpl, type SessionAdmin } from '@headless-lms/core/identity';
+import { type OrgAdmin, OrganizationServiceImpl, parseRole } from '@headless-lms/core/organizations';
+import { AssetsServiceImpl } from '@headless-lms/core/assets';
+import { IntegrationsServiceImpl } from '@headless-lms/core/integrations';
+import { AutomationsServiceImpl } from '@headless-lms/core/automations';
 import { loadIntegrations } from './integrations.js';
 import { registerNotificationSubscribers } from './notifications.js';
-import { StudentsReportServiceImpl } from '../reporting/students/index.js';
-import { DashboardReportServiceImpl } from '../reporting/dashboard/index.js';
-import { LearnReportServiceImpl } from '../reporting/learn/index.js';
-import { Mailer, type MailerLookups } from '../core/shared/mailer.js';
-import { SettingsService } from '../core/shared/settings.js';
+import { StudentsReportServiceImpl } from '@headless-lms/core/reporting/students';
+import { DashboardReportServiceImpl } from '@headless-lms/core/reporting/dashboard';
+import { LearnReportServiceImpl } from '@headless-lms/core/reporting/learn';
+import { Mailer, type MailerLookups } from '@headless-lms/core/shared/mailer';
+import { SettingsService } from '@headless-lms/core/shared/settings';
 
 import { DrizzleEntitlementsRepository } from '../adapters/db/repositories/entitlements.js';
 import { DrizzleProgressRepository } from '../adapters/db/repositories/progress.js';
@@ -62,7 +62,7 @@ import type {
   OutboxRelay,
   TemplateContext,
   TemplateRenderer,
-} from '../core/shared/ports.js';
+} from '@headless-lms/core/shared/ports';
 import type { AutomationEngine } from '@headless-lms/types';
 
 /** Installation-supplied ports; an absent slot falls back to a fail-loudly stub. */

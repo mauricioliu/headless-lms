@@ -7,10 +7,10 @@
 // no explicit content-type filter needed.
 import { and, eq, gt, isNull, or, sql, type SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { LearnEntitlementReader, ContentRef } from '../../../reporting/learn/index.js';
+import type { LearnEntitlementReader, ContentRef } from '@headless-lms/core/reporting/learn';
 import { entitlements, courses, downloads, downloadAssets } from '../schema/index.js';
-import type { Logger } from '../../../core/shared/ports.js';
-import { noopLogger } from '../../../core/shared/logger.js';
+import type { Logger } from '@headless-lms/core/shared/ports';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 
 export class DrizzleLearnRepository implements LearnEntitlementReader {
   constructor(

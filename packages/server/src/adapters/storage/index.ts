@@ -5,8 +5,8 @@ import type {
   PresignDownloadInput,
   PresignedUpload,
   StoredObjectInfo,
-} from '../../core/shared/ports.js';
-import { noopLogger } from '../../core/shared/logger.js';
+} from '@headless-lms/core/shared/ports';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 
 export class StorageAdapter implements ObjectStorage {
   constructor(private readonly logger: Logger = noopLogger) {}

@@ -5,7 +5,7 @@ import type {
   CommentReactions,
   CommentWithContext,
   DiscussionRepository,
-} from '../../../core/discussion/ports.js';
+} from '@headless-lms/core/discussion';
 import type {
   Comment,
   CommentReport,
@@ -21,7 +21,7 @@ import { orgUsers } from '../schema/organizations.js';
 import { users } from '../schema/identity.js';
 import { user } from '../../auth/schema.js';
 import { orgUserProfileColumns } from './org-user-profile.js';
-import { noopLogger } from '../../../core/shared/logger.js';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 
 type CommentRow = typeof comments.$inferSelect;
 

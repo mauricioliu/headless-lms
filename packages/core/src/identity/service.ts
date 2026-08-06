@@ -4,7 +4,7 @@ import type { CreateUserInput, UpdateUserInput } from './types.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 import { ConflictError, NotFoundError } from '../shared/errors.js';
-import type { Mailer } from '@headless-lms/server';
+import type { Mailer } from '../shared/mailer.js';
 import { identityEvents } from './events.js';
 
 export class IdentityServiceImpl implements IdentityService {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { InMemoryEventBus } from './index.js';
-import type { DomainEvent } from '../../core/shared/ports.js';
+import type { DomainEvent } from '@headless-lms/core/shared/ports';
 
 function event(type: string, id: string): DomainEvent {
   return {

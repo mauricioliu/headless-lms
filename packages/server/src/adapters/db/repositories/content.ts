@@ -17,7 +17,7 @@ import {
 } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { DbExecutor, Tx } from '../index.js';
-import type { ContentRepository } from '../../../core/content/ports.js';
+import type { ContentRepository } from '@headless-lms/core/content';
 import type {
   Activity,
   Course,
@@ -27,7 +27,7 @@ import type {
   DownloadStatus,
   Module,
   SaveActivityInput,
-} from '../../../core/content/model.js';
+} from '@headless-lms/core/content';
 import type {
   AddDownloadAssetInput,
   CreateCourseInput,
@@ -37,7 +37,7 @@ import type {
   Page,
   UpdateCourseInput,
   UpdateDownloadInput,
-} from '../../../core/content/types.js';
+} from '@headless-lms/core/content';
 import {
   contentItems,
   courses,
@@ -47,10 +47,10 @@ import {
   downloads,
   downloadAssets,
 } from '../schema/content.js';
-import { genId } from '../../../core/shared/id.js';
-import type { Logger } from '../../../core/shared/ports.js';
-import { noopLogger } from '../../../core/shared/logger.js';
-import { NotFoundError, ConflictError } from '../../../core/shared/errors.js';
+import { genId } from '@headless-lms/core/shared/id';
+import type { Logger } from '@headless-lms/core/shared/ports';
+import { noopLogger } from '@headless-lms/core/shared/logger';
+import { NotFoundError, ConflictError } from '@headless-lms/core/shared/errors';
 import { isUniqueViolation } from './pg-errors.js';
 
 function toCourse(row: typeof courses.$inferSelect): Course {

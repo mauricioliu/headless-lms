@@ -10,6 +10,9 @@ export type {
   OrgAdmin,
   AuthHeaders,
   AuthOrganization,
+  OrganizationsRepository,
+  NewOrganizationRow,
+  NewInviteRow,
 } from './ports.js';
 export type { Organization, OrgUser, Invite } from './model.js';
 export { OrganizationRuleError } from './members.js';

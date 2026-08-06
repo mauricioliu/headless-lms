@@ -1,12 +1,12 @@
-import { ConflictError, ForbiddenError, NotFoundError } from '../../core/shared/errors.js';
-import { OrganizationRuleError } from '../../core/organizations/index.js';
+import { ConflictError, ForbiddenError, NotFoundError } from '@headless-lms/core/shared/errors';
+import { OrganizationRuleError } from '@headless-lms/core/organizations';
 import {
   ActionInvocationError,
   AlreadyConnectedError,
   InvalidConfigError,
   UnknownIntegrationError,
-} from '../../core/integrations/index.js';
-import { InvalidTriggerError } from '../../core/automations/index.js';
+} from '@headless-lms/core/integrations';
+import { InvalidTriggerError } from '@headless-lms/core/automations';
 import { NoActiveOrgError } from '../scope.js';
 import { UnauthorizedError } from './auth.js';
 import type { FastifyReply, FastifyRequest } from 'fastify';

@@ -1,8 +1,8 @@
 // reporting/dashboard — service implementation (inbound port).
 import type { EnrollmentPoint, OverviewStats } from './model.js';
 import type { DashboardReportRepository, DashboardReportService } from './ports.js';
-import type { Logger } from '../../core/shared/ports.js';
-import { noopLogger } from '../../core/shared/logger.js';
+import type { Logger } from '../../shared/ports.js';
+import { noopLogger } from '../../shared/logger.js';
 
 export type DashboardReportServiceParams = {
   repo: DashboardReportRepository;

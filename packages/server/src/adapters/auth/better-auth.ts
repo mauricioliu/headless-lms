@@ -9,12 +9,12 @@ import { APIError, betterAuth } from 'better-auth';
 import type { CreateAuthOptions } from './types.js';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import * as authSchema from './schema.js';
-import { prefixId } from '../../core/shared/id.js';
+import { prefixId } from '@headless-lms/core/shared/id';
 import { customSession, magicLink, organization } from 'better-auth/plugins';
 import { eq } from 'drizzle-orm';
 import { ac, roles } from './access.js';
-import  { type AuthHeaders, type AuthOrganization, type MemberWriteContext, type OrgAdmin, OrganizationRuleError, parseRole, type Role, type UpdateOrganizationInput } from '../../core/organizations/index.js';
-import type { SessionAdmin } from '../../core/identity/index.js';
+import  { type AuthHeaders, type AuthOrganization, type MemberWriteContext, type OrgAdmin, OrganizationRuleError, parseRole, type Role, type UpdateOrganizationInput } from '@headless-lms/core/organizations';
+import type { SessionAdmin } from '@headless-lms/core/identity';
 
 export function createAuth(opts: CreateAuthOptions) {
   const { sendResetPassword, sendMagicLink, beforeUserCreate, beforeCreateSession } = opts.hooks;

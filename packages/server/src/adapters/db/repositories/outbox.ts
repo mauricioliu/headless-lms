@@ -7,8 +7,8 @@ import type {
   OutboxMessage,
   OutboxStore,
   Logger,
-} from '../../../core/shared/ports.js';
-import { noopLogger } from '../../../core/shared/logger.js';
+} from '@headless-lms/core/shared/ports';
+import { noopLogger } from '@headless-lms/core/shared/logger';
 import type { EventOutbox } from '@headless-lms/types/schemas';
 import type { DbExecutor } from '../index.js';
 import { eventOutbox } from '../schema/outbox.js';
