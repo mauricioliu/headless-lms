@@ -5,7 +5,6 @@
 // learner there — is the organizations context's OrgUser, not a second
 // identity. See ./organizations.ts.
 
-import type { IncomingHttpHeaders } from "node:http";
 export type {
   CreateUserInput,
   ProvisionUserInput,
@@ -30,7 +29,7 @@ export type ActiveSession = {
 };
 
 export interface SessionVerifier {
-  verify(headers: IncomingHttpHeaders): Promise<ActiveSession | null>;
+  verify(headers: Record<string, string | string[] | undefined>): Promise<ActiveSession | null>;
 }
 
 export interface AccountProvisioner {
