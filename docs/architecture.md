@@ -44,13 +44,16 @@ the `create-headless-lms` cli which bootstraps a project.
 
 ### Core Server
 
-The backend is a library — `@headless-lms/server` (`packages/server`) that provides the domain core and web
-server.
+The backend is two libraries: `@headless-lms/core` (`packages/core`) is the domain — the bounded contexts,
+their ports and service implementations, plus the wire types (`@headless-lms/core/types`), zod schemas
+(`@headless-lms/core/schemas`) and cross-context reporting (`@headless-lms/core/reporting/*`).
+`@headless-lms/server` (`packages/server`) is composition (`app/`) and the web server (`http/`) — nothing else.
 
 **Everything** in this project are replacable and is built like that from the start. The core service defines the 
 interfaces that adapters implement.
 
-The server core is organized by context (or domain), and each domain defines its ports and service implementations.
+The core is organized by context (or domain), and each domain defines its ports and service implementations.
+A context is imported only through its `index.ts` (`@headless-lms/core/<context>`).
 There is no orchastration layer at this point - and that's a decision that ensures that each use case has a domain
 owner as we build out the system.
 
@@ -83,8 +86,8 @@ with that data.
 It defines the content structure - e.g. a **Course** 
 
 I like Slate.js, and I've done other work using Plate.js, so the default course content builder is an engine built
-on Plate.js. Some people love TipTap, some people has existing SCORM frontends. The [editor contract](packages/types/src/editor/index.ts)
-(`@headless-lms/types/editor`) is what you'll use to implement your frontend.
+on Plate.js. Some people love TipTap, some people has existing SCORM frontends. The [editor contract](packages/editor/src/index.ts)
+(`@headless-lms/editor`) is what you'll use to implement your frontend.
 
 
 ### Defaults

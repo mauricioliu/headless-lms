@@ -3,7 +3,7 @@ title: Overview
 description: How plugins extend an installation, and which ones ship with the platform.
 ---
 
-Plugins are third-party integrations loaded by your installation. Each one is a folder in the installation's plugins directory — the **directory name is the integration id** — default-exporting a module that satisfies the `Integration` contract from `@headless-lms/types`. Composition scans that directory at startup, so adding an integration is adding a folder; there is nothing else to register.
+Plugins are third-party integrations loaded by your installation. Each one is a folder in the installation's plugins directory — the **directory name is the integration id** — default-exporting a module that satisfies the `Integration` contract from `@headless-lms/core/types`. Composition scans that directory at startup, so adding an integration is adding a folder; there is nothing else to register.
 
 ```ts title="main.ts"
 const container = await createContainer(config, {
@@ -22,4 +22,4 @@ A plugin folder can be a thin re-export of a published package — the reference
 
 ## Writing your own
 
-Implement the `Integration` contract from `@headless-lms/types` (the zod helpers in `@headless-lms/utils` cover input validation), drop the folder into your installation's plugins directory, and restart. Integration packages depend only on `@headless-lms/types` and `@headless-lms/utils` — never on the server.
+Implement the `Integration` contract from `@headless-lms/core/types` (the zod helpers in `@headless-lms/utils` cover input validation), drop the folder into your installation's plugins directory, and restart. Integration packages depend only on `@headless-lms/core/types` and `@headless-lms/utils` — never on the server.

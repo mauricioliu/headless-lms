@@ -39,4 +39,4 @@ These are the variables the reference installation (`apps/api`) maps to the adap
 
 ## Using a different store
 
-Any S3-compatible service (AWS S3, Cloudflare R2, …) works with this adapter — set the endpoint, credentials, and region accordingly. For something else entirely, implement the `ObjectStorage` port from `@headless-lms/types` (`presignUpload`, `presignDownload`, `stat`, `remove`) and pass it in the `storage` slot.
+Any S3-compatible service (AWS S3, Cloudflare R2, …) works with this adapter — set the endpoint, credentials, and region accordingly. For something else entirely, implement the `ObjectStorage` port from `@headless-lms/core/types` (`presignUpload`, `presignDownload`, `stat`, `remove`) and pass it in the `storage` slot.

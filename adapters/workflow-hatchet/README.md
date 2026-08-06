@@ -1,7 +1,7 @@
 # @headless-lms/adapter-workflow-hatchet
 
 Hatchet ([hatchet.run](https://hatchet.run)) implementation of the `AutomationEngine`
-port from `@headless-lms/types` — durable execution for dispatched automations.
+port from `@headless-lms/core/types` — durable execution for dispatched automations.
 
 The adapter declares one workflow, `automation-run`: a durable parent task that
 iterates the dispatched actions, spawning one child task per action

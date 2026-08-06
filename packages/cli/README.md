@@ -4,7 +4,7 @@ The `headless-lms` bin: a thin CLI over the operational functions
 `@headless-lms/server` exports. Reads `.env` from the cwd if present.
 
 ```bash
-headless-lms migrate   # apply the server's bundled Drizzle migrations
+headless-lms migrate   # apply the Drizzle migrations bundled in @headless-lms/adapter-db
 headless-lms --help
 ```
 

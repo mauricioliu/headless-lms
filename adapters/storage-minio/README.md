@@ -1,7 +1,7 @@
 # @headless-lms/adapter-storage-minio
 
 MinIO (S3-compatible) implementation of the `ObjectStorage` port from
-`@headless-lms/types`. Works against MinIO or any S3-compatible store; buckets
+`@headless-lms/core/types`. Works against MinIO or any S3-compatible store; buckets
 are private, access is via short-lived presigned URLs only.
 
 The adapter reads no environment itself — the installation's `config.ts` parses

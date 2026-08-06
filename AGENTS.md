@@ -10,12 +10,21 @@ Read [this](docs/architecture.md)
 
 ### Import boundaries
 
-- The contexts are listed in ./docs/domains.
-- A context imports another context **only** through its `index.ts` (no deep imports). `core/shared/ports` is the exception (cross-cutting, allowed).
-- `core/` may not import `adapters/`, `http/`, `app/`, `reporting/`, frameworks (`fastify`, `pg`), or `drizzle-orm`.
-- `reporting/` may import any `core/<ctx>/index.ts`; it may not import `adapters/`, `http/`, or a context's internals. `core/` may not import `reporting/`.
-- `adapters/` may import `core/` ports only.
-- `app/` wires `core` + `adapters` + `reporting`; inbound entry points use `app`, `core`, and `reporting`.
+- The contexts are listed in ./docs/domains. They live in `packages/core`.
+- A context imports another context **only** through its `index.ts` — enforced by the
+  `@headless-lms/core` exports map for external consumers and by lint inside the package.
+  `core/shared` is the exception (cross-cutting, allowed, imported per-file:
+  `@headless-lms/core/shared/ports`).
+- Wire types live at `@headless-lms/core/types`, zod schemas at `@headless-lms/core/schemas`.
+  The React-bound editor contract is `@headless-lms/editor`; server-side code never imports it.
+- `@headless-lms/core` depends on `zod`, `ksuid`, and `@headless-lms/utils` — never on adapters,
+  the server, fastify, pg, or drizzle.
+- Adapters live in `adapters/*` as `@headless-lms/adapter-*` packages. They implement ports
+  from `@headless-lms/core/shared/ports` (or a context's ports via its index) and never
+  import `@headless-lms/server`.
+- `reporting` lives in `packages/core/src/reporting` (`@headless-lms/core/reporting/*`):
+  composed cross-context reads, no domain authority; contexts may not import it.
+- `@headless-lms/server` is `app/` (composition root) + `http/` only.
 
 These rules are not advisory — run `pnpm lint` after changing imports across layers.
 

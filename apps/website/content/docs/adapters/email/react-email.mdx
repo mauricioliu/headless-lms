@@ -17,7 +17,7 @@ The adapter needs no configuration of its own — branding comes from the server
 
 ## The template catalog
 
-The catalog is closed and typed: every template id in `EmailTemplateParams` (from `@headless-lms/types`) must have an entry, or the adapter fails to typecheck. The server ships these templates:
+The catalog is closed and typed: every template id in `EmailTemplateParams` (from `@headless-lms/core/types`) must have an entry, or the adapter fails to typecheck. The server ships these templates:
 
 | Template | Sent when |
 | --- | --- |
@@ -51,4 +51,4 @@ pnpm --filter @headless-lms/adapter-email-templates dev
 
 ## Using your own templates
 
-Implement the `TemplateRenderer` port from `@headless-lms/types` — one `render(id, ctx, params)` method returning `{ subject, html, text }` — and pass it in the `templates` slot. The typed catalog guarantees you handle every email the server can send.
+Implement the `TemplateRenderer` port from `@headless-lms/core/types` — one `render(id, ctx, params)` method returning `{ subject, html, text }` — and pass it in the `templates` slot. The typed catalog guarantees you handle every email the server can send.

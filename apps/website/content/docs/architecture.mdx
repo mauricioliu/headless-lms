@@ -3,7 +3,7 @@ title: Architecture
 description: A hexagonal core of bounded contexts, composed with adapters and plugins at build time.
 ---
 
-Headless LMS provides the building blocks to compose an LMS from npm packages. The backend is a library — `@headless-lms/server` — that holds the domain core and web server. An _installation_ is a small project that composes the library with its own config, [adapters](/docs/adapters), and [plugins](/docs/plugins), then runs it. Everything is swappable, and everything ships with a sane default so it works out of the box.
+Headless LMS provides the building blocks to compose an LMS from npm packages. The backend is two libraries: `@headless-lms/core` holds the domain, and `@headless-lms/server` is the web server plus the wiring that composes core with its adapters. An _installation_ is a small project that composes them with its own config, [adapters](/docs/adapters), and [plugins](/docs/plugins), then runs it. Everything is swappable, and everything ships with a sane default so it works out of the box.
 
 ## Hexagonal core
 
@@ -39,7 +39,7 @@ Staff and learners are different populations, modelled separately. Staff hold an
 
 ## Reporting
 
-Cross-context reads live in a dedicated reporting layer outside the core. It composes each context's public service into views — the students list, the dashboard overview — and owns no data and no rules. It exists because a domain context depends on nothing outward, whereas reporting must read across many of them.
+Cross-context reads live in a dedicated reporting layer alongside the contexts, not inside any of them. It composes each context's public service into views — the students list, the dashboard overview — and owns no data and no rules. It exists because a domain context depends on nothing outward, whereas reporting must read across many of them.
 
 ## Plugins and automations
 

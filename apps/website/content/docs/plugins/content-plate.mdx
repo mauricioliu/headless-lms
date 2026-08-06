@@ -3,7 +3,7 @@ title: Plate editor
 description: Notion-style activity content editing with the content-plate plugin.
 ---
 
-`@headless-lms/content-plate` is the [Plate](https://platejs.org)-based implementation of the swappable activity content editor. It default-exports an `EditorModule` satisfying `@headless-lms/editor-contract`; the content blob is the Plate node array, stored opaquely by the backend — the server never interprets it.
+`@headless-lms/content-plate` is the [Plate](https://platejs.org)-based implementation of the swappable activity content editor. It default-exports an `EditorModule` satisfying `@headless-lms/editor`; the content blob is the Plate node array, stored opaquely by the backend — the server never interprets it.
 
 ## What's included
 
@@ -13,4 +13,4 @@ description: Notion-style activity content editing with the content-plate plugin
 
 ## Swapping the editor
 
-The editor is behind `@headless-lms/editor-contract`: an `EditorModule` bundles the client-side `Editor`, an RSC-safe `Renderer`, a `validate` function, and `meta: { type, version }` identifying the content format. Implement the contract and register your module in the frontend to replace Plate entirely — existing content keeps working as long as your module declares the format it can render.
+The editor is behind `@headless-lms/editor`: an `EditorModule` bundles the client-side `Editor`, an RSC-safe `Renderer`, a `validate` function, and `meta: { type, version }` identifying the content format. Implement the contract and register your module in the frontend to replace Plate entirely — existing content keeps working as long as your module declares the format it can render.

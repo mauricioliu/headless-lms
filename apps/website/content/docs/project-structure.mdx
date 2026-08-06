@@ -14,28 +14,32 @@ headless-lms/
 │  ├─ student/               # Next.js student portal
 │  └─ website/               # public docs and marketing site
 ├─ packages/
-│  ├─ server/                # @headless-lms/server — backend library
-│  ├─ api-contract/          # @headless-lms/api-contract — Zod HTTP schemas
+│  ├─ core/                  # @headless-lms/core — the domain: contexts, reporting, types, schemas
+│  ├─ server/                # @headless-lms/server — composition root + Fastify HTTP layer
 │  ├─ sdk/                   # @headless-lms/sdk — generated typed client
-│  ├─ types/                 # @headless-lms/types — published type surface
 │  ├─ utils/                 # @headless-lms/utils — integration runtime helpers
-│  ├─ editor-contract/       # @headless-lms/editor-contract — editor shared types
+│  ├─ editor/                # @headless-lms/editor — activity editor contract
 │  ├─ cli/                   # @headless-lms/cli — headless-lms bin
 │  └─ create-headless-lms/   # create-headless-lms — installation scaffolder
 ├─ plugins/
 │  ├─ slack/                 # @headless-lms/plugin-slack
 │  └─ content-plate/         # @headless-lms/content-plate editor plugin
 ├─ adapters/
+│  ├─ db/                    # @headless-lms/adapter-db — Drizzle schema, repositories, migrations
+│  ├─ auth/                  # @headless-lms/adapter-auth — Better Auth
+│  ├─ defaults/              # @headless-lms/adapter-defaults — in-process bus, logging, stubs
 │  ├─ email-resend/          # @headless-lms/adapter-email-resend
 │  ├─ email-templates/       # @headless-lms/adapter-email-templates
-│  └─ storage-minio/         # @headless-lms/adapter-storage-minio
+│  ├─ storage-minio/         # @headless-lms/adapter-storage-minio
+│  └─ workflow-hatchet/      # @headless-lms/adapter-workflow-hatchet
 ├─ docs/                     # internal architecture and domain notes
 └─ docker/                   # Postgres + MinIO for local dev
 ```
 
 ## Packages
 
-- `@headless-lms/server` — a framework-free domain core behind a Fastify HTTP layer, persisted with Drizzle and Postgres. The backend ships as this library.
+- `@headless-lms/core` — the framework-free domain: the bounded contexts, their ports, the type surface (`@headless-lms/core/types`) and the Zod HTTP schemas (`@headless-lms/core/schemas`).
+- `@headless-lms/server` — the Fastify HTTP layer and the composition root that wires core to its adapters. Persistence is Drizzle and Postgres, in `@headless-lms/adapter-db`.
 - `@headless-lms/sdk` — the typed client, generated from the OpenAPI spec that the server produces.
 - `create-headless-lms` — the scaffolder behind `npm create headless-lms`.
 

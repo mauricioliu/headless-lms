@@ -83,8 +83,10 @@ anywhere Node and Postgres run.
 
 ## Under the hood
 
-The backend ships as a library, `@headless-lms/server`: a framework-free
-domain core behind a Fastify HTTP layer, persisted with Drizzle/Postgres.
+The backend ships as two libraries: `@headless-lms/core`, a framework-free
+domain of bounded contexts, and `@headless-lms/server`, the Fastify HTTP layer
+and the composition root that wires core to its adapters. Persistence is
+Drizzle/Postgres, in `@headless-lms/adapter-db`.
 
 An *installation* composes what it wants with sane defaults. See `apps/api` for an example project.
 
@@ -93,7 +95,7 @@ An *installation* composes what it wants with sane defaults. See `apps/api` for 
 - [Architecture](docs/architecture.md)  layers, contexts, and how an
   installation composes the server
 - [Project structure](docs/project-structure.md)  what each workspace is
-- [`packages/server`](packages/server/README.md)  the backend library
+- [`packages/server`](packages/server/README.md)  composition root + HTTP layer
 - [`packages/create-headless-lms`](packages/create-headless-lms/README.md)
   the installation scaffolder
 - `/docs` on a running API interactive OpenAPI reference

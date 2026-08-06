@@ -1,6 +1,6 @@
 # @headless-lms/adapter-email-resend
 
-Resend implementation of the `EmailSender` port from `@headless-lms/types`.
+Resend implementation of the `EmailSender` port from `@headless-lms/core/types`.
 
 The adapter reads no environment itself — the installation's `config.ts` parses
 env into a `ResendEmailConfig` and injects the constructed adapter:
