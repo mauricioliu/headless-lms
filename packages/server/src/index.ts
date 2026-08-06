@@ -10,7 +10,7 @@ import type { ServerConfig } from './http/config.js';
 
 export { buildServer } from './http/server.js';
 export { loadIntegrations } from './app/integrations.js';
-export { InlineAutomationEngine } from './adapters/workflows/index.js';
+export { InlineAutomationEngine } from '@headless-lms/adapter-defaults/workflows';
 // Operational functions consumed by the @headless-lms/cli bin.
 export { runMigrations } from '@headless-lms/adapter-db';
 export type { ServerConfig } from './http/config.js';

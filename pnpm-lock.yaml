@@ -100,6 +100,31 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.0)(jsdom@25.0.1)(lightningcss@1.32.0)
 
+  adapters/defaults:
+    dependencies:
+      '@headless-lms/adapter-db':
+        specifier: workspace:*
+        version: link:../db
+      '@headless-lms/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      pino:
+        specifier: ^10.3.1
+        version: 10.3.1
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.0
+      tsdown:
+        specifier: ^0.22.9
+        version: 0.22.9(tsx@4.22.4)(typescript@5.9.3)(unrun@0.3.1)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.0)(jsdom@25.0.1)(lightningcss@1.32.0)
+
   adapters/email-resend:
     dependencies:
       '@headless-lms/core':
@@ -642,6 +667,9 @@ importers:
       '@headless-lms/adapter-db':
         specifier: workspace:*
         version: link:../../adapters/db
+      '@headless-lms/adapter-defaults':
+        specifier: workspace:*
+        version: link:../../adapters/defaults
       '@headless-lms/core':
         specifier: workspace:*
         version: link:../core
@@ -651,9 +679,6 @@ importers:
       better-auth:
         specifier: ^1.6.25
         version: 1.6.25(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@types/pg@8.20.0)(gel@2.2.0)(kysely@0.29.2)(pg@8.22.0))(next@16.2.9(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.22.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@2.1.9(@types/node@22.20.0)(jsdom@25.0.1)(lightningcss@1.32.0))
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@types/pg@8.20.0)(gel@2.2.0)(kysely@0.29.2)(pg@8.22.0)
       fastify:
         specifier: ^5.2.0
         version: 5.9.0
@@ -663,12 +688,6 @@ importers:
       ksuid:
         specifier: ^3.0.0
         version: 3.0.0
-      pg:
-        specifier: ^8.13.1
-        version: 8.22.0
-      pino:
-        specifier: ^10.3.1
-        version: 10.3.1
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -676,9 +695,6 @@ importers:
       '@types/node':
         specifier: ^22.10.2
         version: 22.20.0
-      '@types/pg':
-        specifier: ^8.11.10
-        version: 8.20.0
       tsdown:
         specifier: ^0.22.9
         version: 0.22.9(tsx@4.22.4)(typescript@5.9.3)(unrun@0.3.1)

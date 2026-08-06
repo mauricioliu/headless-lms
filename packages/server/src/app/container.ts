@@ -21,21 +21,21 @@ import {
   DrizzleStudentsRepository,
   DrizzleUnitOfWork,
 } from '@headless-lms/adapter-db';
-import { InMemoryEventBus } from '../adapters/events/index.js';
+import { InMemoryEventBus } from '@headless-lms/adapter-defaults/events';
 import {
   PollingOutboxRelay,
   type PollingOutboxRelayConfig,
-} from '../adapters/events/outbox-relay.js';
-import { InlineAutomationEngine } from '../adapters/workflows/index.js';
-import { EmailAdapter, StubTemplateRenderer } from '../adapters/email/index.js';
+} from '@headless-lms/adapter-defaults/events/outbox-relay';
+import { InlineAutomationEngine } from '@headless-lms/adapter-defaults/workflows';
+import { EmailAdapter, StubTemplateRenderer } from '@headless-lms/adapter-defaults/email';
 import {
   createRootLogger,
   type LogLevel,
   type PinoInstance,
   requestLogContext,
   type RequestLogContext,
-} from '../adapters/logging/index.js';
-import { StorageAdapter } from '../adapters/storage/index.js';
+} from '@headless-lms/adapter-defaults/logging';
+import { StorageAdapter } from '@headless-lms/adapter-defaults/storage';
 import { BetterAuth } from '@headless-lms/adapter-auth';
 
 import { ContentServiceImpl } from '@headless-lms/core/content';

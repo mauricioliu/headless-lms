@@ -1,0 +1,55 @@
+{
+  "name": "@headless-lms/adapter-defaults",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./email": {
+      "types": "./dist/email/index.d.ts",
+      "default": "./dist/email/index.js"
+    },
+    "./storage": {
+      "types": "./dist/storage/index.d.ts",
+      "default": "./dist/storage/index.js"
+    },
+    "./events": {
+      "types": "./dist/events/index.d.ts",
+      "default": "./dist/events/index.js"
+    },
+    "./events/outbox-relay": {
+      "types": "./dist/events/outbox-relay.d.ts",
+      "default": "./dist/events/outbox-relay.js"
+    },
+    "./logging": {
+      "types": "./dist/logging/index.d.ts",
+      "default": "./dist/logging/index.js"
+    },
+    "./logging/request-context": {
+      "types": "./dist/logging/request-context.d.ts",
+      "default": "./dist/logging/request-context.js"
+    },
+    "./workflows": {
+      "types": "./dist/workflows/index.d.ts",
+      "default": "./dist/workflows/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@headless-lms/adapter-db": "workspace:*",
+    "@headless-lms/core": "workspace:*",
+    "pino": "^10.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsdown": "^0.22.9",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

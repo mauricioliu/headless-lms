@@ -31,6 +31,34 @@ export default defineConfig({
         replacement: r("./adapters/db/src/index.ts"),
       },
       {
+        find: "@headless-lms/adapter-defaults/events/outbox-relay",
+        replacement: r("./adapters/defaults/src/events/outbox-relay.ts"),
+      },
+      {
+        find: "@headless-lms/adapter-defaults/logging/request-context",
+        replacement: r("./adapters/defaults/src/logging/request-context.ts"),
+      },
+      {
+        find: "@headless-lms/adapter-defaults/email",
+        replacement: r("./adapters/defaults/src/email/index.ts"),
+      },
+      {
+        find: "@headless-lms/adapter-defaults/storage",
+        replacement: r("./adapters/defaults/src/storage/index.ts"),
+      },
+      {
+        find: "@headless-lms/adapter-defaults/events",
+        replacement: r("./adapters/defaults/src/events/index.ts"),
+      },
+      {
+        find: "@headless-lms/adapter-defaults/logging",
+        replacement: r("./adapters/defaults/src/logging/index.ts"),
+      },
+      {
+        find: "@headless-lms/adapter-defaults/workflows",
+        replacement: r("./adapters/defaults/src/workflows/index.ts"),
+      },
+      {
         find: /^@headless-lms\/core\/shared\/([a-z-]+)$/,
         replacement: r("./packages/core/src/shared/$1.ts"),
       },
