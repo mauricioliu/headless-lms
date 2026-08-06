@@ -1,12 +1,9 @@
 // automations context — domain entities, DTOs, and events.
 import type { DomainEvent } from "./shared.js";
 
-/** Any DomainEvent type. */
 export type AutomationTrigger = string;
 
-/** One step of an automation: which action, and its input per that action's inputSchema. */
 export interface AutomationAction {
-  /** Unique action id; plugin actions are `<integrationId>.<actionId>`. */
   type: string;
   input: Record<string, unknown>;
 }
@@ -16,7 +13,7 @@ export interface Automation {
   name: string;
   description?: string;
   trigger: AutomationTrigger;
-  actions: AutomationAction[]; // ordered
+  actions: AutomationAction[];
   enabled: boolean;
 }
 
@@ -26,6 +23,7 @@ export interface CreateAutomationInput {
   trigger: AutomationTrigger;
   actions: AutomationAction[];
 }
+
 export type UpdateAutomationInput = Partial<CreateAutomationInput> & {
   enabled?: boolean;
 };
@@ -37,17 +35,14 @@ export interface AutomationRunsQuery {
   sort?: string | undefined;
 }
 
-/** An action an automation can use: a built-in type or `<integrationId>.<actionId>`. */
 export interface AvailableAction {
   type: string;
   description: string;
   inputSchema: Record<string, unknown>;
-  /** Who defines it: 'system' or the integration id. */
   source: string;
 }
 export type AvailableActions = AvailableAction[];
 
-/** Which domain events an automation can react to. */
 export interface AvailableTriggers {
   triggers: { type: string; description: string }[];
 }
@@ -66,7 +61,7 @@ export interface AutomationRun {
   orgId: string;
   automationId: string;
   trigger: AutomationTrigger;
-  event: DomainEvent; // triggering event snapshot (jsonb)
+  event: DomainEvent;
   status: AutomationRunStatus;
   actionResults: AutomationActionResult[];
   startedAt: string;
@@ -98,53 +93,3 @@ export interface AutomationEngine {
   start(): Promise<void>;
   stop(): Promise<void>;
 }
-
-// --- events — the catalog from docs/domain/automations.md -----
-export interface AutomationCreated extends DomainEvent {
-  type: "automation.created";
-  automation: Automation;
-}
-export interface AutomationUpdated extends DomainEvent {
-  type: "automation.updated";
-  automation: Automation;
-}
-export interface AutomationDeleted extends DomainEvent {
-  type: "automation.deleted";
-  automation: Automation;
-}
-export interface AutomationEnabled extends DomainEvent {
-  type: "automation.enabled";
-  automationId: string;
-}
-export interface AutomationDisabled extends DomainEvent {
-  type: "automation.disabled";
-  automationId: string;
-}
-export interface AutomationRunStarted extends DomainEvent {
-  type: "automation.run.started";
-  run: AutomationRun;
-}
-export interface AutomationRunCompleted extends DomainEvent {
-  type: "automation.run.completed";
-  run: AutomationRun;
-}
-export interface AutomationRunFailed extends DomainEvent {
-  type: "automation.run.failed";
-  run: AutomationRun;
-}
-export interface AutomationActionFailed extends DomainEvent {
-  type: "automation.action.failed";
-  runId: string;
-  automationId: string;
-  result: AutomationActionResult;
-}
-export type AutomationEvent =
-  | AutomationCreated
-  | AutomationUpdated
-  | AutomationDeleted
-  | AutomationEnabled
-  | AutomationDisabled
-  | AutomationRunStarted
-  | AutomationRunCompleted
-  | AutomationRunFailed
-  | AutomationActionFailed;

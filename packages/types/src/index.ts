@@ -1,8 +1,9 @@
-// @headless-lms/types — the platform's published type surface. Pure type
-// declarations only: domain entities, DTOs, domain events, the integration
-// contract, and the deployment-swappable ports adapter packages implement.
+// @headless-lms/types — the platform's published type surface: domain
+// entities, DTOs, domain event envelope types, the integration contract, and the
+// deployment-swappable ports adapter packages implement.
 // One file per bounded context, mirroring apps/api/src/core/.
 export * from "./shared.js";
+export * from "./events.js";
 export * from "./ports.js";
 export * from "./email-templates.js";
 export * from "./identity.js";
