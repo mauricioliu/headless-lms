@@ -7,11 +7,11 @@ import type {
   EntitlementsQuery,
   GrantEntitlementInput,
   Page,
-} from '@headless-lms/types';
+} from '@headless-lms/core/types';
 import { entitlements } from '../schema/index.js';
 import { orgUsers, users } from '../schema/index.js';
 import { contentItems, courses, downloads } from '../schema/content.js';
-import type { Logger } from '@headless-lms/types';
+import type { Logger } from '@headless-lms/core/types';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 
 type ResolvedStatus = 'active' | 'expired' | 'revoked';

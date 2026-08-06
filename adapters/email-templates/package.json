@@ -18,7 +18,7 @@
     "dev": "email dev --dir src/emails"
   },
   "dependencies": {
-    "@headless-lms/types": "workspace:*",
+    "@headless-lms/core": "workspace:*",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.1.0",
     "react": "19.2.4",

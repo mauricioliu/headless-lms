@@ -14,7 +14,7 @@
 
 import { useCallback, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import type { EditorMediaKind, UploadedEditorFile } from "@headless-lms/types/editor";
+import type { EditorMediaKind, UploadedEditorFile } from "@headless-lms/editor";
 
 import { AssetPickerDialog } from "@/app/(dashboard)/media/_components/asset-picker-dialog";
 import { getAssetUrlAction } from "@/app/(dashboard)/media/actions";

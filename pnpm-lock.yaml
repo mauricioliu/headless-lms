@@ -40,9 +40,9 @@ importers:
 
   adapters/email-resend:
     dependencies:
-      '@headless-lms/types':
+      '@headless-lms/core':
         specifier: workspace:*
-        version: link:../../packages/types
+        version: link:../../packages/core
     devDependencies:
       '@types/node':
         specifier: ^22.10.2
@@ -59,9 +59,9 @@ importers:
 
   adapters/email-templates:
     dependencies:
-      '@headless-lms/types':
+      '@headless-lms/core':
         specifier: workspace:*
-        version: link:../../packages/types
+        version: link:../../packages/core
       '@react-email/components':
         specifier: ^1.0.12
         version: 1.0.12(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -99,9 +99,9 @@ importers:
 
   adapters/storage-minio:
     dependencies:
-      '@headless-lms/types':
+      '@headless-lms/core':
         specifier: workspace:*
-        version: link:../../packages/types
+        version: link:../../packages/core
       minio:
         specifier: ^8.0.7
         version: 8.0.7
@@ -121,9 +121,9 @@ importers:
       '@hatchet-dev/typescript-sdk':
         specifier: ^1.28.0
         version: 1.28.0(@grpc/grpc-js@1.14.4)(@modelcontextprotocol/sdk@1.29.0(zod@4.4.3))(zod@4.4.3)
-      '@headless-lms/types':
+      '@headless-lms/core':
         specifier: workspace:*
-        version: link:../../packages/types
+        version: link:../../packages/core
     devDependencies:
       '@types/node':
         specifier: ^22.10.2
@@ -155,12 +155,12 @@ importers:
       '@headless-lms/content-plate':
         specifier: workspace:*
         version: link:../../plugins/content-plate
+      '@headless-lms/editor':
+        specifier: workspace:*
+        version: link:../../packages/editor
       '@headless-lms/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
-      '@headless-lms/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@hookform/resolvers':
         specifier: ^5.4.0
         version: 5.4.0(react-hook-form@7.80.0(react@19.2.4))(zod@4.4.3)
@@ -264,15 +264,15 @@ importers:
       '@headless-lms/adapter-workflow-hatchet':
         specifier: workspace:*
         version: link:../../adapters/workflow-hatchet
+      '@headless-lms/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@headless-lms/plugin-slack':
         specifier: workspace:*
         version: link:../../plugins/slack
       '@headless-lms/server':
         specifier: workspace:*
         version: link:../../packages/server
-      '@headless-lms/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@headless-lms/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -304,12 +304,12 @@ importers:
       '@headless-lms/content-plate':
         specifier: workspace:*
         version: link:../../plugins/content-plate
+      '@headless-lms/editor':
+        specifier: workspace:*
+        version: link:../../packages/editor
       '@headless-lms/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
-      '@headless-lms/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@hookform/resolvers':
         specifier: ^5.4.0
         version: 5.4.0(react-hook-form@7.80.0(react@19.2.4))(zod@4.4.3)
@@ -493,9 +493,6 @@ importers:
 
   packages/core:
     dependencies:
-      '@headless-lms/types':
-        specifier: workspace:*
-        version: link:../types
       '@headless-lms/utils':
         specifier: workspace:*
         version: link:../utils
@@ -538,6 +535,21 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.0)(jsdom@25.0.1)(lightningcss@1.32.0)
 
+  packages/editor:
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.2
+        version: 26.1.2
+      '@types/react':
+        specifier: ^19
+        version: 19.2.17
+      tsdown:
+        specifier: ^0.22.9
+        version: 0.22.9(tsx@4.22.4)(typescript@5.9.3)(unrun@0.3.1)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   packages/sdk:
     dependencies:
       '@hey-api/client-fetch':
@@ -565,9 +577,6 @@ importers:
       '@headless-lms/core':
         specifier: workspace:*
         version: link:../core
-      '@headless-lms/types':
-        specifier: workspace:*
-        version: link:../types
       '@headless-lms/utils':
         specifier: workspace:*
         version: link:../utils
@@ -618,30 +627,11 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.0)(jsdom@25.0.1)(lightningcss@1.32.0)
 
-  packages/types:
-    dependencies:
-      zod:
-        specifier: 4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@types/node':
-        specifier: ^26.1.2
-        version: 26.1.2
-      '@types/react':
-        specifier: ^19
-        version: 19.2.17
-      tsdown:
-        specifier: ^0.22.9
-        version: 0.22.9(tsx@4.22.4)(typescript@5.9.3)(unrun@0.3.1)
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.3
-
   packages/utils:
     dependencies:
-      '@headless-lms/types':
+      '@headless-lms/core':
         specifier: workspace:*
-        version: link:../types
+        version: link:../core
     devDependencies:
       tsdown:
         specifier: ^0.22.9
@@ -661,9 +651,9 @@ importers:
       '@emoji-mart/data':
         specifier: 1.2.1
         version: 1.2.1
-      '@headless-lms/types':
+      '@headless-lms/editor':
         specifier: workspace:*
-        version: link:../../packages/types
+        version: link:../../packages/editor
       '@platejs/autoformat':
         specifier: 52.0.11
         version: 52.0.11(platejs@52.0.17(@types/react@19.2.17)(immer@11.1.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.4)))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -818,9 +808,9 @@ importers:
 
   plugins/slack:
     dependencies:
-      '@headless-lms/types':
+      '@headless-lms/core':
         specifier: workspace:*
-        version: link:../../packages/types
+        version: link:../../packages/core
       '@headless-lms/utils':
         specifier: workspace:*
         version: link:../../packages/utils

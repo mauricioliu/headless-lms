@@ -26,7 +26,7 @@ import type {
   AutomationsUnitOfWork,
 } from './ports.js';
 import type { DomainEvent, Logger } from '../shared/ports.js';
-import type { JsonValue } from '@headless-lms/types';
+import type { JsonValue } from '../types/index.js';
 import { noopLogger } from '../shared/logger.js';
 import type { Mailer, MailerLookups } from '../shared/mailer.js';
 import type { IntegrationsService } from '../integrations/index.js';

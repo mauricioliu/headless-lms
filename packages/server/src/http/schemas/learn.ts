@@ -2,7 +2,7 @@
 // and Module payloads (identical wire shape to the back-office API, including
 // the opaque activity `settings` blob) so one renderer path serves both.
 import { z } from "zod";
-import { progressReportItemSchema } from "@headless-lms/types/schemas";
+import { progressReportItemSchema } from "@headless-lms/core/schemas";
 import { Course } from "./content.js";
 import { Module } from "./activities.js";
 import { Download, DownloadAsset } from "./downloads.js";

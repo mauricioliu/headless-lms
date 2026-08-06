@@ -15,10 +15,10 @@
     // isolatedDeclarations is valid in the packages that opt into it.
     "declaration": true,
     "paths": {
-      "@headless-lms/types": ["./packages/types/src/index.ts"],
-      "@headless-lms/types/editor": ["./packages/types/src/editor/index.ts"],
-      "@headless-lms/types/schemas": ["./packages/types/src/schemas/index.ts"],
       "@headless-lms/utils": ["./packages/utils/src/index.ts"],
+      "@headless-lms/editor": ["./packages/editor/src/index.ts"],
+      "@headless-lms/core/types": ["./packages/core/src/types/index.ts"],
+      "@headless-lms/core/schemas": ["./packages/core/src/types/schemas/index.ts"],
       "@headless-lms/core/shared/*": ["./packages/core/src/shared/*.ts"],
       "@headless-lms/core/reporting/*": ["./packages/core/src/reporting/*/index.ts"],
       "@headless-lms/core/*": ["./packages/core/src/*/index.ts"],

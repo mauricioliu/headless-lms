@@ -2,7 +2,7 @@ import type {
   ActiveSession,
   Logger, NewOrganizationInput,
   SessionVerifier,
-} from '@headless-lms/types';
+} from '@headless-lms/core/types';
 import type { IncomingHttpHeaders } from 'node:http';
 import { fromNodeHeaders } from 'better-auth/node';
 import { APIError, betterAuth } from 'better-auth';

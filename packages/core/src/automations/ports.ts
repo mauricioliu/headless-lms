@@ -1,5 +1,5 @@
 // automations context — ports. AutomationDispatch/Executor/Engine are owned by
-// @headless-lms/types and re-exported here so every engine implementation
+// @headless-lms/core/types and re-exported here so every engine implementation
 // (inline, Hatchet-backed, …) shares one definition.
 import type { Automation, AutomationRun, Page } from './model.js';
 import type {
@@ -11,7 +11,7 @@ import type {
 } from './types.js';
 import type { DomainEvent, OutboxAppender, UnitOfWork } from '../shared/ports.js';
 
-export type { AutomationDispatch, AutomationExecutor, AutomationEngine } from '@headless-lms/types';
+export type { AutomationDispatch, AutomationExecutor, AutomationEngine } from '../types/index.js';
 
 /** A run row before persistence assigns its id and event_id. */
 export type NewAutomationRun = Omit<AutomationRun, 'id' | 'eventId'>;

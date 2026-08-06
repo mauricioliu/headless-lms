@@ -6,7 +6,7 @@ import {
   downloadSchema,
   idSchema,
   moduleSchema,
-} from '@headless-lms/types/schemas';
+} from '../types/schemas/index.js';
 import {
   defineEvent,
   type EventOf,

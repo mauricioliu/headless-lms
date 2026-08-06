@@ -4,7 +4,7 @@
 // row's payload cannot be decrypted if copied to another row or org.
 // `key_version` names the encryption key used, enabling rotation later.
 import { pgTable, text, integer, timestamp, primaryKey } from 'drizzle-orm/pg-core';
-import type { Credential } from '@headless-lms/types/schemas';
+import type { Credential } from '@headless-lms/core/schemas';
 import { organizations } from './organizations.js';
 import type { Expect, NoDrift } from './drift.js';
 

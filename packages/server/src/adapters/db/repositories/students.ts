@@ -12,7 +12,7 @@ import type { Page, Student, StudentsQuery } from '@headless-lms/core/reporting/
 import { orgUsers, users, entitlements } from '../schema/index.js';
 import { STUDENT_ROLE } from '@headless-lms/core/organizations';
 import { user } from '../../auth/schema.js';
-import type { OrgUserStatus } from '@headless-lms/types';
+import type { OrgUserStatus } from '@headless-lms/core/types';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import { orgUserProfileColumns } from './org-user-profile.js';

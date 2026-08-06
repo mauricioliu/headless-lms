@@ -14,7 +14,7 @@ import type {
   Page,
   ReactionEmoji,
   Role,
-} from '@headless-lms/types';
+} from '@headless-lms/core/types';
 import { commentReactions, commentReports, comments } from '../schema/index.js';
 import { activities } from '../schema/content.js';
 import { orgUsers } from '../schema/organizations.js';

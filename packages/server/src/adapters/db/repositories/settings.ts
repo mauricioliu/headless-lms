@@ -1,9 +1,9 @@
 import { and, eq } from 'drizzle-orm';
-import type { Setting } from '@headless-lms/types/schemas';
+import type { Setting } from '@headless-lms/core/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { SettingsRecord, SettingsRepository } from '@headless-lms/core/shared/settings';
 import { settings } from '../schema/settings.js';
-import type { Logger } from '@headless-lms/types';
+import type { Logger } from '@headless-lms/core/types';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 
 type Row = typeof settings.$inferSelect;

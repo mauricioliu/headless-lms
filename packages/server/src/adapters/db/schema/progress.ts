@@ -13,7 +13,7 @@ import {
   unique,
   foreignKey,
 } from 'drizzle-orm/pg-core';
-import type { ProgressRecord } from '@headless-lms/types/schemas';
+import type { ProgressRecord } from '@headless-lms/core/schemas';
 import { genId } from '@headless-lms/core/shared/id';
 import { organizations, orgUsers } from './organizations.js';
 import type { Expect, NoDrift } from './drift.js';

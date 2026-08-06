@@ -1,4 +1,4 @@
-// assets context — domain entities & DTOs, owned by @headless-lms/types.
+// assets context — domain entities & DTOs, owned by @headless-lms/core/types.
 export type {
   AssetKind,
   AssetStatus,
@@ -8,4 +8,4 @@ export type {
   DownloadTicket,
   AssetsQuery,
   Page,
-} from '@headless-lms/types';
+} from '../types/index.js';

@@ -3,7 +3,7 @@
 // connect/reconnect, stored encrypted server-side, and never appear in any
 // response — responses carry configuration and state only.
 import { z } from "zod";
-import { connectionSchema, jsonRecordSchema } from "@headless-lms/types/schemas";
+import { connectionSchema, jsonRecordSchema } from "@headless-lms/core/schemas";
 
 /** An action an integration can be invoked with; schemas are JSON Schema. */
 export const IntegrationActionInfo = z.object({

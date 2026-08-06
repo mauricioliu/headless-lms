@@ -1,12 +1,12 @@
 // integrations context — ports. The integration contract itself (Integration,
-// Action, ActionContext, Validation) is owned by @headless-lms/types so
+// Action, ActionContext, Validation) is owned by @headless-lms/core/types so
 // integration packages and the platform share one definition; the context
 // re-exports it as part of its public surface.
-import type { Integration } from '@headless-lms/types';
+import type { Integration } from '../types/index.js';
 import type { ConfigureInput, ConnectInput, Connection } from './model.js';
 import type { CredentialStore, OutboxAppender, UnitOfWork } from '../shared/ports.js';
 
-export type { Validation, ActionContext, Action, Integration } from '@headless-lms/types';
+export type { Validation, ActionContext, Action, Integration } from '../types/index.js';
 
 /** The integrations declared at startup. Unknown ids are rejected by the service. */
 export interface IntegrationsRegistry {

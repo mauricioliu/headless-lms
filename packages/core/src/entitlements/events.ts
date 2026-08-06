@@ -1,4 +1,4 @@
-import { entitlementSchema } from '@headless-lms/types/schemas';
+import { entitlementSchema } from '../types/schemas/index.js';
 import { defineEvent, type EventOf, type EventOfValues } from '../shared/ports.js';
 
 export const entitlementEvents = {

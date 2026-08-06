@@ -2,7 +2,7 @@
 // The operational surface over the org's members and pending invites. Roles
 // come from ./roles.ts (the single role model); writes go through Better Auth.
 import type { StaffRole } from './roles.js';
-import type { OrgUserProfile } from '@headless-lms/types';
+import type { OrgUserProfile } from '../types/index.js';
 
 export type MemberStatus = 'active' | 'invited';
 

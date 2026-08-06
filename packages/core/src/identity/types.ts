@@ -1,7 +1,7 @@
-// identity context — DTOs, owned by @headless-lms/types.
+// identity context — DTOs, owned by @headless-lms/core/types.
 export type {
   UserId,
   CreateUserInput,
   ProvisionUserInput,
   UpdateUserInput,
-} from '@headless-lms/types';
+} from '../types/index.js';

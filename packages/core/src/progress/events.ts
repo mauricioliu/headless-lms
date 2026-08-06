@@ -1,4 +1,4 @@
-import { progressRecordSchema } from '@headless-lms/types/schemas';
+import { progressRecordSchema } from '../types/schemas/index.js';
 import { defineEvent, type EventOf, type EventOfValues } from '../shared/ports.js';
 import type { NewDomainEvent } from '../shared/ports.js';
 

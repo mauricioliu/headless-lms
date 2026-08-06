@@ -1,5 +1,5 @@
 // reporting/students — read model over identity + entitlements + progress. Framework-free.
-import type { OrgUserProfile, OrgUserStatus } from '@headless-lms/types';
+import type { OrgUserProfile, OrgUserStatus } from '../../types/index.js';
 
 export interface Student extends OrgUserProfile {
   /** As typed on the invite form. `name` is the composed rendering name and

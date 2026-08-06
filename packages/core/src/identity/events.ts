@@ -1,4 +1,4 @@
-import { userSchema } from '@headless-lms/types/schemas';
+import { userSchema } from '../types/schemas/index.js';
 import { defineEvent, type EventOf, type EventOfValues } from '../shared/ports.js';
 
 export const identityEvents = {

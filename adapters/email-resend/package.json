@@ -17,7 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@headless-lms/types": "workspace:*"
+    "@headless-lms/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

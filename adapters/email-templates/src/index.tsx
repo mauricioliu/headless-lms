@@ -7,7 +7,7 @@ import type {
   EmailTemplateParams,
   TemplateContext,
   TemplateRenderer,
-} from '@headless-lms/types';
+} from '@headless-lms/core/types';
 import MagicLink, { subject as magicLink } from './emails/magic-link.js';
 import StudentInvite, { subject as studentInvite } from './emails/student-invite.js';
 import MemberInvite, { subject as memberInvite } from './emails/member-invite.js';

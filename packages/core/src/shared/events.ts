@@ -7,7 +7,7 @@ import type {
   EventParseResult,
   JsonValue,
   MakeEventInput,
-} from '@headless-lms/types';
+} from '../types/index.js';
 
 export class InvalidDomainEventError extends Error {
   constructor(type: string, detail: string) {

@@ -14,7 +14,7 @@ import type {
   EventDefinition,
   TemplateContext,
   TemplateRenderer,
-} from '@headless-lms/types';
+} from '../types/index.js';
 
 export type {
   DomainEvent,

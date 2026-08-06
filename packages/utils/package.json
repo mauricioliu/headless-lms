@@ -2,7 +2,7 @@
   "name": "@headless-lms/utils",
   "version": "0.0.0",
   "private": true,
-  "description": "Runtime helpers for integration packages: adapt zod schemas to the @headless-lms/types integration contract.",
+  "description": "Runtime helpers for integration packages: adapt zod schemas to the @headless-lms/core/types integration contract.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,7 +18,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@headless-lms/types": "workspace:*"
+    "@headless-lms/core": "workspace:*"
   },
   "peerDependencies": {
     "zod": "^4.0.0"

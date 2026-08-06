@@ -7,7 +7,7 @@
 // settings never learns what it is scoping. Rows orphaned by a deleted entity
 // are purged off that domain's *.deleted event, not by cascade.
 import { pgTable, text, jsonb, timestamp, primaryKey } from 'drizzle-orm/pg-core';
-import type { Setting } from '@headless-lms/types/schemas';
+import type { Setting } from '@headless-lms/core/schemas';
 import { organizations } from './organizations.js';
 import type { Expect, NoDrift } from './drift.js';
 

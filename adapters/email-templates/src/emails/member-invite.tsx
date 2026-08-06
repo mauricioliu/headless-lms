@@ -1,4 +1,4 @@
-import type { EmailTemplateParams, TemplateContext } from '@headless-lms/types';
+import type { EmailTemplateParams, TemplateContext } from '@headless-lms/core/types';
 import { EmailButton, Layout, Paragraph, PREVIEW_CTX } from './layout.js';
 
 type Params = EmailTemplateParams['memberInvite'];

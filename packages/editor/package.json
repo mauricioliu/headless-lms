@@ -1,26 +1,23 @@
 {
-  "name": "@headless-lms/adapter-storage-minio",
+  "name": "@headless-lms/editor",
   "version": "0.0.0",
   "private": true,
+  "description": "Editor content contract (React-bound). The server never imports this.",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
   },
+  "files": ["dist"],
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@headless-lms/core": "workspace:*",
-    "minio": "^8.0.7"
-  },
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@types/node": "^26.1.2",
+    "@types/react": "^19",
     "tsdown": "^0.22.9",
     "typescript": "^5.7.2"
   }

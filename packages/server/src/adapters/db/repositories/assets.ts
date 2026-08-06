@@ -7,9 +7,9 @@ import type {
   AssetStatus,
   AssetsQuery,
   Page,
-} from '@headless-lms/types';
+} from '@headless-lms/core/types';
 import { assets } from '../schema/assets.js';
-import type { Logger } from '@headless-lms/types';
+import type { Logger } from '@headless-lms/core/types';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import type { DbExecutor } from '../index.js';
 

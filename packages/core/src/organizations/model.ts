@@ -1,2 +1,2 @@
-// organizations context — domain entities, owned by @headless-lms/types.
-export type { Organization, OrgUser, Invite } from '@headless-lms/types';
+// organizations context — domain entities, owned by @headless-lms/core/types.
+export type { Organization, OrgUser, Invite } from '../types/index.js';

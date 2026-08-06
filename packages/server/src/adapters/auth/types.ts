@@ -2,7 +2,7 @@ import { type GenericEndpointContext, type Session, type User } from 'better-aut
 import { type OrganizationOptions } from 'better-auth/plugins';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
-import type { Logger } from '@headless-lms/types';
+import type { Logger } from '@headless-lms/core/types';
 
 // The engine's own user/session records, not the domain's — these hooks fire
 // inside better-auth, before anything has been mirrored into `users`.

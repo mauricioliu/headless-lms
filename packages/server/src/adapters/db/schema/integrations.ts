@@ -11,7 +11,7 @@ import {
   foreignKey,
   unique,
 } from 'drizzle-orm/pg-core';
-import type { Connection } from '@headless-lms/types/schemas';
+import type { Connection } from '@headless-lms/core/schemas';
 import { organizations } from './organizations.js';
 import { credentials } from './credentials.js';
 import type { Expect, NoDrift } from './drift.js';

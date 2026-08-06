@@ -1,7 +1,7 @@
 // Assets (media library) resource schemas. An Asset is a tracked object in
 // private storage; files are uploaded via a presigned PUT and served via a
 // presigned GET. Domain objects (e.g. a lesson) reference an asset by id.
-// The Asset payload shape is owned by @headless-lms/types/schemas; route-local
+// The Asset payload shape is owned by @headless-lms/core/schemas; route-local
 // schemas define endpoint-only concerns such as params and pagination.
 import { z } from "zod";
 import {
@@ -10,7 +10,7 @@ import {
   assetStatusSchema,
   downloadTicketSchema,
   uploadTicketSchema,
-} from "@headless-lms/types/schemas";
+} from "@headless-lms/core/schemas";
 import { ListQuery, paginated } from "./shared.js";
 
 export const AssetKind = assetKindSchema;

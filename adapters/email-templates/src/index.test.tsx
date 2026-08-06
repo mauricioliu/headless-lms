@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { EmailTemplateId, EmailTemplateParams, TemplateContext } from '@headless-lms/types';
+import type { EmailTemplateId, EmailTemplateParams, TemplateContext } from '@headless-lms/core/types';
 import { ReactEmailTemplateRenderer } from './index.js';
 
 const CTX: TemplateContext = {

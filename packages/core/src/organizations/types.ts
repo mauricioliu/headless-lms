@@ -1,5 +1,5 @@
-// organizations context — DTOs, owned by @headless-lms/types.
-import type { Organization } from '@headless-lms/types';
+// organizations context — DTOs, owned by @headless-lms/core/types.
+import type { Organization } from '../types/index.js';
 
 export type {
   OrganizationId,
@@ -12,9 +12,9 @@ export type {
   InviteRole,
   CreateOrgUserInput,
   OrgUserStatus,
-} from '@headless-lms/types';
+} from '../types/index.js';
 
-export type { ProvisionUserInput } from '@headless-lms/types';
+export type { ProvisionUserInput } from '../types/index.js';
 
 export interface CreateOrganizationInput {
   externalId?: string;

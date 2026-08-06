@@ -1,4 +1,4 @@
-// automations context — domain entities, owned by @headless-lms/types; the
+// automations context — domain entities, owned by @headless-lms/core/types; the
 // domain error below is runtime code and stays in core.
 export type {
   AutomationTrigger,
@@ -8,7 +8,7 @@ export type {
   AutomationActionResult,
   AutomationRun,
   Page,
-} from '@headless-lms/types';
+} from '../types/index.js';
 
 /** Rejected at authoring time: automation.* is reserved to avoid a self-triggering loop. */
 export class InvalidTriggerError extends Error {

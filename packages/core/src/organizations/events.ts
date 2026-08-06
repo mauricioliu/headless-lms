@@ -2,7 +2,7 @@ import {
   inviteSchema,
   organizationSchema,
   orgUserSchema,
-} from '@headless-lms/types/schemas';
+} from '../types/schemas/index.js';
 import { defineEvent, type EventOf, type EventOfValues } from '../shared/ports.js';
 
 export const organizationEvents = {

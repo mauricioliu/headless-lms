@@ -5,7 +5,7 @@
 // which (trigger, template) pairings are derivable. A template with no entry
 // (e.g. courseCompleted) makes `executeAction` throw a named error, recorded
 // by the engine as a failed action.
-import type { EmailTemplateId, EmailTemplateParams } from '@headless-lms/types';
+import type { EmailTemplateId, EmailTemplateParams } from '../types/index.js';
 import { entitlementEvents } from '../entitlements/index.js';
 import type { Mailer, MailerLookups } from '../shared/mailer.js';
 import type { DomainEvent } from '../shared/ports.js';

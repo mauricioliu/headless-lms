@@ -17,7 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@headless-lms/types": "workspace:*",
+    "@headless-lms/core": "workspace:*",
     "@headless-lms/utils": "workspace:*",
     "zod": "4.4.3"
   },

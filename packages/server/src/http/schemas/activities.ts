@@ -6,7 +6,7 @@ import {
   activitySchema,
   moduleSchema,
   saveActivityInputSchema,
-} from "@headless-lms/types/schemas";
+} from "@headless-lms/core/schemas";
 
 export const Activity = activitySchema;
 export type Activity = z.infer<typeof Activity>;

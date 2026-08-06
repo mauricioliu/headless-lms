@@ -1,4 +1,4 @@
-// content context — DTOs, owned by @headless-lms/types.
+// content context — DTOs, owned by @headless-lms/core/types.
 export type {
   ListCoursesQuery,
   Page,
@@ -9,4 +9,4 @@ export type {
   UpdateDownloadInput,
   AddDownloadAssetInput,
   ReorderDownloadAssetsInput,
-} from '@headless-lms/types';
+} from '../types/index.js';

@@ -1,4 +1,4 @@
-// content context — domain entities, owned by @headless-lms/types.
+// content context — domain entities, owned by @headless-lms/core/types.
 export type {
   Activity,
   ActivityAsset,
@@ -13,4 +13,4 @@ export type {
   DownloadStatus,
   Module,
   SaveActivityInput,
-} from '@headless-lms/types';
+} from '../types/index.js';

@@ -7,7 +7,7 @@ import type {
   PresignDownloadInput,
   PresignedUpload,
   StoredObjectInfo,
-} from "@headless-lms/types";
+} from "@headless-lms/core/types";
 
 export interface MinioStorageConfig {
   endPoint: string;

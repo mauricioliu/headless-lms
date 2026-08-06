@@ -7,6 +7,18 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: "@headless-lms/core/types",
+        replacement: r("./packages/core/src/types/index.ts"),
+      },
+      {
+        find: "@headless-lms/core/schemas",
+        replacement: r("./packages/core/src/types/schemas/index.ts"),
+      },
+      {
+        find: "@headless-lms/editor",
+        replacement: r("./packages/editor/src/index.ts"),
+      },
+      {
         find: /^@headless-lms\/core\/shared\/([a-z-]+)$/,
         replacement: r("./packages/core/src/shared/$1.ts"),
       },

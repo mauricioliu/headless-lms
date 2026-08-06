@@ -1,5 +1,5 @@
 // Resend implementation of the EmailSender port.
-import type { EmailSender, EmailMessage, Logger } from "@headless-lms/types";
+import type { EmailSender, EmailMessage, Logger } from "@headless-lms/core/types";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 

@@ -39,7 +39,7 @@ export function paginated<T extends z.ZodTypeAny>(row: T) {
 export const OrgRole = z.enum(["owner", "admin", "instructor", "student"]);
 export type OrgRole = z.infer<typeof OrgRole>;
 
-/** Mirrors UserProfile in @headless-lms/types — keyed on the auth user id. */
+/** Mirrors UserProfile in @headless-lms/core/types — keyed on the auth user id. */
 export const UserProfileSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -48,7 +48,7 @@ export const UserProfileSchema = z.object({
 });
 export type UserProfileSchema = z.infer<typeof UserProfileSchema>;
 
-/** Mirrors OrgUserProfile in @headless-lms/types — keyed on org_users.id. */
+/** Mirrors OrgUserProfile in @headless-lms/core/types — keyed on org_users.id. */
 export const OrgUserProfileSchema = z.object({
   id: z.string(),
   firstName: z.string().nullable(),

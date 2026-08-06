@@ -1,6 +1,6 @@
 // automations tables — org-scoped automation definitions and their run
 // history. `automations.actions` and `automation_runs.action_results` are
-// ordered jsonb blobs (contract types owned by @headless-lms/types); a run's
+// ordered jsonb blobs (contract types owned by @headless-lms/core/types); a run's
 // `event` is the triggering DomainEvent snapshot, stored verbatim.
 import { pgTable, text, boolean, jsonb, timestamp, primaryKey, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { genId } from '@headless-lms/core/shared/id';
@@ -10,7 +10,7 @@ import type {
   AutomationAction,
   AutomationActionResult,
   AutomationRun,
-} from '@headless-lms/types/schemas';
+} from '@headless-lms/core/schemas';
 import type { DomainEvent } from '@headless-lms/core/shared/ports';
 import type { Expect, NoDrift } from './drift.js';
 

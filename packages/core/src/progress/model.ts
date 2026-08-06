@@ -1,2 +1,2 @@
-// progress context — domain entities, owned by @headless-lms/types.
-export type { ProgressTargetType, ProgressRecord } from '@headless-lms/types';
+// progress context — domain entities, owned by @headless-lms/core/types.
+export type { ProgressTargetType, ProgressRecord } from '../types/index.js';

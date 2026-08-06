@@ -2,7 +2,7 @@
 // a piece of content — generic over content types (course today) — its
 // validity + source. Distinct from payment and from completion.
 import { z } from "zod";
-import { entitlementSchema } from "@headless-lms/types/schemas";
+import { entitlementSchema } from "@headless-lms/core/schemas";
 import { ListQuery, paginated } from "./shared.js";
 
 export const EntitlementStatus = z.enum(["active", "expired", "revoked"]);

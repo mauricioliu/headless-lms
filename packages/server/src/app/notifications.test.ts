@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { registerNotificationSubscribers } from './notifications.js';
 import { InMemoryEventBus } from '../adapters/events/index.js';
-import type { Entitlement } from '@headless-lms/types';
+import type { Entitlement } from '@headless-lms/core/types';
 import type { MailerLookups } from '@headless-lms/core/shared/mailer';
 import { entitlementEvents } from '@headless-lms/core/entitlements';
 

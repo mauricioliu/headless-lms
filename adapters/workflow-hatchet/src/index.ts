@@ -3,7 +3,7 @@
 // ("automation-run-action", retries: 3) per action through the durable event
 // log, stopping on the first exhausted child; the parent then finalizes once
 // with the results collected so far.
-import type { Logger, AutomationDispatch, AutomationExecutor, AutomationEngine, AutomationActionResult } from "@headless-lms/types";
+import type { Logger, AutomationDispatch, AutomationExecutor, AutomationEngine, AutomationActionResult } from "@headless-lms/core/types";
 import { Hatchet } from "@hatchet-dev/typescript-sdk";
 
 const WORKFLOW_NAME = "automation-run";

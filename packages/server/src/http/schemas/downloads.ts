@@ -9,7 +9,7 @@ import {
   downloadSchema,
   downloadStatusSchema,
   reorderDownloadAssetsInputSchema,
-} from "@headless-lms/types/schemas";
+} from "@headless-lms/core/schemas";
 import { ListQuery, paginated } from "./shared.js";
 
 export const DownloadStatus = downloadStatusSchema;

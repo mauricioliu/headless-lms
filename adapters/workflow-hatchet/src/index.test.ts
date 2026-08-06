@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import type { AutomationActionResult, AutomationDispatch } from "@headless-lms/types";
+import type { AutomationActionResult, AutomationDispatch } from "@headless-lms/core/types";
 import { HatchetAutomationEngine, type HatchetClientLike } from "./index.js";
 
 /** Records every `task`/`durableTask`/`worker` call the adapter makes and lets a

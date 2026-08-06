@@ -1,4 +1,4 @@
-// The swappable-editor contract, published as `@headless-lms/types/editor`.
+// The swappable-editor contract, published as `@headless-lms/editor`.
 // Types only — no editor code, no runtime deps. React-bound, so it is a
 // separate entry: the server imports the package root and must never import
 // this one (lint-enforced). An installation picks its editor by assigning a

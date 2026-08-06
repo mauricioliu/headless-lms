@@ -1,4 +1,4 @@
-// discussion context — DTOs, owned by @headless-lms/types.
+// discussion context — DTOs, owned by @headless-lms/core/types.
 export type {
   CommentsConfig,
   CommentReportSummary,
@@ -8,4 +8,4 @@ export type {
   Page,
   ReactionCounts,
   ReactionEmoji,
-} from '@headless-lms/types';
+} from '../types/index.js';

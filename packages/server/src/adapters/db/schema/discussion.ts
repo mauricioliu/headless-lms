@@ -22,7 +22,7 @@ import {
   check,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import type { Comment, CommentReaction, CommentReport } from '@headless-lms/types/schemas';
+import type { Comment, CommentReaction, CommentReport } from '@headless-lms/core/schemas';
 import { genId } from '@headless-lms/core/shared/id';
 import { organizations, orgUsers } from './organizations.js';
 import { activities } from './content.js';

@@ -25,7 +25,7 @@ import type {
   Download,
   DownloadAsset,
   Module,
-} from '@headless-lms/types/schemas';
+} from '@headless-lms/core/schemas';
 import { genId } from '@headless-lms/core/shared/id';
 import { organizations } from './organizations.js';
 import { assets } from './assets.js';

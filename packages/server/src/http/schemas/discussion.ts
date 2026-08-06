@@ -5,7 +5,7 @@
 // The author is the org user's profile minus its email — learners read each
 // other's comments and the list must not be a directory of the cohort's
 // addresses. The staff-facing comment list carries `authorEmail` separately.
-import type { CommentSettings as DomainCommentSettings } from "@headless-lms/types";
+import type { CommentSettings as DomainCommentSettings } from "@headless-lms/core/types";
 import {
   commentAuthorSchema,
   commentListItemSchema,
@@ -13,7 +13,7 @@ import {
   commentSchema,
   commentStatusSchema,
   commentViewSchema,
-} from "@headless-lms/types/schemas";
+} from "@headless-lms/core/schemas";
 import { z } from "zod";
 import { ListQuery, type Matches, paginated } from "./shared.js";
 

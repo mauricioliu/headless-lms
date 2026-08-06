@@ -3,7 +3,7 @@ import type {
   AutomationActionResult,
   AutomationDispatch,
   AutomationExecutor,
-} from '@headless-lms/types';
+} from '@headless-lms/core/types';
 import { InlineAutomationEngine } from './index.js';
 
 function dispatch(): AutomationDispatch {

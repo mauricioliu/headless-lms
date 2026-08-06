@@ -1,5 +1,5 @@
 import 'fastify';
-import type { User } from '@headless-lms/types';
+import type { User } from '@headless-lms/core/types';
 
 /** The session's account as the HTTP layer sees it. Re-exported from the
  *  package entry point so this module — and its augmentation — gets loaded. */

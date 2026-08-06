@@ -5,7 +5,7 @@ import type {
   AutomationDispatch,
   AutomationEngine,
   AutomationExecutor,
-} from '@headless-lms/types';
+} from '@headless-lms/core/types';
 
 export class InlineAutomationEngine implements AutomationEngine {
   private executor: AutomationExecutor | undefined;

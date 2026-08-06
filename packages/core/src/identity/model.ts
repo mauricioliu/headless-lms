@@ -1,2 +1,2 @@
-// identity context — domain entities, owned by @headless-lms/types.
-export type { User } from '@headless-lms/types';
+// identity context — domain entities, owned by @headless-lms/core/types.
+export type { User } from '../types/index.js';

@@ -1,6 +1,6 @@
 
 import { pgTable, text, timestamp, primaryKey, foreignKey, unique } from 'drizzle-orm/pg-core';
-import type { Entitlement } from '@headless-lms/types/schemas';
+import type { Entitlement } from '@headless-lms/core/schemas';
 import { genId } from '@headless-lms/core/shared/id';
 import { organizations, orgUsers } from './organizations.js';
 import { contentItems } from './content.js';

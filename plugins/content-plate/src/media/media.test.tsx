@@ -1,6 +1,6 @@
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import type { EditorMediaModule, MediaTracking } from '@headless-lms/types/editor';
+import type { EditorMediaModule, MediaTracking } from '@headless-lms/editor';
 
 import { MediaProvider, useMediaTracking } from './index';
 

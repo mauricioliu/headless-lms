@@ -1,6 +1,6 @@
-// integrations context — entities & DTOs are owned by @headless-lms/types;
+// integrations context — entities & DTOs are owned by @headless-lms/core/types;
 // the domain errors below are runtime code and stay in core.
-export type { Connection, ConnectInput, ConfigureInput } from '@headless-lms/types';
+export type { Connection, ConnectInput, ConfigureInput } from '../types/index.js';
 
 /** An org already has a connection for this integration (one per integration per org). */
 export class AlreadyConnectedError extends Error {

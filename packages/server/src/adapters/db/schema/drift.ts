@@ -1,5 +1,5 @@
 // Compile-time drift checks: a table's row type must carry exactly the fields
-// of its domain type from @headless-lms/types/schemas. A row field may be wider
+// of its domain type from @headless-lms/core/schemas. A row field may be wider
 // than the domain's (opaque jsonb, generated text) but never narrower, missing,
 // or extra. On drift, the check resolves to the offending keys.
 export type Eq<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;

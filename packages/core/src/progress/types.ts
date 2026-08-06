@@ -1,7 +1,7 @@
-// progress context — DTOs, owned by @headless-lms/types.
+// progress context — DTOs, owned by @headless-lms/core/types.
 export type {
   ProgressId,
   ProgressTarget,
   ProgressReportItem,
   ReportProgressInput,
-} from '@headless-lms/types';
+} from '../types/index.js';

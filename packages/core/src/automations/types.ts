@@ -1,4 +1,4 @@
-// automations context — DTOs, owned by @headless-lms/types.
+// automations context — DTOs, owned by @headless-lms/core/types.
 export type {
   CreateAutomationInput,
   UpdateAutomationInput,
@@ -6,4 +6,4 @@ export type {
   AvailableAction,
   AvailableActions,
   AvailableTriggers,
-} from '@headless-lms/types';
+} from '../types/index.js';

@@ -1,7 +1,7 @@
 // automations context — the code-owned catalogs `availableActions()` and
 // `availableTriggers()` serve: built-in action definitions and the domain
 // event types automations may react to.
-import type { EmailTemplateId } from '@headless-lms/types';
+import type { EmailTemplateId } from '../types/index.js';
 import { assetEvents } from '../assets/index.js';
 import { contentEvents } from '../content/index.js';
 import { discussionEvents } from '../discussion/index.js';

@@ -1,9 +1,9 @@
 // organizations context — roles and the authorization matrix.
 // Defined in code (no DB enum). The DB stores role as text; the domain narrows
 // it to Role and answers authorization questions here. The Role type itself is
-// owned by @headless-lms/types; RANK/MATRIX below are Record<Role, …>, so the
+// owned by @headless-lms/core/types; RANK/MATRIX below are Record<Role, …>, so the
 // compiler forces this file to cover every role the published type declares.
-import type { Role } from '@headless-lms/types';
+import type { Role } from '../types/index.js';
 
 export type { Role };
 export const ROLES = [

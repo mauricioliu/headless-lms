@@ -1,6 +1,6 @@
 import { Body, Button, Container, Head, Heading, Hr, Html, Img, Link, Section, Tailwind, Text } from '@react-email/components';
 import type { ReactNode } from 'react';
-import type { TemplateContext } from '@headless-lms/types';
+import type { TemplateContext } from '@headless-lms/core/types';
 
 export function Layout({ ctx, heading, children }: {
   ctx: TemplateContext;

@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@headless-lms/content-plate": "workspace:*",
-    "@headless-lms/types": "workspace:*",
+    "@headless-lms/editor": "workspace:*",
     "@headless-lms/sdk": "workspace:*",
     "@hookform/resolvers": "^5.4.0",
     "better-auth": "^1.6.25",

@@ -1,4 +1,4 @@
-// discussion context — domain entities, owned by @headless-lms/types.
+// discussion context — domain entities, owned by @headless-lms/core/types.
 export type {
   ActivityCommentsRule,
   Comment,
@@ -7,4 +7,4 @@ export type {
   CommentReaction,
   CommentReport,
   CommentSettings,
-} from '@headless-lms/types';
+} from '../types/index.js';

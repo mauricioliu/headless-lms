@@ -1,7 +1,7 @@
 // Automations resource schemas. An automation matches a trigger (a domain
 // event type) against enabled rules and runs an ordered list of actions;
 // every run is recorded. Payload shapes are owned by
-// @headless-lms/types/schemas; route-local schemas define endpoint-only
+// @headless-lms/core/schemas; route-local schemas define endpoint-only
 // concerns such as params and pagination envelopes.
 import { z } from "zod";
 import {
@@ -15,7 +15,7 @@ import {
   availableTriggersSchema,
   createAutomationInputSchema,
   updateAutomationInputSchema,
-} from "@headless-lms/types/schemas";
+} from "@headless-lms/core/schemas";
 import { ListQuery, paginated } from "./shared.js";
 
 /** One step of an automation: which action, and its input per that action's inputSchema. */

@@ -7,7 +7,7 @@ import {
   unique,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import type { Invite, Organization, OrgUser } from '@headless-lms/types/schemas';
+import type { Invite, Organization, OrgUser } from '@headless-lms/core/schemas';
 import { genId } from '@headless-lms/core/shared/id';
 import { users } from './identity.js';
 import type { Expect, NoDrift } from './drift.js';

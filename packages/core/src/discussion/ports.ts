@@ -1,7 +1,7 @@
 // discussion context — ports.
 // Inbound: the use cases the service implements.
 // Outbound: the persistence contract the repository fulfils.
-import type { Activity, Role } from '@headless-lms/types';
+import type { Activity, Role } from '../types/index.js';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 import type { Comment, CommentAuthor, CommentReport } from './model.js';
 import type {

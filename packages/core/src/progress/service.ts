@@ -18,7 +18,7 @@ import type {
 import type { ProgressReportItem, ProgressTarget, ReportProgressInput } from './types.js';
 import { progressEvents, type NewProgressEvent } from './events.js';
 import type { Activity, ContentService, Module } from '../content/index.js';
-import type { JsonValue } from '@headless-lms/types';
+import type { JsonValue } from '../types/index.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 

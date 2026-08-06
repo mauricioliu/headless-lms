@@ -63,7 +63,7 @@ import type {
   TemplateContext,
   TemplateRenderer,
 } from '@headless-lms/core/shared/ports';
-import type { AutomationEngine } from '@headless-lms/types';
+import type { AutomationEngine } from '@headless-lms/core/types';
 
 /** Installation-supplied ports; an absent slot falls back to a fail-loudly stub. */
 export interface AdapterOverrides {
