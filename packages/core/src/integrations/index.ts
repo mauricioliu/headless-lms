@@ -2,7 +2,7 @@
 export { IntegrationsServiceImpl } from './service.js';
 export { integrationEvents } from './events.js';
 export { createIntegrationsRegistry } from './registry.js';
-export { zodConfig, zodSecrets, zodAction } from '@headless-lms/utils';
+export { zodConfig, zodSecrets, zodAction } from './zod.js';
 export {
   ActionInvocationError,
   AlreadyConnectedError,

@@ -14,7 +14,6 @@ packages/
   cli/          @headless-lms/cli — the headless-lms bin (migrate)
   create-headless-lms/  npm create headless-lms — installation scaffolder
   editor/       @headless-lms/editor — the React-bound activity editor contract
-  utils/        @headless-lms/utils — runtime helpers for integrations
   sdk/          @headless-lms/sdk — client generated off the OpenAPI spec
 plugins/
   slack/          @headless-lms/plugin-slack — the Slack integration
@@ -115,15 +114,15 @@ the in-process `InlineAutomationEngine`. `apps/api/src/config.ts` is the only fi
 on the backend that touches `process.env`; `adapters/email-resend`,
 `storage-minio` and `workflow-hatchet` each carry a README for the env they expect.
 
-`@headless-lms/utils` holds the code that must exist at runtime — the zod
-adapters (`zodConfig`, `zodSecrets`, `zodAction`) that turn zod schemas into the
-contract's JSON-Schema getters and validators. `zod` is a peer dependency.
+`@headless-lms/core/integrations` holds the code that must exist at runtime — the
+zod adapters (`zodConfig`, `zodSecrets`, `zodAction`) that turn zod schemas into
+the contract's JSON-Schema getters and validators.
 
 ## Writing an integration
 
-Depend on `@headless-lms/core` (+ `@headless-lms/utils`), never on the server —
-`/types` for the contract, plus whichever context subpaths carry the events you
-react to. Default-export an `Integration`; the server loads it from the
+Depend on `@headless-lms/core`, never on the server — `/types` for the contract,
+`/integrations` for the zod adapters, plus whichever context subpaths carry the
+events you react to. Default-export an `Integration`; the server loads it from the
 installation's plugins dir (`pluginsDir`, e.g. `apps/api/src/plugins/` — directory
 name = integration id). A plugin folder may be a thin re-export of a workspace
 package (see `plugins/slack`).
@@ -131,5 +130,5 @@ package (see `plugins/slack`).
 ```ts
 import type { Integration } from "@headless-lms/core/types";
 import type { EntitlementCreated } from "@headless-lms/core/entitlements";
-import { zodAction } from "@headless-lms/utils";
+import { zodAction } from "@headless-lms/core/integrations";
 ```

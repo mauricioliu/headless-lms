@@ -22,4 +22,4 @@ A plugin folder can be a thin re-export of a published package — the reference
 
 ## Writing your own
 
-Implement the `Integration` contract from `@headless-lms/core/types` (the zod helpers in `@headless-lms/utils` cover input validation), drop the folder into your installation's plugins directory, and restart. Integration packages depend only on `@headless-lms/core` and `@headless-lms/utils` — never on the server. Each context exports the domain event types it owns, so a handler for entitlement events imports them from `@headless-lms/core/entitlements`.
+Implement the `Integration` contract from `@headless-lms/core/types` (the zod helpers in `@headless-lms/core/integrations` cover input validation), drop the folder into your installation's plugins directory, and restart. Integration packages depend only on `@headless-lms/core` — never on the server. Each context exports the domain event types it owns, so a handler for entitlement events imports them from `@headless-lms/core/entitlements`.

@@ -568,9 +568,6 @@ importers:
 
   packages/core:
     dependencies:
-      '@headless-lms/utils':
-        specifier: workspace:*
-        version: link:../utils
       ksuid:
         specifier: ^3.0.0
         version: 3.0.0
@@ -690,22 +687,6 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.0)(jsdom@25.0.1)(lightningcss@1.32.0)
-
-  packages/utils:
-    dependencies:
-      '@headless-lms/core':
-        specifier: workspace:*
-        version: link:../core
-    devDependencies:
-      tsdown:
-        specifier: ^0.22.9
-        version: 0.22.9(tsx@4.22.4)(typescript@5.9.3)(unrun@0.3.1)
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.3
-      zod:
-        specifier: 4.4.3
-        version: 4.4.3
 
   plugins/content-plate:
     dependencies:
@@ -875,9 +856,6 @@ importers:
       '@headless-lms/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@headless-lms/utils':
-        specifier: workspace:*
-        version: link:../../packages/utils
       zod:
         specifier: 4.4.3
         version: 4.4.3

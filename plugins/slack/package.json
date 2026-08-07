@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "@headless-lms/core": "workspace:*",
-    "@headless-lms/utils": "workspace:*",
     "zod": "4.4.3"
   },
   "devDependencies": {

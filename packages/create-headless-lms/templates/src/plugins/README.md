@@ -11,4 +11,5 @@ Two ways to add one:
    `pnpm add @headless-lms/plugin-slack`, then `plugins/slack/index.ts`:
    `export { default } from "@headless-lms/plugin-slack";`
 2. **Custom integration** — write the folder directly, depending only on
-   `@headless-lms/core/types` (+ `@headless-lms/utils` for the zod helpers).
+   `@headless-lms/core/types` (+ `@headless-lms/core/integrations` for the zod
+   helpers).

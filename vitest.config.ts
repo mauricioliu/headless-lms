@@ -19,10 +19,6 @@ export default defineConfig({
         replacement: r("./packages/editor/src/index.ts"),
       },
       {
-        find: "@headless-lms/utils",
-        replacement: r("./packages/utils/src/index.ts"),
-      },
-      {
         find: "@headless-lms/server",
         replacement: r("./packages/server/src/index.ts"),
       },

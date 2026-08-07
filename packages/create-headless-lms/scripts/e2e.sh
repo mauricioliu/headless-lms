@@ -32,11 +32,10 @@ fi
 # real npm-published versions.
 #
 # Closure of the template's deps (@headless-lms/{adapter-storage-minio,cli,
-# core,server}): server pulls adapter-{auth,db,defaults}, adapter-auth pulls
-# adapter-db, and core pulls utils (core <-> utils is mutually recursive).
+# core,server}): server pulls adapter-{auth,db,defaults}, and adapter-auth
+# pulls adapter-db.
 echo "==> building workspace packages"
 pnpm \
-  --filter @headless-lms/utils \
   --filter @headless-lms/core \
   --filter @headless-lms/adapter-db \
   --filter @headless-lms/adapter-auth \
@@ -47,7 +46,6 @@ pnpm \
   build
 
 echo "==> packing the scaffold's workspace closure"
-UTILS_TARBALL="$(cd "$ROOT/packages/utils" && pnpm pack --pack-destination "$WORK" | tail -1)"
 CORE_TARBALL="$(cd "$ROOT/packages/core" && pnpm pack --pack-destination "$WORK" | tail -1)"
 DB_TARBALL="$(cd "$ROOT/adapters/db" && pnpm pack --pack-destination "$WORK" | tail -1)"
 AUTH_TARBALL="$(cd "$ROOT/adapters/auth" && pnpm pack --pack-destination "$WORK" | tail -1)"
@@ -66,7 +64,6 @@ echo "==> installing with the packed server (workspace closure pinned to local t
   npm pkg set "dependencies.@headless-lms/cli=file:$CLI_TARBALL" && \
   npm pkg set "dependencies.@headless-lms/core=file:$CORE_TARBALL" && \
   npm pkg set "dependencies.@headless-lms/adapter-storage-minio=file:$MINIO_TARBALL" && \
-  npm pkg set "pnpm.overrides[@headless-lms/utils]=file:$UTILS_TARBALL" && \
   npm pkg set "pnpm.overrides[@headless-lms/core]=file:$CORE_TARBALL" && \
   npm pkg set "pnpm.overrides[@headless-lms/adapter-db]=file:$DB_TARBALL" && \
   npm pkg set "pnpm.overrides[@headless-lms/adapter-auth]=file:$AUTH_TARBALL" && \

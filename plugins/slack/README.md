@@ -27,7 +27,7 @@ content types read "granted access to".
 ## Wiring
 
 Implements the `Integration` contract from `@headless-lms/core/types`, using the
-zod helpers from `@headless-lms/utils`.
+zod helpers from `@headless-lms/core/integrations`.
 The api loads it through the plugin folder convention:
 `apps/api/src/plugins/slack/index.ts` re-exports this package's default export.
 

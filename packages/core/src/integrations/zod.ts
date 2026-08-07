@@ -1,12 +1,12 @@
 // Zod helpers for integration modules. An integration declares its config and
 // each action's input/output as zod schemas once; these adapt them to the
 // contract's JSON-Schema getters and validators.
-import { z } from "zod";
-import type { Action, ActionContext, Validation } from "@headless-lms/core/types";
+import { z } from 'zod';
+import type { Action, ActionContext, Validation } from '../types/index.js';
 
 function toErrors(error: z.ZodError): string[] {
   return error.issues.map((issue) =>
-    issue.path.length ? `${issue.path.join(".")}: ${issue.message}` : issue.message,
+    issue.path.length ? `${issue.path.join('.')}: ${issue.message}` : issue.message,
   );
 }
 

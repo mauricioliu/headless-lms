@@ -15,7 +15,6 @@
     // isolatedDeclarations is valid in the packages that opt into it.
     "declaration": true,
     "paths": {
-      "@headless-lms/utils": ["./packages/utils/src/index.ts"],
       "@headless-lms/editor": ["./packages/editor/src/index.ts"],
       "@headless-lms/core/types": ["./packages/core/src/types/index.ts"],
       "@headless-lms/core/schemas": ["./packages/core/src/types/schemas/index.ts"],

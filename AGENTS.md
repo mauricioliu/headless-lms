@@ -17,7 +17,7 @@ Read [this](docs/architecture.md)
   `@headless-lms/core/shared/ports`).
 - Wire types live at `@headless-lms/core/types`, zod schemas at `@headless-lms/core/schemas`.
   The React-bound editor contract is `@headless-lms/editor`; server-side code never imports it.
-- `@headless-lms/core` depends on `zod`, `ksuid`, and `@headless-lms/utils` — never on adapters,
+- `@headless-lms/core` depends on `zod` and `ksuid` — never on adapters,
   the server, fastify, pg, or drizzle.
 - Adapters live in `adapters/*` as `@headless-lms/adapter-*` packages. They implement ports
   from `@headless-lms/core/shared/ports` (or a context's ports via its index) and never
