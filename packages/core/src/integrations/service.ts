@@ -16,8 +16,10 @@ import {
   AlreadyConnectedError,
   InvalidConfigError,
   UnknownIntegrationError,
+  type ConfigureInput,
+  type ConnectInput,
+  type Connection,
 } from './model.js';
-import type { ConfigureInput, ConnectInput, Connection } from './model.js';
 import type {
   ConnectionsRepository,
   IntegrationsRegistry,

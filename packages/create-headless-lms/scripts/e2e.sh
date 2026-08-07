@@ -21,21 +21,38 @@ if lsof -i :8000 -sTCP:LISTEN -t >/dev/null 2>&1; then
 fi
 
 # @headless-lms/server ships as an unbundled transpile (dist mirrors src/
-# file-for-file), so its @headless-lms/{types,utils,api-contract} imports stay
-# real runtime dependencies, and @headless-lms/cli depends on it for the
+# file-for-file), so its @headless-lms/{core,adapter-*} imports stay real
+# runtime dependencies, and @headless-lms/cli depends on it for the
 # migrate/seed functions. `pnpm pack` rewrites their `workspace:*` ranges to
 # the local version number (e.g. "0.0.0"), which isn't published to npm — a
 # plain `pnpm install` in the standalone scaffold would try to fetch it from
-# the registry and 404. So we pack all five workspace packages and pin the
-# transitive ones via `pnpm.overrides` to their local tarballs, simulating
-# what would otherwise be real npm-published versions.
+# the registry and 404. So we pack the scaffold's four direct dependencies
+# plus their whole transitive workspace closure, and pin every one via
+# `pnpm.overrides` to its local tarball, simulating what would otherwise be
+# real npm-published versions.
+#
+# Closure of the template's deps (@headless-lms/{adapter-storage-minio,cli,
+# core,server}): server pulls adapter-{auth,db,defaults}, adapter-auth pulls
+# adapter-db, and core pulls utils (core <-> utils is mutually recursive).
 echo "==> building workspace packages"
-pnpm --filter @headless-lms/types --filter @headless-lms/utils --filter @headless-lms/api-contract --filter @headless-lms/server --filter @headless-lms/cli build
+pnpm \
+  --filter @headless-lms/utils \
+  --filter @headless-lms/core \
+  --filter @headless-lms/adapter-db \
+  --filter @headless-lms/adapter-auth \
+  --filter @headless-lms/adapter-defaults \
+  --filter @headless-lms/adapter-storage-minio \
+  --filter @headless-lms/server \
+  --filter @headless-lms/cli \
+  build
 
-echo "==> packing @headless-lms/{types,utils,api-contract,server,cli}"
-TYPES_TARBALL="$(cd "$ROOT/packages/types" && pnpm pack --pack-destination "$WORK" | tail -1)"
+echo "==> packing the scaffold's workspace closure"
 UTILS_TARBALL="$(cd "$ROOT/packages/utils" && pnpm pack --pack-destination "$WORK" | tail -1)"
-CONTRACT_TARBALL="$(cd "$ROOT/packages/api-contract" && pnpm pack --pack-destination "$WORK" | tail -1)"
+CORE_TARBALL="$(cd "$ROOT/packages/core" && pnpm pack --pack-destination "$WORK" | tail -1)"
+DB_TARBALL="$(cd "$ROOT/adapters/db" && pnpm pack --pack-destination "$WORK" | tail -1)"
+AUTH_TARBALL="$(cd "$ROOT/adapters/auth" && pnpm pack --pack-destination "$WORK" | tail -1)"
+DEFAULTS_TARBALL="$(cd "$ROOT/adapters/defaults" && pnpm pack --pack-destination "$WORK" | tail -1)"
+MINIO_TARBALL="$(cd "$ROOT/adapters/storage-minio" && pnpm pack --pack-destination "$WORK" | tail -1)"
 SERVER_TARBALL="$(cd "$ROOT/packages/server" && pnpm pack --pack-destination "$WORK" | tail -1)"
 CLI_TARBALL="$(cd "$ROOT/packages/cli" && pnpm pack --pack-destination "$WORK" | tail -1)"
 
@@ -43,14 +60,20 @@ echo "==> scaffolding into $WORK"
 pnpm --filter create-headless-lms build
 (cd "$WORK" && node "$ROOT/packages/create-headless-lms/dist/index.js" e2e-lms --yes)
 
-echo "==> installing with the packed server (transitive workspace deps pinned to local tarballs)"
+echo "==> installing with the packed server (workspace closure pinned to local tarballs)"
 (cd "$WORK/e2e-lms" && \
   npm pkg set "dependencies.@headless-lms/server=file:$SERVER_TARBALL" && \
   npm pkg set "dependencies.@headless-lms/cli=file:$CLI_TARBALL" && \
-  npm pkg set "pnpm.overrides[@headless-lms/types]=file:$TYPES_TARBALL" && \
+  npm pkg set "dependencies.@headless-lms/core=file:$CORE_TARBALL" && \
+  npm pkg set "dependencies.@headless-lms/adapter-storage-minio=file:$MINIO_TARBALL" && \
   npm pkg set "pnpm.overrides[@headless-lms/utils]=file:$UTILS_TARBALL" && \
-  npm pkg set "pnpm.overrides[@headless-lms/api-contract]=file:$CONTRACT_TARBALL" && \
+  npm pkg set "pnpm.overrides[@headless-lms/core]=file:$CORE_TARBALL" && \
+  npm pkg set "pnpm.overrides[@headless-lms/adapter-db]=file:$DB_TARBALL" && \
+  npm pkg set "pnpm.overrides[@headless-lms/adapter-auth]=file:$AUTH_TARBALL" && \
+  npm pkg set "pnpm.overrides[@headless-lms/adapter-defaults]=file:$DEFAULTS_TARBALL" && \
+  npm pkg set "pnpm.overrides[@headless-lms/adapter-storage-minio]=file:$MINIO_TARBALL" && \
   npm pkg set "pnpm.overrides[@headless-lms/server]=file:$SERVER_TARBALL" && \
+  npm pkg set "pnpm.overrides[@headless-lms/cli]=file:$CLI_TARBALL" && \
   pnpm install)
 
 echo "==> migrate (docker Postgres on 8005 must be up; scaffold already set db name e2e_lms)"

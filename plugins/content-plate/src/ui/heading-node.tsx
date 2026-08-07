@@ -2,8 +2,7 @@
 
 import { cva, type VariantProps } from 'class-variance-authority';
 import { PathApi } from 'platejs';
-import type { PlateElementProps } from 'platejs/react';
-import { PlateElement } from 'platejs/react';
+import { PlateElement, type PlateElementProps } from 'platejs/react';
 
 const headingVariants = cva(
   'relative mb-1 px-0.5 py-[3px] font-semibold leading-[1.3]!',

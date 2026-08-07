@@ -29,11 +29,9 @@
     "@headless-lms/adapter-db": "workspace:*",
     "@headless-lms/adapter-defaults": "workspace:*",
     "@headless-lms/core": "workspace:*",
-    "@headless-lms/utils": "workspace:*",
     "better-auth": "^1.6.25",
     "fastify": "^5.2.0",
     "fastify-type-provider-zod": "^7.0.0",
-    "ksuid": "^3.0.0",
     "zod": "4.4.3"
   },
   "devDependencies": {

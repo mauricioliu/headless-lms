@@ -22,8 +22,7 @@ import {
   TableIcon,
 } from 'lucide-react';
 import { KEYS } from 'platejs';
-import type { PlateEditor, PlateElementProps } from 'platejs/react';
-import { PlateElement } from 'platejs/react';
+import { PlateElement, type PlateEditor, type PlateElementProps } from 'platejs/react';
 import type { ReactNode } from 'react';
 
 import {

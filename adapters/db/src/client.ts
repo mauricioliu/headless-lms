@@ -1,6 +1,5 @@
 // Drizzle client + connection. Owns connection pooling (Drizzle does not).
-import { drizzle } from 'drizzle-orm/node-postgres';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 
 /** Transaction executor — the same query surface as the root db.

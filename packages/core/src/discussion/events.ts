@@ -1,6 +1,10 @@
 import { commentReportSchema, commentSchema } from '../types/schemas/index.js';
-import { defineEvent, type EventOf, type EventOfValues } from '../shared/ports.js';
-import type { NewDomainEvent } from '../shared/ports.js';
+import {
+  defineEvent,
+  type EventOf,
+  type EventOfValues,
+  type NewDomainEvent,
+} from '../shared/ports.js';
 
 export const discussionEvents = {
   commentCreated: defineEvent({

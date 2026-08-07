@@ -18,8 +18,7 @@ import {
   MoveUpRightIcon,
   ZoomInIcon,
 } from 'lucide-react';
-import type { TMediaElement, TTextAlignProps } from 'platejs';
-import { KEYS } from 'platejs';
+import { KEYS, type TMediaElement, type TTextAlignProps } from 'platejs';
 import { useEditorRef, useElement } from 'platejs/react';
 import type { ComponentProps, Dispatch, SetStateAction } from 'react';
 import { toast } from 'sonner';

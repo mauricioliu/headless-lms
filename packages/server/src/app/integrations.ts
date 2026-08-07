@@ -8,8 +8,11 @@
 import { readdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
-import { createIntegrationsRegistry } from '@headless-lms/core/integrations';
-import type { Integration, IntegrationsRegistry } from '@headless-lms/core/integrations';
+import {
+  createIntegrationsRegistry,
+  type Integration,
+  type IntegrationsRegistry,
+} from '@headless-lms/core/integrations';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 

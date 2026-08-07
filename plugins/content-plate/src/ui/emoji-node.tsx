@@ -2,8 +2,7 @@
 
 import { EmojiInlineIndexSearch, insertEmoji } from '@platejs/emoji';
 import { EmojiPlugin } from '@platejs/emoji/react';
-import type { PlateElementProps } from 'platejs/react';
-import { PlateElement, usePluginOption } from 'platejs/react';
+import { PlateElement, usePluginOption, type PlateElementProps } from 'platejs/react';
 import { useMemo, useState } from 'react';
 
 import { useDebounce } from '../hooks/use-debounce';

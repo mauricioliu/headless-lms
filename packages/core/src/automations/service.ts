@@ -7,8 +7,13 @@
 // `runAction`/`finalize`.
 import { catalogActions, catalogTriggers } from './catalog.js';
 import { executeAction } from './actions.js';
-import { InvalidTriggerError } from './model.js';
-import type { Automation, AutomationActionResult, AutomationRun, Page } from './model.js';
+import {
+  InvalidTriggerError,
+  type Automation,
+  type AutomationActionResult,
+  type AutomationRun,
+  type Page,
+} from './model.js';
 import type {
   AutomationRunsQuery,
   AvailableActions,

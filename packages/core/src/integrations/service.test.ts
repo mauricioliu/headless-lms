@@ -6,8 +6,8 @@ import {
   AlreadyConnectedError,
   InvalidConfigError,
   UnknownIntegrationError,
+  type Connection,
 } from './model.js';
-import type { Connection } from './model.js';
 import { ConflictError, NotFoundError } from '../shared/errors.js';
 import type { ConnectionsRepository, Integration, IntegrationsUnitOfWork } from './ports.js';
 import type { CredentialStore, NewDomainEvent } from '../shared/ports.js';

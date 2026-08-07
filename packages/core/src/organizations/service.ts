@@ -25,8 +25,7 @@ import type {
   UpdateOrganizationInput,
   UpdateStudentInput,
 } from './types.js';
-import { organizationEvents } from './events.js';
-import type { OrganizationEvent } from './events.js';
+import { organizationEvents, type OrganizationEvent } from './events.js';
 import type { Logger, NewDomainEvent } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 import type { Mailer } from '../shared/mailer.js';

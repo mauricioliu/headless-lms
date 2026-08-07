@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { AutomationsServiceImpl } from './service.js';
-import { InvalidTriggerError } from './model.js';
-import type { Automation, AutomationActionResult, AutomationRun } from './model.js';
+import {
+  InvalidTriggerError,
+  type Automation,
+  type AutomationActionResult,
+  type AutomationRun,
+} from './model.js';
 import type { CreateAutomationInput } from './types.js';
 import type {
   AutomationDispatch,

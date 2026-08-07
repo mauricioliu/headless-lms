@@ -3,7 +3,7 @@
 // actual object operations to the ObjectStorage port. Org isolation is enforced
 // by scoping every lookup to the caller's org (cross-org reads return null).
 import { genId } from '../shared/id.js';
-import type { ObjectStorage } from '../shared/ports.js';
+import type { Logger, ObjectStorage } from '../shared/ports.js';
 import type {
   Asset,
   AssetsQuery,
@@ -12,9 +12,7 @@ import type {
   RequestUploadInput,
   UploadTicket,
 } from './model.js';
-import type { AssetsRepository, AssetsService } from './ports.js';
-import type { AssetsUnitOfWork } from './ports.js';
-import type { Logger } from '../shared/ports.js';
+import type { AssetsRepository, AssetsService, AssetsUnitOfWork } from './ports.js';
 import { noopLogger } from '../shared/logger.js';
 import { assetEvents } from './events.js';
 
