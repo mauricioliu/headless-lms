@@ -4,8 +4,7 @@ import {
   BaseFontFamilyPlugin,
   BaseFontSizePlugin,
 } from '@platejs/basic-styles';
-import type { SlatePluginConfig } from 'platejs';
-import { KEYS } from 'platejs';
+import { KEYS, type SlatePluginConfig } from 'platejs';
 
 const options = {
   inject: { targetPlugins: [KEYS.p] },

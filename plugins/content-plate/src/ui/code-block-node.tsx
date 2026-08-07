@@ -2,8 +2,7 @@
 
 import { CheckIcon, ChevronDownIcon, FilesIcon } from 'lucide-react';
 
-import type { TCodeBlockElement } from 'platejs';
-import { NodeApi } from 'platejs';
+import { NodeApi, type TCodeBlockElement } from 'platejs';
 import {
   PlateElement,
   type PlateElementProps,

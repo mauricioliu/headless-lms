@@ -1,7 +1,5 @@
 'use client';
 
-import type { AutoformatRule } from '@platejs/autoformat';
-
 import {
   AutoformatPlugin,
   autoformatArrow,
@@ -10,6 +8,7 @@ import {
   autoformatMath,
   autoformatPunctuation,
   autoformatSmartQuotes,
+  type AutoformatRule,
 } from '@platejs/autoformat';
 import { insertEmptyCodeBlock } from '@platejs/code-block';
 import { toggleList } from '@platejs/list';
