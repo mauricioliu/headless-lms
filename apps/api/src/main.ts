@@ -1,11 +1,11 @@
 // Process entry point: env → config → container → server → listen → relay.
 import { fileURLToPath } from "node:url";
-import { createContainer, buildServer } from "@headless-lms/server";
+import { buildServer, createContainer } from "@headless-lms/server";
 import { ResendEmailAdapter } from "@headless-lms/adapter-email-resend";
 import { MinioStorageAdapter } from "@headless-lms/adapter-storage-minio";
 import { HatchetAutomationEngine } from "@headless-lms/adapter-workflow-hatchet";
 import { ReactEmailTemplateRenderer } from "@headless-lms/adapter-email-templates";
-import { loadServerConfig, loadEmailConfig, loadStorageConfig, hatchetEnabled } from "./config.js";
+import { loadEmailConfig, loadServerConfig, loadStorageConfig } from "./config.js";
 
 const config = loadServerConfig();
 const emailConfig = loadEmailConfig();
@@ -15,7 +15,7 @@ const container = await createContainer(config, {
     email: emailConfig && new ResendEmailAdapter(emailConfig),
     storage: new MinioStorageAdapter(loadStorageConfig()),
     templates: new ReactEmailTemplateRenderer(),
-    workflows: hatchetEnabled() ? new HatchetAutomationEngine() : undefined,
+    workflows: new HatchetAutomationEngine(),
   },
 });
 const app = await buildServer(config, container);
@@ -27,13 +27,9 @@ try {
   process.exit(1);
 }
 
-// Start the outbox relay and the automation engine ONLY here, after listen —
-// never from an onReady hook: gen-openapi boots this same container via
-// app.ready() during `pnpm gen:sdk` and must not begin polling/working.
-// buildServer's onClose stops both.
 container.outboxRelay.start();
 container.automationEngine.start().catch((err) => {
-  container.logger.error('automation engine failed to start', {
+  container.logger.error("automation engine failed to start", {
     err: err instanceof Error ? err : new Error(String(err)),
   });
 });
