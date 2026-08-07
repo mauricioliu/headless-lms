@@ -40,4 +40,6 @@ Every slot is optional, with a sensible default, so you can start with nothing c
 | `storage` | `ObjectStorage` | [`@headless-lms/adapter-storage-minio`](/docs/adapters/storage/minio) | Stub that fails loudly on use |
 | `workflows` | `AutomationEngine` | [`@headless-lms/adapter-workflow-hatchet`](/docs/adapters/workflows/hatchet) | In-process engine, one attempt per action |
 
-Because each slot is just an interface, you can replace any adapter with your own implementation — implement the port from `@headless-lms/core/types` and pass it in the same way. Installations scaffolded with `npm create headless-lms` come wired with the default adapters shown above.
+Because each slot is just an interface, you can replace any adapter with your own implementation — implement the port from `@headless-lms/core/types` and pass it in the same way.
+
+An installation scaffolded with `npm create headless-lms` comes with one adapter wired: MinIO storage, and only when `STORAGE_ENDPOINT` is set. Every other slot sits on its default, so a fresh project boots against nothing but Postgres. Add the adapters above as you need them — `apps/api` in the repository is the fully wired reference (Resend, MinIO, React Email, Hatchet).

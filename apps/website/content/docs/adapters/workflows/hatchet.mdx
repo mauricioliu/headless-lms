@@ -35,7 +35,7 @@ The Hatchet SDK reads its own environment — the adapter reads none of it. For 
 
 | Variable | Required | Notes |
 | --- | --- | --- |
-| `HATCHET_CLIENT_TOKEN` | yes | Hatchet API token for the target tenant. In the reference installation, unset → inline engine instead. |
+| `HATCHET_CLIENT_TOKEN` | yes | Hatchet API token for the target tenant. Read by the Hatchet SDK, not by the adapter. |
 
 The SDK supports further `HATCHET_CLIENT_*` variables (host/port, TLS, namespace, …) — see the [Hatchet setup docs](https://docs.hatchet.run/home/setup).
 
