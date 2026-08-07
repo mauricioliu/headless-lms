@@ -1,10 +1,10 @@
 ---
-title: List apps the current user has authorized
+title: Withdraw your reaction from a comment
 full: true
 _openapi:
   preload:
     - ../../packages/sdk/openapi.json
-  method: GET
+  method: DELETE
   webhook: false
   toc: []
   structuredData:
@@ -21,7 +21,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/connected-apps","method":"get"}]} showDescription />
+      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/learn/comments/{commentId}/reaction","method":"delete"}]} showDescription />
     </>
   );
 }

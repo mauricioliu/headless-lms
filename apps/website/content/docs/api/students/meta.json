@@ -3,8 +3,9 @@
   "description": "Students and their enrollments",
   "pages": [
     "listStudents",
-    "createStudent",
     "getStudent",
-    "deleteStudent"
+    "updateStudent",
+    "deleteStudent",
+    "resendStudentInvite"
   ]
 }

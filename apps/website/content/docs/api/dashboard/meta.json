@@ -2,6 +2,7 @@
   "title": "Dashboard",
   "description": "Back-office overview",
   "pages": [
-    "getOverview"
+    "getOverview",
+    "getEnrollmentSeries"
   ]
 }

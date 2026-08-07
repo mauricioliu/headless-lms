@@ -8,6 +8,7 @@
     "getConnection",
     "configureConnection",
     "disconnectIntegration",
-    "reconnectIntegration"
+    "reconnectIntegration",
+    "invokeConnectionAction"
   ]
 }

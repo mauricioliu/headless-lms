@@ -1,10 +1,10 @@
 ---
-title: Create a student from the admin portal
+title: Read an invite by its token
 full: true
 _openapi:
   preload:
     - ../../packages/sdk/openapi.json
-  method: POST
+  method: GET
   webhook: false
   toc: []
   structuredData:
@@ -21,7 +21,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/students","method":"post"}]} showDescription />
+      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/organizations/invites/{token}","method":"get"}]} showDescription />
     </>
   );
 }

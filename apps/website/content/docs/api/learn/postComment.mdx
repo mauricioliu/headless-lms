@@ -1,5 +1,5 @@
 ---
-title: Accept an invite with the logged-in account
+title: Post a comment or reply on an activity
 full: true
 _openapi:
   preload:
@@ -21,7 +21,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/organizations/invites/accept","method":"post"}]} showDescription />
+      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/learn/activities/{activityId}/comments","method":"post"}]} showDescription />
     </>
   );
 }

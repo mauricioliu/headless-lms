@@ -1,10 +1,10 @@
 ---
-title: Revoke a connected app's access token
+title: Redirect to a short-lived signed URL for an entitled asset
 full: true
 _openapi:
   preload:
     - ../../packages/sdk/openapi.json
-  method: DELETE
+  method: GET
   webhook: false
   toc: []
   structuredData:
@@ -21,7 +21,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/connected-apps/{id}","method":"delete"}]} showDescription />
+      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/learn/downloads/{downloadId}/assets/{assetId}","method":"get"}]} showDescription />
     </>
   );
 }

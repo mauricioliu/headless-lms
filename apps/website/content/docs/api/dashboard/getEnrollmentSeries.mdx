@@ -1,10 +1,10 @@
 ---
-title: Accept an invite with the logged-in account
+title: Enrollments granted per day over a trailing window
 full: true
 _openapi:
   preload:
     - ../../packages/sdk/openapi.json
-  method: POST
+  method: GET
   webhook: false
   toc: []
   structuredData:
@@ -21,7 +21,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/organizations/invites/accept","method":"post"}]} showDescription />
+      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/overview/enrollments","method":"get"}]} showDescription />
     </>
   );
 }

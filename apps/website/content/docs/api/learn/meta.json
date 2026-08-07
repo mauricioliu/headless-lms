@@ -2,12 +2,23 @@
   "title": "Learn",
   "description": "Student-facing course delivery",
   "pages": [
-    "listLearnCourses",
     "getLearnOrg",
+    "getLearnViewer",
+    "listLearnCourses",
     "getLearnCourse",
     "listLearnModules",
-    "requestLearnAssetDownload",
     "reportProgress",
-    "getLearnCourseProgress"
+    "getLearnCourseProgress",
+    "listActivityComments",
+    "postComment",
+    "editComment",
+    "deleteComment",
+    "clearCommentReaction",
+    "setCommentReaction",
+    "reportComment",
+    "getAssetDownloadUrl",
+    "listLearnDownloads",
+    "getLearnDownload",
+    "getLearnDownloadAsset"
   ]
 }

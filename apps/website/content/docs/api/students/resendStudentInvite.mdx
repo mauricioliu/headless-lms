@@ -1,5 +1,5 @@
 ---
-title: Get a short-lived presigned URL to serve an asset to the student
+title: Re-send a pending student's invite email
 full: true
 _openapi:
   preload:
@@ -21,7 +21,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/learn/assets/{id}/download-url","method":"post"}]} showDescription />
+      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/students/{id}/invite/resend","method":"post"}]} showDescription />
     </>
   );
 }

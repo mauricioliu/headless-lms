@@ -1,8 +1,0 @@
-{
-  "title": "Connected Apps",
-  "description": "OAuth clients connected to the MCP endpoint",
-  "pages": [
-    "listConnectedApps",
-    "revokeConnectedApp"
-  ]
-}

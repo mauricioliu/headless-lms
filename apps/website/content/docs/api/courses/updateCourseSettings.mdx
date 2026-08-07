@@ -1,10 +1,10 @@
 ---
-title: Validate an invite token and stage it for signup
+title: Update a course settings
 full: true
 _openapi:
   preload:
     - ../../packages/sdk/openapi.json
-  method: POST
+  method: PATCH
   webhook: false
   toc: []
   structuredData:
@@ -21,7 +21,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/organizations/invites/activate","method":"post"}]} showDescription />
+      <Comp document="../../packages/sdk/openapi.json" operations={[{"path":"/api/courses/{id}/settings","method":"patch"}]} showDescription />
     </>
   );
 }
