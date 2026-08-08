@@ -1,7 +1,6 @@
 {
   "name": "@headless-lms/adapter-defaults",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
   "exports": {
     "./email": {
@@ -51,5 +50,19 @@
     "tsdown": "^0.22.9",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
+  },
+  "description": "Default in-process adapters (email, storage, events, logging, workflows) for the headless LMS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdwt/headless-lms.git",
+    "directory": "adapters/defaults"
+  },
+  "homepage": "https://github.com/mdwt/headless-lms#readme",
+  "bugs": {
+    "url": "https://github.com/mdwt/headless-lms/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

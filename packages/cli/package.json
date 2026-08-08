@@ -1,12 +1,13 @@
 {
   "name": "@headless-lms/cli",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
   "bin": {
     "headless-lms": "./dist/index.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsdown",
     "lint": "eslint src",
@@ -21,5 +22,19 @@
     "tsdown": "^0.22.9",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
+  },
+  "description": "CLI for running and managing a headless LMS instance",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdwt/headless-lms.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/mdwt/headless-lms#readme",
+  "bugs": {
+    "url": "https://github.com/mdwt/headless-lms/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -1,7 +1,6 @@
 {
   "name": "@headless-lms/plugin-slack",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -25,5 +24,22 @@
     "tsdown": "^0.22.9",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
+  },
+  "description": "Slack notifications plugin for the headless LMS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdwt/headless-lms.git",
+    "directory": "plugins/slack"
+  },
+  "homepage": "https://github.com/mdwt/headless-lms#readme",
+  "bugs": {
+    "url": "https://github.com/mdwt/headless-lms/issues"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

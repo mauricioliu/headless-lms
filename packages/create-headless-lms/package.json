@@ -1,10 +1,14 @@
 {
   "name": "create-headless-lms",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
-  "bin": { "create-headless-lms": "./dist/index.js" },
-  "files": ["dist", "templates"],
+  "bin": {
+    "create-headless-lms": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
   "scripts": {
     "build": "tsdown",
     "test": "vitest run",
@@ -18,5 +22,19 @@
     "tsdown": "^0.22.9",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
+  },
+  "description": "Scaffold a new headless LMS project",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdwt/headless-lms.git",
+    "directory": "packages/create-headless-lms"
+  },
+  "homepage": "https://github.com/mdwt/headless-lms#readme",
+  "bugs": {
+    "url": "https://github.com/mdwt/headless-lms/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

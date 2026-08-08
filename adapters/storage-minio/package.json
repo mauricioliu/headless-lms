@@ -1,7 +1,6 @@
 {
   "name": "@headless-lms/adapter-storage-minio",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,5 +22,22 @@
     "@types/node": "^22.10.2",
     "tsdown": "^0.22.9",
     "typescript": "^5.7.2"
+  },
+  "description": "MinIO/S3 storage adapter for the headless LMS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdwt/headless-lms.git",
+    "directory": "adapters/storage-minio"
+  },
+  "homepage": "https://github.com/mdwt/headless-lms#readme",
+  "bugs": {
+    "url": "https://github.com/mdwt/headless-lms/issues"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

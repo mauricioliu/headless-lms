@@ -1,7 +1,6 @@
 {
   "name": "@headless-lms/sdk",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -10,6 +9,7 @@
   },
   "scripts": {
     "gen": "openapi-ts",
+    "build": "tsdown",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -17,6 +17,32 @@
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.99.0",
+    "tsdown": "^0.22.9",
     "typescript": "^5.7.2"
+  },
+  "description": "Generated TypeScript SDK for the headless LMS API",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdwt/headless-lms.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://github.com/mdwt/headless-lms#readme",
+  "bugs": {
+    "url": "https://github.com/mdwt/headless-lms/issues"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
   }
 }

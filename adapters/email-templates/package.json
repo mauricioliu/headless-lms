@@ -1,7 +1,6 @@
 {
   "name": "@headless-lms/adapter-email-templates",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -32,5 +31,22 @@
     "tsdown": "^0.22.9",
     "typescript": "^5.9.3",
     "vitest": "^2.1.9"
+  },
+  "description": "React Email templates for the headless LMS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdwt/headless-lms.git",
+    "directory": "adapters/email-templates"
+  },
+  "homepage": "https://github.com/mdwt/headless-lms#readme",
+  "bugs": {
+    "url": "https://github.com/mdwt/headless-lms/issues"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

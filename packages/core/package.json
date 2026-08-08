@@ -1,7 +1,6 @@
 {
   "name": "@headless-lms/core",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -44,5 +43,41 @@
     "tsdown": "^0.22.9",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
+  },
+  "description": "Framework-agnostic domain core for the headless LMS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdwt/headless-lms.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/mdwt/headless-lms#readme",
+  "bugs": {
+    "url": "https://github.com/mdwt/headless-lms/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      "./types": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/types/index.js"
+      },
+      "./schemas": {
+        "types": "./dist/types/schemas/index.d.ts",
+        "default": "./dist/types/schemas/index.js"
+      },
+      "./shared/*": {
+        "types": "./dist/shared/*.d.ts",
+        "default": "./dist/shared/*.js"
+      },
+      "./reporting/*": {
+        "types": "./dist/reporting/*/index.d.ts",
+        "default": "./dist/reporting/*/index.js"
+      },
+      "./*": {
+        "types": "./dist/*/index.d.ts",
+        "default": "./dist/*/index.js"
+      }
+    }
   }
 }

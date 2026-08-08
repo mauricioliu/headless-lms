@@ -18,9 +18,13 @@
     "typecheck": "pnpm -r typecheck",
     "db:generate": "pnpm --filter @headless-lms/adapter-db db:generate",
     "db:migrate": "pnpm --filter @headless-lms/adapter-db db:migrate",
-    "gen:sdk": "pnpm --filter @headless-lms/api gen:openapi && pnpm --filter @headless-lms/sdk gen"
+    "gen:sdk": "pnpm --filter @headless-lms/api gen:openapi && pnpm --filter @headless-lms/sdk gen",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.1",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
     "eslint": "^8.57.1",
