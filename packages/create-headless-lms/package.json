@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "create-headless-lms": "./dist/index.js"
+    "create-headless-lms": "dist/index.js"
   },
   "files": [
     "dist",
