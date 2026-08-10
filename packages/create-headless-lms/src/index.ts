@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { parseArgs, validateName } from "./args.js";
 import { defaultAnswers, type Answers, type StorageAnswer } from "./answers.js";
-import { scaffold } from "./scaffold.js";
+import { resolveDepRanges, scaffold } from "./scaffold.js";
 
 const args = parseArgs(process.argv.slice(2));
 
@@ -128,7 +128,7 @@ const targetDir = resolve(process.cwd(), name);
 const s = p.spinner();
 s.start(`Scaffolding ${name}`);
 try {
-  await scaffold(answers, targetDir);
+  await scaffold(answers, targetDir, await resolveDepRanges());
   s.stop(`Created ${name}/`);
 } catch (err) {
   s.stop("Scaffold failed");

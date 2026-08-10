@@ -75,7 +75,43 @@ STORAGE_REGION=
 STORAGE_BUCKET=
 `;
 
-export async function scaffold(answers: Answers, targetDir: string): Promise<string[]> {
+export const TEMPLATE_DEPS = [
+  "@headless-lms/adapter-storage-minio",
+  "@headless-lms/cli",
+  "@headless-lms/core",
+  "@headless-lms/server",
+] as const;
+
+/**
+ * Latest published version of each template dependency, as a caret range.
+ * Falls back to the `latest` dist-tag when the registry is unreachable —
+ * install resolves it then, and install needs the registry anyway.
+ */
+export async function resolveDepRanges(): Promise<Record<string, string>> {
+  const entries = await Promise.all(
+    TEMPLATE_DEPS.map(async (pkg) => {
+      try {
+        const res = await fetch(`https://registry.npmjs.org/${pkg}/latest`, {
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (!res.ok) {
+          throw new Error(`${res.status}`);
+        }
+        const { version } = (await res.json()) as { version: string };
+        return [pkg, `^${version}`] as const;
+      } catch {
+        return [pkg, "latest"] as const;
+      }
+    }),
+  );
+  return Object.fromEntries(entries);
+}
+
+export async function scaffold(
+  answers: Answers,
+  targetDir: string,
+  depRanges: Record<string, string> = {},
+): Promise<string[]> {
   try {
     const existing = await readdir(targetDir);
     if (existing.length > 0) {
@@ -110,6 +146,10 @@ export async function scaffold(answers: Answers, targetDir: string): Promise<str
       BETTER_AUTH_SECRET: randomBytes(32).toString("base64"),
       CREDENTIAL_STORE_KEY: randomBytes(32).toString("base64"),
       STORAGE_ENV: storageEnv,
+      STORAGE_MINIO_RANGE: depRanges["@headless-lms/adapter-storage-minio"] ?? "latest",
+      CLI_RANGE: depRanges["@headless-lms/cli"] ?? "latest",
+      CORE_RANGE: depRanges["@headless-lms/core"] ?? "latest",
+      SERVER_RANGE: depRanges["@headless-lms/server"] ?? "latest",
     };
 
     await mkdir(join(targetDir, "src", "plugins"), { recursive: true });

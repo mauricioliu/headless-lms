@@ -103,6 +103,28 @@ describe("scaffold", () => {
     expect(example).not.toContain("wJalrXUtnFEMIrealLookingSecretKeyEXAMPLE");
   });
 
+  it("writes resolved dependency ranges, defaulting to the latest dist-tag", async () => {
+    const target = join(await scratch(), "my-lms");
+    await scaffold(defaultAnswers("my-lms"), target, {
+      "@headless-lms/cli": "^0.1.0",
+      "@headless-lms/server": "^0.1.2",
+    });
+    const pkg = JSON.parse(await readFile(join(target, "package.json"), "utf8"));
+    expect(pkg.dependencies["@headless-lms/cli"]).toBe("^0.1.0");
+    expect(pkg.dependencies["@headless-lms/server"]).toBe("^0.1.2");
+    expect(pkg.dependencies["@headless-lms/core"]).toBe("latest");
+    expect(pkg.dependencies["@headless-lms/adapter-storage-minio"]).toBe("latest");
+  });
+
+  it("never scaffolds an unpublished 0.0.0 range", async () => {
+    const target = join(await scratch(), "my-lms");
+    await scaffold(defaultAnswers("my-lms"), target);
+    const pkg = JSON.parse(await readFile(join(target, "package.json"), "utf8"));
+    for (const range of Object.values(pkg.dependencies as Record<string, string>)) {
+      expect(range).not.toContain("0.0.0");
+    }
+  });
+
   it("refuses a non-empty target directory", async () => {
     const target = join(await scratch(), "occupied");
     await mkdir(target, { recursive: true });
