@@ -30,7 +30,7 @@ export async function learnCommentsRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listActivityComments',
-      tags: ['Learn'],
+      tags: ['Discussion'],
       summary: "Read an activity's comments",
       params: DiscussionActivityParam,
       response: { 200: ActivityComments, 404: ErrorBody },
@@ -51,7 +51,7 @@ export async function learnCommentsRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'postComment',
-      tags: ['Learn'],
+      tags: ['Discussion'],
       summary: 'Post a comment or reply on an activity',
       params: DiscussionActivityParam,
       body: PostComment,
@@ -78,7 +78,7 @@ export async function learnCommentsRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'editComment',
-      tags: ['Learn'],
+      tags: ['Discussion'],
       summary: 'Revise your own comment',
       params: CommentIdParam,
       body: EditComment,
@@ -100,7 +100,7 @@ export async function learnCommentsRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'deleteComment',
-      tags: ['Learn'],
+      tags: ['Discussion'],
       summary: 'Delete a comment',
       params: CommentIdParam,
       response: { 200: Comment, 403: ErrorBody, 404: ErrorBody },
@@ -121,7 +121,7 @@ export async function learnCommentsRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'setCommentReaction',
-      tags: ['Learn'],
+      tags: ['Discussion'],
       summary: 'Set your reaction to a comment, replacing any you already had',
       params: CommentIdParam,
       body: SetCommentReaction,
@@ -143,7 +143,7 @@ export async function learnCommentsRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'clearCommentReaction',
-      tags: ['Learn'],
+      tags: ['Discussion'],
       summary: 'Withdraw your reaction from a comment',
       params: CommentIdParam,
       response: { 200: CommentReactions, 403: ErrorBody, 404: ErrorBody },
@@ -164,7 +164,7 @@ export async function learnCommentsRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'reportComment',
-      tags: ['Learn'],
+      tags: ['Discussion'],
       summary: 'Flag a comment for moderator attention',
       params: CommentIdParam,
       body: ReportComment,

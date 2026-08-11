@@ -13,7 +13,7 @@ export async function learnOrgRoutes(app: FastifyInstance, container: Container)
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getLearnOrg',
-      tags: ['Learn'],
+      tags: ['Organizations'],
       summary: "Get the portal org's public identity (branding)",
       response: { 200: LearnOrg },
     },
@@ -34,7 +34,7 @@ export async function learnOrgRoutes(app: FastifyInstance, container: Container)
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getLearnViewer',
-      tags: ['Learn'],
+      tags: ['Organizations'],
       summary: "Get the caller's identity within the session's org",
       response: { 200: LearnViewer },
     },

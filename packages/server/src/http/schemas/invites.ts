@@ -1,5 +1,6 @@
 // Invites resource schemas — domain-owned invites (staff + student).
 import { z } from "zod";
+import { emailSchema } from "@headless-lms/core/schemas";
 
 /** Roles an invitation can carry. Never owner. */
 export const InviteRole = z.enum(["admin", "instructor", "student"]);
@@ -20,7 +21,7 @@ export type Invite = z.infer<typeof Invite>;
  *  only delivery is skipped. Both are ignored for staff roles, whose org user
  *  is mirrored from the auth provider when they join. */
 export const CreateInvite = z.object({
-  email: z.email(),
+  email: emailSchema,
   role: InviteRole,
   firstName: z.string().trim().min(1).optional(),
   lastName: z.string().trim().min(1).optional(),

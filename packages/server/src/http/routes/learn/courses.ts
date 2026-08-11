@@ -24,7 +24,7 @@ export async function learnCoursesRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listLearnCourses',
-      tags: ['Learn'],
+      tags: ['Content'],
       summary: "List the student's enrolled courses",
       response: { 200: LearnCourses },
     },
@@ -43,7 +43,7 @@ export async function learnCoursesRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getLearnCourse',
-      tags: ['Learn'],
+      tags: ['Content'],
       summary: 'Get one enrolled course',
       params: LearnCourseIdParam,
       response: { 200: Course, 404: ErrorBody },
@@ -67,7 +67,7 @@ export async function learnCoursesRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listLearnModules',
-      tags: ['Learn'],
+      tags: ['Content'],
       summary: "List an enrolled course's module/activity tree",
       params: LearnCourseIdParam,
       response: { 200: LearnModules, 404: ErrorBody },

@@ -3,6 +3,10 @@ import type { DomainEvent, EventMetadata, JsonValue } from "../shared.js";
 
 export const idSchema: z.ZodString = z.string().trim().min(1);
 
+// The default z.email() pattern uses lookaheads, which RE2-based OpenAPI
+// consumers (Go, linters) reject. The HTML5 pattern is lookahead-free.
+export const emailSchema: z.ZodEmail = z.email({ pattern: z.regexes.html5Email });
+
 export const isoDateStringSchema = z.string().trim().min(1);
 
 export const serializableDateSchema = z.union([
@@ -20,6 +24,9 @@ export const jsonValueSchema: z.ZodType<JsonValue, unknown> = z.lazy(() =>
     z.record(z.string(), jsonValueSchema),
   ]),
 );
+// Recursive schemas serialize to JSON Schema as a $ref; without a registered
+// id the ref gets an auto-name ("schema0") that OpenAPI tooling can't resolve.
+z.globalRegistry.add(jsonValueSchema, { id: "JsonValue" });
 
 export const jsonRecordSchema = z.record(z.string(), jsonValueSchema);
 

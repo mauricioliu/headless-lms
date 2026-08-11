@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { roleSchema } from "./organizations.js";
-import { idSchema } from "./shared.js";
+import { idSchema, emailSchema } from "./shared.js";
 
 export const commentStatusSchema = z.enum(["pending", "published", "removed"]);
 export type CommentStatus = z.infer<typeof commentStatusSchema>;
@@ -97,7 +97,7 @@ export const commentListItemSchema = z.object({
   body: z.string(),
   status: commentStatusSchema,
   author: commentAuthorSchema,
-  authorEmail: z.string().email(),
+  authorEmail: emailSchema,
   removedBy: idSchema.nullable(),
   reports: z.array(commentReportSummarySchema),
   createdAt: z.coerce.date(),

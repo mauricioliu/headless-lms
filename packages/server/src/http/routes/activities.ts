@@ -21,7 +21,7 @@ export async function activitiesRoutes(app: FastifyInstance, container: Containe
   const r = app.withTypeProvider<ZodTypeProvider>();
   // Modules/activities are part of the content aggregate; grouped under the Courses tag.
   const content = container.content;
-  const tags = ['Courses'];
+  const tags = ['Content'];
 
   r.route({
     method: 'GET',

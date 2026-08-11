@@ -29,7 +29,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listCourses',
-      tags: ['Courses'],
+      tags: ['Content'],
       summary: 'List courses',
       querystring: CoursesQuery,
       response: { 200: CoursesPage },
@@ -46,7 +46,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getCourse',
-      tags: ['Courses'],
+      tags: ['Content'],
       summary: 'Get a course by id',
       params: CourseIdParam,
       response: { 200: Course, 404: ErrorBody },
@@ -67,7 +67,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'createCourse',
-      tags: ['Courses'],
+      tags: ['Content'],
       summary: 'Create a course',
       body: CreateCourse,
       response: { 201: Course },
@@ -85,7 +85,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'updateCourse',
-      tags: ['Courses'],
+      tags: ['Content'],
       summary: 'Update a course',
       params: CourseIdParam,
       body: UpdateCourse,
@@ -103,7 +103,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'updateCourseSettings',
-      tags: ['Courses'],
+      tags: ['Content'],
       summary: 'Update a course settings',
       params: CourseIdParam,
       body: PatchCourseSettings,
@@ -122,7 +122,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'deleteCourse',
-      tags: ['Courses'],
+      tags: ['Content'],
       summary: 'Delete a course',
       params: CourseIdParam,
       response: { 204: z.void(), 404: ErrorBody },

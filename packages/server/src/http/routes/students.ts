@@ -27,7 +27,7 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listStudents',
-      tags: ['Students'],
+      tags: ['Organizations'],
       summary: 'List students',
       querystring: StudentsQuery,
       response: { 200: StudentsPage },
@@ -44,7 +44,7 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getStudent',
-      tags: ['Students'],
+      tags: ['Organizations'],
       summary: 'Get a student by id',
       params: StudentIdParam,
       response: { 200: Student, 404: ErrorBody },
@@ -68,7 +68,7 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'updateStudent',
-      tags: ['Students'],
+      tags: ['Organizations'],
       summary: "Update a student's profile",
       params: StudentIdParam,
       body: UpdateStudentBody,
@@ -100,7 +100,7 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'resendStudentInvite',
-      tags: ['Students'],
+      tags: ['Organizations'],
       summary: "Re-send a pending student's invite email",
       params: StudentIdParam,
       response: { 204: z.void(), 404: ErrorBody, 409: ErrorBody },
@@ -122,7 +122,7 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'deleteStudent',
-      tags: ['Students'],
+      tags: ['Organizations'],
       summary: 'Delete a student',
       params: StudentIdParam,
       response: { 204: z.void(), 404: ErrorBody },

@@ -4,6 +4,26 @@ export type ClientOptions = {
   baseUrl: "http://localhost:8000" | (string & {});
 };
 
+export type JsonValueInput =
+  | string
+  | number
+  | boolean
+  | Array<JsonValueInput>
+  | {
+      [key: string]: JsonValueInput;
+    }
+  | null;
+
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | Array<JsonValue>
+  | {
+      [key: string]: JsonValue;
+    }
+  | null;
+
 export type UpdateOrganizationData = {
   body: {
     name: string;
@@ -315,27 +335,18 @@ export type ListCoursesResponses = {
    */
   200: {
     rows: Array<{
+      orgId: string;
       id: string;
+      type: "course";
       title: string;
       slug: string;
       description: string;
       status: "draft" | "published";
       category: string;
       thumbnailAssetId: string | null;
-      settings: {
-        transcriptDownloads: boolean;
-        comments?: {
-          enabled: boolean;
-          threaded: boolean;
-          requireReview: boolean;
-          reactions: boolean;
-        };
-      };
-      moduleCount: number;
-      activityCount: number;
-      enrolledCount: number;
-      updatedAt: string;
+      settings: JsonValue;
       createdAt: string;
+      updatedAt: string;
     }>;
     total: number;
     page: number;
@@ -361,27 +372,18 @@ export type CreateCourseResponses = {
    * Default Response
    */
   201: {
+    orgId: string;
     id: string;
+    type: "course";
     title: string;
     slug: string;
     description: string;
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    settings: {
-      transcriptDownloads: boolean;
-      comments?: {
-        enabled: boolean;
-        threaded: boolean;
-        requireReview: boolean;
-        reactions: boolean;
-      };
-    };
-    moduleCount: number;
-    activityCount: number;
-    enrolledCount: number;
-    updatedAt: string;
+    settings: JsonValue;
     createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -441,27 +443,18 @@ export type GetCourseResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
+    type: "course";
     title: string;
     slug: string;
     description: string;
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    settings: {
-      transcriptDownloads: boolean;
-      comments?: {
-        enabled: boolean;
-        threaded: boolean;
-        requireReview: boolean;
-        reactions: boolean;
-      };
-    };
-    moduleCount: number;
-    activityCount: number;
-    enrolledCount: number;
-    updatedAt: string;
+    settings: JsonValue;
     createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -508,27 +501,18 @@ export type UpdateCourseResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
+    type: "course";
     title: string;
     slug: string;
     description: string;
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    settings: {
-      transcriptDownloads: boolean;
-      comments?: {
-        enabled: boolean;
-        threaded: boolean;
-        requireReview: boolean;
-        reactions: boolean;
-      };
-    };
-    moduleCount: number;
-    activityCount: number;
-    enrolledCount: number;
-    updatedAt: string;
+    settings: JsonValue;
     createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -602,18 +586,17 @@ export type ListDownloadsResponses = {
    */
   200: {
     rows: Array<{
+      orgId: string;
       id: string;
+      type: "download";
       title: string;
       slug: string;
       description: string;
       status: "draft" | "published";
       category: string;
       thumbnailAssetId: string | null;
-      assetCount: number;
-      totalSize: number;
-      entitledCount: number;
-      updatedAt: string;
       createdAt: string;
+      updatedAt: string;
     }>;
     total: number;
     page: number;
@@ -639,18 +622,17 @@ export type CreateDownloadResponses = {
    * Default Response
    */
   201: {
+    orgId: string;
     id: string;
+    type: "download";
     title: string;
     slug: string;
     description: string;
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    assetCount: number;
-    totalSize: number;
-    entitledCount: number;
-    updatedAt: string;
     createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -710,18 +692,17 @@ export type GetDownloadResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
+    type: "download";
     title: string;
     slug: string;
     description: string;
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    assetCount: number;
-    totalSize: number;
-    entitledCount: number;
-    updatedAt: string;
     createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -759,18 +740,17 @@ export type UpdateDownloadResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
+    type: "download";
     title: string;
     slug: string;
     description: string;
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    assetCount: number;
-    totalSize: number;
-    entitledCount: number;
-    updatedAt: string;
     createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -802,13 +782,12 @@ export type ListDownloadAssetsResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
+    downloadId: string;
     assetId: string;
     seq: number;
     displayName: string | null;
-    filename: string;
-    contentType: string;
-    size: number;
   }>;
 };
 
@@ -844,13 +823,12 @@ export type AddDownloadAssetResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
+    downloadId: string;
     assetId: string;
     seq: number;
     displayName: string | null;
-    filename: string;
-    contentType: string;
-    size: number;
   }>;
 };
 
@@ -892,13 +870,12 @@ export type ReorderDownloadAssetsResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
+    downloadId: string;
     assetId: string;
     seq: number;
     displayName: string | null;
-    filename: string;
-    contentType: string;
-    size: number;
   }>;
 };
 
@@ -932,13 +909,12 @@ export type RemoveDownloadAssetResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
+    downloadId: string;
     assetId: string;
     seq: number;
     displayName: string | null;
-    filename: string;
-    contentType: string;
-    size: number;
   }>;
 };
 
@@ -974,13 +950,12 @@ export type RenameDownloadAssetResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
+    downloadId: string;
     assetId: string;
     seq: number;
     displayName: string | null;
-    filename: string;
-    contentType: string;
-    size: number;
   }>;
 };
 
@@ -1038,27 +1013,18 @@ export type ListLearnCoursesResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
+    type: "course";
     title: string;
     slug: string;
     description: string;
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    settings: {
-      transcriptDownloads: boolean;
-      comments?: {
-        enabled: boolean;
-        threaded: boolean;
-        requireReview: boolean;
-        reactions: boolean;
-      };
-    };
-    moduleCount: number;
-    activityCount: number;
-    enrolledCount: number;
-    updatedAt: string;
+    settings: JsonValue;
     createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -1090,27 +1056,18 @@ export type GetLearnCourseResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
+    type: "course";
     title: string;
     slug: string;
     description: string;
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    settings: {
-      transcriptDownloads: boolean;
-      comments?: {
-        enabled: boolean;
-        threaded: boolean;
-        requireReview: boolean;
-        reactions: boolean;
-      };
-    };
-    moduleCount: number;
-    activityCount: number;
-    enrolledCount: number;
-    updatedAt: string;
+    settings: JsonValue;
     createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -1142,18 +1099,13 @@ export type ListLearnModulesResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
     courseId: string;
     title: string;
     seq: number;
-    activities: Array<{
-      id: string;
-      moduleId: string;
-      courseId: string;
-      seq: number;
-      settings: unknown;
-      assetIds: Array<string>;
-    }>;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -1165,7 +1117,7 @@ export type ReportProgressData = {
     reports: Array<{
       asset?: string;
       completed?: boolean;
-      [key: string]: unknown;
+      [key: string]: JsonValueInput | string | boolean | undefined;
     }>;
   };
   path?: never;
@@ -1403,6 +1355,7 @@ export type DeleteCommentResponses = {
    */
   200: {
     id: string;
+    orgId: string;
     activityId: string;
     parentId: string | null;
     orgUserId: string;
@@ -1651,6 +1604,7 @@ export type GetAssetDownloadUrlResponses = {
   200: {
     url: string;
     asset: {
+      orgId: string;
       id: string;
       key: string;
       kind: "video" | "download" | "content";
@@ -1679,18 +1633,17 @@ export type ListLearnDownloadsResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
+    type: "download";
     title: string;
     slug: string;
     description: string;
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    assetCount: number;
-    totalSize: number;
-    entitledCount: number;
-    updatedAt: string;
     createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -1724,27 +1677,25 @@ export type GetLearnDownloadResponses = {
    */
   200: {
     download: {
+      orgId: string;
       id: string;
+      type: "download";
       title: string;
       slug: string;
       description: string;
       status: "draft" | "published";
       category: string;
       thumbnailAssetId: string | null;
-      assetCount: number;
-      totalSize: number;
-      entitledCount: number;
-      updatedAt: string;
       createdAt: string;
+      updatedAt: string;
     };
     assets: Array<{
+      orgId: string;
       id: string;
+      downloadId: string;
       assetId: string;
       seq: number;
       displayName: string | null;
-      filename: string;
-      contentType: string;
-      size: number;
     }>;
   };
 };
@@ -1870,6 +1821,7 @@ export type ModerateRemoveCommentResponses = {
    */
   200: {
     id: string;
+    orgId: string;
     activityId: string;
     parentId: string | null;
     orgUserId: string;
@@ -1884,7 +1836,7 @@ export type ModerateRemoveCommentResponses = {
 export type ModerateRemoveCommentResponse =
   ModerateRemoveCommentResponses[keyof ModerateRemoveCommentResponses];
 
-export type EditComment2Data = {
+export type PublishCommentData = {
   body: {
     status: "published";
   };
@@ -1895,7 +1847,7 @@ export type EditComment2Data = {
   url: "/api/comments/{commentId}";
 };
 
-export type EditComment2Errors = {
+export type PublishCommentErrors = {
   /**
    * Default Response
    */
@@ -1912,14 +1864,15 @@ export type EditComment2Errors = {
   };
 };
 
-export type EditComment2Error = EditComment2Errors[keyof EditComment2Errors];
+export type PublishCommentError = PublishCommentErrors[keyof PublishCommentErrors];
 
-export type EditComment2Responses = {
+export type PublishCommentResponses = {
   /**
    * Default Response
    */
   200: {
     id: string;
+    orgId: string;
     activityId: string;
     parentId: string | null;
     orgUserId: string;
@@ -1931,7 +1884,7 @@ export type EditComment2Responses = {
   };
 };
 
-export type EditComment2Response = EditComment2Responses[keyof EditComment2Responses];
+export type PublishCommentResponse = PublishCommentResponses[keyof PublishCommentResponses];
 
 export type DismissCommentReportsData = {
   body?: never;
@@ -2048,18 +2001,13 @@ export type ListModulesResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
     courseId: string;
     title: string;
     seq: number;
-    activities: Array<{
-      id: string;
-      moduleId: string;
-      courseId: string;
-      seq: number;
-      settings: unknown;
-      assetIds: Array<string>;
-    }>;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -2081,18 +2029,13 @@ export type CreateModuleResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
     courseId: string;
     title: string;
     seq: number;
-    activities: Array<{
-      id: string;
-      moduleId: string;
-      courseId: string;
-      seq: number;
-      settings: unknown;
-      assetIds: Array<string>;
-    }>;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -2114,18 +2057,13 @@ export type ReorderModulesResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
     courseId: string;
     title: string;
     seq: number;
-    activities: Array<{
-      id: string;
-      moduleId: string;
-      courseId: string;
-      seq: number;
-      settings: unknown;
-      assetIds: Array<string>;
-    }>;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -2146,18 +2084,13 @@ export type DeleteModuleResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
     courseId: string;
     title: string;
     seq: number;
-    activities: Array<{
-      id: string;
-      moduleId: string;
-      courseId: string;
-      seq: number;
-      settings: unknown;
-      assetIds: Array<string>;
-    }>;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -2180,18 +2113,13 @@ export type UpdateModuleResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
     courseId: string;
     title: string;
     seq: number;
-    activities: Array<{
-      id: string;
-      moduleId: string;
-      courseId: string;
-      seq: number;
-      settings: unknown;
-      assetIds: Array<string>;
-    }>;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -2214,18 +2142,13 @@ export type ReorderActivitiesResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
     courseId: string;
     title: string;
     seq: number;
-    activities: Array<{
-      id: string;
-      moduleId: string;
-      courseId: string;
-      seq: number;
-      settings: unknown;
-      assetIds: Array<string>;
-    }>;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -2234,7 +2157,7 @@ export type ReorderActivitiesResponse =
 
 export type CreateActivityData = {
   body: {
-    settings?: unknown;
+    settings?: JsonValueInput;
     assetIds?: Array<string>;
   };
   path: {
@@ -2250,18 +2173,13 @@ export type CreateActivityResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
     courseId: string;
     title: string;
     seq: number;
-    activities: Array<{
-      id: string;
-      moduleId: string;
-      courseId: string;
-      seq: number;
-      settings: unknown;
-      assetIds: Array<string>;
-    }>;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -2283,18 +2201,13 @@ export type DeleteActivityResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
     courseId: string;
     title: string;
     seq: number;
-    activities: Array<{
-      id: string;
-      moduleId: string;
-      courseId: string;
-      seq: number;
-      settings: unknown;
-      assetIds: Array<string>;
-    }>;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -2302,7 +2215,7 @@ export type DeleteActivityResponse = DeleteActivityResponses[keyof DeleteActivit
 
 export type UpdateActivityData = {
   body: {
-    settings?: unknown;
+    settings?: JsonValueInput;
     assetIds?: Array<string>;
   };
   path: {
@@ -2319,18 +2232,13 @@ export type UpdateActivityResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
     courseId: string;
     title: string;
     seq: number;
-    activities: Array<{
-      id: string;
-      moduleId: string;
-      courseId: string;
-      seq: number;
-      settings: unknown;
-      assetIds: Array<string>;
-    }>;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -2552,20 +2460,14 @@ export type ListEntitlementsResponses = {
    */
   200: {
     rows: Array<{
+      orgId: string;
       id: string;
       orgUserId: string;
-      firstName: string | null;
-      lastName: string | null;
-      email: string;
-      content: {
-        id: string;
-        type: "course" | "download";
-        title: string;
-      };
-      status: "active" | "expired" | "revoked";
+      contentId: string;
+      status: "active" | "revoked";
+      source: string;
       grantedAt: string;
       expiresAt: string | null;
-      source: string;
     }>;
     total: number;
     page: number;
@@ -2579,7 +2481,7 @@ export type GrantEntitlementData = {
   body: {
     orgUserId: string;
     contentId: string;
-    expiresAt: string | null;
+    expiresAt: unknown;
   };
   path?: never;
   query?: never;
@@ -2591,20 +2493,14 @@ export type GrantEntitlementResponses = {
    * Default Response
    */
   201: {
+    orgId: string;
     id: string;
     orgUserId: string;
-    firstName: string | null;
-    lastName: string | null;
-    email: string;
-    content: {
-      id: string;
-      type: "course" | "download";
-      title: string;
-    };
-    status: "active" | "expired" | "revoked";
+    contentId: string;
+    status: "active" | "revoked";
+    source: string;
     grantedAt: string;
     expiresAt: string | null;
-    source: string;
   };
 };
 
@@ -2639,20 +2535,14 @@ export type SetEntitlementStatusResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
     orgUserId: string;
-    firstName: string | null;
-    lastName: string | null;
-    email: string;
-    content: {
-      id: string;
-      type: "course" | "download";
-      title: string;
-    };
-    status: "active" | "expired" | "revoked";
+    contentId: string;
+    status: "active" | "revoked";
+    source: string;
     grantedAt: string;
     expiresAt: string | null;
-    source: string;
   };
 };
 
@@ -2671,17 +2561,20 @@ export type ListAutomationsResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
     name: string;
-    description?: string;
+    description: string | null;
     trigger: string;
     actions: Array<{
       type: string;
       input: {
-        [key: string]: unknown;
+        [key: string]: JsonValue;
       };
     }>;
     enabled: boolean;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -2695,7 +2588,7 @@ export type CreateAutomationData = {
     actions: Array<{
       type: string;
       input: {
-        [key: string]: unknown;
+        [key: string]: JsonValueInput;
       };
     }>;
   };
@@ -2709,17 +2602,20 @@ export type CreateAutomationResponses = {
    * Default Response
    */
   201: {
+    orgId: string;
     id: string;
     name: string;
-    description?: string;
+    description: string | null;
     trigger: string;
     actions: Array<{
       type: string;
       input: {
-        [key: string]: unknown;
+        [key: string]: JsonValue;
       };
     }>;
     enabled: boolean;
+    createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -2740,7 +2636,7 @@ export type ListAutomationActionsResponses = {
     type: string;
     description: string;
     inputSchema: {
-      [key: string]: unknown;
+      [key: string]: JsonValue;
     };
     source: string;
   }>;
@@ -2825,17 +2721,20 @@ export type GetAutomationResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
     name: string;
-    description?: string;
+    description: string | null;
     trigger: string;
     actions: Array<{
       type: string;
       input: {
-        [key: string]: unknown;
+        [key: string]: JsonValue;
       };
     }>;
     enabled: boolean;
+    createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -2849,7 +2748,7 @@ export type UpdateAutomationData = {
     actions?: Array<{
       type: string;
       input: {
-        [key: string]: unknown;
+        [key: string]: JsonValueInput;
       };
     }>;
     enabled?: boolean;
@@ -2878,17 +2777,20 @@ export type UpdateAutomationResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
     name: string;
-    description?: string;
+    description: string | null;
     trigger: string;
     actions: Array<{
       type: string;
       input: {
-        [key: string]: unknown;
+        [key: string]: JsonValue;
       };
     }>;
     enabled: boolean;
+    createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -2915,12 +2817,21 @@ export type ListAutomationRunsResponses = {
    */
   200: {
     rows: Array<{
-      id: string;
       orgId: string;
+      id: string;
       automationId: string;
       trigger: string;
+      eventId: string;
       event: {
-        [key: string]: unknown;
+        type: string;
+        version: number;
+        id: string;
+        orgId: string;
+        occurredAt: string;
+        data: JsonValue;
+        metadata?: {
+          [key: string]: JsonValue;
+        };
       };
       status: "running" | "completed" | "failed";
       actionResults: Array<{
@@ -3020,6 +2931,7 @@ export type RequestUploadResponses = {
    */
   201: {
     asset: {
+      orgId: string;
       id: string;
       key: string;
       kind: "video" | "download" | "content";
@@ -3081,6 +2993,7 @@ export type ConfirmAssetResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
     key: string;
     kind: "video" | "download" | "content";
@@ -3133,6 +3046,7 @@ export type ListAssetsResponses = {
    */
   200: {
     rows: Array<{
+      orgId: string;
       id: string;
       key: string;
       kind: "video" | "download" | "content";
@@ -3233,6 +3147,7 @@ export type GetAssetResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
     key: string;
     kind: "video" | "download" | "content";
@@ -3292,6 +3207,7 @@ export type RequestAssetDownloadResponses = {
   200: {
     url: string;
     asset: {
+      orgId: string;
       id: string;
       key: string;
       kind: "video" | "download" | "content";
@@ -3387,10 +3303,11 @@ export type ListConnectionsResponses = {
    * Default Response
    */
   200: Array<{
+    orgId: string;
     id: string;
     integrationId: string;
     config: {
-      [key: string]: unknown;
+      [key: string]: JsonValue;
     };
     active: boolean;
     createdAt: string;
@@ -3404,10 +3321,10 @@ export type ConnectIntegrationData = {
   body: {
     integrationId: string;
     secrets: {
-      [key: string]: unknown;
+      [key: string]: JsonValueInput;
     };
     config?: {
-      [key: string]: unknown;
+      [key: string]: JsonValueInput;
     };
   };
   path?: never;
@@ -3446,10 +3363,11 @@ export type ConnectIntegrationResponses = {
    * Default Response
    */
   201: {
+    orgId: string;
     id: string;
     integrationId: string;
     config: {
-      [key: string]: unknown;
+      [key: string]: JsonValue;
     };
     active: boolean;
     createdAt: string;
@@ -3543,10 +3461,11 @@ export type GetConnectionResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
     integrationId: string;
     config: {
-      [key: string]: unknown;
+      [key: string]: JsonValue;
     };
     active: boolean;
     createdAt: string;
@@ -3559,7 +3478,7 @@ export type GetConnectionResponse = GetConnectionResponses[keyof GetConnectionRe
 export type ConfigureConnectionData = {
   body: {
     config?: {
-      [key: string]: unknown;
+      [key: string]: JsonValueInput;
     };
     active?: boolean;
   };
@@ -3601,10 +3520,11 @@ export type ConfigureConnectionResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
     integrationId: string;
     config: {
-      [key: string]: unknown;
+      [key: string]: JsonValue;
     };
     active: boolean;
     createdAt: string;
@@ -3618,7 +3538,7 @@ export type ConfigureConnectionResponse =
 export type ReconnectIntegrationData = {
   body: {
     secrets: {
-      [key: string]: unknown;
+      [key: string]: JsonValueInput;
     };
   };
   path: {
@@ -3660,10 +3580,11 @@ export type ReconnectIntegrationResponses = {
    * Default Response
    */
   200: {
+    orgId: string;
     id: string;
     integrationId: string;
     config: {
-      [key: string]: unknown;
+      [key: string]: JsonValue;
     };
     active: boolean;
     createdAt: string;

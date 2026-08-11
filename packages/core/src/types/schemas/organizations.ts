@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { idSchema } from "./shared.js";
+import { idSchema, emailSchema } from "./shared.js";
 
 export const roleSchema = z.enum(["owner", "admin", "instructor", "student"]);
 export type Role = z.infer<typeof roleSchema>;
@@ -38,7 +38,7 @@ export const orgUserProfileSchema = z.object({
   id: idSchema,
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
-  email: z.string().email(),
+  email: emailSchema,
   image: z.string().nullable(),
 }).strict();
 export type OrgUserProfile = z.infer<typeof orgUserProfileSchema>;
@@ -46,7 +46,7 @@ export type OrgUserProfile = z.infer<typeof orgUserProfileSchema>;
 export const inviteSchema = z.object({
   id: idSchema,
   orgId: idSchema,
-  email: z.string().email(),
+  email: emailSchema,
   role: inviteRoleSchema,
   status: z.enum(["pending", "accepted", "rejected", "canceled"]),
   invitedBy: idSchema,
@@ -81,7 +81,7 @@ export type CreateOrgUserInput = z.infer<typeof createOrgUserInputSchema>;
 
 export const createInviteInputSchema = z.object({
   orgId: idSchema,
-  email: z.string().email(),
+  email: emailSchema,
   role: inviteRoleSchema,
   inviterUserId: idSchema,
   firstName: z.string().optional(),
@@ -93,6 +93,6 @@ export type CreateInviteInput = z.infer<typeof createInviteInputSchema>;
 export const acceptInviteInputSchema = z.object({
   token: z.string().trim().min(1),
   userId: idSchema,
-  email: z.string().email(),
+  email: emailSchema,
 }).strict();
 export type AcceptInviteInput = z.infer<typeof acceptInviteInputSchema>;

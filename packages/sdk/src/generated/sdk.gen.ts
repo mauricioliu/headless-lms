@@ -48,8 +48,6 @@ import type {
   DisconnectIntegrationResponses,
   DismissCommentReportsErrors,
   DismissCommentReportsResponses,
-  EditComment2Errors,
-  EditComment2Responses,
   EditCommentErrors,
   EditCommentResponses,
   GetAssetDownloadUrlErrors,
@@ -82,6 +80,7 @@ import type {
   GrantEntitlementResponses,
   InvokeConnectionActionErrors,
   InvokeConnectionActionResponses,
+  JsonValueInput,
   ListActivityCommentsErrors,
   ListActivityCommentsResponses,
   ListAssetsErrors,
@@ -111,6 +110,8 @@ import type {
   ModerateRemoveCommentResponses,
   PostCommentErrors,
   PostCommentResponses,
+  PublishCommentErrors,
+  PublishCommentResponses,
   ReconnectIntegrationErrors,
   ReconnectIntegrationResponses,
   RemoveDownloadAssetErrors,
@@ -448,9 +449,180 @@ export class Organizations {
       },
     });
   }
+
+  /**
+   * Get the portal org's public identity (branding)
+   */
+  public static getLearnOrg<ThrowOnError extends boolean = false>(
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetLearnOrgResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<GetLearnOrgResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/learn/org",
+      ...options,
+    });
+  }
+
+  /**
+   * Get the caller's identity within the session's org
+   */
+  public static getLearnViewer<ThrowOnError extends boolean = false>(
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetLearnViewerResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<GetLearnViewerResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/learn/viewer",
+      ...options,
+    });
+  }
+
+  /**
+   * List students
+   */
+  public static listStudents<ThrowOnError extends boolean = false>(
+    parameters?: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      sort?: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListStudentsResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "page" },
+            { in: "query", key: "pageSize" },
+            { in: "query", key: "search" },
+            { in: "query", key: "sort" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).get<ListStudentsResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/students",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Delete a student
+   */
+  public static deleteStudent<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<DeleteStudentResponses, DeleteStudentErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).delete<
+      DeleteStudentResponses,
+      DeleteStudentErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/students/{id}",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Get a student by id
+   */
+  public static getStudent<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetStudentResponses, GetStudentErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).get<
+      GetStudentResponses,
+      GetStudentErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/students/{id}",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Update a student's profile
+   */
+  public static updateStudent<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<UpdateStudentResponses, UpdateStudentErrors, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "body", key: "firstName" },
+            { in: "body", key: "lastName" },
+            { in: "body", key: "email" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).patch<
+      UpdateStudentResponses,
+      UpdateStudentErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/students/{id}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * Re-send a pending student's invite email
+   */
+  public static resendStudentInvite<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ResendStudentInviteResponses, ResendStudentInviteErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).post<
+      ResendStudentInviteResponses,
+      ResendStudentInviteErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/students/{id}/invite/resend",
+      ...options,
+      ...params,
+    });
+  }
 }
 
-export class Courses {
+export class Content {
   /**
    * List courses
    */
@@ -678,325 +850,6 @@ export class Courses {
     });
   }
 
-  /**
-   * List a course's modules
-   */
-  public static listModules<ThrowOnError extends boolean = false>(
-    parameters: {
-      courseId: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListModulesResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "courseId" }] }]);
-    return (options?.client ?? client).get<ListModulesResponses, unknown, ThrowOnError, "data">({
-      responseStyle: "data",
-      url: "/api/courses/{courseId}/modules",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Add a module
-   */
-  public static createModule<ThrowOnError extends boolean = false>(
-    parameters: {
-      courseId: string;
-      title: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<CreateModuleResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "courseId" },
-            { in: "body", key: "title" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).post<CreateModuleResponses, unknown, ThrowOnError, "data">({
-      responseStyle: "data",
-      url: "/api/courses/{courseId}/modules",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    });
-  }
-
-  /**
-   * Reorder modules
-   */
-  public static reorderModules<ThrowOnError extends boolean = false>(
-    parameters: {
-      courseId: string;
-      orderedIds: Array<string>;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ReorderModulesResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "courseId" },
-            { in: "body", key: "orderedIds" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).post<ReorderModulesResponses, unknown, ThrowOnError, "data">(
-      {
-        responseStyle: "data",
-        url: "/api/courses/{courseId}/modules/reorder",
-        ...options,
-        ...params,
-        headers: {
-          "Content-Type": "application/json",
-          ...options?.headers,
-          ...params.headers,
-        },
-      },
-    );
-  }
-
-  /**
-   * Delete a module
-   */
-  public static deleteModule<ThrowOnError extends boolean = false>(
-    parameters: {
-      courseId: string;
-      moduleId: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<DeleteModuleResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "courseId" },
-            { in: "path", key: "moduleId" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).delete<DeleteModuleResponses, unknown, ThrowOnError, "data">(
-      {
-        responseStyle: "data",
-        url: "/api/courses/{courseId}/modules/{moduleId}",
-        ...options,
-        ...params,
-      },
-    );
-  }
-
-  /**
-   * Rename a module
-   */
-  public static updateModule<ThrowOnError extends boolean = false>(
-    parameters: {
-      courseId: string;
-      moduleId: string;
-      title: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<UpdateModuleResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "courseId" },
-            { in: "path", key: "moduleId" },
-            { in: "body", key: "title" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).patch<UpdateModuleResponses, unknown, ThrowOnError, "data">({
-      responseStyle: "data",
-      url: "/api/courses/{courseId}/modules/{moduleId}",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    });
-  }
-
-  /**
-   * Reorder activities in a module
-   */
-  public static reorderActivities<ThrowOnError extends boolean = false>(
-    parameters: {
-      courseId: string;
-      moduleId: string;
-      orderedIds: Array<string>;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ReorderActivitiesResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "courseId" },
-            { in: "path", key: "moduleId" },
-            { in: "body", key: "orderedIds" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).post<
-      ReorderActivitiesResponses,
-      unknown,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/courses/{courseId}/modules/{moduleId}/activities/reorder",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    });
-  }
-
-  /**
-   * Add an activity
-   */
-  public static createActivity<ThrowOnError extends boolean = false>(
-    parameters: {
-      courseId: string;
-      moduleId: string;
-      settings?: unknown;
-      assetIds?: Array<string>;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<CreateActivityResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "courseId" },
-            { in: "path", key: "moduleId" },
-            { in: "body", key: "settings" },
-            { in: "body", key: "assetIds" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).post<CreateActivityResponses, unknown, ThrowOnError, "data">(
-      {
-        responseStyle: "data",
-        url: "/api/courses/{courseId}/modules/{moduleId}/activities",
-        ...options,
-        ...params,
-        headers: {
-          "Content-Type": "application/json",
-          ...options?.headers,
-          ...params.headers,
-        },
-      },
-    );
-  }
-
-  /**
-   * Delete an activity
-   */
-  public static deleteActivity<ThrowOnError extends boolean = false>(
-    parameters: {
-      courseId: string;
-      moduleId: string;
-      activityId: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<DeleteActivityResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "courseId" },
-            { in: "path", key: "moduleId" },
-            { in: "path", key: "activityId" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).delete<
-      DeleteActivityResponses,
-      unknown,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/courses/{courseId}/modules/{moduleId}/activities/{activityId}",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Update an activity
-   */
-  public static updateActivity<ThrowOnError extends boolean = false>(
-    parameters: {
-      courseId: string;
-      moduleId: string;
-      activityId: string;
-      settings?: unknown;
-      assetIds?: Array<string>;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<UpdateActivityResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "courseId" },
-            { in: "path", key: "moduleId" },
-            { in: "path", key: "activityId" },
-            { in: "body", key: "settings" },
-            { in: "body", key: "assetIds" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).patch<
-      UpdateActivityResponses,
-      unknown,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/courses/{courseId}/modules/{moduleId}/activities/{activityId}",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    });
-  }
-}
-
-export class Downloads {
   /**
    * List downloads
    */
@@ -1347,34 +1200,6 @@ export class Downloads {
       },
     });
   }
-}
-
-export class Learn {
-  /**
-   * Get the portal org's public identity (branding)
-   */
-  public static getLearnOrg<ThrowOnError extends boolean = false>(
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GetLearnOrgResponses, unknown, ThrowOnError, "data"> {
-    return (options?.client ?? client).get<GetLearnOrgResponses, unknown, ThrowOnError, "data">({
-      responseStyle: "data",
-      url: "/api/learn/org",
-      ...options,
-    });
-  }
-
-  /**
-   * Get the caller's identity within the session's org
-   */
-  public static getLearnViewer<ThrowOnError extends boolean = false>(
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GetLearnViewerResponses, unknown, ThrowOnError, "data"> {
-    return (options?.client ?? client).get<GetLearnViewerResponses, unknown, ThrowOnError, "data">({
-      responseStyle: "data",
-      url: "/api/learn/viewer",
-      ...options,
-    });
-  }
 
   /**
    * List the student's enrolled courses
@@ -1441,6 +1266,400 @@ export class Learn {
   }
 
   /**
+   * Downloads the student is actively entitled to
+   */
+  public static listLearnDownloads<ThrowOnError extends boolean = false>(
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListLearnDownloadsResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<
+      ListLearnDownloadsResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/downloads",
+      ...options,
+    });
+  }
+
+  /**
+   * One entitled download and its ordered assets
+   */
+  public static getLearnDownload<ThrowOnError extends boolean = false>(
+    parameters: {
+      downloadId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetLearnDownloadResponses, GetLearnDownloadErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "downloadId" }] }]);
+    return (options?.client ?? client).get<
+      GetLearnDownloadResponses,
+      GetLearnDownloadErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/downloads/{downloadId}",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Redirect to a short-lived signed URL for an entitled asset
+   */
+  public static getLearnDownloadAsset<ThrowOnError extends boolean = false>(
+    parameters: {
+      downloadId: string;
+      assetId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<unknown, GetLearnDownloadAssetErrors, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "downloadId" },
+            { in: "path", key: "assetId" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).get<
+      unknown,
+      GetLearnDownloadAssetErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/downloads/{downloadId}/assets/{assetId}",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * List a course's modules
+   */
+  public static listModules<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListModulesResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "courseId" }] }]);
+    return (options?.client ?? client).get<ListModulesResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/courses/{courseId}/modules",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Add a module
+   */
+  public static createModule<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+      title: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<CreateModuleResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "courseId" },
+            { in: "body", key: "title" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).post<CreateModuleResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/courses/{courseId}/modules",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * Reorder modules
+   */
+  public static reorderModules<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+      orderedIds: Array<string>;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ReorderModulesResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "courseId" },
+            { in: "body", key: "orderedIds" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).post<ReorderModulesResponses, unknown, ThrowOnError, "data">(
+      {
+        responseStyle: "data",
+        url: "/api/courses/{courseId}/modules/reorder",
+        ...options,
+        ...params,
+        headers: {
+          "Content-Type": "application/json",
+          ...options?.headers,
+          ...params.headers,
+        },
+      },
+    );
+  }
+
+  /**
+   * Delete a module
+   */
+  public static deleteModule<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+      moduleId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<DeleteModuleResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "courseId" },
+            { in: "path", key: "moduleId" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).delete<DeleteModuleResponses, unknown, ThrowOnError, "data">(
+      {
+        responseStyle: "data",
+        url: "/api/courses/{courseId}/modules/{moduleId}",
+        ...options,
+        ...params,
+      },
+    );
+  }
+
+  /**
+   * Rename a module
+   */
+  public static updateModule<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+      moduleId: string;
+      title: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<UpdateModuleResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "courseId" },
+            { in: "path", key: "moduleId" },
+            { in: "body", key: "title" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).patch<UpdateModuleResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/courses/{courseId}/modules/{moduleId}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * Reorder activities in a module
+   */
+  public static reorderActivities<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+      moduleId: string;
+      orderedIds: Array<string>;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ReorderActivitiesResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "courseId" },
+            { in: "path", key: "moduleId" },
+            { in: "body", key: "orderedIds" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).post<
+      ReorderActivitiesResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/courses/{courseId}/modules/{moduleId}/activities/reorder",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * Add an activity
+   */
+  public static createActivity<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+      moduleId: string;
+      settings?: JsonValueInput;
+      assetIds?: Array<string>;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<CreateActivityResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "courseId" },
+            { in: "path", key: "moduleId" },
+            { in: "body", key: "settings" },
+            { in: "body", key: "assetIds" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).post<CreateActivityResponses, unknown, ThrowOnError, "data">(
+      {
+        responseStyle: "data",
+        url: "/api/courses/{courseId}/modules/{moduleId}/activities",
+        ...options,
+        ...params,
+        headers: {
+          "Content-Type": "application/json",
+          ...options?.headers,
+          ...params.headers,
+        },
+      },
+    );
+  }
+
+  /**
+   * Delete an activity
+   */
+  public static deleteActivity<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+      moduleId: string;
+      activityId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<DeleteActivityResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "courseId" },
+            { in: "path", key: "moduleId" },
+            { in: "path", key: "activityId" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).delete<
+      DeleteActivityResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/courses/{courseId}/modules/{moduleId}/activities/{activityId}",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Update an activity
+   */
+  public static updateActivity<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+      moduleId: string;
+      activityId: string;
+      settings?: JsonValueInput;
+      assetIds?: Array<string>;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<UpdateActivityResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "courseId" },
+            { in: "path", key: "moduleId" },
+            { in: "path", key: "activityId" },
+            { in: "body", key: "settings" },
+            { in: "body", key: "assetIds" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).patch<
+      UpdateActivityResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/courses/{courseId}/modules/{moduleId}/activities/{activityId}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+}
+
+export class Progress {
+  /**
    * Report usage on a target; the progress service decides completion
    */
   public static reportProgress<ThrowOnError extends boolean = false>(
@@ -1449,7 +1668,7 @@ export class Learn {
       reports: Array<{
         asset?: string;
         completed?: boolean;
-        [key: string]: unknown;
+        [key: string]: JsonValueInput | string | boolean | undefined;
       }>;
     },
     options?: Options<never, ThrowOnError>,
@@ -1510,7 +1729,9 @@ export class Learn {
       ...params,
     });
   }
+}
 
+export class Discussion {
   /**
    * Read an activity's comments
    */
@@ -1749,106 +1970,6 @@ export class Learn {
   }
 
   /**
-   * Get a short-lived presigned URL to serve an asset to the student
-   */
-  public static getAssetDownloadUrl<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GetAssetDownloadUrlResponses, GetAssetDownloadUrlErrors, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
-    return (options?.client ?? client).post<
-      GetAssetDownloadUrlResponses,
-      GetAssetDownloadUrlErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/learn/assets/{id}/url",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Downloads the student is actively entitled to
-   */
-  public static listLearnDownloads<ThrowOnError extends boolean = false>(
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListLearnDownloadsResponses, unknown, ThrowOnError, "data"> {
-    return (options?.client ?? client).get<
-      ListLearnDownloadsResponses,
-      unknown,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/learn/downloads",
-      ...options,
-    });
-  }
-
-  /**
-   * One entitled download and its ordered assets
-   */
-  public static getLearnDownload<ThrowOnError extends boolean = false>(
-    parameters: {
-      downloadId: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GetLearnDownloadResponses, GetLearnDownloadErrors, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "downloadId" }] }]);
-    return (options?.client ?? client).get<
-      GetLearnDownloadResponses,
-      GetLearnDownloadErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/learn/downloads/{downloadId}",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Redirect to a short-lived signed URL for an entitled asset
-   */
-  public static getLearnDownloadAsset<ThrowOnError extends boolean = false>(
-    parameters: {
-      downloadId: string;
-      assetId: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<unknown, GetLearnDownloadAssetErrors, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "downloadId" },
-            { in: "path", key: "assetId" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).get<
-      unknown,
-      GetLearnDownloadAssetErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/learn/downloads/{downloadId}/assets/{assetId}",
-      ...options,
-      ...params,
-    });
-  }
-}
-
-export class Discussion {
-  /**
    * List comments, filtered by course, activity, author, status or reports
    */
   public static listComments<ThrowOnError extends boolean = false>(
@@ -1922,13 +2043,13 @@ export class Discussion {
   /**
    * Publish a comment: approves a pending one, restores a removed one
    */
-  public static editComment<ThrowOnError extends boolean = false>(
+  public static publishComment<ThrowOnError extends boolean = false>(
     parameters: {
       commentId: string;
       status: "published";
     },
     options?: Options<never, ThrowOnError>,
-  ): RequestResult<EditComment2Responses, EditComment2Errors, ThrowOnError, "data"> {
+  ): RequestResult<PublishCommentResponses, PublishCommentErrors, ThrowOnError, "data"> {
     const params = buildClientParams(
       [parameters],
       [
@@ -1941,8 +2062,8 @@ export class Discussion {
       ],
     );
     return (options?.client ?? client).patch<
-      EditComment2Responses,
-      EditComment2Errors,
+      PublishCommentResponses,
+      PublishCommentErrors,
       ThrowOnError,
       "data"
     >({
@@ -2026,568 +2147,30 @@ export class Discussion {
   }
 }
 
-export class Students {
-  /**
-   * List students
-   */
-  public static listStudents<ThrowOnError extends boolean = false>(
-    parameters?: {
-      page?: number;
-      pageSize?: number;
-      search?: string;
-      sort?: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListStudentsResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "query", key: "page" },
-            { in: "query", key: "pageSize" },
-            { in: "query", key: "search" },
-            { in: "query", key: "sort" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).get<ListStudentsResponses, unknown, ThrowOnError, "data">({
-      responseStyle: "data",
-      url: "/api/students",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Delete a student
-   */
-  public static deleteStudent<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<DeleteStudentResponses, DeleteStudentErrors, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
-    return (options?.client ?? client).delete<
-      DeleteStudentResponses,
-      DeleteStudentErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/students/{id}",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Get a student by id
-   */
-  public static getStudent<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GetStudentResponses, GetStudentErrors, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
-    return (options?.client ?? client).get<
-      GetStudentResponses,
-      GetStudentErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/students/{id}",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Update a student's profile
-   */
-  public static updateStudent<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-      firstName: string;
-      lastName: string;
-      email: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<UpdateStudentResponses, UpdateStudentErrors, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "id" },
-            { in: "body", key: "firstName" },
-            { in: "body", key: "lastName" },
-            { in: "body", key: "email" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).patch<
-      UpdateStudentResponses,
-      UpdateStudentErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/students/{id}",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    });
-  }
-
-  /**
-   * Re-send a pending student's invite email
-   */
-  public static resendStudentInvite<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ResendStudentInviteResponses, ResendStudentInviteErrors, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
-    return (options?.client ?? client).post<
-      ResendStudentInviteResponses,
-      ResendStudentInviteErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/students/{id}/invite/resend",
-      ...options,
-      ...params,
-    });
-  }
-}
-
-export class Entitlements {
-  /**
-   * List entitlements
-   */
-  public static listEntitlements<ThrowOnError extends boolean = false>(
-    parameters?: {
-      page?: number;
-      pageSize?: number;
-      search?: string;
-      sort?: string;
-      status?: "active" | "expired" | "revoked";
-      source?: string;
-      orgUserId?: string;
-      contentId?: string;
-      type?: "course" | "download";
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListEntitlementsResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "query", key: "page" },
-            { in: "query", key: "pageSize" },
-            { in: "query", key: "search" },
-            { in: "query", key: "sort" },
-            { in: "query", key: "status" },
-            { in: "query", key: "source" },
-            { in: "query", key: "orgUserId" },
-            { in: "query", key: "contentId" },
-            { in: "query", key: "type" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).get<
-      ListEntitlementsResponses,
-      unknown,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/entitlements",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Grant a student access to a piece of content
-   */
-  public static grantEntitlement<ThrowOnError extends boolean = false>(
-    parameters: {
-      orgUserId: string;
-      contentId: string;
-      expiresAt: string | null;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GrantEntitlementResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "body", key: "orgUserId" },
-            { in: "body", key: "contentId" },
-            { in: "body", key: "expiresAt" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).post<
-      GrantEntitlementResponses,
-      unknown,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/entitlements",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    });
-  }
-
-  /**
-   * Revoke or reinstate an entitlement
-   */
-  public static setEntitlementStatus<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-      status: "active" | "revoked";
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<
-    SetEntitlementStatusResponses,
-    SetEntitlementStatusErrors,
-    ThrowOnError,
-    "data"
-  > {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "id" },
-            { in: "body", key: "status" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).patch<
-      SetEntitlementStatusResponses,
-      SetEntitlementStatusErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/entitlements/{id}",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    });
-  }
-}
-
-export class Automations {
-  /**
-   * List automations
-   */
-  public static listAutomations<ThrowOnError extends boolean = false>(
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListAutomationsResponses, unknown, ThrowOnError, "data"> {
-    return (options?.client ?? client).get<ListAutomationsResponses, unknown, ThrowOnError, "data">(
-      {
-        responseStyle: "data",
-        url: "/api/automations",
-        ...options,
-      },
-    );
-  }
-
-  /**
-   * Create an automation
-   */
-  public static createAutomation<ThrowOnError extends boolean = false>(
-    parameters: {
-      name: string;
-      description?: string;
-      trigger: string;
-      actions: Array<{
-        type: string;
-        input: {
-          [key: string]: unknown;
-        };
-      }>;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<CreateAutomationResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "body", key: "name" },
-            { in: "body", key: "description" },
-            { in: "body", key: "trigger" },
-            { in: "body", key: "actions" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).post<
-      CreateAutomationResponses,
-      unknown,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/automations",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    });
-  }
-
-  /**
-   * List the actions automations can use
-   */
-  public static listAutomationActions<ThrowOnError extends boolean = false>(
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListAutomationActionsResponses, unknown, ThrowOnError, "data"> {
-    return (options?.client ?? client).get<
-      ListAutomationActionsResponses,
-      unknown,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/automations/actions",
-      ...options,
-    });
-  }
-
-  /**
-   * List the domain events automations can react to
-   */
-  public static listAutomationTriggers<ThrowOnError extends boolean = false>(
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListAutomationTriggersResponses, unknown, ThrowOnError, "data"> {
-    return (options?.client ?? client).get<
-      ListAutomationTriggersResponses,
-      unknown,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/automations/triggers",
-      ...options,
-    });
-  }
-
-  /**
-   * Delete an automation
-   */
-  public static deleteAutomation<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<DeleteAutomationResponses, DeleteAutomationErrors, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
-    return (options?.client ?? client).delete<
-      DeleteAutomationResponses,
-      DeleteAutomationErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/automations/{id}",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Get an automation by id
-   */
-  public static getAutomation<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GetAutomationResponses, GetAutomationErrors, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
-    return (options?.client ?? client).get<
-      GetAutomationResponses,
-      GetAutomationErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/automations/{id}",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Update an automation
-   */
-  public static updateAutomation<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-      name?: string;
-      description?: string;
-      trigger?: string;
-      actions?: Array<{
-        type: string;
-        input: {
-          [key: string]: unknown;
-        };
-      }>;
-      enabled?: boolean;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<UpdateAutomationResponses, UpdateAutomationErrors, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "id" },
-            { in: "body", key: "name" },
-            { in: "body", key: "description" },
-            { in: "body", key: "trigger" },
-            { in: "body", key: "actions" },
-            { in: "body", key: "enabled" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).patch<
-      UpdateAutomationResponses,
-      UpdateAutomationErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/automations/{id}",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    });
-  }
-
-  /**
-   * List an automation's runs — a deleted automation's runs remain reachable (audit trail)
-   */
-  public static listAutomationRuns<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-      page?: number;
-      pageSize?: number;
-      search?: string;
-      sort?: string;
-      status?: "running" | "completed" | "failed";
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListAutomationRunsResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "id" },
-            { in: "query", key: "page" },
-            { in: "query", key: "pageSize" },
-            { in: "query", key: "search" },
-            { in: "query", key: "sort" },
-            { in: "query", key: "status" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).get<
-      ListAutomationRunsResponses,
-      unknown,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/automations/{id}/runs",
-      ...options,
-      ...params,
-    });
-  }
-}
-
-export class Dashboard {
-  /**
-   * Back-office overview stats
-   */
-  public static getOverview<ThrowOnError extends boolean = false>(
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GetOverviewResponses, unknown, ThrowOnError, "data"> {
-    return (options?.client ?? client).get<GetOverviewResponses, unknown, ThrowOnError, "data">({
-      responseStyle: "data",
-      url: "/api/overview",
-      ...options,
-    });
-  }
-
-  /**
-   * Enrollments granted per day over a trailing window
-   */
-  public static getEnrollmentSeries<ThrowOnError extends boolean = false>(
-    parameters?: {
-      days?: number;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GetEnrollmentSeriesResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "days" }] }]);
-    return (options?.client ?? client).get<
-      GetEnrollmentSeriesResponses,
-      unknown,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/overview/enrollments",
-      ...options,
-      ...params,
-    });
-  }
-}
-
 export class Assets {
+  /**
+   * Get a short-lived presigned URL to serve an asset to the student
+   */
+  public static getAssetDownloadUrl<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetAssetDownloadUrlResponses, GetAssetDownloadUrlErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).post<
+      GetAssetDownloadUrlResponses,
+      GetAssetDownloadUrlErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/assets/{id}/url",
+      ...options,
+      ...params,
+    });
+  }
+
   /**
    * Register an asset and get a presigned upload URL
    */
@@ -2780,6 +2363,420 @@ export class Assets {
   }
 }
 
+export class Entitlements {
+  /**
+   * List entitlements
+   */
+  public static listEntitlements<ThrowOnError extends boolean = false>(
+    parameters?: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      sort?: string;
+      status?: "active" | "expired" | "revoked";
+      source?: string;
+      orgUserId?: string;
+      contentId?: string;
+      type?: "course" | "download";
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListEntitlementsResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "page" },
+            { in: "query", key: "pageSize" },
+            { in: "query", key: "search" },
+            { in: "query", key: "sort" },
+            { in: "query", key: "status" },
+            { in: "query", key: "source" },
+            { in: "query", key: "orgUserId" },
+            { in: "query", key: "contentId" },
+            { in: "query", key: "type" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).get<
+      ListEntitlementsResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/entitlements",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Grant a student access to a piece of content
+   */
+  public static grantEntitlement<ThrowOnError extends boolean = false>(
+    parameters: {
+      orgUserId: string;
+      contentId: string;
+      expiresAt: unknown;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GrantEntitlementResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "body", key: "orgUserId" },
+            { in: "body", key: "contentId" },
+            { in: "body", key: "expiresAt" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).post<
+      GrantEntitlementResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/entitlements",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * Revoke or reinstate an entitlement
+   */
+  public static setEntitlementStatus<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+      status: "active" | "revoked";
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<
+    SetEntitlementStatusResponses,
+    SetEntitlementStatusErrors,
+    ThrowOnError,
+    "data"
+  > {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "body", key: "status" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).patch<
+      SetEntitlementStatusResponses,
+      SetEntitlementStatusErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/entitlements/{id}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+}
+
+export class Automations {
+  /**
+   * List automations
+   */
+  public static listAutomations<ThrowOnError extends boolean = false>(
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListAutomationsResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<ListAutomationsResponses, unknown, ThrowOnError, "data">(
+      {
+        responseStyle: "data",
+        url: "/api/automations",
+        ...options,
+      },
+    );
+  }
+
+  /**
+   * Create an automation
+   */
+  public static createAutomation<ThrowOnError extends boolean = false>(
+    parameters: {
+      name: string;
+      description?: string;
+      trigger: string;
+      actions: Array<{
+        type: string;
+        input: {
+          [key: string]: JsonValueInput;
+        };
+      }>;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<CreateAutomationResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "body", key: "name" },
+            { in: "body", key: "description" },
+            { in: "body", key: "trigger" },
+            { in: "body", key: "actions" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).post<
+      CreateAutomationResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/automations",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * List the actions automations can use
+   */
+  public static listAutomationActions<ThrowOnError extends boolean = false>(
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListAutomationActionsResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<
+      ListAutomationActionsResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/automations/actions",
+      ...options,
+    });
+  }
+
+  /**
+   * List the domain events automations can react to
+   */
+  public static listAutomationTriggers<ThrowOnError extends boolean = false>(
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListAutomationTriggersResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<
+      ListAutomationTriggersResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/automations/triggers",
+      ...options,
+    });
+  }
+
+  /**
+   * Delete an automation
+   */
+  public static deleteAutomation<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<DeleteAutomationResponses, DeleteAutomationErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).delete<
+      DeleteAutomationResponses,
+      DeleteAutomationErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/automations/{id}",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Get an automation by id
+   */
+  public static getAutomation<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetAutomationResponses, GetAutomationErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).get<
+      GetAutomationResponses,
+      GetAutomationErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/automations/{id}",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Update an automation
+   */
+  public static updateAutomation<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+      name?: string;
+      description?: string;
+      trigger?: string;
+      actions?: Array<{
+        type: string;
+        input: {
+          [key: string]: JsonValueInput;
+        };
+      }>;
+      enabled?: boolean;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<UpdateAutomationResponses, UpdateAutomationErrors, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "body", key: "name" },
+            { in: "body", key: "description" },
+            { in: "body", key: "trigger" },
+            { in: "body", key: "actions" },
+            { in: "body", key: "enabled" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).patch<
+      UpdateAutomationResponses,
+      UpdateAutomationErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/automations/{id}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * List an automation's runs — a deleted automation's runs remain reachable (audit trail)
+   */
+  public static listAutomationRuns<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      sort?: string;
+      status?: "running" | "completed" | "failed";
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListAutomationRunsResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "query", key: "page" },
+            { in: "query", key: "pageSize" },
+            { in: "query", key: "search" },
+            { in: "query", key: "sort" },
+            { in: "query", key: "status" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).get<
+      ListAutomationRunsResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/automations/{id}/runs",
+      ...options,
+      ...params,
+    });
+  }
+}
+
+export class Reporting {
+  /**
+   * Back-office overview stats
+   */
+  public static getOverview<ThrowOnError extends boolean = false>(
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetOverviewResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<GetOverviewResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/overview",
+      ...options,
+    });
+  }
+
+  /**
+   * Enrollments granted per day over a trailing window
+   */
+  public static getEnrollmentSeries<ThrowOnError extends boolean = false>(
+    parameters?: {
+      days?: number;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetEnrollmentSeriesResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "days" }] }]);
+    return (options?.client ?? client).get<
+      GetEnrollmentSeriesResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/overview/enrollments",
+      ...options,
+      ...params,
+    });
+  }
+}
+
 export class Integrations {
   /**
    * List the integrations this deployment supports, with their config schemas
@@ -2829,10 +2826,10 @@ export class Integrations {
     parameters: {
       integrationId: string;
       secrets: {
-        [key: string]: unknown;
+        [key: string]: JsonValueInput;
       };
       config?: {
-        [key: string]: unknown;
+        [key: string]: JsonValueInput;
       };
     },
     options?: Options<never, ThrowOnError>,
@@ -2925,7 +2922,7 @@ export class Integrations {
     parameters: {
       id: string;
       config?: {
-        [key: string]: unknown;
+        [key: string]: JsonValueInput;
       };
       active?: boolean;
     },
@@ -2968,7 +2965,7 @@ export class Integrations {
     parameters: {
       id: string;
       secrets: {
-        [key: string]: unknown;
+        [key: string]: JsonValueInput;
       };
     },
     options?: Options<never, ThrowOnError>,

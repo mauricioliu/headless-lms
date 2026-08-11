@@ -25,7 +25,7 @@ export async function learnDownloadsRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listLearnDownloads',
-      tags: ['Learn'],
+      tags: ['Content'],
       summary: 'Downloads the student is actively entitled to',
       response: { 200: LearnDownloads },
     },
@@ -44,7 +44,7 @@ export async function learnDownloadsRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getLearnDownload',
-      tags: ['Learn'],
+      tags: ['Content'],
       summary: 'One entitled download and its ordered assets',
       params: DownloadIdParam,
       response: { 200: LearnDownload, 404: ErrorBody },
@@ -71,7 +71,7 @@ export async function learnDownloadsRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getLearnDownloadAsset',
-      tags: ['Learn'],
+      tags: ['Content'],
       summary: 'Redirect to a short-lived signed URL for an entitled asset',
       params: DownloadAssetParams,
       response: { 302: z.void(), 404: ErrorBody },

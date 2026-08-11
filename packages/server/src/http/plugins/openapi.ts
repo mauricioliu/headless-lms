@@ -5,28 +5,38 @@
 import type { FastifyInstance } from 'fastify';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
-import { jsonSchemaTransform } from 'fastify-type-provider-zod';
+import { jsonSchemaTransform, jsonSchemaTransformObject } from 'fastify-type-provider-zod';
 import type { ServerConfig } from '../config.js';
+import pkg from '../../../package.json' with { type: 'json' };
+
 
 export function registerOpenApi(app: FastifyInstance, config: ServerConfig): void {
   app.register(swagger, {
     openapi: {
-      info: { title: 'Headless LMS API', version: '0.0.0' },
+      info: {
+        title: 'Headless LMS API',
+        version: pkg.version,
+        description: 'API documentation for the Headless LMS platform',
+        license: {
+          name: 'MIT',
+          url: 'https://opensource.org/licenses/MIT',
+        },
+      },
       servers: [{ url: config.publicUrl }],
       tags: [
-        { name: 'Organizations', description: 'Organizations and member management' },
-        { name: 'Courses', description: 'Course authoring: courses, modules, activities' },
-        { name: 'Learn', description: 'Student-facing course delivery' },
-        { name: 'Students', description: 'Students and their enrollments' },
+        { name: 'Organizations', description: 'The tenant: its members, roles, invites and students' },
+        { name: 'Content', description: 'Authored content: courses and downloads, their structure and delivery' },
         { name: 'Entitlements', description: 'Access grants to content' },
-        { name: 'Progress', description: 'Completion tracking' },
+        { name: 'Progress', description: 'Per-student progress and completion through course content' },
+        { name: 'Discussion', description: 'Learner comments, replies, reactions and moderation' },
+        { name: 'Assets', description: 'The org media library: uploads, serving and lifecycle' },
         { name: 'Automations', description: 'Trigger/action workflows' },
-        { name: 'Dashboard', description: 'Back-office overview' },
-        { name: 'Assets', description: 'Media library and uploads' },
-        { name: 'Integrations', description: 'Third-party integration connections' },
+        { name: 'Integrations', description: 'Connections to external services' },
+        { name: 'Reporting', description: 'Reporting and analytics' },
       ],
     },
     transform: jsonSchemaTransform,
+    transformObject: jsonSchemaTransformObject,
   });
   app.register(swaggerUi, { routePrefix: '/docs' });
 }

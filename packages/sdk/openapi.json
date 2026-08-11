@@ -2,10 +2,68 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Headless LMS API",
-    "version": "0.0.0"
+    "version": "0.1.0",
+    "description": "API documentation for the Headless LMS platform",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
   },
   "components": {
-    "schemas": {}
+    "schemas": {
+      "JsonValueInput": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JsonValueInput"
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValueInput"
+            }
+          }
+        ],
+        "nullable": true
+      },
+      "JsonValue": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JsonValue"
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            }
+          }
+        ],
+        "nullable": true
+      }
+    }
   },
   "paths": {
     "/api/organizations": {
@@ -577,7 +635,7 @@
                   "email": {
                     "type": "string",
                     "format": "email",
-                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                    "pattern": "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
                   },
                   "role": {
                     "type": "string",
@@ -823,7 +881,7 @@
         "operationId": "listCourses",
         "summary": "List courses",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "parameters": [
           {
@@ -898,8 +956,19 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "orgId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
                           "id": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "course"
+                            ]
                           },
                           "title": {
                             "type": "string"
@@ -922,68 +991,25 @@
                           },
                           "thumbnailAssetId": {
                             "nullable": true,
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "settings": {
-                            "type": "object",
-                            "properties": {
-                              "transcriptDownloads": {
-                                "type": "boolean"
-                              },
-                              "comments": {
-                                "type": "object",
-                                "properties": {
-                                  "enabled": {
-                                    "type": "boolean"
-                                  },
-                                  "threaded": {
-                                    "type": "boolean"
-                                  },
-                                  "requireReview": {
-                                    "type": "boolean"
-                                  },
-                                  "reactions": {
-                                    "type": "boolean"
-                                  }
-                                },
-                                "required": [
-                                  "enabled",
-                                  "threaded",
-                                  "requireReview",
-                                  "reactions"
-                                ],
-                                "additionalProperties": false
-                              }
-                            },
-                            "required": [
-                              "transcriptDownloads"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "moduleCount": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
-                          "activityCount": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
-                          "enrolledCount": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
-                          "updatedAt": {
-                            "type": "string"
+                            "$ref": "#/components/schemas/JsonValue"
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
+                          "orgId",
                           "id",
+                          "type",
                           "title",
                           "slug",
                           "description",
@@ -991,11 +1017,8 @@
                           "category",
                           "thumbnailAssetId",
                           "settings",
-                          "moduleCount",
-                          "activityCount",
-                          "enrolledCount",
-                          "updatedAt",
-                          "createdAt"
+                          "createdAt",
+                          "updatedAt"
                         ],
                         "additionalProperties": false
                       }
@@ -1033,7 +1056,7 @@
         "operationId": "createCourse",
         "summary": "Create a course",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -1070,8 +1093,19 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "course"
+                      ]
                     },
                     "title": {
                       "type": "string"
@@ -1094,68 +1128,25 @@
                     },
                     "thumbnailAssetId": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "settings": {
-                      "type": "object",
-                      "properties": {
-                        "transcriptDownloads": {
-                          "type": "boolean"
-                        },
-                        "comments": {
-                          "type": "object",
-                          "properties": {
-                            "enabled": {
-                              "type": "boolean"
-                            },
-                            "threaded": {
-                              "type": "boolean"
-                            },
-                            "requireReview": {
-                              "type": "boolean"
-                            },
-                            "reactions": {
-                              "type": "boolean"
-                            }
-                          },
-                          "required": [
-                            "enabled",
-                            "threaded",
-                            "requireReview",
-                            "reactions"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "required": [
-                        "transcriptDownloads"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "moduleCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "activityCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "enrolledCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "updatedAt": {
-                      "type": "string"
+                      "$ref": "#/components/schemas/JsonValue"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
+                    "type",
                     "title",
                     "slug",
                     "description",
@@ -1163,11 +1154,8 @@
                     "category",
                     "thumbnailAssetId",
                     "settings",
-                    "moduleCount",
-                    "activityCount",
-                    "enrolledCount",
-                    "updatedAt",
-                    "createdAt"
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -1182,7 +1170,7 @@
         "operationId": "getCourse",
         "summary": "Get a course by id",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "parameters": [
           {
@@ -1202,8 +1190,19 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "course"
+                      ]
                     },
                     "title": {
                       "type": "string"
@@ -1226,68 +1225,25 @@
                     },
                     "thumbnailAssetId": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "settings": {
-                      "type": "object",
-                      "properties": {
-                        "transcriptDownloads": {
-                          "type": "boolean"
-                        },
-                        "comments": {
-                          "type": "object",
-                          "properties": {
-                            "enabled": {
-                              "type": "boolean"
-                            },
-                            "threaded": {
-                              "type": "boolean"
-                            },
-                            "requireReview": {
-                              "type": "boolean"
-                            },
-                            "reactions": {
-                              "type": "boolean"
-                            }
-                          },
-                          "required": [
-                            "enabled",
-                            "threaded",
-                            "requireReview",
-                            "reactions"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "required": [
-                        "transcriptDownloads"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "moduleCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "activityCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "enrolledCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "updatedAt": {
-                      "type": "string"
+                      "$ref": "#/components/schemas/JsonValue"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
+                    "type",
                     "title",
                     "slug",
                     "description",
@@ -1295,11 +1251,8 @@
                     "category",
                     "thumbnailAssetId",
                     "settings",
-                    "moduleCount",
-                    "activityCount",
-                    "enrolledCount",
-                    "updatedAt",
-                    "createdAt"
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -1334,7 +1287,7 @@
         "operationId": "updateCourse",
         "summary": "Update a course",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -1393,9 +1346,11 @@
                           "threaded",
                           "requireReview",
                           "reactions"
-                        ]
+                        ],
+                        "additionalProperties": false
                       }
-                    }
+                    },
+                    "additionalProperties": false
                   }
                 }
               }
@@ -1420,8 +1375,19 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "course"
+                      ]
                     },
                     "title": {
                       "type": "string"
@@ -1444,68 +1410,25 @@
                     },
                     "thumbnailAssetId": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "settings": {
-                      "type": "object",
-                      "properties": {
-                        "transcriptDownloads": {
-                          "type": "boolean"
-                        },
-                        "comments": {
-                          "type": "object",
-                          "properties": {
-                            "enabled": {
-                              "type": "boolean"
-                            },
-                            "threaded": {
-                              "type": "boolean"
-                            },
-                            "requireReview": {
-                              "type": "boolean"
-                            },
-                            "reactions": {
-                              "type": "boolean"
-                            }
-                          },
-                          "required": [
-                            "enabled",
-                            "threaded",
-                            "requireReview",
-                            "reactions"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "required": [
-                        "transcriptDownloads"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "moduleCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "activityCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "enrolledCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "updatedAt": {
-                      "type": "string"
+                      "$ref": "#/components/schemas/JsonValue"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
+                    "type",
                     "title",
                     "slug",
                     "description",
@@ -1513,11 +1436,8 @@
                     "category",
                     "thumbnailAssetId",
                     "settings",
-                    "moduleCount",
-                    "activityCount",
-                    "enrolledCount",
-                    "updatedAt",
-                    "createdAt"
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -1552,7 +1472,7 @@
         "operationId": "deleteCourse",
         "summary": "Delete a course",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "parameters": [
           {
@@ -1603,7 +1523,7 @@
         "operationId": "updateCourseSettings",
         "summary": "Update a course settings",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -1636,9 +1556,11 @@
                       "threaded",
                       "requireReview",
                       "reactions"
-                    ]
+                    ],
+                    "additionalProperties": false
                   }
-                }
+                },
+                "additionalProperties": false
               }
             }
           }
@@ -1727,7 +1649,7 @@
         "operationId": "listDownloads",
         "summary": "List downloads",
         "tags": [
-          "Downloads"
+          "Content"
         ],
         "parameters": [
           {
@@ -1802,8 +1724,19 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "orgId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
                           "id": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "download"
+                            ]
                           },
                           "title": {
                             "type": "string"
@@ -1826,43 +1759,30 @@
                           },
                           "thumbnailAssetId": {
                             "nullable": true,
-                            "type": "string"
-                          },
-                          "assetCount": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
-                          "totalSize": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
-                          "entitledCount": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
-                          "updatedAt": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
+                          "orgId",
                           "id",
+                          "type",
                           "title",
                           "slug",
                           "description",
                           "status",
                           "category",
                           "thumbnailAssetId",
-                          "assetCount",
-                          "totalSize",
-                          "entitledCount",
-                          "updatedAt",
-                          "createdAt"
+                          "createdAt",
+                          "updatedAt"
                         ],
                         "additionalProperties": false
                       }
@@ -1900,7 +1820,7 @@
         "operationId": "createDownload",
         "summary": "Create a download",
         "tags": [
-          "Downloads"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -1937,8 +1857,19 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "download"
+                      ]
                     },
                     "title": {
                       "type": "string"
@@ -1961,43 +1892,30 @@
                     },
                     "thumbnailAssetId": {
                       "nullable": true,
-                      "type": "string"
-                    },
-                    "assetCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "totalSize": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "entitledCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
+                    "type",
                     "title",
                     "slug",
                     "description",
                     "status",
                     "category",
                     "thumbnailAssetId",
-                    "assetCount",
-                    "totalSize",
-                    "entitledCount",
-                    "updatedAt",
-                    "createdAt"
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -2012,7 +1930,7 @@
         "operationId": "getDownload",
         "summary": "Get a download by id",
         "tags": [
-          "Downloads"
+          "Content"
         ],
         "parameters": [
           {
@@ -2032,8 +1950,19 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "download"
+                      ]
                     },
                     "title": {
                       "type": "string"
@@ -2056,43 +1985,30 @@
                     },
                     "thumbnailAssetId": {
                       "nullable": true,
-                      "type": "string"
-                    },
-                    "assetCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "totalSize": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "entitledCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
+                    "type",
                     "title",
                     "slug",
                     "description",
                     "status",
                     "category",
                     "thumbnailAssetId",
-                    "assetCount",
-                    "totalSize",
-                    "entitledCount",
-                    "updatedAt",
-                    "createdAt"
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -2127,7 +2043,7 @@
         "operationId": "updateDownload",
         "summary": "Update a download",
         "tags": [
-          "Downloads"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -2182,8 +2098,19 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "download"
+                      ]
                     },
                     "title": {
                       "type": "string"
@@ -2206,43 +2133,30 @@
                     },
                     "thumbnailAssetId": {
                       "nullable": true,
-                      "type": "string"
-                    },
-                    "assetCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "totalSize": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "entitledCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
+                    "type",
                     "title",
                     "slug",
                     "description",
                     "status",
                     "category",
                     "thumbnailAssetId",
-                    "assetCount",
-                    "totalSize",
-                    "entitledCount",
-                    "updatedAt",
-                    "createdAt"
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -2277,7 +2191,7 @@
         "operationId": "deleteDownload",
         "summary": "Delete a download",
         "tags": [
-          "Downloads"
+          "Content"
         ],
         "parameters": [
           {
@@ -2328,7 +2242,7 @@
         "operationId": "listDownloadAssets",
         "summary": "List a download's assets in order",
         "tags": [
-          "Downloads"
+          "Content"
         ],
         "parameters": [
           {
@@ -2350,11 +2264,21 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "downloadId": {
+                        "type": "string",
+                        "minLength": 1
                       },
                       "assetId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "seq": {
                         "type": "integer",
@@ -2364,27 +2288,15 @@
                       "displayName": {
                         "nullable": true,
                         "type": "string"
-                      },
-                      "filename": {
-                        "type": "string"
-                      },
-                      "contentType": {
-                        "type": "string"
-                      },
-                      "size": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
+                      "downloadId",
                       "assetId",
                       "seq",
-                      "displayName",
-                      "filename",
-                      "contentType",
-                      "size"
+                      "displayName"
                     ],
                     "additionalProperties": false
                   }
@@ -2420,7 +2332,7 @@
         "operationId": "addDownloadAsset",
         "summary": "Link a media-library asset to a download",
         "tags": [
-          "Downloads"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -2430,7 +2342,8 @@
                 "type": "object",
                 "properties": {
                   "assetId": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                   },
                   "displayName": {
                     "type": "string"
@@ -2438,7 +2351,8 @@
                 },
                 "required": [
                   "assetId"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -2463,11 +2377,21 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "downloadId": {
+                        "type": "string",
+                        "minLength": 1
                       },
                       "assetId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "seq": {
                         "type": "integer",
@@ -2477,27 +2401,15 @@
                       "displayName": {
                         "nullable": true,
                         "type": "string"
-                      },
-                      "filename": {
-                        "type": "string"
-                      },
-                      "contentType": {
-                        "type": "string"
-                      },
-                      "size": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
+                      "downloadId",
                       "assetId",
                       "seq",
-                      "displayName",
-                      "filename",
-                      "contentType",
-                      "size"
+                      "displayName"
                     ],
                     "additionalProperties": false
                   }
@@ -2535,7 +2447,7 @@
         "operationId": "reorderDownloadAssets",
         "summary": "Reorder a download's assets (send the complete set)",
         "tags": [
-          "Downloads"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -2547,13 +2459,15 @@
                   "assetIds": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     }
                   }
                 },
                 "required": [
                   "assetIds"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -2578,11 +2492,21 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "downloadId": {
+                        "type": "string",
+                        "minLength": 1
                       },
                       "assetId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "seq": {
                         "type": "integer",
@@ -2592,27 +2516,15 @@
                       "displayName": {
                         "nullable": true,
                         "type": "string"
-                      },
-                      "filename": {
-                        "type": "string"
-                      },
-                      "contentType": {
-                        "type": "string"
-                      },
-                      "size": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
+                      "downloadId",
                       "assetId",
                       "seq",
-                      "displayName",
-                      "filename",
-                      "contentType",
-                      "size"
+                      "displayName"
                     ],
                     "additionalProperties": false
                   }
@@ -2672,7 +2584,7 @@
         "operationId": "renameDownloadAsset",
         "summary": "Set an asset's display name within a download",
         "tags": [
-          "Downloads"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -2721,11 +2633,21 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "downloadId": {
+                        "type": "string",
+                        "minLength": 1
                       },
                       "assetId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "seq": {
                         "type": "integer",
@@ -2735,27 +2657,15 @@
                       "displayName": {
                         "nullable": true,
                         "type": "string"
-                      },
-                      "filename": {
-                        "type": "string"
-                      },
-                      "contentType": {
-                        "type": "string"
-                      },
-                      "size": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
+                      "downloadId",
                       "assetId",
                       "seq",
-                      "displayName",
-                      "filename",
-                      "contentType",
-                      "size"
+                      "displayName"
                     ],
                     "additionalProperties": false
                   }
@@ -2791,7 +2701,7 @@
         "operationId": "removeDownloadAsset",
         "summary": "Unlink an asset from a download (the asset itself survives)",
         "tags": [
-          "Downloads"
+          "Content"
         ],
         "parameters": [
           {
@@ -2821,11 +2731,21 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "downloadId": {
+                        "type": "string",
+                        "minLength": 1
                       },
                       "assetId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "seq": {
                         "type": "integer",
@@ -2835,27 +2755,15 @@
                       "displayName": {
                         "nullable": true,
                         "type": "string"
-                      },
-                      "filename": {
-                        "type": "string"
-                      },
-                      "contentType": {
-                        "type": "string"
-                      },
-                      "size": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
+                      "downloadId",
                       "assetId",
                       "seq",
-                      "displayName",
-                      "filename",
-                      "contentType",
-                      "size"
+                      "displayName"
                     ],
                     "additionalProperties": false
                   }
@@ -2893,7 +2801,7 @@
         "operationId": "getLearnOrg",
         "summary": "Get the portal org's public identity (branding)",
         "tags": [
-          "Learn"
+          "Organizations"
         ],
         "responses": {
           "200": {
@@ -2931,7 +2839,7 @@
         "operationId": "getLearnViewer",
         "summary": "Get the caller's identity within the session's org",
         "tags": [
-          "Learn"
+          "Organizations"
         ],
         "responses": {
           "200": {
@@ -2971,7 +2879,7 @@
         "operationId": "listLearnCourses",
         "summary": "List the student's enrolled courses",
         "tags": [
-          "Learn"
+          "Content"
         ],
         "responses": {
           "200": {
@@ -2983,8 +2891,19 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "course"
+                        ]
                       },
                       "title": {
                         "type": "string"
@@ -3007,68 +2926,25 @@
                       },
                       "thumbnailAssetId": {
                         "nullable": true,
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "settings": {
-                        "type": "object",
-                        "properties": {
-                          "transcriptDownloads": {
-                            "type": "boolean"
-                          },
-                          "comments": {
-                            "type": "object",
-                            "properties": {
-                              "enabled": {
-                                "type": "boolean"
-                              },
-                              "threaded": {
-                                "type": "boolean"
-                              },
-                              "requireReview": {
-                                "type": "boolean"
-                              },
-                              "reactions": {
-                                "type": "boolean"
-                              }
-                            },
-                            "required": [
-                              "enabled",
-                              "threaded",
-                              "requireReview",
-                              "reactions"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "transcriptDownloads"
-                        ],
-                        "additionalProperties": false
-                      },
-                      "moduleCount": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "activityCount": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "enrolledCount": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "updatedAt": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/JsonValue"
                       },
                       "createdAt": {
-                        "type": "string"
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
+                      "type",
                       "title",
                       "slug",
                       "description",
@@ -3076,11 +2952,8 @@
                       "category",
                       "thumbnailAssetId",
                       "settings",
-                      "moduleCount",
-                      "activityCount",
-                      "enrolledCount",
-                      "updatedAt",
-                      "createdAt"
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -3096,7 +2969,7 @@
         "operationId": "getLearnCourse",
         "summary": "Get one enrolled course",
         "tags": [
-          "Learn"
+          "Content"
         ],
         "parameters": [
           {
@@ -3116,8 +2989,19 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "course"
+                      ]
                     },
                     "title": {
                       "type": "string"
@@ -3140,68 +3024,25 @@
                     },
                     "thumbnailAssetId": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "settings": {
-                      "type": "object",
-                      "properties": {
-                        "transcriptDownloads": {
-                          "type": "boolean"
-                        },
-                        "comments": {
-                          "type": "object",
-                          "properties": {
-                            "enabled": {
-                              "type": "boolean"
-                            },
-                            "threaded": {
-                              "type": "boolean"
-                            },
-                            "requireReview": {
-                              "type": "boolean"
-                            },
-                            "reactions": {
-                              "type": "boolean"
-                            }
-                          },
-                          "required": [
-                            "enabled",
-                            "threaded",
-                            "requireReview",
-                            "reactions"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "required": [
-                        "transcriptDownloads"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "moduleCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "activityCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "enrolledCount": {
-                      "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
-                    },
-                    "updatedAt": {
-                      "type": "string"
+                      "$ref": "#/components/schemas/JsonValue"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
+                    "type",
                     "title",
                     "slug",
                     "description",
@@ -3209,11 +3050,8 @@
                     "category",
                     "thumbnailAssetId",
                     "settings",
-                    "moduleCount",
-                    "activityCount",
-                    "enrolledCount",
-                    "updatedAt",
-                    "createdAt"
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -3250,7 +3088,7 @@
         "operationId": "listLearnModules",
         "summary": "List an enrolled course's module/activity tree",
         "tags": [
-          "Learn"
+          "Content"
         ],
         "parameters": [
           {
@@ -3272,65 +3110,43 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "courseId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "title": {
                         "type": "string"
                       },
                       "seq": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       },
-                      "activities": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "moduleId": {
-                              "type": "string"
-                            },
-                            "courseId": {
-                              "type": "string"
-                            },
-                            "seq": {
-                              "type": "integer",
-                              "minimum": -9007199254740991,
-                              "maximum": 9007199254740991
-                            },
-                            "settings": {},
-                            "assetIds": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "moduleId",
-                            "courseId",
-                            "seq",
-                            "settings",
-                            "assetIds"
-                          ],
-                          "additionalProperties": false
-                        }
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
                       "courseId",
                       "title",
                       "seq",
-                      "activities"
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -3368,7 +3184,7 @@
         "operationId": "reportProgress",
         "summary": "Report usage on a target; the progress service decides completion",
         "tags": [
-          "Learn"
+          "Progress"
         ],
         "requestBody": {
           "required": true,
@@ -3392,7 +3208,9 @@
                           "type": "boolean"
                         }
                       },
-                      "additionalProperties": {}
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/JsonValueInput"
+                      }
                     }
                   }
                 },
@@ -3458,7 +3276,7 @@
         "operationId": "getLearnCourseProgress",
         "summary": "The student's progress in one course",
         "tags": [
-          "Learn"
+          "Progress"
         ],
         "parameters": [
           {
@@ -3542,7 +3360,7 @@
         "operationId": "listActivityComments",
         "summary": "Read an activity's comments",
         "tags": [
-          "Learn"
+          "Discussion"
         ],
         "parameters": [
           {
@@ -3592,20 +3410,24 @@
                         "type": "object",
                         "properties": {
                           "id": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "activityId": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "parentId": {
                             "nullable": true,
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "author": {
                             "type": "object",
                             "properties": {
                               "id": {
-                                "type": "string"
+                                "type": "string",
+                                "minLength": 1
                               },
                               "firstName": {
                                 "nullable": true,
@@ -3655,7 +3477,8 @@
                             "type": "object",
                             "properties": {
                               "id": {
-                                "type": "string"
+                                "type": "string",
+                                "minLength": 1
                               },
                               "firstName": {
                                 "nullable": true,
@@ -3692,20 +3515,20 @@
                             "type": "object",
                             "additionalProperties": {
                               "type": "integer",
-                              "minimum": -9007199254740991,
+                              "minimum": 0,
                               "maximum": 9007199254740991
                             }
                           },
                           "viewerReaction": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 16
+                            "type": "string"
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -3761,7 +3584,7 @@
         "operationId": "postComment",
         "summary": "Post a comment or reply on an activity",
         "tags": [
-          "Learn"
+          "Discussion"
         ],
         "requestBody": {
           "required": true,
@@ -3807,20 +3630,24 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "activityId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "parentId": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "author": {
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "firstName": {
                           "nullable": true,
@@ -3870,7 +3697,8 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "firstName": {
                           "nullable": true,
@@ -3907,20 +3735,20 @@
                       "type": "object",
                       "additionalProperties": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       }
                     },
                     "viewerReaction": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 16
+                      "type": "string"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -3992,7 +3820,7 @@
         "operationId": "editComment",
         "summary": "Revise your own comment",
         "tags": [
-          "Learn"
+          "Discussion"
         ],
         "requestBody": {
           "required": true,
@@ -4033,20 +3861,24 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "activityId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "parentId": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "author": {
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "firstName": {
                           "nullable": true,
@@ -4096,7 +3928,8 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "firstName": {
                           "nullable": true,
@@ -4133,20 +3966,20 @@
                       "type": "object",
                       "additionalProperties": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       }
                     },
                     "viewerReaction": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 16
+                      "type": "string"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -4216,7 +4049,7 @@
         "operationId": "deleteComment",
         "summary": "Delete a comment",
         "tags": [
-          "Learn"
+          "Discussion"
         ],
         "parameters": [
           {
@@ -4237,17 +4070,25 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
                     },
                     "activityId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "parentId": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "orgUserId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "body": {
                       "type": "string"
@@ -4262,7 +4103,8 @@
                     },
                     "removedBy": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "createdAt": {
                       "type": "string",
@@ -4275,6 +4117,7 @@
                   },
                   "required": [
                     "id",
+                    "orgId",
                     "activityId",
                     "parentId",
                     "orgUserId",
@@ -4341,7 +4184,7 @@
         "operationId": "setCommentReaction",
         "summary": "Set your reaction to a comment, replacing any you already had",
         "tags": [
-          "Learn"
+          "Discussion"
         ],
         "requestBody": {
           "required": true,
@@ -4453,7 +4296,7 @@
         "operationId": "clearCommentReaction",
         "summary": "Withdraw your reaction from a comment",
         "tags": [
-          "Learn"
+          "Discussion"
         ],
         "parameters": [
           {
@@ -4547,7 +4390,7 @@
         "operationId": "reportComment",
         "summary": "Flag a comment for moderator attention",
         "tags": [
-          "Learn"
+          "Discussion"
         ],
         "requestBody": {
           "required": true,
@@ -4671,7 +4514,7 @@
         "operationId": "getAssetDownloadUrl",
         "summary": "Get a short-lived presigned URL to serve an asset to the student",
         "tags": [
-          "Learn"
+          "Assets"
         ],
         "parameters": [
           {
@@ -4692,16 +4535,23 @@
                   "type": "object",
                   "properties": {
                     "url": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "asset": {
                       "type": "object",
                       "properties": {
+                        "orgId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "key": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "kind": {
                           "type": "string",
@@ -4712,14 +4562,16 @@
                           ]
                         },
                         "filename": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "contentType": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "size": {
                           "type": "integer",
-                          "minimum": -9007199254740991,
+                          "minimum": 0,
                           "maximum": 9007199254740991
                         },
                         "status": {
@@ -4730,13 +4582,16 @@
                           ]
                         },
                         "uploadedBy": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "createdAt": {
-                          "type": "string"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
+                        "orgId",
                         "id",
                         "key",
                         "kind",
@@ -4811,7 +4666,7 @@
         "operationId": "listLearnDownloads",
         "summary": "Downloads the student is actively entitled to",
         "tags": [
-          "Learn"
+          "Content"
         ],
         "responses": {
           "200": {
@@ -4823,8 +4678,19 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "download"
+                        ]
                       },
                       "title": {
                         "type": "string"
@@ -4847,43 +4713,30 @@
                       },
                       "thumbnailAssetId": {
                         "nullable": true,
-                        "type": "string"
-                      },
-                      "assetCount": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "totalSize": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "entitledCount": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "updatedAt": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "createdAt": {
-                        "type": "string"
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
+                      "type",
                       "title",
                       "slug",
                       "description",
                       "status",
                       "category",
                       "thumbnailAssetId",
-                      "assetCount",
-                      "totalSize",
-                      "entitledCount",
-                      "updatedAt",
-                      "createdAt"
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -4899,7 +4752,7 @@
         "operationId": "getLearnDownload",
         "summary": "One entitled download and its ordered assets",
         "tags": [
-          "Learn"
+          "Content"
         ],
         "parameters": [
           {
@@ -4922,8 +4775,19 @@
                     "download": {
                       "type": "object",
                       "properties": {
+                        "orgId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "download"
+                          ]
                         },
                         "title": {
                           "type": "string"
@@ -4946,43 +4810,30 @@
                         },
                         "thumbnailAssetId": {
                           "nullable": true,
-                          "type": "string"
-                        },
-                        "assetCount": {
-                          "type": "integer",
-                          "minimum": -9007199254740991,
-                          "maximum": 9007199254740991
-                        },
-                        "totalSize": {
-                          "type": "integer",
-                          "minimum": -9007199254740991,
-                          "maximum": 9007199254740991
-                        },
-                        "entitledCount": {
-                          "type": "integer",
-                          "minimum": -9007199254740991,
-                          "maximum": 9007199254740991
-                        },
-                        "updatedAt": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "createdAt": {
-                          "type": "string"
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
+                        "orgId",
                         "id",
+                        "type",
                         "title",
                         "slug",
                         "description",
                         "status",
                         "category",
                         "thumbnailAssetId",
-                        "assetCount",
-                        "totalSize",
-                        "entitledCount",
-                        "updatedAt",
-                        "createdAt"
+                        "createdAt",
+                        "updatedAt"
                       ],
                       "additionalProperties": false
                     },
@@ -4991,11 +4842,21 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "orgId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
                           "id": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "downloadId": {
+                            "type": "string",
+                            "minLength": 1
                           },
                           "assetId": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "seq": {
                             "type": "integer",
@@ -5005,27 +4866,15 @@
                           "displayName": {
                             "nullable": true,
                             "type": "string"
-                          },
-                          "filename": {
-                            "type": "string"
-                          },
-                          "contentType": {
-                            "type": "string"
-                          },
-                          "size": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
                           }
                         },
                         "required": [
+                          "orgId",
                           "id",
+                          "downloadId",
                           "assetId",
                           "seq",
-                          "displayName",
-                          "filename",
-                          "contentType",
-                          "size"
+                          "displayName"
                         ],
                         "additionalProperties": false
                       }
@@ -5070,7 +4919,7 @@
         "operationId": "getLearnDownloadAsset",
         "summary": "Redirect to a short-lived signed URL for an entitled asset",
         "tags": [
-          "Learn"
+          "Content"
         ],
         "parameters": [
           {
@@ -5230,20 +5079,24 @@
                         "type": "object",
                         "properties": {
                           "id": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "parentId": {
                             "nullable": true,
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "activityId": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "activityTitle": {
                             "type": "string"
                           },
                           "courseId": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "body": {
                             "type": "string"
@@ -5260,7 +5113,8 @@
                             "type": "object",
                             "properties": {
                               "id": {
-                                "type": "string"
+                                "type": "string",
+                                "minLength": 1
                               },
                               "firstName": {
                                 "nullable": true,
@@ -5294,11 +5148,14 @@
                             "additionalProperties": false
                           },
                           "authorEmail": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "email",
+                            "pattern": "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
                           },
                           "removedBy": {
                             "nullable": true,
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "reports": {
                             "type": "array",
@@ -5309,7 +5166,8 @@
                                   "type": "object",
                                   "properties": {
                                     "id": {
-                                      "type": "string"
+                                      "type": "string",
+                                      "minLength": 1
                                     },
                                     "firstName": {
                                       "nullable": true,
@@ -5346,7 +5204,8 @@
                                   "type": "string"
                                 },
                                 "createdAt": {
-                                  "type": "string"
+                                  "type": "string",
+                                  "format": "date-time"
                                 }
                               },
                               "required": [
@@ -5358,10 +5217,12 @@
                             }
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -5438,17 +5299,25 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
                     },
                     "activityId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "parentId": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "orgUserId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "body": {
                       "type": "string"
@@ -5463,7 +5332,8 @@
                     },
                     "removedBy": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "createdAt": {
                       "type": "string",
@@ -5476,6 +5346,7 @@
                   },
                   "required": [
                     "id",
+                    "orgId",
                     "activityId",
                     "parentId",
                     "orgUserId",
@@ -5537,7 +5408,7 @@
         }
       },
       "patch": {
-        "operationId": "editComment",
+        "operationId": "publishComment",
         "summary": "Publish a comment: approves a pending one, restores a removed one",
         "tags": [
           "Discussion"
@@ -5582,17 +5453,25 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
                     },
                     "activityId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "parentId": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "orgUserId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "body": {
                       "type": "string"
@@ -5607,7 +5486,8 @@
                     },
                     "removedBy": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "createdAt": {
                       "type": "string",
@@ -5620,6 +5500,7 @@
                   },
                   "required": [
                     "id",
+                    "orgId",
                     "activityId",
                     "parentId",
                     "orgUserId",
@@ -5800,20 +5681,24 @@
                   "type": "object",
                   "properties": {
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "activityId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "parentId": {
                       "nullable": true,
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "author": {
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "firstName": {
                           "nullable": true,
@@ -5863,7 +5748,8 @@
                       "type": "object",
                       "properties": {
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "firstName": {
                           "nullable": true,
@@ -5900,20 +5786,20 @@
                       "type": "object",
                       "additionalProperties": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       }
                     },
                     "viewerReaction": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 16
+                      "type": "string"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -5985,7 +5871,7 @@
         "operationId": "listModules",
         "summary": "List a course's modules",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "parameters": [
           {
@@ -6007,65 +5893,43 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "courseId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "title": {
                         "type": "string"
                       },
                       "seq": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       },
-                      "activities": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "moduleId": {
-                              "type": "string"
-                            },
-                            "courseId": {
-                              "type": "string"
-                            },
-                            "seq": {
-                              "type": "integer",
-                              "minimum": -9007199254740991,
-                              "maximum": 9007199254740991
-                            },
-                            "settings": {},
-                            "assetIds": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "moduleId",
-                            "courseId",
-                            "seq",
-                            "settings",
-                            "assetIds"
-                          ],
-                          "additionalProperties": false
-                        }
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
                       "courseId",
                       "title",
                       "seq",
-                      "activities"
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -6079,7 +5943,7 @@
         "operationId": "createModule",
         "summary": "Add a module",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -6120,65 +5984,43 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "courseId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "title": {
                         "type": "string"
                       },
                       "seq": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       },
-                      "activities": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "moduleId": {
-                              "type": "string"
-                            },
-                            "courseId": {
-                              "type": "string"
-                            },
-                            "seq": {
-                              "type": "integer",
-                              "minimum": -9007199254740991,
-                              "maximum": 9007199254740991
-                            },
-                            "settings": {},
-                            "assetIds": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "moduleId",
-                            "courseId",
-                            "seq",
-                            "settings",
-                            "assetIds"
-                          ],
-                          "additionalProperties": false
-                        }
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
                       "courseId",
                       "title",
                       "seq",
-                      "activities"
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -6194,7 +6036,7 @@
         "operationId": "reorderModules",
         "summary": "Reorder modules",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -6237,65 +6079,43 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "courseId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "title": {
                         "type": "string"
                       },
                       "seq": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       },
-                      "activities": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "moduleId": {
-                              "type": "string"
-                            },
-                            "courseId": {
-                              "type": "string"
-                            },
-                            "seq": {
-                              "type": "integer",
-                              "minimum": -9007199254740991,
-                              "maximum": 9007199254740991
-                            },
-                            "settings": {},
-                            "assetIds": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "moduleId",
-                            "courseId",
-                            "seq",
-                            "settings",
-                            "assetIds"
-                          ],
-                          "additionalProperties": false
-                        }
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
                       "courseId",
                       "title",
                       "seq",
-                      "activities"
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -6311,7 +6131,7 @@
         "operationId": "updateModule",
         "summary": "Rename a module",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -6360,65 +6180,43 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "courseId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "title": {
                         "type": "string"
                       },
                       "seq": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       },
-                      "activities": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "moduleId": {
-                              "type": "string"
-                            },
-                            "courseId": {
-                              "type": "string"
-                            },
-                            "seq": {
-                              "type": "integer",
-                              "minimum": -9007199254740991,
-                              "maximum": 9007199254740991
-                            },
-                            "settings": {},
-                            "assetIds": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "moduleId",
-                            "courseId",
-                            "seq",
-                            "settings",
-                            "assetIds"
-                          ],
-                          "additionalProperties": false
-                        }
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
                       "courseId",
                       "title",
                       "seq",
-                      "activities"
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -6432,7 +6230,7 @@
         "operationId": "deleteModule",
         "summary": "Delete a module",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "parameters": [
           {
@@ -6462,65 +6260,43 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "courseId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "title": {
                         "type": "string"
                       },
                       "seq": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       },
-                      "activities": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "moduleId": {
-                              "type": "string"
-                            },
-                            "courseId": {
-                              "type": "string"
-                            },
-                            "seq": {
-                              "type": "integer",
-                              "minimum": -9007199254740991,
-                              "maximum": 9007199254740991
-                            },
-                            "settings": {},
-                            "assetIds": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "moduleId",
-                            "courseId",
-                            "seq",
-                            "settings",
-                            "assetIds"
-                          ],
-                          "additionalProperties": false
-                        }
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
                       "courseId",
                       "title",
                       "seq",
-                      "activities"
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -6536,7 +6312,7 @@
         "operationId": "reorderActivities",
         "summary": "Reorder activities in a module",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -6587,65 +6363,43 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "courseId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "title": {
                         "type": "string"
                       },
                       "seq": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       },
-                      "activities": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "moduleId": {
-                              "type": "string"
-                            },
-                            "courseId": {
-                              "type": "string"
-                            },
-                            "seq": {
-                              "type": "integer",
-                              "minimum": -9007199254740991,
-                              "maximum": 9007199254740991
-                            },
-                            "settings": {},
-                            "assetIds": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "moduleId",
-                            "courseId",
-                            "seq",
-                            "settings",
-                            "assetIds"
-                          ],
-                          "additionalProperties": false
-                        }
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
                       "courseId",
                       "title",
                       "seq",
-                      "activities"
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -6661,7 +6415,7 @@
         "operationId": "createActivity",
         "summary": "Add an activity",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -6670,14 +6424,22 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "settings": {},
+                  "settings": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/JsonValueInput"
+                      }
+                    ]
+                  },
                   "assetIds": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     }
                   }
-                }
+                },
+                "additionalProperties": false
               }
             }
           }
@@ -6710,65 +6472,43 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "courseId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "title": {
                         "type": "string"
                       },
                       "seq": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       },
-                      "activities": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "moduleId": {
-                              "type": "string"
-                            },
-                            "courseId": {
-                              "type": "string"
-                            },
-                            "seq": {
-                              "type": "integer",
-                              "minimum": -9007199254740991,
-                              "maximum": 9007199254740991
-                            },
-                            "settings": {},
-                            "assetIds": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "moduleId",
-                            "courseId",
-                            "seq",
-                            "settings",
-                            "assetIds"
-                          ],
-                          "additionalProperties": false
-                        }
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
                       "courseId",
                       "title",
                       "seq",
-                      "activities"
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -6784,7 +6524,7 @@
         "operationId": "updateActivity",
         "summary": "Update an activity",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "requestBody": {
           "required": true,
@@ -6793,14 +6533,22 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "settings": {},
+                  "settings": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/JsonValueInput"
+                      }
+                    ]
+                  },
                   "assetIds": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     }
                   }
-                }
+                },
+                "additionalProperties": false
               }
             }
           }
@@ -6841,65 +6589,43 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "courseId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "title": {
                         "type": "string"
                       },
                       "seq": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       },
-                      "activities": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "moduleId": {
-                              "type": "string"
-                            },
-                            "courseId": {
-                              "type": "string"
-                            },
-                            "seq": {
-                              "type": "integer",
-                              "minimum": -9007199254740991,
-                              "maximum": 9007199254740991
-                            },
-                            "settings": {},
-                            "assetIds": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "moduleId",
-                            "courseId",
-                            "seq",
-                            "settings",
-                            "assetIds"
-                          ],
-                          "additionalProperties": false
-                        }
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
                       "courseId",
                       "title",
                       "seq",
-                      "activities"
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -6913,7 +6639,7 @@
         "operationId": "deleteActivity",
         "summary": "Delete an activity",
         "tags": [
-          "Courses"
+          "Content"
         ],
         "parameters": [
           {
@@ -6951,65 +6677,43 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "courseId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "title": {
                         "type": "string"
                       },
                       "seq": {
                         "type": "integer",
-                        "minimum": -9007199254740991,
+                        "minimum": 0,
                         "maximum": 9007199254740991
                       },
-                      "activities": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "moduleId": {
-                              "type": "string"
-                            },
-                            "courseId": {
-                              "type": "string"
-                            },
-                            "seq": {
-                              "type": "integer",
-                              "minimum": -9007199254740991,
-                              "maximum": 9007199254740991
-                            },
-                            "settings": {},
-                            "assetIds": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "moduleId",
-                            "courseId",
-                            "seq",
-                            "settings",
-                            "assetIds"
-                          ],
-                          "additionalProperties": false
-                        }
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
                       "courseId",
                       "title",
                       "seq",
-                      "activities"
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -7025,7 +6729,7 @@
         "operationId": "listStudents",
         "summary": "List students",
         "tags": [
-          "Students"
+          "Organizations"
         ],
         "parameters": [
           {
@@ -7173,7 +6877,7 @@
         "operationId": "getStudent",
         "summary": "Get a student by id",
         "tags": [
-          "Students"
+          "Organizations"
         ],
         "parameters": [
           {
@@ -7281,7 +6985,7 @@
         "operationId": "updateStudent",
         "summary": "Update a student's profile",
         "tags": [
-          "Students"
+          "Organizations"
         ],
         "requestBody": {
           "required": true,
@@ -7301,7 +7005,7 @@
                   "email": {
                     "type": "string",
                     "format": "email",
-                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                    "pattern": "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
                   }
                 },
                 "required": [
@@ -7441,7 +7145,7 @@
         "operationId": "deleteStudent",
         "summary": "Delete a student",
         "tags": [
-          "Students"
+          "Organizations"
         ],
         "parameters": [
           {
@@ -7492,7 +7196,7 @@
         "operationId": "resendStudentInvite",
         "summary": "Re-send a pending student's invite email",
         "tags": [
-          "Students"
+          "Organizations"
         ],
         "parameters": [
           {
@@ -7669,77 +7373,51 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "orgId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
                           "id": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "orgUserId": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
-                          "firstName": {
-                            "nullable": true,
-                            "type": "string"
-                          },
-                          "lastName": {
-                            "nullable": true,
-                            "type": "string"
-                          },
-                          "email": {
-                            "type": "string"
-                          },
-                          "content": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "type": {
-                                "type": "string",
-                                "enum": [
-                                  "course",
-                                  "download"
-                                ]
-                              },
-                              "title": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "type",
-                              "title"
-                            ],
-                            "additionalProperties": false
+                          "contentId": {
+                            "type": "string",
+                            "minLength": 1
                           },
                           "status": {
                             "type": "string",
                             "enum": [
                               "active",
-                              "expired",
                               "revoked"
                             ]
                           },
-                          "grantedAt": {
+                          "source": {
                             "type": "string"
+                          },
+                          "grantedAt": {
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "expiresAt": {
                             "nullable": true,
-                            "type": "string"
-                          },
-                          "source": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
+                          "orgId",
                           "id",
                           "orgUserId",
-                          "firstName",
-                          "lastName",
-                          "email",
-                          "content",
+                          "contentId",
                           "status",
+                          "source",
                           "grantedAt",
-                          "expiresAt",
-                          "source"
+                          "expiresAt"
                         ],
                         "additionalProperties": false
                       }
@@ -7793,8 +7471,7 @@
                     "type": "string"
                   },
                   "expiresAt": {
-                    "nullable": true,
-                    "type": "string"
+                    "nullable": true
                   }
                 },
                 "required": [
@@ -7814,77 +7491,51 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "orgUserId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
-                    "firstName": {
-                      "nullable": true,
-                      "type": "string"
-                    },
-                    "lastName": {
-                      "nullable": true,
-                      "type": "string"
-                    },
-                    "email": {
-                      "type": "string"
-                    },
-                    "content": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "course",
-                            "download"
-                          ]
-                        },
-                        "title": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "type",
-                        "title"
-                      ],
-                      "additionalProperties": false
+                    "contentId": {
+                      "type": "string",
+                      "minLength": 1
                     },
                     "status": {
                       "type": "string",
                       "enum": [
                         "active",
-                        "expired",
                         "revoked"
                       ]
                     },
-                    "grantedAt": {
+                    "source": {
                       "type": "string"
+                    },
+                    "grantedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "expiresAt": {
                       "nullable": true,
-                      "type": "string"
-                    },
-                    "source": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
                     "orgUserId",
-                    "firstName",
-                    "lastName",
-                    "email",
-                    "content",
+                    "contentId",
                     "status",
+                    "source",
                     "grantedAt",
-                    "expiresAt",
-                    "source"
+                    "expiresAt"
                   ],
                   "additionalProperties": false
                 }
@@ -7941,77 +7592,51 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "orgUserId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
-                    "firstName": {
-                      "nullable": true,
-                      "type": "string"
-                    },
-                    "lastName": {
-                      "nullable": true,
-                      "type": "string"
-                    },
-                    "email": {
-                      "type": "string"
-                    },
-                    "content": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "course",
-                            "download"
-                          ]
-                        },
-                        "title": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "type",
-                        "title"
-                      ],
-                      "additionalProperties": false
+                    "contentId": {
+                      "type": "string",
+                      "minLength": 1
                     },
                     "status": {
                       "type": "string",
                       "enum": [
                         "active",
-                        "expired",
                         "revoked"
                       ]
                     },
-                    "grantedAt": {
+                    "source": {
                       "type": "string"
+                    },
+                    "grantedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "expiresAt": {
                       "nullable": true,
-                      "type": "string"
-                    },
-                    "source": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
                     "orgUserId",
-                    "firstName",
-                    "lastName",
-                    "email",
-                    "content",
+                    "contentId",
                     "status",
+                    "source",
                     "grantedAt",
-                    "expiresAt",
-                    "source"
+                    "expiresAt"
                   ],
                   "additionalProperties": false
                 }
@@ -8060,17 +7685,24 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "name": {
                         "type": "string"
                       },
                       "description": {
+                        "nullable": true,
                         "type": "string"
                       },
                       "trigger": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "actions": {
                         "type": "array",
@@ -8083,7 +7715,9 @@
                             },
                             "input": {
                               "type": "object",
-                              "additionalProperties": {}
+                              "additionalProperties": {
+                                "$ref": "#/components/schemas/JsonValue"
+                              }
                             }
                           },
                           "required": [
@@ -8095,14 +7729,26 @@
                       },
                       "enabled": {
                         "type": "boolean"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
                       "name",
+                      "description",
                       "trigger",
                       "actions",
-                      "enabled"
+                      "enabled",
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -8126,14 +7772,14 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "type": "string",
-                    "minLength": 1
+                    "type": "string"
                   },
                   "description": {
                     "type": "string"
                   },
                   "trigger": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                   },
                   "actions": {
                     "type": "array",
@@ -8146,13 +7792,16 @@
                         },
                         "input": {
                           "type": "object",
-                          "additionalProperties": {}
+                          "additionalProperties": {
+                            "$ref": "#/components/schemas/JsonValueInput"
+                          }
                         }
                       },
                       "required": [
                         "type",
                         "input"
-                      ]
+                      ],
+                      "additionalProperties": false
                     }
                   }
                 },
@@ -8160,7 +7809,8 @@
                   "name",
                   "trigger",
                   "actions"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -8173,17 +7823,24 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "name": {
                       "type": "string"
                     },
                     "description": {
+                      "nullable": true,
                       "type": "string"
                     },
                     "trigger": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "actions": {
                       "type": "array",
@@ -8196,7 +7853,9 @@
                           },
                           "input": {
                             "type": "object",
-                            "additionalProperties": {}
+                            "additionalProperties": {
+                              "$ref": "#/components/schemas/JsonValue"
+                            }
                           }
                         },
                         "required": [
@@ -8208,14 +7867,26 @@
                     },
                     "enabled": {
                       "type": "boolean"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
                     "name",
+                    "description",
                     "trigger",
                     "actions",
-                    "enabled"
+                    "enabled",
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -8243,14 +7914,17 @@
                     "type": "object",
                     "properties": {
                       "type": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "description": {
                         "type": "string"
                       },
                       "inputSchema": {
                         "type": "object",
-                        "additionalProperties": {}
+                        "additionalProperties": {
+                          "$ref": "#/components/schemas/JsonValue"
+                        }
                       },
                       "source": {
                         "type": "string"
@@ -8292,7 +7966,8 @@
                         "type": "object",
                         "properties": {
                           "type": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "description": {
                             "type": "string"
@@ -8342,17 +8017,24 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "name": {
                       "type": "string"
                     },
                     "description": {
+                      "nullable": true,
                       "type": "string"
                     },
                     "trigger": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "actions": {
                       "type": "array",
@@ -8365,7 +8047,9 @@
                           },
                           "input": {
                             "type": "object",
-                            "additionalProperties": {}
+                            "additionalProperties": {
+                              "$ref": "#/components/schemas/JsonValue"
+                            }
                           }
                         },
                         "required": [
@@ -8377,14 +8061,26 @@
                     },
                     "enabled": {
                       "type": "boolean"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
                     "name",
+                    "description",
                     "trigger",
                     "actions",
-                    "enabled"
+                    "enabled",
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -8429,14 +8125,14 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "type": "string",
-                    "minLength": 1
+                    "type": "string"
                   },
                   "description": {
                     "type": "string"
                   },
                   "trigger": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                   },
                   "actions": {
                     "type": "array",
@@ -8449,19 +8145,23 @@
                         },
                         "input": {
                           "type": "object",
-                          "additionalProperties": {}
+                          "additionalProperties": {
+                            "$ref": "#/components/schemas/JsonValueInput"
+                          }
                         }
                       },
                       "required": [
                         "type",
                         "input"
-                      ]
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "enabled": {
                     "type": "boolean"
                   }
-                }
+                },
+                "additionalProperties": false
               }
             }
           }
@@ -8484,17 +8184,24 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "name": {
                       "type": "string"
                     },
                     "description": {
+                      "nullable": true,
                       "type": "string"
                     },
                     "trigger": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "actions": {
                       "type": "array",
@@ -8507,7 +8214,9 @@
                           },
                           "input": {
                             "type": "object",
-                            "additionalProperties": {}
+                            "additionalProperties": {
+                              "$ref": "#/components/schemas/JsonValue"
+                            }
                           }
                         },
                         "required": [
@@ -8519,14 +8228,26 @@
                     },
                     "enabled": {
                       "type": "boolean"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
                     "name",
+                    "description",
                     "trigger",
                     "actions",
-                    "enabled"
+                    "enabled",
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -8688,21 +8409,70 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "id": {
-                            "type": "string"
-                          },
                           "orgId": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
                           },
                           "automationId": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "trigger": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "eventId": {
+                            "type": "string",
+                            "minLength": 1
                           },
                           "event": {
                             "type": "object",
-                            "additionalProperties": {}
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "version": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "exclusiveMinimum": true,
+                                "maximum": 9007199254740991
+                              },
+                              "id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "orgId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "occurredAt": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "data": {
+                                "$ref": "#/components/schemas/JsonValue"
+                              },
+                              "metadata": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "$ref": "#/components/schemas/JsonValue"
+                                }
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "version",
+                              "id",
+                              "orgId",
+                              "occurredAt",
+                              "data"
+                            ],
+                            "additionalProperties": false
                           },
                           "status": {
                             "type": "string",
@@ -8719,11 +8489,12 @@
                               "properties": {
                                 "index": {
                                   "type": "integer",
-                                  "minimum": -9007199254740991,
+                                  "minimum": 0,
                                   "maximum": 9007199254740991
                                 },
                                 "type": {
-                                  "type": "string"
+                                  "type": "string",
+                                  "minLength": 1
                                 },
                                 "status": {
                                   "type": "string",
@@ -8745,18 +8516,21 @@
                             }
                           },
                           "startedAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "finishedAt": {
                             "nullable": true,
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
-                          "id",
                           "orgId",
+                          "id",
                           "automationId",
                           "trigger",
+                          "eventId",
                           "event",
                           "status",
                           "actionResults",
@@ -8801,7 +8575,7 @@
         "operationId": "getOverview",
         "summary": "Back-office overview stats",
         "tags": [
-          "Dashboard"
+          "Reporting"
         ],
         "responses": {
           "200": {
@@ -8851,7 +8625,7 @@
         "operationId": "getEnrollmentSeries",
         "summary": "Enrollments granted per day over a trailing window",
         "tags": [
-          "Dashboard"
+          "Reporting"
         ],
         "parameters": [
           {
@@ -8949,11 +8723,17 @@
                     "asset": {
                       "type": "object",
                       "properties": {
+                        "orgId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "key": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "kind": {
                           "type": "string",
@@ -8964,14 +8744,16 @@
                           ]
                         },
                         "filename": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "contentType": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "size": {
                           "type": "integer",
-                          "minimum": -9007199254740991,
+                          "minimum": 0,
                           "maximum": 9007199254740991
                         },
                         "status": {
@@ -8982,13 +8764,16 @@
                           ]
                         },
                         "uploadedBy": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "createdAt": {
-                          "type": "string"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
+                        "orgId",
                         "id",
                         "key",
                         "kind",
@@ -9002,7 +8787,8 @@
                       "additionalProperties": false
                     },
                     "uploadUrl": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "method": {
                       "type": "string",
@@ -9012,7 +8798,8 @@
                     },
                     "expiresInSeconds": {
                       "type": "integer",
-                      "minimum": -9007199254740991,
+                      "minimum": 0,
+                      "exclusiveMinimum": true,
                       "maximum": 9007199254740991
                     },
                     "headers": {
@@ -9106,11 +8893,17 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "key": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "kind": {
                       "type": "string",
@@ -9121,14 +8914,16 @@
                       ]
                     },
                     "filename": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "contentType": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "size": {
                       "type": "integer",
-                      "minimum": -9007199254740991,
+                      "minimum": 0,
                       "maximum": 9007199254740991
                     },
                     "status": {
@@ -9139,13 +8934,16 @@
                       ]
                     },
                     "uploadedBy": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
                     "key",
                     "kind",
@@ -9303,11 +9101,17 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "orgId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
                           "id": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "key": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "kind": {
                             "type": "string",
@@ -9318,14 +9122,16 @@
                             ]
                           },
                           "filename": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "contentType": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "size": {
                             "type": "integer",
-                            "minimum": -9007199254740991,
+                            "minimum": 0,
                             "maximum": 9007199254740991
                           },
                           "status": {
@@ -9336,13 +9142,16 @@
                             ]
                           },
                           "uploadedBy": {
-                            "type": "string"
+                            "type": "string",
+                            "minLength": 1
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
+                          "orgId",
                           "id",
                           "key",
                           "kind",
@@ -9455,11 +9264,17 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "key": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "kind": {
                       "type": "string",
@@ -9470,14 +9285,16 @@
                       ]
                     },
                     "filename": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "contentType": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "size": {
                       "type": "integer",
-                      "minimum": -9007199254740991,
+                      "minimum": 0,
                       "maximum": 9007199254740991
                     },
                     "status": {
@@ -9488,13 +9305,16 @@
                       ]
                     },
                     "uploadedBy": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
                     "key",
                     "kind",
@@ -9713,16 +9533,23 @@
                   "type": "object",
                   "properties": {
                     "url": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "asset": {
                       "type": "object",
                       "properties": {
+                        "orgId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
                         "id": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "key": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "kind": {
                           "type": "string",
@@ -9733,14 +9560,16 @@
                           ]
                         },
                         "filename": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "contentType": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "size": {
                           "type": "integer",
-                          "minimum": -9007199254740991,
+                          "minimum": 0,
                           "maximum": 9007199254740991
                         },
                         "status": {
@@ -9751,13 +9580,16 @@
                           ]
                         },
                         "uploadedBy": {
-                          "type": "string"
+                          "type": "string",
+                          "minLength": 1
                         },
                         "createdAt": {
-                          "type": "string"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
+                        "orgId",
                         "id",
                         "key",
                         "kind",
@@ -9961,27 +9793,38 @@
                   "items": {
                     "type": "object",
                     "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
                       "id": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "integrationId": {
-                        "type": "string"
+                        "type": "string",
+                        "minLength": 1
                       },
                       "config": {
                         "type": "object",
-                        "additionalProperties": {}
+                        "additionalProperties": {
+                          "$ref": "#/components/schemas/JsonValue"
+                        }
                       },
                       "active": {
                         "type": "boolean"
                       },
                       "createdAt": {
-                        "type": "string"
+                        "type": "string",
+                        "format": "date-time"
                       },
                       "updatedAt": {
-                        "type": "string"
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
+                      "orgId",
                       "id",
                       "integrationId",
                       "config",
@@ -10060,11 +9903,15 @@
                   },
                   "secrets": {
                     "type": "object",
-                    "additionalProperties": {}
+                    "additionalProperties": {
+                      "$ref": "#/components/schemas/JsonValueInput"
+                    }
                   },
                   "config": {
                     "type": "object",
-                    "additionalProperties": {}
+                    "additionalProperties": {
+                      "$ref": "#/components/schemas/JsonValueInput"
+                    }
                   }
                 },
                 "required": [
@@ -10083,27 +9930,38 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "integrationId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "config": {
                       "type": "object",
-                      "additionalProperties": {}
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/JsonValue"
+                      }
                     },
                     "active": {
                       "type": "boolean"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
                     "integrationId",
                     "config",
@@ -10210,27 +10068,38 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "integrationId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "config": {
                       "type": "object",
-                      "additionalProperties": {}
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/JsonValue"
+                      }
                     },
                     "active": {
                       "type": "boolean"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
                     "integrationId",
                     "config",
@@ -10326,7 +10195,9 @@
                 "properties": {
                   "config": {
                     "type": "object",
-                    "additionalProperties": {}
+                    "additionalProperties": {
+                      "$ref": "#/components/schemas/JsonValueInput"
+                    }
                   },
                   "active": {
                     "type": "boolean"
@@ -10354,27 +10225,38 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "integrationId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "config": {
                       "type": "object",
-                      "additionalProperties": {}
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/JsonValue"
+                      }
                     },
                     "active": {
                       "type": "boolean"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
                     "integrationId",
                     "config",
@@ -10565,7 +10447,9 @@
                 "properties": {
                   "secrets": {
                     "type": "object",
-                    "additionalProperties": {}
+                    "additionalProperties": {
+                      "$ref": "#/components/schemas/JsonValueInput"
+                    }
                   }
                 },
                 "required": [
@@ -10593,27 +10477,38 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "id": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "integrationId": {
-                      "type": "string"
+                      "type": "string",
+                      "minLength": 1
                     },
                     "config": {
                       "type": "object",
-                      "additionalProperties": {}
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/JsonValue"
+                      }
                     },
                     "active": {
                       "type": "boolean"
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
+                    "orgId",
                     "id",
                     "integrationId",
                     "config",
@@ -10879,19 +10774,11 @@
   "tags": [
     {
       "name": "Organizations",
-      "description": "Organizations and member management"
+      "description": "The tenant: its members, roles, invites and students"
     },
     {
-      "name": "Courses",
-      "description": "Course authoring: courses, modules, activities"
-    },
-    {
-      "name": "Learn",
-      "description": "Student-facing course delivery"
-    },
-    {
-      "name": "Students",
-      "description": "Students and their enrollments"
+      "name": "Content",
+      "description": "Authored content: courses and downloads, their structure and delivery"
     },
     {
       "name": "Entitlements",
@@ -10899,23 +10786,27 @@
     },
     {
       "name": "Progress",
-      "description": "Completion tracking"
+      "description": "Per-student progress and completion through course content"
+    },
+    {
+      "name": "Discussion",
+      "description": "Learner comments, replies, reactions and moderation"
+    },
+    {
+      "name": "Assets",
+      "description": "The org media library: uploads, serving and lifecycle"
     },
     {
       "name": "Automations",
       "description": "Trigger/action workflows"
     },
     {
-      "name": "Dashboard",
-      "description": "Back-office overview"
-    },
-    {
-      "name": "Assets",
-      "description": "Media library and uploads"
-    },
-    {
       "name": "Integrations",
-      "description": "Third-party integration connections"
+      "description": "Connections to external services"
+    },
+    {
+      "name": "Reporting",
+      "description": "Cross-domain reads for the management dashboard"
     }
   ]
 }

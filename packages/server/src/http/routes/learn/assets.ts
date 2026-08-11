@@ -16,7 +16,7 @@ export async function learnAssetsRoutes(app: FastifyInstance, container: Contain
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getAssetDownloadUrl',
-      tags: ['Learn'],
+      tags: ['Assets'],
       summary: 'Get a short-lived presigned URL to serve an asset to the student',
       params: AssetIdParam,
       response: { 200: DownloadTicket, 401: ErrorBody, 404: ErrorBody },

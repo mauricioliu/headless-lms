@@ -1,5 +1,6 @@
 // Students resource schemas.
 import { z } from "zod";
+import { emailSchema } from "@headless-lms/core/schemas";
 import { ListQuery, paginated, OrgUserProfileSchema } from "./shared.js";
 
 export const OrgUserStatus = z.enum(["invited", "active"]);
@@ -30,6 +31,6 @@ export type StudentIdParam = z.infer<typeof StudentIdParam>;
 export const UpdateStudentBody = z.object({
   firstName: z.string().trim().min(1),
   lastName: z.string().trim().min(1),
-  email: z.string().email(),
+  email: emailSchema,
 });
 export type UpdateStudentBody = z.infer<typeof UpdateStudentBody>;

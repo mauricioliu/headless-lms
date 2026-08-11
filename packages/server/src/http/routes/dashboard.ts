@@ -14,7 +14,7 @@ export async function dashboardRoutes(app: FastifyInstance, container: Container
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getOverview',
-      tags: ['Dashboard'],
+      tags: ['Reporting'],
       summary: 'Back-office overview stats',
       response: { 200: OverviewStats },
     },
@@ -30,7 +30,7 @@ export async function dashboardRoutes(app: FastifyInstance, container: Container
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getEnrollmentSeries',
-      tags: ['Dashboard'],
+      tags: ['Reporting'],
       summary: 'Enrollments granted per day over a trailing window',
       querystring: EnrollmentSeriesQuery,
       response: { 200: EnrollmentSeries },

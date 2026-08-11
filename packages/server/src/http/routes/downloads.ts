@@ -32,7 +32,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listDownloads',
-      tags: ['Downloads'],
+      tags: ['Content'],
       summary: 'List downloads',
       querystring: DownloadsQuery,
       response: { 200: DownloadsPage },
@@ -49,7 +49,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getDownload',
-      tags: ['Downloads'],
+      tags: ['Content'],
       summary: 'Get a download by id',
       params: DownloadIdParam,
       response: { 200: Download, 404: ErrorBody },
@@ -70,7 +70,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'createDownload',
-      tags: ['Downloads'],
+      tags: ['Content'],
       summary: 'Create a download',
       body: CreateDownload,
       response: { 201: Download },
@@ -88,7 +88,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'updateDownload',
-      tags: ['Downloads'],
+      tags: ['Content'],
       summary: 'Update a download',
       params: DownloadIdParam,
       body: UpdateDownload,
@@ -106,7 +106,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'deleteDownload',
-      tags: ['Downloads'],
+      tags: ['Content'],
       summary: 'Delete a download',
       params: DownloadIdParam,
       response: { 204: z.void(), 404: ErrorBody },
@@ -124,7 +124,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'listDownloadAssets',
-      tags: ['Downloads'],
+      tags: ['Content'],
       summary: "List a download's assets in order",
       params: DownloadIdParam,
       response: { 200: z.array(DownloadAsset), 404: ErrorBody },
@@ -141,7 +141,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'addDownloadAsset',
-      tags: ['Downloads'],
+      tags: ['Content'],
       summary: 'Link a media-library asset to a download',
       params: DownloadIdParam,
       body: AddDownloadAsset,
@@ -161,7 +161,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'reorderDownloadAssets',
-      tags: ['Downloads'],
+      tags: ['Content'],
       summary: "Reorder a download's assets (send the complete set)",
       params: DownloadIdParam,
       body: ReorderDownloadAssets,
@@ -183,7 +183,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'renameDownloadAsset',
-      tags: ['Downloads'],
+      tags: ['Content'],
       summary: "Set an asset's display name within a download",
       params: DownloadAssetParams,
       body: RenameDownloadAsset,
@@ -206,7 +206,7 @@ export async function downloadsRoutes(app: FastifyInstance, container: Container
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'removeDownloadAsset',
-      tags: ['Downloads'],
+      tags: ['Content'],
       summary: 'Unlink an asset from a download (the asset itself survives)',
       params: DownloadAssetParams,
       response: { 200: z.array(DownloadAsset), 404: ErrorBody },

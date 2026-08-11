@@ -24,7 +24,7 @@ export async function learnProgressRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'reportProgress',
-      tags: ['Learn'],
+      tags: ['Progress'],
       summary: 'Report usage on a target; the progress service decides completion',
       body: ReportProgress,
       response: { 200: ProgressStatus, 404: ErrorBody },
@@ -59,7 +59,7 @@ export async function learnProgressRoutes(
     preHandler: app.requireOrgSession,
     schema: {
       operationId: 'getLearnCourseProgress',
-      tags: ['Learn'],
+      tags: ['Progress'],
       summary: "The student's progress in one course",
       params: LearnCourseIdParam,
       response: { 200: CourseProgress, 404: ErrorBody },

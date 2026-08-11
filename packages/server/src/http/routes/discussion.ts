@@ -58,7 +58,7 @@ export async function discussionRoutes(app: FastifyInstance, container: Containe
     url: '/api/comments/:commentId',
     preHandler: app.requireOrgSession,
     schema: {
-      operationId: 'editComment',
+      operationId: 'publishComment',
       tags: ['Discussion'],
       summary: 'Publish a comment: approves a pending one, restores a removed one',
       params: CommentIdParam,
