@@ -9,7 +9,7 @@ import { Discussion } from "@headless-lms/sdk";
 import { authHeaders } from "@/lib/api/server-call";
 
 export async function approveCommentAction(commentId: string): Promise<void> {
-  await Discussion.editComment({ commentId, status: "published" }, await authHeaders());
+  await Discussion.publishComment({ commentId, status: "published" }, await authHeaders());
   revalidatePath("/courses/[courseId]/discussion", "page");
 }
 
@@ -19,7 +19,7 @@ export async function moderateRemoveCommentAction(commentId: string): Promise<vo
 }
 
 export async function restoreCommentAction(commentId: string): Promise<void> {
-  await Discussion.editComment({ commentId, status: "published" }, await authHeaders());
+  await Discussion.publishComment({ commentId, status: "published" }, await authHeaders());
   revalidatePath("/courses/[courseId]/discussion", "page");
 }
 
@@ -39,7 +39,7 @@ export async function bulkApproveCommentsAction(commentIds: string[]): Promise<v
   const headers = await authHeaders();
   await Promise.all(
     commentIds.map((commentId) =>
-      Discussion.editComment({ commentId, status: "published" }, headers),
+      Discussion.publishComment({ commentId, status: "published" }, headers),
     ),
   );
   revalidatePath("/courses/[courseId]/discussion", "page");
