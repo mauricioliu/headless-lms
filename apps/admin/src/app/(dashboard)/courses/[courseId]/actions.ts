@@ -123,6 +123,33 @@ export async function saveActivityContentAction(
   revalidateBuilder();
 }
 
+/** Publish/unpublish one activity. `published` lives in the settings blob. */
+export async function setActivityPublishedAction(
+  courseId: string,
+  moduleId: string,
+  activityId: string,
+  published: boolean,
+): Promise<void> {
+  const headers = await authHeaders();
+  const [activities, links] = await Promise.all([
+    Content.listActivities({ courseId }, headers),
+    Content.listActivityAssets({ courseId }, headers),
+  ]);
+  const activity = activities.find((a) => a.id === activityId && a.moduleId === moduleId);
+  if (!activity) throw new Error("Activity not found");
+
+  const settings: ActivitySettings = {
+    ...((activity.settings ?? {}) as ActivitySettings),
+    published,
+  };
+  const assetIds = links.filter((l) => l.activityId === activityId).map((l) => l.assetId);
+  await Content.updateActivity(
+    { courseId, moduleId, activityId, settings: settings as JsonValueInput, assetIds },
+    headers,
+  );
+  revalidateBuilder();
+}
+
 export async function deleteActivityAction(
   courseId: string,
   moduleId: string,

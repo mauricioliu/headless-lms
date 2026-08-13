@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { FileText, GripVertical, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Eye, EyeOff, FileText, GripVertical, SlidersHorizontal, Trash2 } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -14,7 +14,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import type { Activity, ActivitySettings } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
-import { deleteActivityAction } from "../actions";
+import { deleteActivityAction, setActivityPublishedAction } from "../actions";
 
 /** Read the opaque settings blob as the admin-side shape. */
 function settingsOf(activity: Activity): ActivitySettings {
@@ -50,6 +50,18 @@ export function ItemRow({
 
   const settings = settingsOf(item);
   const title = settings.title?.trim() || "Untitled activity";
+
+  function onTogglePublish() {
+    const next = !settings.published;
+    startTransition(async () => {
+      try {
+        await setActivityPublishedAction(courseId, moduleId, item.id, next);
+        toast.success(next ? "Activity published" : "Moved to draft");
+      } catch (err) {
+        toast.error("Something went wrong", { description: (err as Error).message });
+      }
+    });
+  }
 
   function confirmDelete() {
     startTransition(async () => {
@@ -108,6 +120,10 @@ export function ItemRow({
               <SlidersHorizontal className="size-4" />
               Settings
             </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onTogglePublish} disabled={isPending}>
+            {settings.published ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            {settings.published ? "Unpublish" : "Publish"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="danger" onClick={() => setConfirmOpen(true)}>
