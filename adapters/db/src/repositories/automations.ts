@@ -20,6 +20,7 @@ import type {
 import { automations, automationRuns } from '../schema/index.js';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
+import { translateDbErrors } from './pg-errors.js';
 
 const automationSelection = {
   orgId: automations.orgId,
@@ -292,3 +293,5 @@ export class DrizzleAutomationRunsRepository implements AutomationRunsRepository
     };
   }
 }
+translateDbErrors(DrizzleAutomationsRepository);
+translateDbErrors(DrizzleAutomationRunsRepository);

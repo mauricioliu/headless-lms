@@ -22,6 +22,7 @@ import { users } from '../schema/identity.js';
 import { user } from '../schema/better-auth.js';
 import { orgUserProfileColumns } from './org-user-profile.js';
 import { noopLogger } from '@headless-lms/core/shared/logger';
+import { translateDbErrors } from './pg-errors.js';
 
 type CommentRow = typeof comments.$inferSelect;
 
@@ -338,3 +339,4 @@ export class DrizzleDiscussionRepository implements DiscussionRepository {
     };
   }
 }
+translateDbErrors(DrizzleDiscussionRepository);

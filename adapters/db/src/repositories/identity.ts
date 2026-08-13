@@ -8,6 +8,7 @@ import type { IdentityRepository } from '@headless-lms/core/identity';
 import type { CreateUserInput, Logger, UpdateUserInput, User } from '@headless-lms/core/types';
 import { users } from '../schema/identity.js';
 import { noopLogger } from '@headless-lms/core/shared/logger';
+import { translateDbErrors } from './pg-errors.js';
 
 export class DrizzleIdentityRepository implements IdentityRepository {
   constructor(
@@ -72,3 +73,4 @@ export class DrizzleIdentityRepository implements IdentityRepository {
     return row ?? null;
   }
 }
+translateDbErrors(DrizzleIdentityRepository);

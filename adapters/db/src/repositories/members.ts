@@ -19,6 +19,7 @@ import { user } from '../schema/better-auth.js';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import { orgUserProfileColumns } from './org-user-profile.js';
+import { translateDbErrors } from './pg-errors.js';
 
 // The member surface is staff-only; a student org user never reaches here
 // (the queries below exclude it), so an unrecognized role falls back to the
@@ -168,3 +169,4 @@ export class DrizzleMembersRepository implements MembersRepository {
     return all.find((r) => r.id === id) ?? null;
   }
 }
+translateDbErrors(DrizzleMembersRepository);

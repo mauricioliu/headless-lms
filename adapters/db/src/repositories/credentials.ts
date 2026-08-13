@@ -12,6 +12,7 @@ import type { CredentialStore, Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import { genId } from '@headless-lms/core/shared/id';
 import { credentials } from '../schema/credentials.js';
+import { translateDbErrors } from './pg-errors.js';
 
 const IV_BYTES = 12;
 const TAG_BYTES = 16;
@@ -100,3 +101,4 @@ export class DrizzleCredentialStore implements CredentialStore {
       .where(and(eq(credentials.orgId, orgId), eq(credentials.id, ref)));
   }
 }
+translateDbErrors(DrizzleCredentialStore);

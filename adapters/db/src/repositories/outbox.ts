@@ -12,6 +12,7 @@ import { noopLogger } from '@headless-lms/core/shared/logger';
 import type { EventOutbox } from '@headless-lms/core/schemas';
 import type { DbExecutor } from '../client.js';
 import { eventOutbox } from '../schema/outbox.js';
+import { translateDbErrors } from './pg-errors.js';
 
 /** A message that fails this many dispatches is parked: fetchBatch stops
  *  claiming it, leaving the row (with its last_error) for inspection. */
@@ -88,3 +89,5 @@ export class DrizzleOutboxStore implements OutboxStore {
       .where(eq(eventOutbox.id, id));
   }
 }
+translateDbErrors(DrizzleOutboxAppender);
+translateDbErrors(DrizzleOutboxStore);

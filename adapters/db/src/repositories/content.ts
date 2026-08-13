@@ -54,7 +54,7 @@ import { genId } from '@headless-lms/core/shared/id';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import { NotFoundError, ConflictError } from '@headless-lms/core/shared/errors';
-import { isUniqueViolation } from './pg-errors.js';
+import { isUniqueViolation, translateDbErrors } from './pg-errors.js';
 
 // A course's settings live in the shared `settings` table (namespace
 // 'content', scoped by course id) — joined here so the repository answers in
@@ -849,3 +849,4 @@ export class DrizzleContentRepository implements ContentRepository {
     return this.listDownloadAssets(orgId, downloadId);
   }
 }
+translateDbErrors(DrizzleContentRepository);

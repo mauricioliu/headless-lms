@@ -5,6 +5,7 @@ import type { SettingsRecord, SettingsRepository } from '@headless-lms/core/shar
 import { settings } from '../schema/settings.js';
 import type { Logger } from '@headless-lms/core/types';
 import { noopLogger } from '@headless-lms/core/shared/logger';
+import { translateDbErrors } from './pg-errors.js';
 
 type Row = typeof settings.$inferSelect;
 
@@ -105,3 +106,4 @@ export class DrizzleSettingsRepository implements SettingsRepository {
     return toRecord(row);
   }
 }
+translateDbErrors(DrizzleSettingsRepository);

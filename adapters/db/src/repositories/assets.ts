@@ -12,6 +12,7 @@ import type {
 import { assets } from '../schema/assets.js';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import type { DbExecutor } from '../client.js';
+import { translateDbErrors } from './pg-errors.js';
 
 type Row = typeof assets.$inferSelect;
 
@@ -144,3 +145,4 @@ export class DrizzleAssetsRepository implements AssetsRepository {
     return deleted.length > 0;
   }
 }
+translateDbErrors(DrizzleAssetsRepository);

@@ -12,6 +12,7 @@ import type {
 import { courses, entitlements } from '../schema/index.js';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
+import { translateDbErrors } from './pg-errors.js';
 
 export class DrizzleDashboardRepository implements DashboardReportRepository {
   constructor(
@@ -72,3 +73,4 @@ export class DrizzleDashboardRepository implements DashboardReportRepository {
     return rows.map((r) => ({ date: r.date, count: Number(r.count) }));
   }
 }
+translateDbErrors(DrizzleDashboardRepository);

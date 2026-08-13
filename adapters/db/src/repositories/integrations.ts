@@ -5,6 +5,7 @@ import type { Connection, ConnectionsRepository } from '@headless-lms/core/integ
 import { connections } from '../schema/integrations.js';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
+import { translateDbErrors } from './pg-errors.js';
 
 type Row = typeof connections.$inferSelect;
 
@@ -102,3 +103,4 @@ export class DrizzleConnectionsRepository implements ConnectionsRepository {
     return deleted.length > 0;
   }
 }
+translateDbErrors(DrizzleConnectionsRepository);

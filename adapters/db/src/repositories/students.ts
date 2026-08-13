@@ -20,6 +20,7 @@ import type { OrgUserStatus } from '@headless-lms/core/types';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import { orgUserProfileColumns } from './org-user-profile.js';
+import { translateDbErrors } from './pg-errors.js';
 
 const entitlementCountExpr = sql<number>`count(${entitlements.id})`;
 // Completion now lives in the progress domain; the students report no longer
@@ -172,3 +173,4 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
     }
   }
 }
+translateDbErrors(DrizzleStudentsRepository);

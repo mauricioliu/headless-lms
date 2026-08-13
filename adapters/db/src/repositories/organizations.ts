@@ -18,7 +18,7 @@ import { invites, organizations, orgUsers } from '../schema/organizations.js';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import { ConflictError } from '@headless-lms/core/shared/errors';
-import { isUniqueViolation } from './pg-errors.js';
+import { isUniqueViolation, translateDbErrors } from './pg-errors.js';
 
 const INVITE_STATUSES = ['pending', 'accepted', 'rejected', 'canceled'] as const;
 type InviteStatus = (typeof INVITE_STATUSES)[number];
@@ -275,3 +275,4 @@ export class DrizzleOrganizationsRepository implements OrganizationsRepository {
     return row ?? null;
   }
 }
+translateDbErrors(DrizzleOrganizationsRepository);

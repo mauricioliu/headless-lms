@@ -12,6 +12,7 @@ import type {
 import { entitlements, orgUsers, users } from '../schema/index.js';
 import { contentItems, courses, downloads } from '../schema/content.js';
 import { noopLogger } from '@headless-lms/core/shared/logger';
+import { translateDbErrors } from './pg-errors.js';
 
 type ResolvedStatus = 'active' | 'expired' | 'revoked';
 
@@ -252,3 +253,4 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
     return rows.length > 0;
   }
 }
+translateDbErrors(DrizzleEntitlementsRepository);

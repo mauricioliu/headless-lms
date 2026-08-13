@@ -10,6 +10,7 @@ import type {
 import { progressRecords } from '../schema/progress.js';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
+import { translateDbErrors } from './pg-errors.js';
 
 type Row = typeof progressRecords.$inferSelect;
 
@@ -112,3 +113,4 @@ export class DrizzleProgressRepository implements ProgressRepository {
     return row ? toRecord(row) : null;
   }
 }
+translateDbErrors(DrizzleProgressRepository);

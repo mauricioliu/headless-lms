@@ -11,6 +11,7 @@ import type { LearnEntitlementReader, ContentRef } from '@headless-lms/core/repo
 import { entitlements, courses, downloads, downloadAssets } from '../schema/index.js';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
+import { translateDbErrors } from './pg-errors.js';
 
 export class DrizzleLearnRepository implements LearnEntitlementReader {
   constructor(
@@ -106,3 +107,4 @@ export class DrizzleLearnRepository implements LearnEntitlementReader {
     return row !== undefined;
   }
 }
+translateDbErrors(DrizzleLearnRepository);
