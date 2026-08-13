@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { NotFoundError } from '../shared/errors.js';
-import { ContentServiceImpl } from './service.js';
+import { ContentService } from './service.js';
 import type { ContentRepository, ContentUnitOfWork } from './ports.js';
 import type { Activity, Course, Download, DownloadAsset, Module } from './model.js';
 import type { NewDomainEvent, OutboxAppender } from '../shared/ports.js';
@@ -73,7 +73,7 @@ function fakeUow(repo: ContentRepository) {
 
 function build(repo = makeRepo()) {
   const { uow, append, appended } = fakeUow(repo);
-  const svc = new ContentServiceImpl({ repo, uow });
+  const svc = new ContentService({ repo, uow });
   return { svc, repo, append, appended };
 }
 
@@ -138,7 +138,7 @@ describe('ContentServiceImpl', () => {
     });
 
     const { svc } = build(repo);
-    const result = await svc.patchSettings('org1', 'c1', { transcriptDownloads: true });
+    const result = await svc.patchCourseSettings('org1', 'c1', { transcriptDownloads: true });
 
     expect(repo.patchCourseSettings).toHaveBeenCalledWith('org1', 'c1', { transcriptDownloads: true });
     expect(result).toEqual({ transcriptDownloads: true });
@@ -150,7 +150,7 @@ describe('ContentServiceImpl', () => {
 
     const { svc } = build(repo);
 
-    await expect(svc.patchSettings('org1', 'missing', {})).rejects.toThrow(NotFoundError);
+    await expect(svc.patchCourseSettings('org1', 'missing', {})).rejects.toThrow(NotFoundError);
     expect(repo.patchCourseSettings).not.toHaveBeenCalled();
   });
 
@@ -500,7 +500,7 @@ describe('logging', () => {
     (repo.findCourseById as ReturnType<typeof vi.fn>).mockResolvedValue(course);
     (repo.deleteCourse as ReturnType<typeof vi.fn>).mockResolvedValue(true);
     const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl({
+    const svc = new ContentService({
       repo,
       uow,
       logger,
@@ -528,7 +528,7 @@ describe('logging', () => {
     vi.mocked(repo.findActivity).mockResolvedValue(activity);
     vi.mocked(repo.deleteActivity).mockResolvedValue([module]);
     const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl({
+    const svc = new ContentService({
       repo,
       uow,
       logger,
@@ -556,7 +556,7 @@ describe('logging', () => {
     const repo = makeRepo();
     vi.mocked(repo.findModule).mockResolvedValue(null);
     const { uow } = fakeUow(repo);
-    const svc = new ContentServiceImpl({
+    const svc = new ContentService({
       repo,
       uow,
       logger,

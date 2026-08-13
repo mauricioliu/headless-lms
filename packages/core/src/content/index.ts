@@ -1,6 +1,6 @@
 // content context — public surface. Re-export only what other contexts may use.
-export { ContentServiceImpl } from './service.js';
-export type { ContentService, ContentRepository } from './ports.js';
+export { ContentService } from './service.js';
+export type { CourseManagementService, ContentRepository } from './ports.js';
 export type {
   Course,
   CourseStatus,

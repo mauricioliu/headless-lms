@@ -20,14 +20,14 @@ import type {
 } from './types.js';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 
-export interface ContentService {
+export interface CourseManagementService {
   listCourses(orgId: string, query: ListCoursesQuery): Promise<Page<Course>>;
   getCourse(orgId: string, id: string): Promise<Course | null>;
   createCourse(orgId: string, input: CreateCourseInput): Promise<Course>;
   /** @throws NotFoundError when no course with this id exists in the org. */
   updateCourse(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course>;
   /** @throws NotFoundError when no course with this id exists in the org. */
-  patchSettings(
+  patchCourseSettings(
     orgId: string,
     id: string,
     value: Partial<CourseSettings>,
@@ -68,7 +68,9 @@ export interface ContentService {
     moduleId: string,
     activityId: string,
   ): Promise<Module[]>;
+}
 
+export interface DownloadablesService {
   listDownloads(orgId: string, query: ListDownloadsQuery): Promise<Page<Download>>;
   getDownload(orgId: string, id: string): Promise<Download | null>;
   createDownload(orgId: string, input: CreateDownloadInput): Promise<Download>;
@@ -91,7 +93,11 @@ export interface ContentService {
     displayName: string | null,
   ): Promise<DownloadAsset[]>;
   /** @throws ConflictError when assetIds is not exactly the download's current asset set. */
-  reorderDownloadAssets(orgId: string, downloadId: string, assetIds: string[]): Promise<DownloadAsset[]>;
+  reorderDownloadAssets(
+    orgId: string,
+    downloadId: string,
+    assetIds: string[],
+  ): Promise<DownloadAsset[]>;
 }
 
 export interface ContentRepository {
