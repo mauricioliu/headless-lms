@@ -26,7 +26,7 @@ export function loadStorageConfig(): MinioStorageConfig {
     region: process.env.STORAGE_REGION ?? "us-east-1",
     bucket: process.env.STORAGE_BUCKET ?? "headless-lms",
     uploadExpirySeconds: Number(process.env.STORAGE_UPLOAD_EXPIRY ?? 300),
-    downloadExpirySeconds: Number(process.env.STORAGE_DOWNLOAD_EXPIRY ?? 300),
+    downloadExpirySeconds: Number(process.env.STORAGE_DOWNLOAD_EXPIRY ?? 86400),
   };
 }
 
