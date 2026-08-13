@@ -137,6 +137,13 @@ export async function assetsRoutes(app: FastifyInstance, container: Container): 
     method: 'POST',
     url: '/api/assets/:id/download-url',
     preHandler: app.requireOrgSession,
+    // Every body field is optional, so a bodyless POST is valid — the
+    // generated SDK omits the body entirely when no field is set, which
+    // Fastify hands to validation as `null`. Normalize before it gets there.
+    preValidation: (req, _reply, done) => {
+      req.body ??= {};
+      done();
+    },
     schema: {
       operationId: 'requestAssetDownload',
       tags,

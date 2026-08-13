@@ -6,8 +6,8 @@
  *
  * The returned URL is a short-lived presigned URL (for immediate display in
  * the editing session). The durable reference is the returned asset `id`,
- * which the editor persists on the media node — pages re-sign fresh URLs for
- * it at render time (see `lib/api/resolve-asset-urls.ts`).
+ * which the editor persists on the media node — media nodes re-sign fresh
+ * URLs for it whenever they render (the contract's `resolveAssetUrl`).
  */
 
 import type { UploadedEditorFile } from "@headless-lms/editor";

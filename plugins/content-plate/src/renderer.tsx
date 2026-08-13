@@ -7,6 +7,8 @@
 // overridden with wrappers that carry the broker: each node awaits a fresh
 // URL for its own assetId during server render, so the stored (expired)
 // presign in the config is never what reaches the browser.
+import type { ComponentProps } from 'react';
+
 import { createSlateEditor, KEYS, type Value } from 'platejs';
 
 import type { ResolveAssetUrl } from '@headless-lms/editor';
@@ -20,17 +22,17 @@ import { MediaVideoElementStatic } from './ui/media-video-node-static';
 import { isNodeList } from './validate';
 
 const mediaComponents = (resolveAssetUrl: ResolveAssetUrl) => ({
-  [KEYS.img]: (props: object) => (
-    <ImageElementStatic {...(props)} resolveAssetUrl={resolveAssetUrl} />
+  [KEYS.img]: (props: ComponentProps<typeof ImageElementStatic>) => (
+    <ImageElementStatic {...props} resolveAssetUrl={resolveAssetUrl} />
   ),
-  [KEYS.video]: (props: object) => (
-    <MediaVideoElementStatic {...(props as never)} resolveAssetUrl={resolveAssetUrl} />
+  [KEYS.video]: (props: ComponentProps<typeof MediaVideoElementStatic>) => (
+    <MediaVideoElementStatic {...props} resolveAssetUrl={resolveAssetUrl} />
   ),
-  [KEYS.audio]: (props: object) => (
-    <MediaAudioElementStatic {...(props as never)} resolveAssetUrl={resolveAssetUrl} />
+  [KEYS.audio]: (props: ComponentProps<typeof MediaAudioElementStatic>) => (
+    <MediaAudioElementStatic {...props} resolveAssetUrl={resolveAssetUrl} />
   ),
-  [KEYS.file]: (props: object) => (
-    <MediaFileElementStatic {...(props as never)} resolveAssetUrl={resolveAssetUrl} />
+  [KEYS.file]: (props: ComponentProps<typeof MediaFileElementStatic>) => (
+    <MediaFileElementStatic {...props} resolveAssetUrl={resolveAssetUrl} />
   ),
 });
 

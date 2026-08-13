@@ -33,13 +33,11 @@ export function ResolveAssetUrlProvider({
 
 /** Displayable URL for a media element: the embedded one until (and unless)
  *  the host brokers a fresh presign for its assetId. */
-export function useFreshMediaUrl(element: {
-  assetId?: unknown;
-  url?: unknown;
-}): string | undefined {
+export function useFreshMediaUrl(element: unknown): string | undefined {
   const resolve = useContext(ResolveAssetUrlContext);
-  const assetId = typeof element.assetId === 'string' ? element.assetId : undefined;
-  const stored = typeof element.url === 'string' ? element.url : undefined;
+  const el = (element ?? {}) as { assetId?: unknown; url?: unknown };
+  const assetId = typeof el.assetId === 'string' ? el.assetId : undefined;
+  const stored = typeof el.url === 'string' ? el.url : undefined;
   const [fresh, setFresh] = useState<string | null>(null);
 
   useEffect(() => {

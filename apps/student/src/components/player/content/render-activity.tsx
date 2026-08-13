@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import editorModule from "@/editor.config";
+import { resolveAssetUrl } from "@/lib/api/asset-url";
 import type { ActivityContent } from "@/lib/api/types";
 
 // Renders an activity's stored content on the SERVER via the installed editor's
@@ -25,7 +26,7 @@ export function renderActivityContent(content: ActivityContent | null): ReactNod
   }
   return (
     <div className="mx-auto max-w-[760px] px-6 py-10">
-      <Renderer config={content.config} />
+      <Renderer config={content.config} resolveAssetUrl={resolveAssetUrl} />
     </div>
   );
 }

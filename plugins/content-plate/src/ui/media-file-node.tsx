@@ -10,6 +10,8 @@ import {
   withHOC,
 } from 'platejs/react';
 
+import { useFreshMediaUrl } from '../hooks/use-resolve-asset-url';
+
 import { BlockActionButton } from './block-context-menu';
 import { Caption, CaptionTextarea } from './caption';
 
@@ -18,9 +20,10 @@ export const MediaFileElement = withHOC(
   function MediaFileElement(props: PlateElementProps) {
     const readOnly = useReadOnly();
     const { name, unsafeUrl } = useMediaState();
+    const freshUrl = useFreshMediaUrl(props.element);
 
     const onDownload = () => {
-      window.open(unsafeUrl);
+      window.open(freshUrl ?? unsafeUrl);
     };
 
     return (
