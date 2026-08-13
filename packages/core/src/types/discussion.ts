@@ -1,4 +1,5 @@
 export type {
+  ActivityCommentsRule,
   CommentStatus,
   ReactionEmoji,
   ReactionCounts,

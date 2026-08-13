@@ -3,12 +3,12 @@ import { ForbiddenError, NotFoundError } from '../shared/errors.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 import type {
-  ActivityCommentsRule,
   Comment,
   CommentAuthor,
   CommentReport,
   CommentSettings,
 } from './model.js';
+import type { ActivitySettings, CourseSettings } from '../types/index.js';
 import type {
   CommentListItem,
   CommentsConfig,
@@ -39,19 +39,7 @@ export const DEFAULT_SETTINGS = {
   threaded: true,
   requireReview: false,
   reactions: true,
-} as const;
-
-/** The slice of the course's stored settings this context reads. Absent for a
- *  course that has never been configured, so the defaults apply. */
-interface StoredCourseSettings {
-  comments?: Partial<CommentSettings>;
-}
-
-/** The slice of an activity's opaque settings blob this context reads. Absent
- *  or "inherit" = no override, so the course setting stands. */
-interface StoredActivitySettings {
-  comments?: ActivityCommentsRule;
-}
+} as const satisfies CommentSettings;
 
 const EMPTY_REACTIONS: CommentReactions = { reactions: {} };
 
@@ -87,9 +75,9 @@ export class DiscussionServiceImpl implements DiscussionService {
       throw new NotFoundError('Activity', activityId);
     }
 
-    // The `content` namespace row is the whole CourseSettings; comment settings
-    // are one key inside it, written there by content.patchSettings.
-    const stored = await this.settings.get<StoredCourseSettings>(
+    // The `content` namespace row is the whole CourseSettings; the `comments`
+    // key inside it is owned by this context (commentSettingsSchema).
+    const stored = await this.settings.get<Partial<CourseSettings>>(
       orgId,
       SettingsNamespace.content,
       activity.courseId,
@@ -97,7 +85,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     const settings = { ...DEFAULT_SETTINGS, ...stored?.comments };
     // Comments off for the course cannot be overridden back on by an activity:
     // the course switch is the master.
-    const rule = ((activity?.settings ?? {}) as StoredActivitySettings).comments ?? 'inherit';
+    const rule = ((activity?.settings ?? {}) as ActivitySettings).comments ?? 'inherit';
     return {
       enabled: settings.enabled && rule !== 'never',
       threaded: settings.threaded,

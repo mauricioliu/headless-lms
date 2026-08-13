@@ -1,7 +1,6 @@
 export type {
   Activity,
   ActivityAsset,
-  ActivityCommentsRule,
   ActivitySettings,
   AddDownloadAssetInput,
   ContentItem,

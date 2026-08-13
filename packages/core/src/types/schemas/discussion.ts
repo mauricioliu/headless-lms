@@ -21,6 +21,9 @@ export type CommentSettings = z.infer<typeof commentSettingsSchema>;
 
 export type CommentsConfig = CommentSettings;
 
+export const activityCommentsRuleSchema = z.enum(["inherit", "always", "never"]);
+export type ActivityCommentsRule = z.infer<typeof activityCommentsRuleSchema>;
+
 export const commentSchema = z.object({
   id: idSchema,
   orgId: idSchema,

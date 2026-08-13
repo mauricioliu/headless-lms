@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { commentSettingsSchema } from "./discussion.js";
+import { activityCommentsRuleSchema, commentSettingsSchema } from "./discussion.js";
 import { idSchema, jsonValueSchema } from "./shared.js";
 
 export const contentTypeSchema = z.enum(["course", "download"]);
@@ -13,9 +13,6 @@ export const courseSettingsSchema = z.object({
   comments: commentSettingsSchema.optional(),
 }).strict();
 export type CourseSettings = z.infer<typeof courseSettingsSchema>;
-
-export const activityCommentsRuleSchema = z.enum(["inherit", "always", "never"]);
-export type ActivityCommentsRule = z.infer<typeof activityCommentsRuleSchema>;
 
 export const activitySettingsSchema = z.object({
   comments: activityCommentsRuleSchema.optional(),
