@@ -90,7 +90,7 @@ export function DiscussionPanel({
         {nodes.length === 0 ? (
           open && (
             <p className="border-t border-line-divider pt-6 text-center text-[13.5px] text-ink-3">
-              No comments yet — be the first to say something.
+              No comments yet.
             </p>
           )
         ) : (
