@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { serverApi } from "@/lib/api/server";
-import { resolveAssetUrls } from "@/lib/api/resolve-asset-urls";
+import { resolveAssetUrl } from "@/lib/api/asset-url";
 import type { ActivitySettings } from "@/lib/api/types";
 import { formatContentType } from "@/lib/format";
 import editorModule from "@/editor.config";
@@ -39,7 +39,7 @@ export default async function ActivityPreviewPage({
           editor renders <code>{formatContentType(meta)}</code>. It can&apos;t be displayed.
         </p>
       ) : (
-        <Renderer config={await resolveAssetUrls(stored.config)} />
+        <Renderer config={stored.config} resolveAssetUrl={resolveAssetUrl} />
       )}
     </section>
   );
