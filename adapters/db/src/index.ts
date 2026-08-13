@@ -4,6 +4,7 @@ export { runMigrations, migrationsFolder } from './migrate.js';
 export * from './repositories/assets.js';
 export * from './repositories/automations.js';
 export * from './repositories/content.js';
+export * from './repositories/course-analytics.js';
 export * from './repositories/credentials.js';
 export * from './repositories/dashboard.js';
 export * from './repositories/discussion.js';

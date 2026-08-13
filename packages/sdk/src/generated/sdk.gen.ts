@@ -58,6 +58,10 @@ import type {
   GetAutomationResponses,
   GetConnectionErrors,
   GetConnectionResponses,
+  GetCourseAnalyticsErrors,
+  GetCourseAnalyticsResponses,
+  GetCourseEnrollmentSeriesErrors,
+  GetCourseEnrollmentSeriesResponses,
   GetCourseErrors,
   GetCourseResponses,
   GetDownloadErrors,
@@ -2829,6 +2833,68 @@ export class Reporting {
     >({
       responseStyle: "data",
       url: "/api/overview/enrollments",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Completion and engagement stats for a course
+   */
+  public static getCourseAnalytics<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetCourseAnalyticsResponses, GetCourseAnalyticsErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).get<
+      GetCourseAnalyticsResponses,
+      GetCourseAnalyticsErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/courses/{id}/analytics",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Enrollments granted per day for a course over a trailing window
+   */
+  public static getCourseEnrollmentSeries<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+      days?: number;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<
+    GetCourseEnrollmentSeriesResponses,
+    GetCourseEnrollmentSeriesErrors,
+    ThrowOnError,
+    "data"
+  > {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "query", key: "days" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).get<
+      GetCourseEnrollmentSeriesResponses,
+      GetCourseEnrollmentSeriesErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/courses/{id}/analytics/enrollments",
       ...options,
       ...params,
     });

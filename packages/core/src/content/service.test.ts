@@ -154,6 +154,36 @@ describe('ContentServiceImpl', () => {
     expect(repo.patchCourseSettings).not.toHaveBeenCalled();
   });
 
+  it('appends course.updated carrying the merged settings on a settings patch', async () => {
+    const repo = makeRepo();
+    const course = makeCourse();
+    (repo.findCourseById as ReturnType<typeof vi.fn>).mockResolvedValue(course);
+    (repo.patchCourseSettings as ReturnType<typeof vi.fn>).mockResolvedValue({
+      transcriptDownloads: true,
+    });
+
+    const { svc, appended } = build(repo);
+    await svc.patchCourseSettings('org1', 'c1', { transcriptDownloads: true });
+
+    expect(appended).toEqual([
+      {
+        type: 'content.course.updated',
+        version: 1,
+        orgId: 'org1',
+        data: { ...course, settings: { transcriptDownloads: true } },
+      },
+    ]);
+  });
+
+  it('appends nothing when a settings patch finds no course', async () => {
+    const repo = makeRepo();
+    (repo.findCourseById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+    const { svc, append } = build(repo);
+    await expect(svc.patchCourseSettings('org1', 'missing', {})).rejects.toThrow(NotFoundError);
+    expect(append).not.toHaveBeenCalled();
+  });
+
   it('appends course.created (org + full snapshot) inside the unit of work', async () => {
     const repo = makeRepo();
     const created = makeCourse();

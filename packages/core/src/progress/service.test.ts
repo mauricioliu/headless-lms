@@ -3,7 +3,7 @@ import { ProgressServiceImpl } from './service.js';
 import type { ProgressRepository, ProgressUnitOfWork } from './ports.js';
 import type { ProgressRecord } from './model.js';
 import type { NewProgressEvent } from './events.js';
-import type { Activity, ContentService, Module } from '../content/index.js';
+import type { Activity, CourseManagementService, Module } from '../content/index.js';
 import type { ProgressReportItem } from './types.js';
 import { NotFoundError } from '../shared/errors.js';
 
@@ -92,14 +92,14 @@ function structure(overrides?: { a1Settings?: unknown }): {
   };
 }
 
-function fakeContent(modules: Module[], activities: Activity[]): ContentService {
+function fakeContent(modules: Module[], activities: Activity[]): CourseManagementService {
   return {
     listCourseModules: async () => modules,
     listCourseActivities: async () => activities,
     getActivity: async (_orgId: string, id: string) =>
       activities.find((a) => a.id === id) ?? null,
     getModule: async (_orgId: string, id: string) => modules.find((m) => m.id === id) ?? null,
-  } as unknown as ContentService;
+  } as unknown as CourseManagementService;
 }
 
 function makeService(structure: { modules: Module[]; activities: Activity[] }) {

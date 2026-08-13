@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { LearnReportServiceImpl } from './service.js';
 import type { LearnEntitlementReader, ContentRef } from './index.js';
-import type { Activity, ContentService, Course, Module } from '../../content/index.js';
+import type { Activity, CourseManagementService, Course, Module } from '../../content/index.js';
 import type { ProgressRecord, ProgressService } from '../../progress/index.js';
 import type { Asset, AssetsService } from '../../assets/index.js';
 
@@ -78,12 +78,12 @@ function fakeContent(
   courses: Record<string, Course>,
   modules: Record<string, Module[]>,
   activities: Record<string, Activity[]> = {},
-): ContentService {
+): CourseManagementService {
   return {
     getCourse: async (_org: string, id: string) => courses[id] ?? null,
     listCourseModules: async (_org: string, courseId: string) => modules[courseId] ?? [],
     listCourseActivities: async (_org: string, courseId: string) => activities[courseId] ?? [],
-  } as unknown as ContentService;
+  } as unknown as CourseManagementService;
 }
 
 const SIGNED_ASSET: Asset = {
@@ -120,7 +120,7 @@ function fakeAssets(captured: { expiry?: number; filename?: string } = {}): Asse
 
 // Full-surface ContentService fake for the download-delivery suite: every
 // member rejects or returns empty by default, overridable per test.
-function fakeContentService(over: Partial<ContentService> = {}): ContentService {
+function fakeContentService(over: Partial<CourseManagementService> = {}): CourseManagementService {
   const rejectMutation = async (): Promise<never> => {
     throw new Error('not used');
   };
@@ -129,7 +129,7 @@ function fakeContentService(over: Partial<ContentService> = {}): ContentService 
     getCourse: async () => null,
     createCourse: rejectMutation,
     updateCourse: rejectMutation,
-    patchSettings: rejectMutation,
+    patchCourseSettings: rejectMutation,
     deleteCourse: rejectMutation,
     listCourseModules: async () => [],
     listCourseActivities: async () => [],

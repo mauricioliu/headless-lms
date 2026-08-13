@@ -45,6 +45,7 @@ import type {
   AvailableAction,
   AvailableIntegration,
   Course,
+  CourseAnalytics,
   Download,
   DownloadAsset,
   EnrollmentSeries,
@@ -140,6 +141,12 @@ export const serverApi = {
   },
   async enrollmentSeries(days: number): Promise<EnrollmentSeries> {
     return await Reporting.getEnrollmentSeries({ days }, await authHeaders());
+  },
+  async courseAnalytics(courseId: string): Promise<CourseAnalytics> {
+    return await Reporting.getCourseAnalytics({ id: courseId }, await authHeaders());
+  },
+  async courseEnrollmentSeries(courseId: string, days: number): Promise<EnrollmentSeries> {
+    return await Reporting.getCourseEnrollmentSeries({ id: courseId, days }, await authHeaders());
   },
 
   // courses

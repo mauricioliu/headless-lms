@@ -17,7 +17,7 @@ import type {
 } from './ports.js';
 import type { ProgressReportItem, ProgressTarget, ReportProgressInput } from './types.js';
 import { progressEvents, type NewProgressEvent } from './events.js';
-import type { Activity, ContentService, Module } from '../content/index.js';
+import type { Activity, CourseManagementService, Module } from '../content/index.js';
 import type { JsonValue } from '../types/index.js';
 import type { Logger } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
@@ -63,14 +63,14 @@ function completionSatisfied(settings: unknown, claimed: boolean): boolean {
 
 export type ProgressServiceParams = {
   repo: ProgressRepository;
-  content: ContentService;
+  content: CourseManagementService;
   uow: ProgressUnitOfWork;
   logger?: Logger;
 };
 
 export class ProgressServiceImpl implements ProgressService {
   private readonly repo: ProgressRepository;
-  private readonly content: ContentService;
+  private readonly content: CourseManagementService;
   private readonly uow: ProgressUnitOfWork;
   private readonly logger: Logger;
 

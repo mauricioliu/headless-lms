@@ -7,6 +7,7 @@ import {
   DrizzleConnectionsRepository,
   DrizzleContentRepository,
   DrizzleCredentialStore,
+  DrizzleCourseAnalyticsRepository,
   DrizzleDashboardRepository,
   DrizzleDiscussionRepository,
   DrizzleEntitlementsRepository,
@@ -38,7 +39,7 @@ import {
 import { StorageAdapter } from '@headless-lms/adapter-defaults/storage';
 import { BetterAuth } from '@headless-lms/adapter-auth';
 
-import { ContentServiceImpl } from '@headless-lms/core/content';
+import { ContentService } from '@headless-lms/core/content';
 import { EntitlementsServiceImpl } from '@headless-lms/core/entitlements';
 import { ProgressServiceImpl } from '@headless-lms/core/progress';
 import { DiscussionServiceImpl } from '@headless-lms/core/discussion';
@@ -51,6 +52,7 @@ import { loadIntegrations } from './integrations.js';
 import { registerNotificationSubscribers } from './notifications.js';
 import { StudentsReportServiceImpl } from '@headless-lms/core/reporting/students';
 import { DashboardReportServiceImpl } from '@headless-lms/core/reporting/dashboard';
+import { CoursesReportServiceImpl } from '@headless-lms/core/reporting/courses';
 import { LearnReportServiceImpl } from '@headless-lms/core/reporting/learn';
 import { Mailer, type MailerLookups } from '@headless-lms/core/shared/mailer';
 import { SettingsService } from '@headless-lms/core/shared/settings';
@@ -153,7 +155,7 @@ export interface Container {
   // Domains
   identity: IdentityServiceImpl;
   organizations: OrganizationServiceImpl;
-  content: ContentServiceImpl;
+  content: ContentService;
   entitlements: EntitlementsServiceImpl;
   progress: ProgressServiceImpl;
   discussion: DiscussionServiceImpl;
@@ -167,6 +169,7 @@ export interface Container {
   reporting: {
     students: StudentsReportServiceImpl;
     dashboard: DashboardReportServiceImpl;
+    courses: CoursesReportServiceImpl;
     learn: LearnReportServiceImpl;
   };
   storage: ObjectStorage;
@@ -266,7 +269,7 @@ export async function buildContainer(
     content: new DrizzleContentRepository(tx, contentLogger),
     outbox: new DrizzleOutboxAppender(tx, outboxLogger),
   }));
-  const content = new ContentServiceImpl({
+  const content = new ContentService({
     repo: new DrizzleContentRepository(db, contentLogger),
     uow: contentUow,
     logger: contentLogger,
@@ -322,6 +325,10 @@ export async function buildContainer(
     }),
     dashboard: new DashboardReportServiceImpl({
       repo: new DrizzleDashboardRepository(db, reportingLogger),
+      logger: reportingLogger,
+    }),
+    courses: new CoursesReportServiceImpl({
+      repo: new DrizzleCourseAnalyticsRepository(db, reportingLogger),
       logger: reportingLogger,
     }),
     learn: new LearnReportServiceImpl({

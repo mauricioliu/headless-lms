@@ -91,12 +91,18 @@ export class ContentService implements CourseManagementService, DownloadablesSer
     id: string,
     value: Partial<CourseSettings>,
   ): Promise<CourseSettings> {
-    const course = await this.repo.findCourseById(orgId, id);
-    if (!course) {
-      this.logger.warn('course settings patch rejected — not found', { orgId, courseId: id });
-      throw new NotFoundError('Course', id);
-    }
-    const merged = await this.repo.patchCourseSettings(orgId, id, value);
+    const merged = await this.uow.run(async ({ content, outbox }) => {
+      const course = await content.findCourseById(orgId, id);
+      if (!course) {
+        this.logger.warn('course settings patch rejected — not found', { orgId, courseId: id });
+        throw new NotFoundError('Course', id);
+      }
+      const settings = await content.patchCourseSettings(orgId, id, value);
+      await outbox.append([
+        contentEvents.courseUpdated.make({ orgId, data: { ...course, settings } }),
+      ]);
+      return settings;
+    });
     this.logger.info('course settings patched', { orgId, courseId: id, value });
     return merged;
   }

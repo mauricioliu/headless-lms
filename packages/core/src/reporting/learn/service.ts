@@ -2,7 +2,7 @@
 // (which published courses the student is actively enrolled in) with the content
 // service (the Course/Module payload). Activities are filtered to published;
 // `settings.published === false` is the only draft signal (missing ⇒ published).
-import type { ContentService } from '../../content/index.js';
+import type { CourseManagementService } from '../../content/index.js';
 import type { ProgressService } from '../../progress/index.js';
 import type { AssetsService } from '../../assets/index.js';
 import type {
@@ -23,7 +23,7 @@ function isActivityPublished(settings: unknown): boolean {
 
 export type LearnReportServiceParams = {
   reader: LearnEntitlementReader;
-  content: ContentService;
+  content: CourseManagementService;
   progress: ProgressService;
   assets: AssetsService;
   deliveryExpirySeconds: number;
@@ -32,7 +32,7 @@ export type LearnReportServiceParams = {
 
 export class LearnReportServiceImpl implements LearnReportService {
   private readonly reader: LearnEntitlementReader;
-  private readonly content: ContentService;
+  private readonly content: CourseManagementService;
   private readonly progress: ProgressService;
   private readonly assets: AssetsService;
   private readonly deliveryExpirySeconds: number;

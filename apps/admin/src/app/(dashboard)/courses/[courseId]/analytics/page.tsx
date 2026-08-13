@@ -1,20 +1,43 @@
-import { BarChart3 } from "lucide-react";
+import { serverApi } from "@/lib/api/server";
+import { formatNumber } from "@/lib/format";
 
-// Analytics tab: completion + engagement for the course. No reporting endpoint
-// is wired for a single course yet, so this ships as a placeholder.
-export default function CourseAnalyticsTab() {
+import { ENROLLMENT_RANGES } from "../../../_components/enrollment-ranges";
+import { EnrollmentsChart } from "../../../_components/enrollments-chart";
+import { ActivityEngagementTable } from "./_components/activity-engagement-table";
+import { AnalyticsStats } from "./_components/analytics-stats";
+
+// Analytics tab: completion + engagement for the course, computed against the
+// currently enrolled cohort by the reporting/courses read model.
+export default async function CourseAnalyticsTab({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ courseId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { courseId } = await params;
+  const sp = await searchParams;
+  const range = ENROLLMENT_RANGES.find((r) => r.key === sp.range) ?? ENROLLMENT_RANGES[1];
+
+  const [analytics, enrollments] = await Promise.all([
+    serverApi.courseAnalytics(courseId),
+    serverApi.courseEnrollmentSeries(courseId, range.days),
+  ]);
+
   return (
-    <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-line px-6 text-center">
-      <span className="flex size-11 items-center justify-center rounded-full bg-well text-ink-3">
-        <BarChart3 className="size-5" />
-      </span>
-      <div className="flex flex-col gap-1.5">
-        <h2 className="text-base font-medium tracking-tight text-ink">Analytics coming soon</h2>
-        <p className="max-w-[44ch] text-pretty text-sm text-ink-3">
-          Completion rates, engagement, and drop-off for this course will appear here once
-          reporting is connected.
-        </p>
-      </div>
-    </div>
+    <section className="flex flex-col gap-8">
+      <AnalyticsStats
+        stats={[
+          { label: "Enrolled", value: formatNumber(analytics.enrolled) },
+          { label: "Started", value: formatNumber(analytics.started) },
+          { label: "Completed", value: formatNumber(analytics.completed) },
+          { label: "Avg. progress", value: `${analytics.avgProgress}%` },
+        ]}
+      />
+
+      <EnrollmentsChart data={enrollments} range={range.key} />
+
+      <ActivityEngagementTable activities={analytics.activities} enrolled={analytics.enrolled} />
+    </section>
   );
 }

@@ -3087,6 +3087,89 @@ export type GetEnrollmentSeriesResponses = {
 export type GetEnrollmentSeriesResponse =
   GetEnrollmentSeriesResponses[keyof GetEnrollmentSeriesResponses];
 
+export type GetCourseAnalyticsData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/courses/{id}/analytics";
+};
+
+export type GetCourseAnalyticsErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type GetCourseAnalyticsError = GetCourseAnalyticsErrors[keyof GetCourseAnalyticsErrors];
+
+export type GetCourseAnalyticsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    enrolled: number;
+    started: number;
+    completed: number;
+    avgProgress: number;
+    activities: Array<{
+      activityId: string;
+      title: string;
+      moduleId: string;
+      moduleTitle: string;
+      started: number;
+      completed: number;
+    }>;
+  };
+};
+
+export type GetCourseAnalyticsResponse =
+  GetCourseAnalyticsResponses[keyof GetCourseAnalyticsResponses];
+
+export type GetCourseEnrollmentSeriesData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: {
+    days?: number;
+  };
+  url: "/api/courses/{id}/analytics/enrollments";
+};
+
+export type GetCourseEnrollmentSeriesErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type GetCourseEnrollmentSeriesError =
+  GetCourseEnrollmentSeriesErrors[keyof GetCourseEnrollmentSeriesErrors];
+
+export type GetCourseEnrollmentSeriesResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    date: string;
+    count: number;
+  }>;
+};
+
+export type GetCourseEnrollmentSeriesResponse =
+  GetCourseEnrollmentSeriesResponses[keyof GetCourseEnrollmentSeriesResponses];
+
 export type RequestUploadData = {
   body: {
     filename: string;
