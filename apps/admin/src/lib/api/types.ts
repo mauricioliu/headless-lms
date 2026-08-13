@@ -39,11 +39,7 @@ import type {
 
 export type Course = GetCourseResponse;
 export type CourseStatus = Course["status"];
-/**
- * Course-wide delivery settings. On the course row they ride as an opaque
- * JSON blob; the settings endpoint speaks this typed shape. `courseSettingsOf`
- * (lib/api/compose) narrows the blob and fills defaults client-side.
- */
+/** Course-wide delivery settings, served composed and complete on the course. */
 export type CourseSettings = UpdateCourseSettingsResponse;
 
 export type Download = GetDownloadResponse;

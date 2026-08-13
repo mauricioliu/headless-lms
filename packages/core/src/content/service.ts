@@ -33,12 +33,8 @@ function slugify(title: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-/** Defaults for keys the stored blob doesn't carry (rows predating a setting). */
+/** Defaults for keys the stored row doesn't carry (rows predating a setting). */
 const settingsDefaults: CourseSettings = { transcriptDownloads: false };
-
-function toCourseSettings(stored: unknown): CourseSettings {
-  return { ...settingsDefaults, ...(stored as Partial<CourseSettings> | null) };
-}
 
 export type ContentServiceParams = {
   repo: ContentRepository;
@@ -60,8 +56,29 @@ export class ContentServiceImpl implements ContentService {
     this.logger = params.logger ?? noopLogger;
   }
 
-  list(orgId: string, query: ListCoursesQuery): Promise<Page<Course>> {
-    return this.repo.list(orgId, query);
+  private async courseSettings(orgId: string, id: string): Promise<CourseSettings> {
+    const stored = await this.settings.get<Partial<CourseSettings>>(
+      orgId,
+      SettingsNamespace.content,
+      id,
+    );
+    return { ...settingsDefaults, ...stored };
+  }
+
+  async list(orgId: string, query: ListCoursesQuery): Promise<Page<Course>> {
+    const page = await this.repo.list(orgId, query);
+    const stored = await this.settings.getMany<Partial<CourseSettings>>(
+      orgId,
+      SettingsNamespace.content,
+      page.rows.map((row) => row.id),
+    );
+    return {
+      ...page,
+      rows: page.rows.map((row) => ({
+        ...row,
+        settings: { ...settingsDefaults, ...stored.get(row.id) },
+      })),
+    };
   }
 
   async getCourse(orgId: string, id: string): Promise<Course | null> {
@@ -69,44 +86,35 @@ export class ContentServiceImpl implements ContentService {
     if (!course) {
       return null;
     }
-    const settings = await this.settings.get<Partial<CourseSettings>>(
-      orgId,
-      SettingsNamespace.content,
-      id,
-    );
-
-    return {
-      ...course,
-      settings: {
-        ...toCourseSettings(course.settings),
-        ...settings,
-      } as Course['settings'],
-    };
+    return { ...course, settings: await this.courseSettings(orgId, id) };
   }
 
   async createCourse(orgId: string, input: CreateCourseInput): Promise<Course> {
     const course = await this.uow.run(async ({ content, outbox }) => {
       const created = await content.create(orgId, input, slugify(input.title));
+      const full = { ...created, settings: { ...settingsDefaults } };
       await outbox.append([
-        contentEvents.courseCreated.make({ orgId, data: created }),
+        contentEvents.courseCreated.make({ orgId, data: full }),
       ]);
-      return created;
+      return full;
     });
     this.logger.info('course created', { orgId, courseId: course.id, title: course.title });
     return course;
   }
 
   async updateCourse(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course> {
+    const settings = await this.courseSettings(orgId, id);
     const course = await this.uow.run(async ({ content, outbox }) => {
       const updated = await content.update(orgId, id, patch);
       if (!updated) {
         this.logger.warn('course update rejected — not found', { orgId, courseId: id });
         throw new NotFoundError('Course', id);
       }
+      const full = { ...updated, settings };
       await outbox.append([
-        contentEvents.courseUpdated.make({ orgId, data: updated }),
+        contentEvents.courseUpdated.make({ orgId, data: full }),
       ]);
-      return updated;
+      return full;
     });
     this.logger.info('course updated', { orgId, courseId: id, fields: Object.keys(patch) });
     return course;
@@ -129,10 +137,11 @@ export class ContentServiceImpl implements ContentService {
       value,
     );
     this.logger.info('course settings patched', { orgId, courseId: id, value });
-    return { ...toCourseSettings(course.settings), ...merged };
+    return { ...settingsDefaults, ...merged };
   }
 
   async deleteCourse(orgId: string, id: string): Promise<void> {
+    const settings = await this.courseSettings(orgId, id);
     await this.uow.run(async ({ content, outbox }) => {
       // Snapshot before the delete — the event carries the last known state.
       const course = await content.findById(orgId, id);
@@ -144,7 +153,9 @@ export class ContentServiceImpl implements ContentService {
       if (!ok) {
         throw new NotFoundError('Course', id);
       }
-      await outbox.append([contentEvents.courseDeleted.make({ orgId, data: course })]);
+      await outbox.append([
+        contentEvents.courseDeleted.make({ orgId, data: { ...course, settings } }),
+      ]);
     });
     this.logger.info('course deleted', { orgId, courseId: id });
   }

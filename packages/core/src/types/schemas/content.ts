@@ -38,7 +38,7 @@ export const courseSchema = z.object({
   status: courseStatusSchema,
   category: z.string(),
   thumbnailAssetId: idSchema.nullable(),
-  settings: jsonValueSchema,
+  settings: courseSettingsSchema,
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 }).strict();
@@ -109,7 +109,6 @@ export const updateCourseInputSchema = z.object({
   category: z.string().optional(),
   status: courseStatusSchema.optional(),
   thumbnailAssetId: idSchema.nullable().optional(),
-  settings: courseSettingsSchema.partial().optional(),
 }).strict();
 export type UpdateCourseInput = z.infer<typeof updateCourseInputSchema>;
 

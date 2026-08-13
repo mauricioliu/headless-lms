@@ -95,10 +95,10 @@ export interface ContentService {
 }
 
 export interface ContentRepository {
-  list(orgId: string, query: ListCoursesQuery): Promise<Page<Course>>;
-  findById(orgId: string, id: string): Promise<Course | null>;
-  create(orgId: string, input: CreateCourseInput, slug: string): Promise<Course>;
-  update(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course | null>;
+  list(orgId: string, query: ListCoursesQuery): Promise<Page<Omit<Course, 'settings'>>>;
+  findById(orgId: string, id: string): Promise<Omit<Course, 'settings'> | null>;
+  create(orgId: string, input: CreateCourseInput, slug: string): Promise<Omit<Course, 'settings'>>;
+  update(orgId: string, id: string, patch: UpdateCourseInput): Promise<Omit<Course, 'settings'> | null>;
   delete(orgId: string, id: string): Promise<boolean>;
 
   listForCourse(orgId: string, courseId: string): Promise<Module[]>;

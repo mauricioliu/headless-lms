@@ -79,7 +79,6 @@ CREATE TABLE "courses" (
 	"status" text DEFAULT 'draft' NOT NULL,
 	"category" text DEFAULT '' NOT NULL,
 	"thumbnail_asset_id" text,
-	"settings" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "courses_org_id_id_pk" PRIMARY KEY("org_id","id"),

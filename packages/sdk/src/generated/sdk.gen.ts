@@ -757,15 +757,6 @@ export class Content {
       category?: string;
       status?: "draft" | "published";
       thumbnailAssetId?: string | null;
-      settings?: {
-        transcriptDownloads?: boolean;
-        comments?: {
-          enabled: boolean;
-          threaded: boolean;
-          requireReview: boolean;
-          reactions: boolean;
-        };
-      };
     },
     options?: Options<never, ThrowOnError>,
   ): RequestResult<UpdateCourseResponses, UpdateCourseErrors, ThrowOnError, "data"> {
@@ -780,7 +771,6 @@ export class Content {
             { in: "body", key: "category" },
             { in: "body", key: "status" },
             { in: "body", key: "thumbnailAssetId" },
-            { in: "body", key: "settings" },
           ],
         },
       ],

@@ -79,7 +79,6 @@ export const courses = pgTable(
     category: text('category').notNull().default(''),
     // Media-library asset rendered as the course's cover. Null = no cover.
     thumbnailAssetId: text('thumbnail_asset_id'),
-    settings: jsonb('settings').$type<Course['settings']>().notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
@@ -283,7 +282,7 @@ export const downloadAssets = pgTable(
 );
 
 type _ContentItemsDrift = Expect<NoDrift<typeof contentItems.$inferSelect, ContentItem>>;
-type _CoursesDrift = Expect<NoDrift<typeof courses.$inferSelect, Course>>;
+type _CoursesDrift = Expect<NoDrift<typeof courses.$inferSelect, Omit<Course, 'settings'>>>;
 type _ModulesDrift = Expect<NoDrift<typeof modules.$inferSelect, Module>>;
 type _ActivitiesDrift = Expect<NoDrift<typeof activities.$inferSelect, Activity>>;
 type _ActivityAssetsDrift = Expect<NoDrift<typeof activityAssets.$inferSelect, ActivityAsset>>;

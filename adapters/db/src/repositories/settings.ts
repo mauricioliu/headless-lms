@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { Setting } from '@headless-lms/core/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { SettingsRecord, SettingsRepository } from '@headless-lms/core/shared/settings';
@@ -46,6 +46,23 @@ export class DrizzleSettingsRepository implements SettingsRepository {
 
   async find(orgId: string, scopeId: string, namespace?: string): Promise<SettingsRecord[]> {
     const baseConditions = [eq(settings.orgId, orgId), eq(settings.scopeId, scopeId)];
+    const where = namespace
+      ? and(...baseConditions, eq(settings.namespace, namespace))
+      : and(...baseConditions);
+
+    const rows = await this.db.select().from(settings).where(where);
+    return rows.map(toRecord);
+  }
+
+  async findMany(
+    orgId: string,
+    scopeIds: string[],
+    namespace?: string,
+  ): Promise<SettingsRecord[]> {
+    if (scopeIds.length === 0) {
+      return [];
+    }
+    const baseConditions = [eq(settings.orgId, orgId), inArray(settings.scopeId, scopeIds)];
     const where = namespace
       ? and(...baseConditions, eq(settings.namespace, namespace))
       : and(...baseConditions);

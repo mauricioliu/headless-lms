@@ -20,9 +20,9 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-// Settings tab: course-wide delivery toggles, stored in the course's settings
-// blob. Nothing consumes transcript downloads yet — the value is authored and
-// persisted here, and the player will read it.
+// Settings tab: course-wide delivery toggles, stored in the settings store
+// keyed by the course. Nothing consumes transcript downloads yet — the value is
+// authored and persisted here, and the player will read it.
 export function CourseSettingsForm({ course }: { course: Course }) {
   const router = useRouter();
   const {

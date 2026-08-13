@@ -9,6 +9,7 @@ import { SettingsService, type SettingsRepository } from '../shared/settings.js'
 function makeSettings() {
   const repo: SettingsRepository = {
     find: vi.fn(async () => []),
+    findMany: vi.fn(async () => []),
     patch: vi.fn(async (_orgId: string, namespace: string, scopeId: string, value: unknown) => ({
       namespace,
       scopeId,
@@ -128,7 +129,7 @@ describe('ContentServiceImpl', () => {
     const result = await svc.createCourse('org1', { title: 'My New Course' });
 
     expect(repo.create).toHaveBeenCalledWith('org1', { title: 'My New Course' }, 'my-new-course');
-    expect(result).toBe(created);
+    expect(result).toEqual(created);
   });
 
   it('delegates course reads to the content repository', async () => {
@@ -140,7 +141,7 @@ describe('ContentServiceImpl', () => {
     const result = await svc.getCourse('org1', 'c1');
 
     expect(repo.findById).toHaveBeenCalledWith('org1', 'c1');
-    expect(result).toEqual(course);
+    expect(result).toEqual({ ...course, settings: { transcriptDownloads: false } });
     expect(append).not.toHaveBeenCalled();
   });
 
@@ -158,15 +159,13 @@ describe('ContentServiceImpl', () => {
     expect(result?.settings).toEqual({ transcriptDownloads: true });
   });
 
-  it('falls back to the stored course blob when the settings store is empty', async () => {
+  it('serves the defaults when the settings store is empty', async () => {
     const repo = makeRepo();
-    (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(
-      makeCourse({ settings: { transcriptDownloads: true } }),
-    );
+    (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(makeCourse());
 
     const { svc } = build(repo);
 
-    expect((await svc.getCourse('org1', 'c1'))?.settings).toEqual({ transcriptDownloads: true });
+    expect((await svc.getCourse('org1', 'c1'))?.settings).toEqual({ transcriptDownloads: false });
   });
 
   it('patches settings into the content namespace and returns them complete', async () => {
@@ -214,26 +213,10 @@ describe('ContentServiceImpl', () => {
     const result = await svc.updateCourse('org1', 'c1', { title: 'Renamed' });
 
     expect(repo.update).toHaveBeenCalledWith('org1', 'c1', { title: 'Renamed' });
-    expect(result).toBe(updated);
+    expect(result).toEqual(updated);
     expect(appended).toEqual([
       { type: 'content.course.updated', version: 1, orgId: 'org1', data: updated },
     ]);
-  });
-
-  it('forwards a partial settings patch untouched (the repository merges it)', async () => {
-    const repo = makeRepo();
-    const updated = makeCourse({ settings: { transcriptDownloads: true } });
-    (repo.update as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
-
-    const { svc } = build(repo);
-    const result = await svc.updateCourse('org1', 'c1', {
-      settings: { transcriptDownloads: true },
-    });
-
-    expect(repo.update).toHaveBeenCalledWith('org1', 'c1', {
-      settings: { transcriptDownloads: true },
-    });
-    expect(result.settings).toEqual({ transcriptDownloads: true });
   });
 
   it('throws NotFoundError and appends nothing when update finds no course', async () => {

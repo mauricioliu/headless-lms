@@ -344,7 +344,15 @@ export type ListCoursesResponses = {
       status: "draft" | "published";
       category: string;
       thumbnailAssetId: string | null;
-      settings: JsonValue;
+      settings: {
+        transcriptDownloads: boolean;
+        comments?: {
+          enabled: boolean;
+          threaded: boolean;
+          requireReview: boolean;
+          reactions: boolean;
+        };
+      };
       createdAt: string;
       updatedAt: string;
     }>;
@@ -381,7 +389,15 @@ export type CreateCourseResponses = {
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    settings: JsonValue;
+    settings: {
+      transcriptDownloads: boolean;
+      comments?: {
+        enabled: boolean;
+        threaded: boolean;
+        requireReview: boolean;
+        reactions: boolean;
+      };
+    };
     createdAt: string;
     updatedAt: string;
   };
@@ -452,7 +468,15 @@ export type GetCourseResponses = {
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    settings: JsonValue;
+    settings: {
+      transcriptDownloads: boolean;
+      comments?: {
+        enabled: boolean;
+        threaded: boolean;
+        requireReview: boolean;
+        reactions: boolean;
+      };
+    };
     createdAt: string;
     updatedAt: string;
   };
@@ -467,15 +491,6 @@ export type UpdateCourseData = {
     category?: string;
     status?: "draft" | "published";
     thumbnailAssetId?: string | null;
-    settings?: {
-      transcriptDownloads?: boolean;
-      comments?: {
-        enabled: boolean;
-        threaded: boolean;
-        requireReview: boolean;
-        reactions: boolean;
-      };
-    };
   };
   path: {
     id: string;
@@ -510,7 +525,15 @@ export type UpdateCourseResponses = {
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    settings: JsonValue;
+    settings: {
+      transcriptDownloads: boolean;
+      comments?: {
+        enabled: boolean;
+        threaded: boolean;
+        requireReview: boolean;
+        reactions: boolean;
+      };
+    };
     createdAt: string;
     updatedAt: string;
   };
@@ -1022,7 +1045,15 @@ export type ListLearnCoursesResponses = {
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    settings: JsonValue;
+    settings: {
+      transcriptDownloads: boolean;
+      comments?: {
+        enabled: boolean;
+        threaded: boolean;
+        requireReview: boolean;
+        reactions: boolean;
+      };
+    };
     createdAt: string;
     updatedAt: string;
   }>;
@@ -1065,7 +1096,15 @@ export type GetLearnCourseResponses = {
     status: "draft" | "published";
     category: string;
     thumbnailAssetId: string | null;
-    settings: JsonValue;
+    settings: {
+      transcriptDownloads: boolean;
+      comments?: {
+        enabled: boolean;
+        threaded: boolean;
+        requireReview: boolean;
+        reactions: boolean;
+      };
+    };
     createdAt: string;
     updatedAt: string;
   };

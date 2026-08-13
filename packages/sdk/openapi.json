@@ -995,7 +995,40 @@
                             "minLength": 1
                           },
                           "settings": {
-                            "$ref": "#/components/schemas/JsonValue"
+                            "type": "object",
+                            "properties": {
+                              "transcriptDownloads": {
+                                "type": "boolean"
+                              },
+                              "comments": {
+                                "type": "object",
+                                "properties": {
+                                  "enabled": {
+                                    "type": "boolean"
+                                  },
+                                  "threaded": {
+                                    "type": "boolean"
+                                  },
+                                  "requireReview": {
+                                    "type": "boolean"
+                                  },
+                                  "reactions": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "enabled",
+                                  "threaded",
+                                  "requireReview",
+                                  "reactions"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "transcriptDownloads"
+                            ],
+                            "additionalProperties": false
                           },
                           "createdAt": {
                             "type": "string",
@@ -1132,7 +1165,40 @@
                       "minLength": 1
                     },
                     "settings": {
-                      "$ref": "#/components/schemas/JsonValue"
+                      "type": "object",
+                      "properties": {
+                        "transcriptDownloads": {
+                          "type": "boolean"
+                        },
+                        "comments": {
+                          "type": "object",
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "threaded": {
+                              "type": "boolean"
+                            },
+                            "requireReview": {
+                              "type": "boolean"
+                            },
+                            "reactions": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "enabled",
+                            "threaded",
+                            "requireReview",
+                            "reactions"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "transcriptDownloads"
+                      ],
+                      "additionalProperties": false
                     },
                     "createdAt": {
                       "type": "string",
@@ -1229,7 +1295,40 @@
                       "minLength": 1
                     },
                     "settings": {
-                      "$ref": "#/components/schemas/JsonValue"
+                      "type": "object",
+                      "properties": {
+                        "transcriptDownloads": {
+                          "type": "boolean"
+                        },
+                        "comments": {
+                          "type": "object",
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "threaded": {
+                              "type": "boolean"
+                            },
+                            "requireReview": {
+                              "type": "boolean"
+                            },
+                            "reactions": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "enabled",
+                            "threaded",
+                            "requireReview",
+                            "reactions"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "transcriptDownloads"
+                      ],
+                      "additionalProperties": false
                     },
                     "createdAt": {
                       "type": "string",
@@ -1318,39 +1417,6 @@
                   "thumbnailAssetId": {
                     "nullable": true,
                     "type": "string"
-                  },
-                  "settings": {
-                    "type": "object",
-                    "properties": {
-                      "transcriptDownloads": {
-                        "type": "boolean"
-                      },
-                      "comments": {
-                        "type": "object",
-                        "properties": {
-                          "enabled": {
-                            "type": "boolean"
-                          },
-                          "threaded": {
-                            "type": "boolean"
-                          },
-                          "requireReview": {
-                            "type": "boolean"
-                          },
-                          "reactions": {
-                            "type": "boolean"
-                          }
-                        },
-                        "required": [
-                          "enabled",
-                          "threaded",
-                          "requireReview",
-                          "reactions"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "additionalProperties": false
                   }
                 }
               }
@@ -1414,7 +1480,40 @@
                       "minLength": 1
                     },
                     "settings": {
-                      "$ref": "#/components/schemas/JsonValue"
+                      "type": "object",
+                      "properties": {
+                        "transcriptDownloads": {
+                          "type": "boolean"
+                        },
+                        "comments": {
+                          "type": "object",
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "threaded": {
+                              "type": "boolean"
+                            },
+                            "requireReview": {
+                              "type": "boolean"
+                            },
+                            "reactions": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "enabled",
+                            "threaded",
+                            "requireReview",
+                            "reactions"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "transcriptDownloads"
+                      ],
+                      "additionalProperties": false
                     },
                     "createdAt": {
                       "type": "string",
@@ -2930,7 +3029,40 @@
                         "minLength": 1
                       },
                       "settings": {
-                        "$ref": "#/components/schemas/JsonValue"
+                        "type": "object",
+                        "properties": {
+                          "transcriptDownloads": {
+                            "type": "boolean"
+                          },
+                          "comments": {
+                            "type": "object",
+                            "properties": {
+                              "enabled": {
+                                "type": "boolean"
+                              },
+                              "threaded": {
+                                "type": "boolean"
+                              },
+                              "requireReview": {
+                                "type": "boolean"
+                              },
+                              "reactions": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "enabled",
+                              "threaded",
+                              "requireReview",
+                              "reactions"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "transcriptDownloads"
+                        ],
+                        "additionalProperties": false
                       },
                       "createdAt": {
                         "type": "string",
@@ -3028,7 +3160,40 @@
                       "minLength": 1
                     },
                     "settings": {
-                      "$ref": "#/components/schemas/JsonValue"
+                      "type": "object",
+                      "properties": {
+                        "transcriptDownloads": {
+                          "type": "boolean"
+                        },
+                        "comments": {
+                          "type": "object",
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "threaded": {
+                              "type": "boolean"
+                            },
+                            "requireReview": {
+                              "type": "boolean"
+                            },
+                            "reactions": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "enabled",
+                            "threaded",
+                            "requireReview",
+                            "reactions"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "transcriptDownloads"
+                      ],
+                      "additionalProperties": false
                     },
                     "createdAt": {
                       "type": "string",

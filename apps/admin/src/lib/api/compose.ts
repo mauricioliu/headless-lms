@@ -38,10 +38,9 @@ export function buildModuleTree(
   return modules.map((m) => ({ ...m, activities: nodesByModule.get(m.id) ?? [] }));
 }
 
-/** Narrow a course row's opaque settings blob, filling defaults. */
+/** A course's settings — served complete, defaults filled server-side. */
 export function courseSettingsOf(course: Course): CourseSettings {
-  const stored = (course.settings ?? {}) as Partial<CourseSettings>;
-  return { transcriptDownloads: false, ...stored };
+  return course.settings;
 }
 
 /** active|expired|revoked — revoked wins; an elapsed expiry reads as expired. */

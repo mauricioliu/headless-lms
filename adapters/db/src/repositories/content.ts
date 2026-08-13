@@ -52,7 +52,7 @@ import { noopLogger } from '@headless-lms/core/shared/logger';
 import { NotFoundError, ConflictError } from '@headless-lms/core/shared/errors';
 import { isUniqueViolation } from './pg-errors.js';
 
-function toCourse(row: typeof courses.$inferSelect): Course {
+function toCourse(row: typeof courses.$inferSelect): Omit<Course, 'settings'> {
   return { ...row, status: row.status as CourseStatus };
 }
 
@@ -91,7 +91,7 @@ export class DrizzleContentRepository implements ContentRepository {
     return (this.db as NodePgDatabase).transaction(fn);
   }
 
-  async list(orgId: string, query: ListCoursesQuery): Promise<Page<Course>> {
+  async list(orgId: string, query: ListCoursesQuery): Promise<Page<Omit<Course, 'settings'>>> {
     const conditions: SQL[] = [eq(courses.orgId, orgId)];
     if (query.status) {
       conditions.push(eq(courses.status, query.status));
@@ -143,7 +143,7 @@ export class DrizzleContentRepository implements ContentRepository {
     };
   }
 
-  async findById(orgId: string, id: string): Promise<Course | null> {
+  async findById(orgId: string, id: string): Promise<Omit<Course, 'settings'> | null> {
     const [row] = await this.db
       .select()
       .from(courses)
@@ -152,7 +152,7 @@ export class DrizzleContentRepository implements ContentRepository {
     return row ? toCourse(row) : null;
   }
 
-  async create(orgId: string, input: CreateCourseInput, slug: string): Promise<Course> {
+  async create(orgId: string, input: CreateCourseInput, slug: string): Promise<Omit<Course, 'settings'>> {
     // Registry row + concrete row share one id. Both inserts run on the same
     // executor — mutations reach this repository tx-bound (ContentUnitOfWork),
     // so they commit or roll back together.
@@ -179,7 +179,7 @@ export class DrizzleContentRepository implements ContentRepository {
     return created;
   }
 
-  async update(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course | null> {
+  async update(orgId: string, id: string, patch: UpdateCourseInput): Promise<Omit<Course, 'settings'> | null> {
     const set: Record<string, unknown> = { updatedAt: new Date() };
     if (patch.title !== undefined) {
       set.title = patch.title;
@@ -196,10 +196,6 @@ export class DrizzleContentRepository implements ContentRepository {
     // null is meaningful here — it clears the cover — so only `undefined` skips.
     if (patch.thumbnailAssetId !== undefined) {
       set.thumbnailAssetId = patch.thumbnailAssetId;
-    }
-    if (patch.settings !== undefined) {
-      // Shallow merge, so a partial patch can't drop the keys it omits.
-      set.settings = sql`${courses.settings} || ${JSON.stringify(patch.settings)}::jsonb`;
     }
 
     const [updated] = await this.db

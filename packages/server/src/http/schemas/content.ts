@@ -32,7 +32,6 @@ export const UpdateCourse = CreateCourse.partial().extend({
   status: CourseStatus.optional(),
   /** null clears the cover. */
   thumbnailAssetId: z.string().nullable().optional(),
-  settings: CourseSettings.partial().optional(),
 });
 export type UpdateCourse = z.infer<typeof UpdateCourse>;
 
