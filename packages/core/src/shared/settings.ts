@@ -15,7 +15,6 @@ export enum SettingsNamespace {
 export interface SettingsRepository {
   /** Rows for the given scopes, optionally narrowed to one namespace. */
   find(orgId: string, scopeId: string, namespace?: string): Promise<SettingsRecord[]>;
-  findMany(orgId: string, scopeIds: string[], namespace?: string): Promise<SettingsRecord[]>;
   /** Deep-merges the patch into the row's value, inserting when absent. Nested
    *  objects merge key by key; arrays and scalars are replaced outright. */
   patch(orgId: string, namespace: string, scopeId: string, value: unknown): Promise<SettingsRecord>;
@@ -32,18 +31,6 @@ export class SettingsService {
   ): Promise<T | undefined> {
     const rows = await this.repo.find(orgId, scopeId, namespace);
     return (rows[0]?.value as T) ?? defaultIfNull;
-  }
-
-  async getMany<T>(
-    orgId: string,
-    namespace: string,
-    scopeIds: string[],
-  ): Promise<Map<string, T>> {
-    if (scopeIds.length === 0) {
-      return new Map();
-    }
-    const rows = await this.repo.findMany(orgId, scopeIds, namespace);
-    return new Map(rows.map((row) => [row.scopeId, row.value as T]));
   }
 
   async patch<T>(orgId: string, namespace: string, scopeId: string, value: unknown): Promise<T> {

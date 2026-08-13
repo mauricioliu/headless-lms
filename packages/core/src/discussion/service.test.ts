@@ -192,13 +192,6 @@ export function fakeSettings() {
       }
       return out;
     },
-    async findMany(orgId, scopeIds, namespace) {
-      const out: SettingsRecord[] = [];
-      for (const scopeId of scopeIds) {
-        out.push(...(await this.find(orgId, scopeId, namespace)));
-      }
-      return out;
-    },
     async patch(orgId, namespace, scopeId, value) {
       const key = `${orgId}:${namespace}:${scopeId}`;
       const merged = { ...(rows.get(key) ?? {}), ...(value as Record<string, unknown>) };

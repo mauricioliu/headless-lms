@@ -21,7 +21,6 @@ import type {
 } from './types.js';
 import { contentEvents } from './events.js';
 import type { Logger } from '../shared/ports.js';
-import { SettingsNamespace, type SettingsService } from '../shared/settings.js';
 import { NotFoundError, ConflictError } from '../shared/errors.js';
 import { noopLogger } from '../shared/logger.js';
 
@@ -33,88 +32,54 @@ function slugify(title: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-/** Defaults for keys the stored row doesn't carry (rows predating a setting). */
-const settingsDefaults: CourseSettings = { transcriptDownloads: false };
-
 export type ContentServiceParams = {
   repo: ContentRepository;
   uow: ContentUnitOfWork;
-  settings: SettingsService;
   logger?: Logger;
 };
 
 export class ContentServiceImpl implements ContentService {
   private readonly repo: ContentRepository;
   private readonly uow: ContentUnitOfWork;
-  private readonly settings: SettingsService;
   private readonly logger: Logger;
 
   constructor(params: ContentServiceParams) {
     this.repo = params.repo;
     this.uow = params.uow;
-    this.settings = params.settings;
     this.logger = params.logger ?? noopLogger;
   }
 
-  private async courseSettings(orgId: string, id: string): Promise<CourseSettings> {
-    const stored = await this.settings.get<Partial<CourseSettings>>(
-      orgId,
-      SettingsNamespace.content,
-      id,
-    );
-    return { ...settingsDefaults, ...stored };
+  list(orgId: string, query: ListCoursesQuery): Promise<Page<Course>> {
+    return this.repo.listCourses(orgId, query);
   }
 
-  async list(orgId: string, query: ListCoursesQuery): Promise<Page<Course>> {
-    const page = await this.repo.list(orgId, query);
-    const stored = await this.settings.getMany<Partial<CourseSettings>>(
-      orgId,
-      SettingsNamespace.content,
-      page.rows.map((row) => row.id),
-    );
-    return {
-      ...page,
-      rows: page.rows.map((row) => ({
-        ...row,
-        settings: { ...settingsDefaults, ...stored.get(row.id) },
-      })),
-    };
-  }
-
-  async getCourse(orgId: string, id: string): Promise<Course | null> {
-    const course = await this.repo.findById(orgId, id);
-    if (!course) {
-      return null;
-    }
-    return { ...course, settings: await this.courseSettings(orgId, id) };
+  getCourse(orgId: string, id: string): Promise<Course | null> {
+    return this.repo.findCourseById(orgId, id);
   }
 
   async createCourse(orgId: string, input: CreateCourseInput): Promise<Course> {
     const course = await this.uow.run(async ({ content, outbox }) => {
-      const created = await content.create(orgId, input, slugify(input.title));
-      const full = { ...created, settings: { ...settingsDefaults } };
+      const created = await content.createCourse(orgId, input, slugify(input.title));
       await outbox.append([
-        contentEvents.courseCreated.make({ orgId, data: full }),
+        contentEvents.courseCreated.make({ orgId, data: created }),
       ]);
-      return full;
+      return created;
     });
     this.logger.info('course created', { orgId, courseId: course.id, title: course.title });
     return course;
   }
 
   async updateCourse(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course> {
-    const settings = await this.courseSettings(orgId, id);
     const course = await this.uow.run(async ({ content, outbox }) => {
-      const updated = await content.update(orgId, id, patch);
+      const updated = await content.updateCourse(orgId, id, patch);
       if (!updated) {
         this.logger.warn('course update rejected — not found', { orgId, courseId: id });
         throw new NotFoundError('Course', id);
       }
-      const full = { ...updated, settings };
       await outbox.append([
-        contentEvents.courseUpdated.make({ orgId, data: full }),
+        contentEvents.courseUpdated.make({ orgId, data: updated }),
       ]);
-      return full;
+      return updated;
     });
     this.logger.info('course updated', { orgId, courseId: id, fields: Object.keys(patch) });
     return course;
@@ -125,37 +90,29 @@ export class ContentServiceImpl implements ContentService {
     id: string,
     value: Partial<CourseSettings>,
   ): Promise<CourseSettings> {
-    const course = await this.repo.findById(orgId, id);
+    const course = await this.repo.findCourseById(orgId, id);
     if (!course) {
       this.logger.warn('course settings patch rejected — not found', { orgId, courseId: id });
       throw new NotFoundError('Course', id);
     }
-    const merged = await this.settings.patch<Partial<CourseSettings>>(
-      orgId,
-      SettingsNamespace.content,
-      id,
-      value,
-    );
+    const merged = await this.repo.patchCourseSettings(orgId, id, value);
     this.logger.info('course settings patched', { orgId, courseId: id, value });
-    return { ...settingsDefaults, ...merged };
+    return merged;
   }
 
   async deleteCourse(orgId: string, id: string): Promise<void> {
-    const settings = await this.courseSettings(orgId, id);
     await this.uow.run(async ({ content, outbox }) => {
       // Snapshot before the delete — the event carries the last known state.
-      const course = await content.findById(orgId, id);
+      const course = await content.findCourseById(orgId, id);
       if (!course) {
         this.logger.warn('course delete rejected — not found', { orgId, courseId: id });
         throw new NotFoundError('Course', id);
       }
-      const ok = await content.delete(orgId, id);
+      const ok = await content.deleteCourse(orgId, id);
       if (!ok) {
         throw new NotFoundError('Course', id);
       }
-      await outbox.append([
-        contentEvents.courseDeleted.make({ orgId, data: { ...course, settings } }),
-      ]);
+      await outbox.append([contentEvents.courseDeleted.make({ orgId, data: course })]);
     });
     this.logger.info('course deleted', { orgId, courseId: id });
   }
@@ -163,7 +120,7 @@ export class ContentServiceImpl implements ContentService {
   // --- modules & activities ------------------------------------------------
 
   listCourseModules(orgId: string, courseId: string): Promise<Module[]> {
-    return this.repo.listForCourse(orgId, courseId);
+    return this.repo.listCourseModules(orgId, courseId);
   }
   listCourseActivities(orgId: string, courseId: string): Promise<Activity[]> {
     return this.repo.listActivitiesForCourse(orgId, courseId);

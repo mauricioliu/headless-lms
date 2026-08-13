@@ -95,13 +95,14 @@ export interface ContentService {
 }
 
 export interface ContentRepository {
-  list(orgId: string, query: ListCoursesQuery): Promise<Page<Omit<Course, 'settings'>>>;
-  findById(orgId: string, id: string): Promise<Omit<Course, 'settings'> | null>;
-  create(orgId: string, input: CreateCourseInput, slug: string): Promise<Omit<Course, 'settings'>>;
-  update(orgId: string, id: string, patch: UpdateCourseInput): Promise<Omit<Course, 'settings'> | null>;
-  delete(orgId: string, id: string): Promise<boolean>;
+  listCourses(orgId: string, query: ListCoursesQuery): Promise<Page<Course>>;
+  findCourseById(orgId: string, id: string): Promise<Course | null>;
+  createCourse(orgId: string, input: CreateCourseInput, slug: string): Promise<Course>;
+  updateCourse(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course | null>;
+  patchCourseSettings(orgId: string, id: string, value: Partial<CourseSettings>): Promise<CourseSettings>;
+  deleteCourse(orgId: string, id: string): Promise<boolean>;
 
-  listForCourse(orgId: string, courseId: string): Promise<Module[]>;
+  listCourseModules(orgId: string, courseId: string): Promise<Module[]>;
   listActivitiesForCourse(orgId: string, courseId: string): Promise<Activity[]>;
   listActivityAssetsForCourse(orgId: string, courseId: string): Promise<ActivityAsset[]>;
   findActivity(orgId: string, activityId: string): Promise<Activity | null>;

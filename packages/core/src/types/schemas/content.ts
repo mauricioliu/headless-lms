@@ -14,6 +14,9 @@ export const courseSettingsSchema = z.object({
 }).strict();
 export type CourseSettings = z.infer<typeof courseSettingsSchema>;
 
+/** Defaults for keys a stored settings row doesn't carry (or no row at all). */
+export const courseSettingsDefaults: CourseSettings = { transcriptDownloads: false };
+
 export const activitySettingsSchema = z.object({
   comments: activityCommentsRuleSchema.optional(),
 }).strict();
@@ -43,7 +46,6 @@ export const courseSchema = z.object({
   updatedAt: z.coerce.date(),
 }).strict();
 export type Course = z.output<typeof courseSchema>;
-export type CourseInput = z.input<typeof courseSchema>;
 
 export const activitySchema = z.object({
   orgId: idSchema,

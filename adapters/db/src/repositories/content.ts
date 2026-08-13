@@ -23,6 +23,7 @@ import type {
   AddDownloadAssetInput,
   ContentRepository,
   Course,
+  CourseSettings,
   CourseStatus,
   CreateCourseInput,
   CreateDownloadInput,
@@ -37,6 +38,7 @@ import type {
   UpdateCourseInput,
   UpdateDownloadInput,
 } from '@headless-lms/core/content';
+import { courseSettingsDefaults, type Setting } from '@headless-lms/core/schemas';
 import {
   contentItems,
   courses,
@@ -46,14 +48,34 @@ import {
   downloads,
   downloadAssets,
 } from '../schema/content.js';
+import { settings } from '../schema/settings.js';
+import { deepMerge } from './settings.js';
 import { genId } from '@headless-lms/core/shared/id';
 import type { Logger } from '@headless-lms/core/shared/ports';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import { NotFoundError, ConflictError } from '@headless-lms/core/shared/errors';
 import { isUniqueViolation } from './pg-errors.js';
 
-function toCourse(row: typeof courses.$inferSelect): Omit<Course, 'settings'> {
-  return { ...row, status: row.status as CourseStatus };
+// A course's settings live in the shared `settings` table (namespace
+// 'content', scoped by course id) — joined here so the repository answers in
+// whole courses regardless of where the pieces are stored.
+const SETTINGS_NAMESPACE = 'content';
+
+const courseSettingsJoin = and(
+  eq(settings.orgId, courses.orgId),
+  eq(settings.namespace, SETTINGS_NAMESPACE),
+  eq(settings.scopeId, courses.id),
+);
+
+function toCourse(
+  row: typeof courses.$inferSelect,
+  storedSettings: Record<string, unknown> | null,
+): Course {
+  return {
+    ...row,
+    status: row.status as CourseStatus,
+    settings: { ...courseSettingsDefaults, ...storedSettings } as Course['settings'],
+  };
 }
 
 // Columns a caller may sort by. Default falls back to createdAt desc.
@@ -91,7 +113,7 @@ export class DrizzleContentRepository implements ContentRepository {
     return (this.db as NodePgDatabase).transaction(fn);
   }
 
-  async list(orgId: string, query: ListCoursesQuery): Promise<Page<Omit<Course, 'settings'>>> {
+  async listCourses(orgId: string, query: ListCoursesQuery): Promise<Page<Course>> {
     const conditions: SQL[] = [eq(courses.orgId, orgId)];
     if (query.status) {
       conditions.push(eq(courses.status, query.status));
@@ -126,8 +148,9 @@ export class DrizzleContentRepository implements ContentRepository {
     const orderBy = direction === 'desc' ? desc(sortExpr) : asc(sortExpr);
 
     const rows = await this.db
-      .select()
+      .select({ course: courses, settingsValue: settings.value })
       .from(courses)
+      .leftJoin(settings, courseSettingsJoin)
       .where(where)
       .orderBy(orderBy)
       .limit(query.pageSize)
@@ -136,23 +159,24 @@ export class DrizzleContentRepository implements ContentRepository {
     const [totalRow] = await this.db.select({ value: count() }).from(courses).where(where);
 
     return {
-      rows: rows.map(toCourse),
+      rows: rows.map((row) => toCourse(row.course, row.settingsValue)),
       total: totalRow?.value ?? 0,
       page: query.page,
       pageSize: query.pageSize,
     };
   }
 
-  async findById(orgId: string, id: string): Promise<Omit<Course, 'settings'> | null> {
+  async findCourseById(orgId: string, id: string): Promise<Course | null> {
     const [row] = await this.db
-      .select()
+      .select({ course: courses, settingsValue: settings.value })
       .from(courses)
+      .leftJoin(settings, courseSettingsJoin)
       .where(and(eq(courses.orgId, orgId), eq(courses.id, id)))
       .limit(1);
-    return row ? toCourse(row) : null;
+    return row ? toCourse(row.course, row.settingsValue) : null;
   }
 
-  async create(orgId: string, input: CreateCourseInput, slug: string): Promise<Omit<Course, 'settings'>> {
+  async createCourse(orgId: string, input: CreateCourseInput, slug: string): Promise<Course> {
     // Registry row + concrete row share one id. Both inserts run on the same
     // executor — mutations reach this repository tx-bound (ContentUnitOfWork),
     // so they commit or roll back together.
@@ -172,14 +196,14 @@ export class DrizzleContentRepository implements ContentRepository {
     if (!inserted) {
       throw new Error('failed to insert course');
     }
-    const created = await this.findById(orgId, inserted.id);
+    const created = await this.findCourseById(orgId, inserted.id);
     if (!created) {
       throw new Error('failed to load created course');
     }
     return created;
   }
 
-  async update(orgId: string, id: string, patch: UpdateCourseInput): Promise<Omit<Course, 'settings'> | null> {
+  async updateCourse(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course | null> {
     const set: Record<string, unknown> = { updatedAt: new Date() };
     if (patch.title !== undefined) {
       set.title = patch.title;
@@ -206,10 +230,56 @@ export class DrizzleContentRepository implements ContentRepository {
     if (!updated) {
       return null;
     }
-    return this.findById(orgId, id);
+    return this.findCourseById(orgId, id);
   }
 
-  async delete(orgId: string, id: string): Promise<boolean> {
+  async patchCourseSettings(
+    orgId: string,
+    id: string,
+    value: Partial<CourseSettings>,
+  ): Promise<CourseSettings> {
+    const key = and(
+      eq(settings.orgId, orgId),
+      eq(settings.namespace, SETTINGS_NAMESPACE),
+      eq(settings.scopeId, id),
+    );
+
+    // Merge in JS under a row lock, same as the settings repository: the read
+    // and the write must be one atomic unit or concurrent patches would
+    // clobber each other's sibling keys.
+    const merged = await this.tx(async (tx) => {
+      let [existing] = await tx.select().from(settings).where(key).for('update');
+
+      if (!existing) {
+        const [inserted] = await tx
+          .insert(settings)
+          .values({ orgId, namespace: SETTINGS_NAMESPACE, scopeId: id, value: value as Setting['value'] })
+          .onConflictDoNothing()
+          .returning();
+        if (inserted) {
+          return inserted.value;
+        }
+        [existing] = await tx.select().from(settings).where(key).for('update');
+        if (!existing) {
+          throw new Error('course settings patch: row vanished mid-transaction');
+        }
+      }
+
+      const [updated] = await tx
+        .update(settings)
+        .set({ value: deepMerge(existing.value, value) as Setting['value'], updatedAt: new Date() })
+        .where(key)
+        .returning();
+      if (!updated) {
+        throw new Error('course settings patch returned no row');
+      }
+      return updated.value;
+    });
+
+    return { ...courseSettingsDefaults, ...merged } as CourseSettings;
+  }
+
+  async deleteCourse(orgId: string, id: string): Promise<boolean> {
     // Deletes go through the registry: cascades to the course row and its
     // entitlements in one statement. Never delete from `courses` directly —
     // that would strand the registry row.
@@ -229,7 +299,7 @@ export class DrizzleContentRepository implements ContentRepository {
   // join: `saveActivity` upserts the row and replaces its asset links; deletes
   // drop the links first (they FK the activity), then the activity rows.
 
-  listForCourse(orgId: string, courseId: string): Promise<Module[]> {
+  listCourseModules(orgId: string, courseId: string): Promise<Module[]> {
     return this.tx((tx) => this.listModules(tx, orgId, courseId));
   }
 

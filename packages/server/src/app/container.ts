@@ -269,7 +269,6 @@ export async function buildContainer(
   const content = new ContentServiceImpl({
     repo: new DrizzleContentRepository(db, contentLogger),
     uow: contentUow,
-    settings,
     logger: contentLogger,
   });
   // Entitlements: reads on the root db; writes + outbox append in one tx.

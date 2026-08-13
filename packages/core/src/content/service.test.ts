@@ -4,21 +4,6 @@ import { ContentServiceImpl } from './service.js';
 import type { ContentRepository, ContentUnitOfWork } from './ports.js';
 import type { Activity, Course, Download, DownloadAsset, Module } from './model.js';
 import type { NewDomainEvent, OutboxAppender } from '../shared/ports.js';
-import { SettingsService, type SettingsRepository } from '../shared/settings.js';
-
-function makeSettings() {
-  const repo: SettingsRepository = {
-    find: vi.fn(async () => []),
-    findMany: vi.fn(async () => []),
-    patch: vi.fn(async (_orgId: string, namespace: string, scopeId: string, value: unknown) => ({
-      namespace,
-      scopeId,
-      value: value as Record<string, unknown>,
-    })),
-  };
-  return { settings: new SettingsService(repo), settingsRepo: repo };
-}
-
 const AT = new Date('2026-01-01T00:00:00.000Z');
 
 function makeCourse(over: Partial<Course> = {}): Course {
@@ -41,12 +26,13 @@ function makeCourse(over: Partial<Course> = {}): Course {
 
 function makeRepo(): ContentRepository {
   return {
-    list: vi.fn(),
-    findById: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    listForCourse: vi.fn(),
+    listCourses: vi.fn(),
+    findCourseById: vi.fn(),
+    createCourse: vi.fn(),
+    updateCourse: vi.fn(),
+    patchCourseSettings: vi.fn(),
+    deleteCourse: vi.fn(),
+    listCourseModules: vi.fn(),
     listActivitiesForCourse: vi.fn(),
     listActivityAssetsForCourse: vi.fn(),
     findActivity: vi.fn(),
@@ -87,9 +73,8 @@ function fakeUow(repo: ContentRepository) {
 
 function build(repo = makeRepo()) {
   const { uow, append, appended } = fakeUow(repo);
-  const { settings, settingsRepo } = makeSettings();
-  const svc = new ContentServiceImpl({ repo, uow, settings });
-  return { svc, repo, append, appended, settingsRepo };
+  const svc = new ContentServiceImpl({ repo, uow });
+  return { svc, repo, append, appended };
 }
 
 function makeActivity(over: Partial<Activity> = {}): Activity {
@@ -123,78 +108,56 @@ describe('ContentServiceImpl', () => {
   it('derives the slug from the title on create', async () => {
     const repo = makeRepo();
     const created = makeCourse({ title: 'My New Course', slug: 'my-new-course' });
-    (repo.create as ReturnType<typeof vi.fn>).mockResolvedValue(created);
+    (repo.createCourse as ReturnType<typeof vi.fn>).mockResolvedValue(created);
 
     const { svc } = build(repo);
     const result = await svc.createCourse('org1', { title: 'My New Course' });
 
-    expect(repo.create).toHaveBeenCalledWith('org1', { title: 'My New Course' }, 'my-new-course');
+    expect(repo.createCourse).toHaveBeenCalledWith('org1', { title: 'My New Course' }, 'my-new-course');
     expect(result).toEqual(created);
   });
 
   it('delegates course reads to the content repository', async () => {
     const repo = makeRepo();
     const course = makeCourse();
-    (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(course);
+    (repo.findCourseById as ReturnType<typeof vi.fn>).mockResolvedValue(course);
 
     const { svc, append } = build(repo);
     const result = await svc.getCourse('org1', 'c1');
 
-    expect(repo.findById).toHaveBeenCalledWith('org1', 'c1');
+    expect(repo.findCourseById).toHaveBeenCalledWith('org1', 'c1');
     expect(result).toEqual({ ...course, settings: { transcriptDownloads: false } });
     expect(append).not.toHaveBeenCalled();
   });
 
-  it('overlays the settings store onto the course read', async () => {
+  it('delegates a settings patch to the repository and returns its result', async () => {
     const repo = makeRepo();
-    (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(makeCourse());
-
-    const { svc, settingsRepo } = build(repo);
-    (settingsRepo.find as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { namespace: 'content', scopeId: 'c1', value: { transcriptDownloads: true } },
-    ]);
-    const result = await svc.getCourse('org1', 'c1');
-
-    expect(settingsRepo.find).toHaveBeenCalledWith('org1', 'c1', 'content');
-    expect(result?.settings).toEqual({ transcriptDownloads: true });
-  });
-
-  it('serves the defaults when the settings store is empty', async () => {
-    const repo = makeRepo();
-    (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(makeCourse());
-
-    const { svc } = build(repo);
-
-    expect((await svc.getCourse('org1', 'c1'))?.settings).toEqual({ transcriptDownloads: false });
-  });
-
-  it('patches settings into the content namespace and returns them complete', async () => {
-    const repo = makeRepo();
-    (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(makeCourse());
-
-    const { svc, settingsRepo } = build(repo);
-    const result = await svc.patchSettings('org1', 'c1', { transcriptDownloads: true });
-
-    expect(settingsRepo.patch).toHaveBeenCalledWith('org1', 'content', 'c1', {
+    (repo.findCourseById as ReturnType<typeof vi.fn>).mockResolvedValue(makeCourse());
+    (repo.patchCourseSettings as ReturnType<typeof vi.fn>).mockResolvedValue({
       transcriptDownloads: true,
     });
+
+    const { svc } = build(repo);
+    const result = await svc.patchSettings('org1', 'c1', { transcriptDownloads: true });
+
+    expect(repo.patchCourseSettings).toHaveBeenCalledWith('org1', 'c1', { transcriptDownloads: true });
     expect(result).toEqual({ transcriptDownloads: true });
   });
 
   it('throws NotFoundError when patching settings on a course that does not exist', async () => {
     const repo = makeRepo();
-    (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (repo.findCourseById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-    const { svc, settingsRepo } = build(repo);
+    const { svc } = build(repo);
 
     await expect(svc.patchSettings('org1', 'missing', {})).rejects.toThrow(NotFoundError);
-    expect(settingsRepo.patch).not.toHaveBeenCalled();
+    expect(repo.patchCourseSettings).not.toHaveBeenCalled();
   });
 
   it('appends course.created (org + full snapshot) inside the unit of work', async () => {
     const repo = makeRepo();
     const created = makeCourse();
-    (repo.create as ReturnType<typeof vi.fn>).mockResolvedValue(created);
+    (repo.createCourse as ReturnType<typeof vi.fn>).mockResolvedValue(created);
 
     const { svc, appended } = build(repo);
     await svc.createCourse('org1', { title: 'Intro' });
@@ -207,12 +170,12 @@ describe('ContentServiceImpl', () => {
   it('appends course.updated with the updated snapshot', async () => {
     const repo = makeRepo();
     const updated = makeCourse({ title: 'Renamed' });
-    (repo.update as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
+    (repo.updateCourse as ReturnType<typeof vi.fn>).mockResolvedValue(updated);
 
     const { svc, appended } = build(repo);
     const result = await svc.updateCourse('org1', 'c1', { title: 'Renamed' });
 
-    expect(repo.update).toHaveBeenCalledWith('org1', 'c1', { title: 'Renamed' });
+    expect(repo.updateCourse).toHaveBeenCalledWith('org1', 'c1', { title: 'Renamed' });
     expect(result).toEqual(updated);
     expect(appended).toEqual([
       { type: 'content.course.updated', version: 1, orgId: 'org1', data: updated },
@@ -221,7 +184,7 @@ describe('ContentServiceImpl', () => {
 
   it('throws NotFoundError and appends nothing when update finds no course', async () => {
     const repo = makeRepo();
-    (repo.update as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (repo.updateCourse as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     const { svc, append } = build(repo);
     await expect(svc.updateCourse('org1', 'missing', { title: 'X' })).rejects.toThrow(
@@ -233,8 +196,8 @@ describe('ContentServiceImpl', () => {
   it('appends course.deleted with the pre-delete snapshot', async () => {
     const repo = makeRepo();
     const course = makeCourse();
-    (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(course);
-    (repo.delete as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+    (repo.findCourseById as ReturnType<typeof vi.fn>).mockResolvedValue(course);
+    (repo.deleteCourse as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
     const { svc, appended } = build(repo);
     await svc.deleteCourse('org1', 'c1');
@@ -246,18 +209,18 @@ describe('ContentServiceImpl', () => {
 
   it('throws NotFoundError and appends nothing when remove finds no course', async () => {
     const repo = makeRepo();
-    (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (repo.findCourseById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     const { svc, repo: r, append } = build(repo);
     await expect(svc.deleteCourse('org1', 'missing')).rejects.toThrow(NotFoundError);
-    expect(r.delete).not.toHaveBeenCalled();
+    expect(r.deleteCourse).not.toHaveBeenCalled();
     expect(append).not.toHaveBeenCalled();
   });
 
   it('throws NotFoundError when the course vanishes between snapshot and delete', async () => {
     const repo = makeRepo();
-    (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(makeCourse());
-    (repo.delete as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    (repo.findCourseById as ReturnType<typeof vi.fn>).mockResolvedValue(makeCourse());
+    (repo.deleteCourse as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
     const { svc, append } = build(repo);
     await expect(svc.deleteCourse('org1', 'c1')).rejects.toThrow(NotFoundError);
@@ -266,7 +229,7 @@ describe('ContentServiceImpl', () => {
 
   it('does not append when the write fails — the error propagates out of run', async () => {
     const repo = makeRepo();
-    (repo.create as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('boom'));
+    (repo.createCourse as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('boom'));
 
     const { svc, append } = build(repo);
     await expect(svc.createCourse('org1', { title: 'Intro' })).rejects.toThrow('boom');
@@ -532,15 +495,14 @@ describe('logging', () => {
     const { logger, entries } = createCapturingLogger();
     const repo = makeRepo();
     const course = makeCourse();
-    (repo.create as ReturnType<typeof vi.fn>).mockResolvedValue(course);
-    (repo.update as ReturnType<typeof vi.fn>).mockResolvedValue(course);
-    (repo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(course);
-    (repo.delete as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+    (repo.createCourse as ReturnType<typeof vi.fn>).mockResolvedValue(course);
+    (repo.updateCourse as ReturnType<typeof vi.fn>).mockResolvedValue(course);
+    (repo.findCourseById as ReturnType<typeof vi.fn>).mockResolvedValue(course);
+    (repo.deleteCourse as ReturnType<typeof vi.fn>).mockResolvedValue(true);
     const { uow } = fakeUow(repo);
     const svc = new ContentServiceImpl({
       repo,
       uow,
-      settings: makeSettings().settings,
       logger,
     });
 
@@ -569,7 +531,6 @@ describe('logging', () => {
     const svc = new ContentServiceImpl({
       repo,
       uow,
-      settings: makeSettings().settings,
       logger,
     });
 
@@ -598,7 +559,6 @@ describe('logging', () => {
     const svc = new ContentServiceImpl({
       repo,
       uow,
-      settings: makeSettings().settings,
       logger,
     });
 
