@@ -19,6 +19,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { DbExecutor, Tx } from '../client.js';
 import type {
   Activity,
+  ActivityAsset,
   AddDownloadAssetInput,
   ContentRepository,
   Course,
@@ -242,6 +243,25 @@ export class DrizzleContentRepository implements ContentRepository {
       .from(activities)
       .where(and(eq(activities.orgId, orgId), eq(activities.courseId, courseId)))
       .orderBy(activities.moduleId, activities.seq);
+  }
+
+  // Bare join-table rows; the activities join only scopes them to the course.
+  async listActivityAssetsForCourse(orgId: string, courseId: string): Promise<ActivityAsset[]> {
+    return this.db
+      .select({
+        orgId: activityAssets.orgId,
+        id: activityAssets.id,
+        activityId: activityAssets.activityId,
+        assetId: activityAssets.assetId,
+        seq: activityAssets.seq,
+      })
+      .from(activityAssets)
+      .innerJoin(
+        activities,
+        and(eq(activities.orgId, activityAssets.orgId), eq(activities.id, activityAssets.activityId)),
+      )
+      .where(and(eq(activityAssets.orgId, orgId), eq(activities.courseId, courseId)))
+      .orderBy(activityAssets.activityId, activityAssets.seq);
   }
 
   async findActivity(orgId: string, activityId: string): Promise<Activity | null> {

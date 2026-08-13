@@ -16,6 +16,7 @@ import { isManager } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import type {
   Automation,
+  AutomationAction,
   AutomationTriggerInfo,
   AvailableAction,
   IntegrationConnection,
@@ -100,7 +101,10 @@ export function AutomationEditor({
       setDraft((d) => {
         const actions = [...d.actions];
         // New type, fresh inputs — the old action's input keys don't carry over.
-        actions[index] = { type, input: def ? schemaDefaults(def.inputSchema) : {} };
+        actions[index] = {
+          type,
+          input: def ? (schemaDefaults(def.inputSchema) as AutomationAction["input"]) : {},
+        };
         return { ...d, actions };
       });
     },
@@ -110,7 +114,7 @@ export function AutomationEditor({
   const changeActionInput = useCallback((index: number, input: Record<string, unknown>) => {
     setDraft((d) => {
       const actions = [...d.actions];
-      actions[index] = { ...actions[index], input };
+      actions[index] = { ...actions[index], input: input as AutomationAction["input"] };
       return { ...d, actions };
     });
   }, []);

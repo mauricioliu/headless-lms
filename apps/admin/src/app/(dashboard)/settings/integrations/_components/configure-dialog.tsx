@@ -1,5 +1,7 @@
 "use client";
 
+import type { JsonValueInput } from "@headless-lms/sdk";
+
 import { useEffect, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -53,7 +55,7 @@ export function ConfigureDialog({
     startTransition(async () => {
       try {
         await configureConnectionAction(connection.id, {
-          config: values.config,
+          config: values.config as Record<string, JsonValueInput> | undefined,
           active: values.active,
         });
         toast.success(`${name} updated`);

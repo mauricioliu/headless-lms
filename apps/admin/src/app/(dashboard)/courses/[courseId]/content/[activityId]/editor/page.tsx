@@ -20,7 +20,7 @@ export default async function ActivityEditorPage({
 }) {
   const { courseId, activityId } = await params;
 
-  const modules = await serverApi.listModules(courseId);
+  const modules = await serverApi.moduleTree(courseId);
 
   const parent = modules.find((m) => m.activities.some((a) => a.id === activityId));
   const activity = parent?.activities.find((a) => a.id === activityId);

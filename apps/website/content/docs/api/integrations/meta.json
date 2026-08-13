@@ -1,6 +1,6 @@
 {
   "title": "Integrations",
-  "description": "Third-party integration connections",
+  "description": "Connections to external services",
   "pages": [
     "listAvailableIntegrations",
     "listConnections",

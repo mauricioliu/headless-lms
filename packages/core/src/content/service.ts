@@ -1,5 +1,6 @@
 import type {
   Activity,
+  ActivityAsset,
   Course,
   CourseSettings,
   Download,
@@ -155,6 +156,9 @@ export class ContentServiceImpl implements ContentService {
   }
   listCourseActivities(orgId: string, courseId: string): Promise<Activity[]> {
     return this.repo.listActivitiesForCourse(orgId, courseId);
+  }
+  listCourseActivityAssets(orgId: string, courseId: string): Promise<ActivityAsset[]> {
+    return this.repo.listActivityAssetsForCourse(orgId, courseId);
   }
   getActivity(orgId: string, activityId: string): Promise<Activity | null> {
     return this.repo.findActivity(orgId, activityId);

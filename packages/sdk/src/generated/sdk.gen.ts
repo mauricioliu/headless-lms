@@ -81,6 +81,8 @@ import type {
   InvokeConnectionActionErrors,
   InvokeConnectionActionResponses,
   JsonValueInput,
+  ListActivitiesResponses,
+  ListActivityAssetsResponses,
   ListActivityCommentsErrors,
   ListActivityCommentsResponses,
   ListAssetsErrors,
@@ -99,6 +101,8 @@ import type {
   ListDownloadAssetsResponses,
   ListDownloadsResponses,
   ListEntitlementsResponses,
+  ListLearnActivitiesErrors,
+  ListLearnActivitiesResponses,
   ListLearnCoursesResponses,
   ListLearnDownloadsResponses,
   ListLearnModulesErrors,
@@ -1266,6 +1270,29 @@ export class Content {
   }
 
   /**
+   * List an enrolled course's published activities
+   */
+  public static listLearnActivities<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListLearnActivitiesResponses, ListLearnActivitiesErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "courseId" }] }]);
+    return (options?.client ?? client).get<
+      ListLearnActivitiesResponses,
+      ListLearnActivitiesErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/courses/{courseId}/activities",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
    * Downloads the student is actively entitled to
    */
   public static listLearnDownloads<ThrowOnError extends boolean = false>(
@@ -1389,6 +1416,47 @@ export class Content {
         ...options?.headers,
         ...params.headers,
       },
+    });
+  }
+
+  /**
+   * List a course's activities
+   */
+  public static listActivities<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListActivitiesResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "courseId" }] }]);
+    return (options?.client ?? client).get<ListActivitiesResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/courses/{courseId}/activities",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * List a course's activity→asset links
+   */
+  public static listActivityAssets<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListActivityAssetsResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "courseId" }] }]);
+    return (options?.client ?? client).get<
+      ListActivityAssetsResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/courses/{courseId}/activity-assets",
+      ...options,
+      ...params,
     });
   }
 

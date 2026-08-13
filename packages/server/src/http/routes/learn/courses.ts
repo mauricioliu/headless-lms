@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
+  ActivityList,
   Course,
   ErrorBody,
   LearnCourseIdParam,
@@ -82,6 +83,30 @@ export async function learnCoursesRoutes(
         throw new NotFoundError('Course', req.params.courseId);
       }
       return modules;
+    },
+  });
+
+  r.route({
+    method: 'GET',
+    url: '/api/learn/courses/:courseId/activities',
+    preHandler: app.requireOrgSession,
+    schema: {
+      operationId: 'listLearnActivities',
+      tags: ['Content'],
+      summary: "List an enrolled course's published activities",
+      params: LearnCourseIdParam,
+      response: { 200: ActivityList, 404: ErrorBody },
+    },
+    handler: async (req) => {
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      const activities = await learn.listActivities(req.orgId, orgUser.id, req.params.courseId);
+      if (!activities) {
+        throw new NotFoundError('Course', req.params.courseId);
+      }
+      return activities;
     },
   });
 }

@@ -4,7 +4,7 @@
 // the reducer in ./comment-state so the rules stay testable; this file owns
 // only the network calls and the request-ordering guard.
 import { useCallback, useEffect, useReducer, useRef } from "react";
-import { Learn } from "@headless-lms/sdk";
+import { Discussion } from "@headless-lms/sdk";
 import type { CommentAuthor, CommentView, ReactionEmoji } from "@/lib/api/types";
 
 import { ensureClientSdk } from "@/lib/api/client-sdk";
@@ -41,7 +41,7 @@ export function useComments(activityId: string): UseComments {
     ensureClientSdk();
     dispatch({ kind: "loading" });
     let cancelled = false;
-    void Learn.listActivityComments({ activityId })
+    void Discussion.listActivityComments({ activityId })
       .then((view) => {
         if (cancelled || current.current !== activityId) return;
         dispatch({ kind: "loaded", view });
@@ -75,7 +75,7 @@ export function useComments(activityId: string): UseComments {
     async (body: string, parentId: string | null) => {
       ensureClientSdk();
       try {
-        const comment = await Learn.postComment({ activityId, body, parentId });
+        const comment = await Discussion.postComment({ activityId, body, parentId });
         dispatch({ kind: "inserted", comment });
       } catch (err: unknown) {
         dispatch({ kind: "failed", message: message(err) });
@@ -88,7 +88,7 @@ export function useComments(activityId: string): UseComments {
   const edit = useCallback(async (id: string, body: string) => {
     ensureClientSdk();
     try {
-      const comment = await Learn.editComment({ commentId: id, body });
+      const comment = await Discussion.editComment({ commentId: id, body });
       dispatch({ kind: "replaced", id, comment });
     } catch (err: unknown) {
       dispatch({ kind: "failed", message: message(err) });
@@ -102,7 +102,7 @@ export function useComments(activityId: string): UseComments {
         () => dispatch({ kind: "removed", id, by }),
         async () => {
           ensureClientSdk();
-          await Learn.deleteComment({ commentId: id });
+          await Discussion.deleteComment({ commentId: id });
         },
       ),
     [optimistic],
@@ -114,8 +114,8 @@ export function useComments(activityId: string): UseComments {
     ensureClientSdk();
     try {
       const state = emoji
-        ? await Learn.setCommentReaction({ commentId: id, emoji })
-        : await Learn.clearCommentReaction({ commentId: id });
+        ? await Discussion.setCommentReaction({ commentId: id, emoji })
+        : await Discussion.clearCommentReaction({ commentId: id });
       dispatch({ kind: "reacted", id, ...state });
     } catch (err: unknown) {
       dispatch({ kind: "failed", message: message(err) });
@@ -128,7 +128,7 @@ export function useComments(activityId: string): UseComments {
   const report = useCallback(async (id: string, reason: string) => {
     ensureClientSdk();
     try {
-      await Learn.reportComment({ commentId: id, reason });
+      await Discussion.reportComment({ commentId: id, reason });
     } catch (err: unknown) {
       dispatch({ kind: "failed", message: message(err) });
       throw err;

@@ -1,5 +1,7 @@
 "use client";
 
+import type { JsonValueInput } from "@headless-lms/sdk";
+
 import { useEffect, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -46,7 +48,10 @@ export function ReconnectDialog({
     if (!connection) return;
     startTransition(async () => {
       try {
-        await reconnectIntegrationAction(connection.id, values.secrets);
+        await reconnectIntegrationAction(
+          connection.id,
+          values.secrets as Record<string, JsonValueInput>,
+        );
         toast.success(`${name} reconnected`);
         onOpenChange(false);
       } catch (err) {

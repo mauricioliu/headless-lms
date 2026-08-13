@@ -15,16 +15,17 @@ export default async function CoursePlayerPage({
 }) {
   const { courseId } = await params;
   const session = await requireAuth();
-  const [course, modules, org, viewer, progress] = await Promise.all([
+  const [course, modules, activities, org, viewer, progress] = await Promise.all([
     learnApi.getCourse(courseId),
     learnApi.listModules(courseId),
+    learnApi.listActivities(courseId),
     learnApi.org(),
     learnApi.viewer(),
     learnApi.courseProgress(courseId),
   ]);
-  if (!course || !modules) notFound();
+  if (!course || !modules || !activities) notFound();
 
-  const adapted = adaptCourse(course, modules);
+  const adapted = adaptCourse(course, modules, activities);
   // Where the student left off: the first activity in course order they
   // haven't completed.
   const completion = progress?.activities ?? {};

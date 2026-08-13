@@ -11,7 +11,7 @@ export default async function CourseContentTab({
 }) {
   const { courseId } = await params;
 
-  const modules = await serverApi.listModules(courseId);
+  const modules = await serverApi.moduleTree(courseId);
 
   return (
     <section className="flex flex-col gap-3">

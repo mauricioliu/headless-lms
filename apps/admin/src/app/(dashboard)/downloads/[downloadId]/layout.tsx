@@ -19,16 +19,18 @@ export default async function DownloadLayout({
   const { downloadId } = await params;
 
   const downloadPromise = serverApi.getDownload(downloadId);
+  const statsPromise = serverApi.downloadStats(downloadId);
   const session = await requireAuth(downloadPromise);
   if (!isManager(session.role)) {
     void downloadPromise.catch(() => {});
+    void statsPromise.catch(() => {});
     return <ForbiddenView description="You don't have access to manage this download." />;
   }
-  const download = await downloadPromise;
+  const [download, stats] = await Promise.all([downloadPromise, statsPromise]);
 
   return (
     <div className="flex flex-col gap-8">
-      <DownloadHeader download={download} />
+      <DownloadHeader download={download} stats={stats} />
       {children}
     </div>
   );

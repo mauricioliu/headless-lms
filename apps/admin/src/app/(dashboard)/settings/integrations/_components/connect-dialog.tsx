@@ -1,5 +1,7 @@
 "use client";
 
+import type { JsonValueInput } from "@headless-lms/sdk";
+
 import { useEffect, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -51,8 +53,8 @@ export function ConnectDialog({
       try {
         await connectIntegrationAction({
           integrationId: integration.id,
-          secrets: values.secrets,
-          config: values.config,
+          secrets: values.secrets as Record<string, JsonValueInput>,
+          config: values.config as Record<string, JsonValueInput> | undefined,
         });
         toast.success(`${name} connected`);
         onOpenChange(false);

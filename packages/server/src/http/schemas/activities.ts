@@ -3,6 +3,7 @@
 // opaque settings blob at a position (`seq`) with a set of linked assets.
 import { z } from "zod";
 import {
+  activityAssetSchema,
   activitySchema,
   moduleSchema,
   saveActivityInputSchema,
@@ -11,12 +12,23 @@ import {
 export const Activity = activitySchema;
 export type Activity = z.infer<typeof Activity>;
 
+export const ActivityAsset = activityAssetSchema;
+export type ActivityAsset = z.infer<typeof ActivityAsset>;
+
 export const Module = moduleSchema;
 export type Module = z.infer<typeof Module>;
 
 /** Module/activity-write endpoints return the full, reordered module list. */
 export const ModuleList = z.array(Module);
 export type ModuleList = z.infer<typeof ModuleList>;
+
+/** A course's activities as bare rows, ordered by (moduleId, seq). */
+export const ActivityList = z.array(Activity);
+export type ActivityList = z.infer<typeof ActivityList>;
+
+/** A course's activity→asset link rows, ordered by (activityId, seq). */
+export const ActivityAssetList = z.array(ActivityAsset);
+export type ActivityAssetList = z.infer<typeof ActivityAssetList>;
 
 export const CourseIdPathParam = z.object({ courseId: z.string() });
 export type CourseIdPathParam = z.infer<typeof CourseIdPathParam>;

@@ -1,5 +1,6 @@
 // Settings tab: every course-level setting, one section per group.
 import { serverApi } from "@/lib/api/server";
+import { courseSettingsOf } from "@/lib/api/compose";
 import { getAssetUrlAction } from "@/app/(dashboard)/media/actions";
 import { SettingsSurface } from "@/components/forms/settings-section";
 
@@ -25,7 +26,7 @@ export default async function CourseSettingsTab({
     <SettingsSurface>
       <BasicsForm course={course} />
       <ThumbnailField courseId={course.id} assetId={course.thumbnailAssetId} url={thumbnailUrl} />
-      <CommentsSettings courseId={course.id} settings={course.settings.comments} />
+      <CommentsSettings courseId={course.id} settings={courseSettingsOf(course).comments} />
       <CourseSettingsForm course={course} />
     </SettingsSurface>
   );

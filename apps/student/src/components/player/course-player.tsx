@@ -29,7 +29,7 @@ import {
 } from "@/lib/video-tracking";
 import editorMedia from "@/editor-media.config";
 import type { MediaTrackingEvent } from "@headless-lms/editor";
-import { Learn } from "@headless-lms/sdk";
+import { Assets } from "@headless-lms/sdk";
 
 import { PlayerHeader } from "./player-header";
 import { CurriculumSidebar, type SidebarStyle } from "./curriculum-sidebar";
@@ -173,7 +173,7 @@ export function CoursePlayer({
   const refreshUrl = useCallback(async (assetId: string): Promise<string | null> => {
     ensureClientSdk();
     try {
-      const ticket = await Learn.getAssetDownloadUrl({ id: assetId });
+      const ticket = await Assets.getAssetDownloadUrl({ id: assetId });
       return ticket.url;
     } catch {
       return null;

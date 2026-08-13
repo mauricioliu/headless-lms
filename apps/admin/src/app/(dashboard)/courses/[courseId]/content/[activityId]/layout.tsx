@@ -19,7 +19,7 @@ export default async function ActivityLayout({
 }) {
   const { courseId, activityId } = await params;
 
-  const modules = await serverApi.listModules(courseId);
+  const modules = await serverApi.moduleTree(courseId);
 
   const activity = modules.flatMap((m) => m.activities).find((a) => a.id === activityId);
   if (!activity) notFound();

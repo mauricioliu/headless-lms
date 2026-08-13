@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { RowActions } from "@/components/data-table/row-actions";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import type { Activity, Module } from "@/lib/api/types";
+import type { ActivityNode, ModuleTree } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
 import { ItemRow } from "./item-row";
@@ -60,7 +60,7 @@ function SortableModule({
   index,
   canEdit,
 }: {
-  module: Module;
+  module: ModuleTree;
   courseId: string;
   index: number;
   canEdit: boolean;
@@ -69,8 +69,8 @@ function SortableModule({
   const sensors = useDndSensors();
   const [isPending, startTransition] = useTransition();
 
-  const [items, setItems] = useState<Activity[]>(module.activities);
-  const [serverItems, setServerItems] = useState<Activity[]>(module.activities);
+  const [items, setItems] = useState<ActivityNode[]>(module.activities);
+  const [serverItems, setServerItems] = useState<ActivityNode[]>(module.activities);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(module.title);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -367,14 +367,14 @@ export function ModuleList({
   canEdit,
 }: {
   courseId: string;
-  modules: Module[];
+  modules: ModuleTree[];
   canEdit: boolean;
 }) {
   const router = useRouter();
   const sensors = useDndSensors();
   const [, startTransition] = useTransition();
-  const [ordered, setOrdered] = useState<Module[]>(modules);
-  const [serverModules, setServerModules] = useState<Module[]>(modules);
+  const [ordered, setOrdered] = useState<ModuleTree[]>(modules);
+  const [serverModules, setServerModules] = useState<ModuleTree[]>(modules);
 
   // Re-sync local ordering when the server returns a new module set (e.g. after
   // a revalidated Server Action streams fresh props down).

@@ -1,7 +1,8 @@
 {
   "title": "Assets",
-  "description": "Media library and uploads",
+  "description": "The org media library: uploads, serving and lifecycle",
   "pages": [
+    "getAssetDownloadUrl",
     "requestUpload",
     "confirmAsset",
     "listAssets",

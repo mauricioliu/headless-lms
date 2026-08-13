@@ -47,6 +47,7 @@ function makeRepo(): ContentRepository {
     delete: vi.fn(),
     listForCourse: vi.fn(),
     listActivitiesForCourse: vi.fn(),
+    listActivityAssetsForCourse: vi.fn(),
     findActivity: vi.fn(),
     findModule: vi.fn(),
     reorderModules: vi.fn(),

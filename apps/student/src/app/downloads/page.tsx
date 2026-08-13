@@ -3,7 +3,6 @@ import { Download as DownloadIcon, Inbox } from "lucide-react";
 
 import { requireAuth } from "@/lib/auth/server-session";
 import { learnApi } from "@/lib/api/server";
-import { formatBytes } from "@/lib/format";
 import type { Download } from "@/lib/api/types";
 
 async function thumbnailsFor(downloads: Download[]): Promise<Map<string, string>> {
@@ -22,7 +21,13 @@ export default async function DownloadsPage() {
   const downloadsPromise = learnApi.listDownloads();
   await requireAuth(downloadsPromise);
   const downloads = await downloadsPromise;
-  const thumbnails = await thumbnailsFor(downloads);
+  // File counts come from each download's own assets resource; the learn list
+  // row is the bare download record.
+  const [thumbnails, details] = await Promise.all([
+    thumbnailsFor(downloads),
+    Promise.all(downloads.map((d) => learnApi.getDownload(d.id))),
+  ]);
+  const fileCounts = new Map(downloads.map((d, i) => [d.id, details[i]?.assets.length ?? 0]));
 
   return (
     <div className="mx-auto max-w-[1180px] px-7 pb-[70px] pt-[30px]">
@@ -69,8 +74,8 @@ export default async function DownloadsPage() {
                   {download.description}
                 </p>
                 <div className="mt-auto text-[12.5px] text-ink-3">
-                  {download.assetCount} {download.assetCount === 1 ? "file" : "files"} ·{" "}
-                  {formatBytes(download.totalSize)}
+                  {fileCounts.get(download.id)}{" "}
+                  {fileCounts.get(download.id) === 1 ? "file" : "files"}
                 </div>
               </div>
             </Link>

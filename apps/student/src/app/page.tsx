@@ -26,11 +26,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
   // other as handled — no unhandledRejection noise while the request unwinds.
   const [rawCourses, org, sp] = await Promise.all([coursesPromise, orgPromise, paramsPromise]);
 
-  const courses = rawCourses.map(adaptCourseSummary);
-  // Progress is per-course on the API; fan out so the whole page — hero, stat
-  // chips, every bar — renders on the server instead of waiting on the client
-  // store to be seeded.
-  const progress = await Promise.all(courses.map((c) => learnApi.courseProgress(c.id)));
+  // Progress and activities are per-course on the API; fan out so the whole
+  // page — hero, stat chips, every bar — renders on the server instead of
+  // waiting on the client store to be seeded.
+  const [progress, activityLists] = await Promise.all([
+    Promise.all(rawCourses.map((c) => learnApi.courseProgress(c.id))),
+    Promise.all(rawCourses.map((c) => learnApi.listActivities(c.id))),
+  ]);
+  const courses = rawCourses.map((c, i) => adaptCourseSummary(c, activityLists[i]?.length ?? 0));
   const views = courses.map((course, i) => toCourseView(course, progress[i]?.activities ?? {}));
 
   const view = parseDashboardParams(sp);

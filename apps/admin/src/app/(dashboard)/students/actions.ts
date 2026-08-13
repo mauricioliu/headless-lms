@@ -3,7 +3,7 @@
 // Server actions for student mutations (list page + detail page).
 
 import { revalidatePath } from "next/cache";
-import { Organizations, Students } from "@headless-lms/sdk";
+import { Organizations } from "@headless-lms/sdk";
 
 import { authHeaders } from "@/lib/api/server-call";
 
@@ -42,17 +42,17 @@ export interface UpdateStudentInput {
 // student who hasn't accepted retires their pending invite, so the list has to
 // be revalidated too — their invite state moved.
 export async function updateStudentAction(id: string, input: UpdateStudentInput): Promise<void> {
-  await Students.updateStudent({ id, ...input }, await authHeaders());
+  await Organizations.updateStudent({ id, ...input }, await authHeaders());
   revalidatePath("/students");
   revalidatePath(`/students/${id}`);
 }
 
 export async function resendStudentInviteAction(id: string): Promise<void> {
-  await Students.resendStudentInvite({ id }, await authHeaders());
+  await Organizations.resendStudentInvite({ id }, await authHeaders());
   revalidatePath(`/students/${id}`);
 }
 
 export async function deleteStudentAction(id: string): Promise<void> {
-  await Students.deleteStudent({ id }, await authHeaders());
+  await Organizations.deleteStudent({ id }, await authHeaders());
   revalidatePath("/students");
 }

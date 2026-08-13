@@ -16,6 +16,8 @@ import type {
   GetEnrollmentSeriesResponse,
   GetOverviewResponse,
   GetStudentResponse,
+  ListActivitiesResponse,
+  ListActivityAssetsResponse,
   ListAssetsResponse,
   ListAutomationActionsResponse,
   ListAutomationTriggersResponse,
@@ -30,26 +32,44 @@ import type {
   ListStudentsResponse,
   RequestAssetDownloadResponse,
   RequestUploadResponse,
+  UpdateCourseSettingsResponse,
 } from "@headless-lms/sdk";
 
 // --- entities (straight from the SDK responses) ----------------------------
 
 export type Course = GetCourseResponse;
 export type CourseStatus = Course["status"];
-/** Course-wide delivery settings, stored server-side and always complete. */
-export type CourseSettings = Course["settings"];
+/**
+ * Course-wide delivery settings. On the course row they ride as an opaque
+ * JSON blob; the settings endpoint speaks this typed shape. `courseSettingsOf`
+ * (lib/api/compose) narrows the blob and fills defaults client-side.
+ */
+export type CourseSettings = UpdateCourseSettingsResponse;
 
 export type Download = GetDownloadResponse;
 export type DownloadStatus = Download["status"];
-export type DownloadAsset = ListDownloadAssetsResponse[number];
+/** Bare download→asset link row, exactly as the API stores it. */
+export type DownloadAssetLink = ListDownloadAssetsResponse[number];
+/** A link row joined client-side with its asset's file metadata for display. */
+export type DownloadAsset = DownloadAssetLink & {
+  filename: string;
+  contentType: string;
+  size: number;
+};
 
 export type Module = ListModulesResponse[number];
 
 /**
- * An activity is uniform on the wire: `{ id, moduleId, seq, settings, assetIds }`.
- * Everything content-specific lives in the opaque `settings` blob.
+ * An activity as the API serves it: a bare row whose content-specific data
+ * lives in the opaque `settings` blob. Asset links are their own resource
+ * (`listActivityAssets`); `ActivityNode` carries them joined client-side.
  */
-export type Activity = Module["activities"][number];
+export type Activity = ListActivitiesResponse[number];
+export type ActivityAssetLink = ListActivityAssetsResponse[number];
+export type ActivityNode = Activity & { assetIds: string[] };
+
+/** The module→activity tree, composed client-side from the bare lists. */
+export type ModuleTree = Module & { activities: ActivityNode[] };
 
 /**
  * The activity's authored content, stored inside `settings.content`. `config`
@@ -96,8 +116,22 @@ export interface SaveActivityInput {
 
 export type Student = GetStudentResponse;
 
-export type Entitlement = ListEntitlementsResponse["rows"][number];
-export type EntitlementStatus = Entitlement["status"];
+/** Bare entitlement grant row, exactly as the API stores it. */
+export type EntitlementGrant = ListEntitlementsResponse["rows"][number];
+/** active|expired|revoked — `expired` is derived client-side from `expiresAt`. */
+export type EntitlementStatus = EntitlementGrant["status"] | "expired";
+
+/**
+ * A grant row joined client-side with the student's identity and the granted
+ * content's title (each its own resource on the API), plus the derived status.
+ */
+export type Entitlement = Omit<EntitlementGrant, "status"> & {
+  status: EntitlementStatus;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  content: { id: string; type: "course" | "download"; title: string };
+};
 
 export type Member = ListMembersResponse["rows"][number];
 export type MemberStatus = Member["status"];

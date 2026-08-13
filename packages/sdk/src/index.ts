@@ -11,15 +11,13 @@ import { client } from "./generated/client.gen";
 import {
   Assets as AssetsGen,
   Automations as AutomationsGen,
-  Courses as CoursesGen,
-  Dashboard as DashboardGen,
+  Content as ContentGen,
   Discussion as DiscussionGen,
-  Downloads as DownloadsGen,
   Entitlements as EntitlementsGen,
   Integrations as IntegrationsGen,
-  Learn as LearnGen,
   Organizations as OrganizationsGen,
-  Students as StudentsGen,
+  Progress as ProgressGen,
+  Reporting as ReportingGen,
 } from "./generated/sdk.gen";
 
 /**
@@ -37,15 +35,13 @@ type Throwing<S> = {
 
 export const Assets = AssetsGen as Throwing<typeof AssetsGen>;
 export const Automations = AutomationsGen as Throwing<typeof AutomationsGen>;
-export const Courses = CoursesGen as Throwing<typeof CoursesGen>;
-export const Dashboard = DashboardGen as Throwing<typeof DashboardGen>;
+export const Content = ContentGen as Throwing<typeof ContentGen>;
 export const Discussion = DiscussionGen as Throwing<typeof DiscussionGen>;
-export const Downloads = DownloadsGen as Throwing<typeof DownloadsGen>;
 export const Entitlements = EntitlementsGen as Throwing<typeof EntitlementsGen>;
 export const Integrations = IntegrationsGen as Throwing<typeof IntegrationsGen>;
-export const Learn = LearnGen as Throwing<typeof LearnGen>;
 export const Organizations = OrganizationsGen as Throwing<typeof OrganizationsGen>;
-export const Students = StudentsGen as Throwing<typeof StudentsGen>;
+export const Progress = ProgressGen as Throwing<typeof ProgressGen>;
+export const Reporting = ReportingGen as Throwing<typeof ReportingGen>;
 
 export interface ConfigureSdkOptions {
   /** API origin, e.g. `https://api.example.com` or `http://localhost:8000`. */

@@ -21,7 +21,14 @@ import { DownloadTabsNav } from "./download-tabs-nav";
 // tab nav. Rendered by the download layout above every tab. Unlike the course
 // header, publish/delete live here directly instead of a separate
 // `*-header-actions` file — this task's shell doesn't need the extra split.
-export function DownloadHeader({ download }: { download: Download }) {
+export function DownloadHeader({
+  download,
+  stats,
+}: {
+  download: Download;
+  /** Composed client-side from the assets + grants resources (not on the row). */
+  stats: { assetCount: number; totalSize: number; entitledCount: number };
+}) {
   const user = useCurrentUser();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -71,11 +78,11 @@ export function DownloadHeader({ download }: { download: Download }) {
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-ink-3">
             <CourseStatusBadge status={download.status} />
             <Dot />
-            <span className="tabular-nums">{formatNumber(download.assetCount)} files</span>
+            <span className="tabular-nums">{formatNumber(stats.assetCount)} files</span>
             <Dot />
-            <span className="tabular-nums">{formatBytes(download.totalSize)}</span>
+            <span className="tabular-nums">{formatBytes(stats.totalSize)}</span>
             <Dot />
-            <span className="tabular-nums">{formatNumber(download.entitledCount)} entitled</span>
+            <span className="tabular-nums">{formatNumber(stats.entitledCount)} entitled</span>
             <Dot />
             <span>Updated {relativeTime(download.updatedAt)}</span>
           </div>

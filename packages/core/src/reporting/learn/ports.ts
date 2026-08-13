@@ -1,5 +1,6 @@
 // reporting/learn — ports.
 import type {
+  Activity,
   Course,
   Module,
   ContentRef,
@@ -16,6 +17,7 @@ export interface LearnReportService {
   listCourses(orgId: string, orgUserId: string): Promise<Course[]>;
   getCourse(orgId: string, orgUserId: string, courseId: string): Promise<Course | null>;
   listModules(orgId: string, orgUserId: string, courseId: string): Promise<Module[] | null>;
+  listActivities(orgId: string, orgUserId: string, courseId: string): Promise<Activity[] | null>;
   courseProgress(
     orgId: string,
     orgUserId: string,

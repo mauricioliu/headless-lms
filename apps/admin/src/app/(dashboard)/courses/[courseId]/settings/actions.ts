@@ -3,7 +3,7 @@
 // Server actions for the course Settings tab.
 
 import { revalidatePath } from "next/cache";
-import { Courses } from "@headless-lms/sdk";
+import { Content } from "@headless-lms/sdk";
 
 import { authHeaders } from "@/lib/api/server-call";
 import type { CommentSettings, Course, CourseSettings } from "@/lib/api/types";
@@ -13,7 +13,7 @@ export async function setCourseThumbnailAction(
   courseId: string,
   thumbnailAssetId: string | null,
 ): Promise<Course> {
-  const course = await Courses.updateCourse(
+  const course = await Content.updateCourse(
     { id: courseId, thumbnailAssetId },
     await authHeaders(),
   );
@@ -29,7 +29,7 @@ export async function setCommentsSettingsAction(
   courseId: string,
   comments: CommentSettings,
 ): Promise<CourseSettings> {
-  const settings = await Courses.updateCourseSettings(
+  const settings = await Content.updateCourseSettings(
     { id: courseId, comments },
     await authHeaders(),
   );

@@ -1,0 +1,8 @@
+{
+  "title": "Reporting",
+  "description": "Reporting and analytics",
+  "pages": [
+    "getOverview",
+    "getEnrollmentSeries"
+  ]
+}

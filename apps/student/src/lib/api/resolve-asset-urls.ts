@@ -13,7 +13,7 @@ import "server-only";
  */
 
 import { unstable_rethrow } from "next/navigation";
-import { Learn } from "@headless-lms/sdk";
+import { Assets } from "@headless-lms/sdk";
 
 import { authHeaders } from "./server-call";
 
@@ -66,7 +66,7 @@ export async function resolveAssetUrls(config: unknown): Promise<unknown> {
   await Promise.all(
     [...ids].map(async (id) => {
       try {
-        const ticket = await Learn.getAssetDownloadUrl({ id }, headers);
+        const ticket = await Assets.getAssetDownloadUrl({ id }, headers);
         urls.set(id, ticket.url);
       } catch (e) {
         // A 401 redirects by throwing, so let Next's control-flow errors pass.

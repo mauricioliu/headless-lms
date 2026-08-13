@@ -1,0 +1,18 @@
+{
+  "title": "Discussion",
+  "description": "Learner comments, replies, reactions and moderation",
+  "pages": [
+    "listActivityComments",
+    "postComment",
+    "editComment",
+    "deleteComment",
+    "clearCommentReaction",
+    "setCommentReaction",
+    "reportComment",
+    "listComments",
+    "publishComment",
+    "moderateRemoveComment",
+    "dismissCommentReports",
+    "replyToComment"
+  ]
+}

@@ -5,7 +5,14 @@
 import type { ContentService } from '../../content/index.js';
 import type { ProgressService } from '../../progress/index.js';
 import type { AssetsService } from '../../assets/index.js';
-import type { Course, Module, CourseProgressView, Download, DownloadAsset } from './model.js';
+import type {
+  Activity,
+  Course,
+  Module,
+  CourseProgressView,
+  Download,
+  DownloadAsset,
+} from './model.js';
 import type { LearnEntitlementReader, LearnReportService } from './ports.js';
 import type { Logger } from '../../shared/ports.js';
 import { noopLogger } from '../../shared/logger.js';
@@ -63,6 +70,19 @@ export class LearnReportServiceImpl implements LearnReportService {
       return null;
     }
     return this.content.listCourseModules(ref.orgId, courseId);
+  }
+
+  async listActivities(
+    orgId: string,
+    orgUserId: string,
+    courseId: string,
+  ): Promise<Activity[] | null> {
+    const ref = await this.reader.activeRef(orgId, orgUserId, courseId);
+    if (!ref) {
+      return null;
+    }
+    const activities = await this.content.listCourseActivities(ref.orgId, courseId);
+    return activities.filter((a) => isActivityPublished(a.settings));
   }
 
   async courseProgress(

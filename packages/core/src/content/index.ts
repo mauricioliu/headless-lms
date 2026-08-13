@@ -7,6 +7,7 @@ export type {
   CourseSettings,
   Module,
   Activity,
+  ActivityAsset,
   SaveActivityInput,
   DownloadStatus,
   Download,

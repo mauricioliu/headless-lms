@@ -4,13 +4,13 @@
   "pages": [
     "index",
     "organizations",
-    "courses",
-    "learn",
-    "students",
+    "content",
+    "progress",
+    "discussion",
+    "assets",
     "entitlements",
     "automations",
-    "dashboard",
-    "assets",
+    "reporting",
     "integrations"
   ]
 }

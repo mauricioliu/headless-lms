@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { serverApi } from "@/lib/api/server";
+import { courseSettingsOf } from "@/lib/api/compose";
 
 import { ActivitySettingsForm } from "./activity-settings-form";
 
@@ -14,9 +15,10 @@ export default async function ActivitySettingsPage({
   const { courseId, activityId } = await params;
 
   const [modules, course] = await Promise.all([
-    serverApi.listModules(courseId),
+    serverApi.moduleTree(courseId),
     serverApi.getCourse(courseId),
   ]);
+  const courseSettings = courseSettingsOf(course);
 
   const parent = modules.find((m) => m.activities.some((a) => a.id === activityId));
   const activity = parent?.activities.find((a) => a.id === activityId);
@@ -27,8 +29,8 @@ export default async function ActivitySettingsPage({
       courseId={courseId}
       moduleId={parent.id}
       activity={activity}
-      courseTranscriptDownloads={course.settings.transcriptDownloads}
-      courseCommentsEnabled={course.settings.comments?.enabled ?? false}
+      courseTranscriptDownloads={courseSettings.transcriptDownloads}
+      courseCommentsEnabled={courseSettings.comments?.enabled ?? false}
     />
   );
 }

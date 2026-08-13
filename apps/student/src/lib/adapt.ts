@@ -1,6 +1,8 @@
-// Maps the Learn wire types → the presentational view-model.
+// Maps the Learn wire types → the presentational view-model. The API serves
+// modules and activities as separate bare lists; the tree is composed here.
 import type {
   ActivitySettings,
+  Activity as WireActivity,
   CourseSummary,
   Course as WireCourse,
   Module as WireModule,
@@ -16,23 +18,24 @@ export function toneOf(id: string): CoverTone {
   return TONES[h % TONES.length];
 }
 
-export function adaptCourseSummary(c: CourseSummary): CourseSummaryVM {
+export function adaptCourseSummary(c: CourseSummary, lessonCount: number): CourseSummaryVM {
   return {
     id: c.id,
     title: c.title,
     description: c.description,
     category: c.category,
     tone: toneOf(c.id),
-    lessonCount: c.activityCount,
+    lessonCount,
   };
 }
 
-function adaptModule(m: WireModule): Module {
+function adaptModule(m: WireModule, activities: WireActivity[]): Module {
   return {
     id: m.id,
     title: m.title,
     order: m.seq,
-    lessons: m.activities
+    lessons: activities
+      .filter((a) => a.moduleId === m.id)
       .filter((a) => (a.settings as ActivitySettings | null)?.published !== false)
       .map((a): Lesson => {
         const s = (a.settings ?? {}) as ActivitySettings;
@@ -46,13 +49,17 @@ function adaptModule(m: WireModule): Module {
   };
 }
 
-export function adaptCourse(course: WireCourse, modules: WireModule[]): Course {
+export function adaptCourse(
+  course: WireCourse,
+  modules: WireModule[],
+  activities: WireActivity[],
+): Course {
   return {
     id: course.id,
     title: course.title,
     description: course.description,
     category: course.category,
     tone: toneOf(course.id),
-    modules: modules.map(adaptModule),
+    modules: modules.map((m) => adaptModule(m, activities)),
   };
 }

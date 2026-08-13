@@ -6,6 +6,7 @@ import type {
   GetLearnOrgResponse,
   ListLearnCoursesResponse,
   ListLearnDownloadsResponse,
+  ListLearnActivitiesResponse,
   ListLearnModulesResponse,
 } from "@headless-lms/sdk";
 
@@ -14,7 +15,7 @@ export type Course = GetLearnCourseResponse;
 export type Org = GetLearnOrgResponse;
 export type CourseSummary = ListLearnCoursesResponse[number];
 export type Module = ListLearnModulesResponse[number];
-export type Activity = Module["activities"][number];
+export type Activity = ListLearnActivitiesResponse[number];
 
 /** One activity's comments as the learner may see them. */
 export type ActivityComments = ListActivityCommentsResponse;

@@ -1,7 +1,7 @@
 // Ergonomic usage reporting over the generated SDK. The app reports facts;
 // the server decides completion — completed() resolves with the server's
 // answer, opened()/report() never throw.
-import { Learn } from "@headless-lms/sdk";
+import { Progress, type ReportProgressData } from "@headless-lms/sdk";
 
 export type ProgressTargetRef = { activity: string };
 
@@ -28,7 +28,10 @@ export interface ProgressReporter {
 export function progressReporter(target: ProgressTargetRef): ProgressReporter {
   const send = async (items: ProgressReportItem[]): Promise<ProgressStatusValue | null> => {
     try {
-      const result = await Learn.reportProgress({ activity: target.activity, reports: items });
+      const result = await Progress.reportProgress({
+        activity: target.activity,
+        reports: items as NonNullable<ReportProgressData["body"]>["reports"],
+      });
       return result.status;
     } catch {
       return null;

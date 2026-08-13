@@ -3,7 +3,7 @@
 // Server actions for course mutations.
 
 import { revalidatePath } from "next/cache";
-import { Courses } from "@headless-lms/sdk";
+import { Content } from "@headless-lms/sdk";
 
 import { authHeaders } from "@/lib/api/server-call";
 import type { Course } from "@/lib/api/types";
@@ -21,7 +21,7 @@ export interface CourseInput {
 }
 
 export async function createCourseAction(input: CourseInput): Promise<Course> {
-  const course = await Courses.createCourse(
+  const course = await Content.createCourse(
     { title: input.title, description: input.description, category: input.category },
     await authHeaders(),
   );
@@ -33,7 +33,7 @@ export async function updateCourseAction(
   id: string,
   patch: CourseInput & { status?: Course["status"] },
 ): Promise<Course> {
-  const course = await Courses.updateCourse(
+  const course = await Content.updateCourse(
     {
       id,
       title: patch.title,
@@ -52,11 +52,11 @@ export async function setCoursePublishedAction(
   id: string,
   status: Course["status"],
 ): Promise<void> {
-  await Courses.updateCourse({ id, status }, await authHeaders());
+  await Content.updateCourse({ id, status }, await authHeaders());
   revalidateCourse();
 }
 
 export async function deleteCourseAction(id: string): Promise<void> {
-  await Courses.deleteCourse({ id }, await authHeaders());
+  await Content.deleteCourse({ id }, await authHeaders());
   revalidateCourse();
 }

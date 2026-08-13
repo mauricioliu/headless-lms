@@ -1,5 +1,6 @@
 import type {
   Activity,
+  ActivityAsset,
   Course,
   CourseSettings,
   Download,
@@ -36,6 +37,7 @@ export interface ContentService {
 
   listCourseModules(orgId: string, courseId: string): Promise<Module[]>;
   listCourseActivities(orgId: string, courseId: string): Promise<Activity[]>;
+  listCourseActivityAssets(orgId: string, courseId: string): Promise<ActivityAsset[]>;
   getActivity(orgId: string, activityId: string): Promise<Activity | null>;
   getModule(orgId: string, moduleId: string): Promise<Module | null>;
   reorderModules(orgId: string, courseId: string, orderedIds: string[]): Promise<Module[]>;
@@ -101,6 +103,7 @@ export interface ContentRepository {
 
   listForCourse(orgId: string, courseId: string): Promise<Module[]>;
   listActivitiesForCourse(orgId: string, courseId: string): Promise<Activity[]>;
+  listActivityAssetsForCourse(orgId: string, courseId: string): Promise<ActivityAsset[]>;
   findActivity(orgId: string, activityId: string): Promise<Activity | null>;
   findModule(orgId: string, moduleId: string): Promise<Module | null>;
   reorderModules(orgId: string, courseId: string, orderedIds: string[]): Promise<Module[]>;

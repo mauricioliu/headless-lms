@@ -11,11 +11,12 @@ import "server-only";
  * rejected session before handing over to /login.
  */
 import { unstable_rethrow } from "next/navigation";
-import { Learn } from "@headless-lms/sdk";
+import { Assets, Content, Organizations, Progress } from "@headless-lms/sdk";
 
 import { statusOf } from "./shared";
 import { authHeaders } from "./server-call";
 import type {
+  Activity,
   Course,
   CourseSummary,
   Download,
@@ -49,21 +50,26 @@ async function orNull<T>(read: () => Promise<T>): Promise<T | null> {
 
 export const learnApi = {
   async listCourses(): Promise<CourseSummary[]> {
-    return await Learn.listLearnCourses(await authHeaders());
+    return await Content.listLearnCourses(await authHeaders());
   },
   async org(): Promise<Org> {
-    return await Learn.getLearnOrg(await authHeaders());
+    return await Organizations.getLearnOrg(await authHeaders());
   },
   async viewer(): Promise<Viewer> {
-    return await Learn.getLearnViewer(await authHeaders());
+    return await Organizations.getLearnViewer(await authHeaders());
   },
   async getCourse(courseId: string): Promise<Course | null> {
     const headers = await authHeaders();
-    return orNullOn404(() => Learn.getLearnCourse({ courseId }, headers));
+    return orNullOn404(() => Content.getLearnCourse({ courseId }, headers));
   },
   async listModules(courseId: string): Promise<Module[] | null> {
     const headers = await authHeaders();
-    return orNullOn404(() => Learn.listLearnModules({ courseId }, headers));
+    return orNullOn404(() => Content.listLearnModules({ courseId }, headers));
+  },
+  /** Bare published-activity rows for an enrolled course. */
+  async listActivities(courseId: string): Promise<Activity[] | null> {
+    const headers = await authHeaders();
+    return orNullOn404(() => Content.listLearnActivities({ courseId }, headers));
   },
   /** Progress is decoration on an otherwise-renderable page, so any failure
    *  (other than the 401 redirect) degrades to "no progress" rather than
@@ -73,19 +79,19 @@ export const learnApi = {
     positions: Record<string, unknown>;
   } | null> {
     const headers = await authHeaders();
-    return orNull(() => Learn.getLearnCourseProgress({ courseId }, headers));
+    return orNull(() => Progress.getLearnCourseProgress({ courseId }, headers));
   },
   async listDownloads(): Promise<Download[]> {
-    return await Learn.listLearnDownloads(await authHeaders());
+    return await Content.listLearnDownloads(await authHeaders());
   },
   async getDownload(downloadId: string): Promise<DownloadDetail | null> {
     const headers = await authHeaders();
-    return orNullOn404(() => Learn.getLearnDownload({ downloadId }, headers));
+    return orNullOn404(() => Content.getLearnDownload({ downloadId }, headers));
   },
   /** Sign a fresh short-lived URL for an org asset (e.g. a download thumbnail). */
   async assetUrl(assetId: string): Promise<string | null> {
     const headers = await authHeaders();
-    const ticket = await orNull(() => Learn.getAssetDownloadUrl({ id: assetId }, headers));
+    const ticket = await orNull(() => Assets.getAssetDownloadUrl({ id: assetId }, headers));
     return ticket?.url ?? null;
   },
 };

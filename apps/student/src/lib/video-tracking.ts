@@ -189,7 +189,10 @@ type ReportBody = NonNullable<ReportProgressData["body"]>;
 export function flushKeepalive(activityId: string, items: VideoReportItem[]): void {
   if (items.length === 0) return;
   const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-  const body: ReportBody = { activity: activityId, reports: items };
+  const body: ReportBody = {
+    activity: activityId,
+    reports: items as ReportBody["reports"],
+  };
   void fetch(`${base}/api/learn/progress`, {
     method: "POST",
     credentials: "include",

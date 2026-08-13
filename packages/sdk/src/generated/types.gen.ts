@@ -1111,6 +1111,46 @@ export type ListLearnModulesResponses = {
 
 export type ListLearnModulesResponse = ListLearnModulesResponses[keyof ListLearnModulesResponses];
 
+export type ListLearnActivitiesData = {
+  body?: never;
+  path: {
+    courseId: string;
+  };
+  query?: never;
+  url: "/api/learn/courses/{courseId}/activities";
+};
+
+export type ListLearnActivitiesErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+  };
+};
+
+export type ListLearnActivitiesError = ListLearnActivitiesErrors[keyof ListLearnActivitiesErrors];
+
+export type ListLearnActivitiesResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    orgId: string;
+    id: string;
+    moduleId: string;
+    courseId: string;
+    seq: number;
+    settings: JsonValue;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+};
+
+export type ListLearnActivitiesResponse =
+  ListLearnActivitiesResponses[keyof ListLearnActivitiesResponses];
+
 export type ReportProgressData = {
   body: {
     activity: string;
@@ -2040,6 +2080,58 @@ export type CreateModuleResponses = {
 };
 
 export type CreateModuleResponse = CreateModuleResponses[keyof CreateModuleResponses];
+
+export type ListActivitiesData = {
+  body?: never;
+  path: {
+    courseId: string;
+  };
+  query?: never;
+  url: "/api/courses/{courseId}/activities";
+};
+
+export type ListActivitiesResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    orgId: string;
+    id: string;
+    moduleId: string;
+    courseId: string;
+    seq: number;
+    settings: JsonValue;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+};
+
+export type ListActivitiesResponse = ListActivitiesResponses[keyof ListActivitiesResponses];
+
+export type ListActivityAssetsData = {
+  body?: never;
+  path: {
+    courseId: string;
+  };
+  query?: never;
+  url: "/api/courses/{courseId}/activity-assets";
+};
+
+export type ListActivityAssetsResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    orgId: string;
+    id: string;
+    activityId: string;
+    assetId: string;
+    seq: number;
+  }>;
+};
+
+export type ListActivityAssetsResponse =
+  ListActivityAssetsResponses[keyof ListActivityAssetsResponses];
 
 export type ReorderModulesData = {
   body: {

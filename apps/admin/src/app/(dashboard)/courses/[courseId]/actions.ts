@@ -3,7 +3,7 @@
 // Server actions for course-builder (detail) mutations.
 
 import { revalidatePath } from "next/cache";
-import { Courses } from "@headless-lms/sdk";
+import { Content, type JsonValueInput } from "@headless-lms/sdk";
 
 import { authHeaders } from "@/lib/api/server-call";
 import type {
@@ -32,13 +32,13 @@ export async function reorderModulesAction(
   courseId: string,
   orderedIds: string[],
 ): Promise<Module[]> {
-  const modules = await Courses.reorderModules({ courseId, orderedIds }, await authHeaders());
+  const modules = await Content.reorderModules({ courseId, orderedIds }, await authHeaders());
   revalidateBuilder();
   return modules;
 }
 
 export async function createModuleAction(courseId: string, title: string): Promise<Module[]> {
-  const modules = await Courses.createModule({ courseId, title }, await authHeaders());
+  const modules = await Content.createModule({ courseId, title }, await authHeaders());
   revalidateBuilder();
   return modules;
 }
@@ -48,13 +48,13 @@ export async function updateModuleAction(
   moduleId: string,
   title: string,
 ): Promise<Module[]> {
-  const modules = await Courses.updateModule({ courseId, moduleId, title }, await authHeaders());
+  const modules = await Content.updateModule({ courseId, moduleId, title }, await authHeaders());
   revalidateBuilder();
   return modules;
 }
 
 export async function deleteModuleAction(courseId: string, moduleId: string): Promise<Module[]> {
-  const modules = await Courses.deleteModule({ courseId, moduleId }, await authHeaders());
+  const modules = await Content.deleteModule({ courseId, moduleId }, await authHeaders());
   revalidateBuilder();
   return modules;
 }
@@ -66,7 +66,7 @@ export async function reorderActivitiesAction(
   moduleId: string,
   orderedIds: string[],
 ): Promise<Module[]> {
-  const modules = await Courses.reorderActivities(
+  const modules = await Content.reorderActivities(
     { courseId, moduleId, orderedIds },
     await authHeaders(),
   );
@@ -80,13 +80,13 @@ export async function saveActivityAction(
   activity: SaveActivityInput,
 ): Promise<Module[]> {
   // Activities are uniform: the body is just the opaque settings + assets.
-  const body = { settings: activity.settings, assetIds: activity.assetIds };
+  const body = { settings: activity.settings as JsonValueInput, assetIds: activity.assetIds };
   const modules = activity.id
-    ? await Courses.updateActivity(
+    ? await Content.updateActivity(
         { courseId, moduleId, activityId: activity.id, ...body },
         await authHeaders(),
       )
-    : await Courses.createActivity({ courseId, moduleId, ...body }, await authHeaders());
+    : await Content.createActivity({ courseId, moduleId, ...body }, await authHeaders());
   revalidateBuilder();
   return modules;
 }
@@ -103,19 +103,22 @@ export async function saveActivityContentAction(
   activityId: string,
   content: ActivityContent,
 ): Promise<void> {
-  const modules = await Courses.listModules({ courseId }, await authHeaders());
-  const activity = modules
-    .find((m) => m.id === moduleId)
-    ?.activities.find((a) => a.id === activityId);
+  const headers = await authHeaders();
+  const [activities, links] = await Promise.all([
+    Content.listActivities({ courseId }, headers),
+    Content.listActivityAssets({ courseId }, headers),
+  ]);
+  const activity = activities.find((a) => a.id === activityId && a.moduleId === moduleId);
   if (!activity) throw new Error("Activity not found");
 
   const settings: ActivitySettings = {
     ...((activity.settings ?? {}) as ActivitySettings),
     content,
   };
-  await Courses.updateActivity(
-    { courseId, moduleId, activityId, settings, assetIds: activity.assetIds },
-    await authHeaders(),
+  const assetIds = links.filter((l) => l.activityId === activityId).map((l) => l.assetId);
+  await Content.updateActivity(
+    { courseId, moduleId, activityId, settings: settings as JsonValueInput, assetIds },
+    headers,
   );
   revalidateBuilder();
 }
@@ -125,7 +128,7 @@ export async function deleteActivityAction(
   moduleId: string,
   activityId: string,
 ): Promise<Module[]> {
-  const modules = await Courses.deleteActivity(
+  const modules = await Content.deleteActivity(
     { courseId, moduleId, activityId },
     await authHeaders(),
   );
@@ -140,7 +143,7 @@ export async function setCoursePublishedAction(
   courseId: string,
   status: Course["status"],
 ): Promise<Course> {
-  const course = await Courses.updateCourse({ id: courseId, status }, await authHeaders());
+  const course = await Content.updateCourse({ id: courseId, status }, await authHeaders());
   revalidateBuilder();
   return course;
 }
@@ -154,7 +157,7 @@ export async function updateCourseSettingsAction(
   courseId: string,
   settings: Partial<CourseSettings>,
 ): Promise<CourseSettings> {
-  const updated = await Courses.updateCourseSettings(
+  const updated = await Content.updateCourseSettings(
     { id: courseId, ...settings },
     await authHeaders(),
   );
@@ -167,7 +170,7 @@ export async function updateCourseDetailsAction(
   courseId: string,
   patch: { title: string; category: string; description: string },
 ): Promise<Course> {
-  const course = await Courses.updateCourse(
+  const course = await Content.updateCourse(
     {
       id: courseId,
       title: patch.title,

@@ -5,6 +5,8 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
+  ActivityAssetList,
+  ActivityList,
   ActivityPathParam,
   CourseIdPathParam,
   CreateModule,
@@ -37,6 +39,40 @@ export async function activitiesRoutes(app: FastifyInstance, container: Containe
     handler: async (req) => {
       const scope = await resolveScope(container, req);
       return content.listCourseModules(scope.orgId, req.params.courseId);
+    },
+  });
+
+  r.route({
+    method: 'GET',
+    url: '/api/courses/:courseId/activities',
+    preHandler: app.requireOrgSession,
+    schema: {
+      operationId: 'listActivities',
+      tags,
+      summary: "List a course's activities",
+      params: CourseIdPathParam,
+      response: { 200: ActivityList },
+    },
+    handler: async (req) => {
+      const scope = await resolveScope(container, req);
+      return content.listCourseActivities(scope.orgId, req.params.courseId);
+    },
+  });
+
+  r.route({
+    method: 'GET',
+    url: '/api/courses/:courseId/activity-assets',
+    preHandler: app.requireOrgSession,
+    schema: {
+      operationId: 'listActivityAssets',
+      tags,
+      summary: "List a course's activity→asset links",
+      params: CourseIdPathParam,
+      response: { 200: ActivityAssetList },
+    },
+    handler: async (req) => {
+      const scope = await resolveScope(container, req);
+      return content.listCourseActivityAssets(scope.orgId, req.params.courseId);
     },
   });
 

@@ -133,6 +133,7 @@ function fakeContentService(over: Partial<ContentService> = {}): ContentService 
     deleteCourse: rejectMutation,
     listCourseModules: async () => [],
     listCourseActivities: async () => [],
+    listCourseActivityAssets: async () => [],
     getActivity: async () => null,
     getModule: async () => null,
     reorderModules: rejectMutation,

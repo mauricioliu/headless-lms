@@ -7,7 +7,7 @@ import { ColumnHeader } from "@/components/data-table/column-header";
 import { RowActions } from "@/components/data-table/row-actions";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { can } from "@/lib/roles";
-import { relativeTime, formatNumber, formatBytes } from "@/lib/format";
+import { relativeTime } from "@/lib/format";
 import type { Download, SessionUser } from "@/lib/api/types";
 
 /**
@@ -62,30 +62,6 @@ export function downloadsColumns(opts: {
       accessorKey: "status",
       header: ({ column }) => <ColumnHeader column={column} title="Status" />,
       cell: ({ row }) => <CourseStatusBadge status={row.original.status} />,
-    },
-    {
-      accessorKey: "assetCount",
-      header: ({ column }) => <ColumnHeader column={column} title="Files" align="right" />,
-      meta: { align: "right" },
-      cell: ({ row }) => (
-        <span className="tabular-nums text-ink-2">{formatNumber(row.original.assetCount)}</span>
-      ),
-    },
-    {
-      accessorKey: "totalSize",
-      header: ({ column }) => <ColumnHeader column={column} title="Size" align="right" />,
-      meta: { align: "right" },
-      cell: ({ row }) => (
-        <span className="tabular-nums text-ink-2">{formatBytes(row.original.totalSize)}</span>
-      ),
-    },
-    {
-      accessorKey: "entitledCount",
-      header: ({ column }) => <ColumnHeader column={column} title="Entitled" align="right" />,
-      meta: { align: "right" },
-      cell: ({ row }) => (
-        <span className="tabular-nums text-ink">{formatNumber(row.original.entitledCount)}</span>
-      ),
     },
     {
       accessorKey: "updatedAt",

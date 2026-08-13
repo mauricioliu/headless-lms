@@ -5,7 +5,6 @@ import { ArrowLeft, Download as DownloadIcon } from "lucide-react";
 import { requireAuth } from "@/lib/auth/server-session";
 import { learnApi } from "@/lib/api/server";
 import { API_URL } from "@/lib/api/server-call";
-import { formatBytes } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -62,10 +61,7 @@ export default async function DownloadDetailPage({
           >
             <div className="min-w-0">
               <div className="truncate text-[14.5px] font-medium">
-                {asset.displayName ?? asset.filename}
-              </div>
-              <div className="text-[12.5px] text-ink-3">
-                {asset.contentType} · {formatBytes(asset.size)}
+                {asset.displayName ?? `File ${i + 1}`}
               </div>
             </div>
             <Button asChild variant="brand" size="pillSm" className="shrink-0">

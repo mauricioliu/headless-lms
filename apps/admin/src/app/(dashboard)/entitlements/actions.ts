@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { Entitlements } from "@headless-lms/sdk";
 
 import { authHeaders } from "@/lib/api/server-call";
-import type { Entitlement } from "@/lib/api/types";
+import type { EntitlementGrant } from "@/lib/api/types";
 
 export interface GrantEntitlementInput {
   orgUserId: string;
@@ -14,7 +14,9 @@ export interface GrantEntitlementInput {
   expiresAt: string | null;
 }
 
-export async function grantEntitlementAction(input: GrantEntitlementInput): Promise<Entitlement> {
+export async function grantEntitlementAction(
+  input: GrantEntitlementInput,
+): Promise<EntitlementGrant> {
   const entitlement = await Entitlements.grantEntitlement(input, await authHeaders());
   revalidatePath("/entitlements");
   revalidatePath(`/students/${input.orgUserId}`);
@@ -29,8 +31,8 @@ export async function grantEntitlementAction(input: GrantEntitlementInput): Prom
 export async function setEntitlementStatusAction(
   id: string,
   action: "revoke" | "reinstate",
-): Promise<Entitlement> {
-  const status: Entitlement["status"] = action === "revoke" ? "revoked" : "active";
+): Promise<EntitlementGrant> {
+  const status: EntitlementGrant["status"] = action === "revoke" ? "revoked" : "active";
   const entitlement = await Entitlements.setEntitlementStatus({ id, status }, await authHeaders());
   revalidatePath("/entitlements");
   return entitlement;

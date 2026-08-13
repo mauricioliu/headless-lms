@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SettingRow, SettingsSection, SettingsSurface } from "@/components/forms/settings-section";
-import type { Activity, ActivitySettings } from "@/lib/api/types";
+import type { ActivityNode, ActivitySettings } from "@/lib/api/types";
 
 import { saveActivityAction } from "../../../actions";
 import { useRegisterSave } from "../_components/activity-bar-context";
@@ -79,7 +79,7 @@ export function ActivitySettingsForm({
 }: {
   courseId: string;
   moduleId: string;
-  activity: Activity;
+  activity: ActivityNode;
   courseTranscriptDownloads: boolean;
   courseCommentsEnabled: boolean;
 }) {

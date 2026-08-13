@@ -10,6 +10,7 @@ import { SettingRow, SettingsSection } from "@/components/forms/settings-section
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import type { Course } from "@/lib/api/types";
+import { courseSettingsOf } from "@/lib/api/compose";
 
 import { updateCourseSettingsAction } from "../actions";
 
@@ -31,7 +32,7 @@ export function CourseSettingsForm({ course }: { course: Course }) {
     formState: { isSubmitting, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { transcriptDownloads: course.settings.transcriptDownloads },
+    defaultValues: { transcriptDownloads: courseSettingsOf(course).transcriptDownloads },
   });
 
   async function onValid(values: FormValues) {

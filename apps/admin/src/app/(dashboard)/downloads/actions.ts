@@ -4,9 +4,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Downloads } from "@headless-lms/sdk";
+import { Content } from "@headless-lms/sdk";
 
 import { authHeaders } from "@/lib/api/server-call";
+import { composeDownloadAssets } from "@/lib/api/server";
 import type { Download, DownloadAsset } from "@/lib/api/types";
 
 /** Download-level writes surface on both the list and that download's page. */
@@ -36,7 +37,7 @@ export interface DownloadPatch {
 }
 
 export async function createDownloadAction(input: DownloadInput): Promise<Download> {
-  const download = await Downloads.createDownload(
+  const download = await Content.createDownload(
     { title: input.title, description: input.description, category: input.category },
     await authHeaders(),
   );
@@ -48,7 +49,7 @@ export async function updateDownloadAction(
   downloadId: string,
   patch: DownloadPatch,
 ): Promise<Download> {
-  const download = await Downloads.updateDownload(
+  const download = await Content.updateDownload(
     {
       downloadId,
       title: patch.title,
@@ -68,12 +69,12 @@ export async function setDownloadPublishedAction(
   downloadId: string,
   status: Download["status"],
 ): Promise<void> {
-  await Downloads.updateDownload({ downloadId, status }, await authHeaders());
+  await Content.updateDownload({ downloadId, status }, await authHeaders());
   revalidateDownload();
 }
 
 export async function deleteDownloadAction(downloadId: string): Promise<void> {
-  await Downloads.deleteDownload({ downloadId }, await authHeaders());
+  await Content.deleteDownload({ downloadId }, await authHeaders());
   revalidateDownload();
 }
 
@@ -85,7 +86,7 @@ export async function deleteDownloadAction(downloadId: string): Promise<void> {
  * entirely, so the client never re-renders the dead route.
  */
 export async function deleteDownloadAndRedirectAction(downloadId: string): Promise<void> {
-  await Downloads.deleteDownload({ downloadId }, await authHeaders());
+  await Content.deleteDownload({ downloadId }, await authHeaders());
   revalidatePath("/downloads");
   redirect("/downloads");
 }
@@ -95,12 +96,12 @@ export async function addDownloadAssetAction(
   assetId: string,
   displayName?: string,
 ): Promise<DownloadAsset[]> {
-  const assets = await Downloads.addDownloadAsset(
+  const links = await Content.addDownloadAsset(
     { downloadId, assetId, displayName },
     await authHeaders(),
   );
   revalidateDownload();
-  return assets;
+  return composeDownloadAssets(links);
 }
 
 export async function renameDownloadAssetAction(
@@ -108,31 +109,31 @@ export async function renameDownloadAssetAction(
   assetId: string,
   displayName: string | null,
 ): Promise<DownloadAsset[]> {
-  const assets = await Downloads.renameDownloadAsset(
+  const links = await Content.renameDownloadAsset(
     { downloadId, assetId, displayName },
     await authHeaders(),
   );
   revalidateDownload();
-  return assets;
+  return composeDownloadAssets(links);
 }
 
 export async function removeDownloadAssetAction(
   downloadId: string,
   assetId: string,
 ): Promise<DownloadAsset[]> {
-  const assets = await Downloads.removeDownloadAsset({ downloadId, assetId }, await authHeaders());
+  const links = await Content.removeDownloadAsset({ downloadId, assetId }, await authHeaders());
   revalidateDownload();
-  return assets;
+  return composeDownloadAssets(links);
 }
 
 export async function reorderDownloadAssetsAction(
   downloadId: string,
   assetIds: string[],
 ): Promise<DownloadAsset[]> {
-  const assets = await Downloads.reorderDownloadAssets(
+  const links = await Content.reorderDownloadAssets(
     { downloadId, assetIds },
     await authHeaders(),
   );
   revalidateDownload();
-  return assets;
+  return composeDownloadAssets(links);
 }

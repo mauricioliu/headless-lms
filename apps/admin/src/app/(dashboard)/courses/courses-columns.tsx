@@ -7,7 +7,7 @@ import { ColumnHeader } from "@/components/data-table/column-header";
 import { RowActions } from "@/components/data-table/row-actions";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { can } from "@/lib/roles";
-import { relativeTime, formatNumber } from "@/lib/format";
+import { relativeTime } from "@/lib/format";
 import type { Course, SessionUser } from "@/lib/api/types";
 
 /**
@@ -59,30 +59,6 @@ export function coursesColumns(opts: {
       accessorKey: "status",
       header: ({ column }) => <ColumnHeader column={column} title="Status" />,
       cell: ({ row }) => <CourseStatusBadge status={row.original.status} />,
-    },
-    {
-      accessorKey: "moduleCount",
-      header: ({ column }) => <ColumnHeader column={column} title="Modules" align="right" />,
-      meta: { align: "right" },
-      cell: ({ row }) => (
-        <span className="tabular-nums text-ink-2">{formatNumber(row.original.moduleCount)}</span>
-      ),
-    },
-    {
-      accessorKey: "activityCount",
-      header: ({ column }) => <ColumnHeader column={column} title="Activities" align="right" />,
-      meta: { align: "right" },
-      cell: ({ row }) => (
-        <span className="tabular-nums text-ink-2">{formatNumber(row.original.activityCount)}</span>
-      ),
-    },
-    {
-      accessorKey: "enrolledCount",
-      header: ({ column }) => <ColumnHeader column={column} title="Enrolled" align="right" />,
-      meta: { align: "right" },
-      cell: ({ row }) => (
-        <span className="tabular-nums text-ink">{formatNumber(row.original.enrolledCount)}</span>
-      ),
     },
     {
       accessorKey: "updatedAt",

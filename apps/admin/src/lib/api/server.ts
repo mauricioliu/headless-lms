@@ -11,6 +11,11 @@ import "server-only";
  * per-call `headers` option — never `client.setConfig` with request state.
  * `configureSdk` only sets the (constant) baseUrl and the error mapping.
  *
+ * The API serves bare model rows; every display shape the dashboard needs —
+ * the module→activity tree, entitlement rows joined with student identity and
+ * content titles, download assets joined with file metadata — is composed here
+ * from multiple bare reads (see lib/api/compose).
+ *
  * Only SSR-prefetched **read** methods live here. Mutations and browser-only
  * flows (`uploadAsset`, presigned `assetDownloadUrl`, `useAssetUrl`) stay
  * client-side and are never prefetched. Query serialization goes through the
@@ -21,17 +26,16 @@ import "server-only";
 import {
   Assets,
   Automations,
-  Courses,
-  Dashboard,
+  Content,
   Discussion,
-  Downloads,
   Entitlements,
   Integrations,
   Organizations,
-  Students,
+  Reporting,
 } from "@headless-lms/sdk";
 
 import { toQuery } from "./shared";
+import { buildModuleTree, entitlementStatusOf } from "./compose";
 import { fullName } from "@/lib/format";
 import { authHeaders } from "./server-call";
 import type {
@@ -45,41 +49,122 @@ import type {
   DownloadAsset,
   EnrollmentSeries,
   Entitlement,
+  EntitlementGrant,
   IntegrationConnection,
   ListParams,
   Member,
-  Module,
+  ModuleTree,
   OverviewStats,
   Paginated,
   CommentListItem,
   Student,
 } from "./types";
 
+/** Resolve a granted content id to its type + display title. The grant row
+ *  stores only the id, so probe the two content resources in order. */
+async function contentRefOf(
+  contentId: string,
+  headers: Awaited<ReturnType<typeof authHeaders>>,
+): Promise<Entitlement["content"]> {
+  try {
+    const course = await Content.getCourse({ id: contentId }, headers);
+    return { id: contentId, type: "course", title: course.title };
+  } catch {
+    // fall through to download
+  }
+  try {
+    const download = await Content.getDownload({ downloadId: contentId }, headers);
+    return { id: contentId, type: "download", title: download.title };
+  } catch {
+    return { id: contentId, type: "course", title: contentId };
+  }
+}
+
+/** Join bare grant rows with student identity + content titles (one fetch per
+ *  unique id, in parallel) and derive the display status. */
+async function composeEntitlements(grants: EntitlementGrant[]): Promise<Entitlement[]> {
+  const headers = await authHeaders();
+  const studentIds = [...new Set(grants.map((g) => g.orgUserId))];
+  const contentIds = [...new Set(grants.map((g) => g.contentId))];
+  const [students, refs] = await Promise.all([
+    Promise.all(
+      studentIds.map(async (id) => {
+        try {
+          return await Organizations.getStudent({ id }, headers);
+        } catch {
+          return null;
+        }
+      }),
+    ),
+    Promise.all(contentIds.map((id) => contentRefOf(id, headers))),
+  ]);
+  const studentById = new Map(students.filter((s) => s !== null).map((s) => [s.id, s]));
+  const refById = new Map(refs.map((r) => [r.id, r]));
+  return grants.map((g) => {
+    const student = studentById.get(g.orgUserId);
+    return {
+      ...g,
+      status: entitlementStatusOf(g),
+      firstName: student?.firstName ?? null,
+      lastName: student?.lastName ?? null,
+      email: student?.email ?? "",
+      content: refById.get(g.contentId) ?? { id: g.contentId, type: "course", title: g.contentId },
+    };
+  });
+}
+
+/** Join bare download→asset link rows with each asset's file metadata. Also
+ *  used by the download-asset server actions to return display rows. */
+export async function composeDownloadAssets(
+  links: Awaited<ReturnType<typeof Content.listDownloadAssets>>,
+): Promise<DownloadAsset[]> {
+  const headers = await authHeaders();
+  const assetIds = [...new Set(links.map((l) => l.assetId))];
+  const assets = await Promise.all(assetIds.map((id) => Assets.getAsset({ id }, headers)));
+  const assetById = new Map(assets.map((a) => [a.id, a]));
+  return links.map((l) => {
+    const asset = assetById.get(l.assetId);
+    return {
+      ...l,
+      filename: asset?.filename ?? l.assetId,
+      contentType: asset?.contentType ?? "application/octet-stream",
+      size: asset?.size ?? 0,
+    };
+  });
+}
+
 export const serverApi = {
-  // dashboard
+  // reporting
   async overview(): Promise<OverviewStats> {
-    return await Dashboard.getOverview(await authHeaders());
+    return await Reporting.getOverview(await authHeaders());
   },
   async enrollmentSeries(days: number): Promise<EnrollmentSeries> {
-    return await Dashboard.getEnrollmentSeries({ days }, await authHeaders());
+    return await Reporting.getEnrollmentSeries({ days }, await authHeaders());
   },
 
   // courses
   async listCourses(params: ListParams): Promise<Paginated<Course>> {
-    return await Courses.listCourses(toQuery(params, ["status", "category"]), await authHeaders());
+    return await Content.listCourses(toQuery(params, ["status", "category"]), await authHeaders());
   },
   async getCourse(id: string): Promise<Course> {
-    return await Courses.getCourse({ id }, await authHeaders());
+    return await Content.getCourse({ id }, await authHeaders());
   },
-  async listModules(courseId: string): Promise<Module[]> {
-    return await Courses.listModules({ courseId }, await authHeaders());
+  /** The builder's module→activity tree, composed from the three bare lists. */
+  async moduleTree(courseId: string): Promise<ModuleTree[]> {
+    const headers = await authHeaders();
+    const [modules, activities, links] = await Promise.all([
+      Content.listModules({ courseId }, headers),
+      Content.listActivities({ courseId }, headers),
+      Content.listActivityAssets({ courseId }, headers),
+    ]);
+    return buildModuleTree(modules, activities, links);
   },
   // Both content types offered by the entitlements grant pickers, tagged with
   // their type so the UI can group course vs. download options.
   async contentLite(): Promise<{ id: string; title: string; type: "course" | "download" }[]> {
     const [coursesPage, downloadsPage] = await Promise.all([
-      Courses.listCourses({ pageSize: 100, sort: "title" }, await authHeaders()),
-      Downloads.listDownloads({ pageSize: 100, sort: "title" }, await authHeaders()),
+      Content.listCourses({ pageSize: 100, sort: "title" }, await authHeaders()),
+      Content.listDownloads({ pageSize: 100, sort: "title" }, await authHeaders()),
     ]);
     const courses = coursesPage.rows.map((c) => ({
       id: c.id,
@@ -96,35 +181,50 @@ export const serverApi = {
 
   // downloads
   async listDownloads(params: ListParams): Promise<Paginated<Download>> {
-    return await Downloads.listDownloads(
-      toQuery(params, ["status", "category"]),
-      await authHeaders(),
-    );
+    return await Content.listDownloads(toQuery(params, ["status", "category"]), await authHeaders());
   },
   async getDownload(downloadId: string): Promise<Download> {
-    return await Downloads.getDownload({ downloadId }, await authHeaders());
+    return await Content.getDownload({ downloadId }, await authHeaders());
   },
   async listDownloadAssets(downloadId: string): Promise<DownloadAsset[]> {
-    return await Downloads.listDownloadAssets({ downloadId }, await authHeaders());
+    const links = await Content.listDownloadAssets({ downloadId }, await authHeaders());
+    return composeDownloadAssets(links);
+  },
+  /** Header stats for one download, composed from its assets + grants. */
+  async downloadStats(
+    downloadId: string,
+  ): Promise<{ assetCount: number; totalSize: number; entitledCount: number }> {
+    const [assets, entitled] = await Promise.all([
+      this.listDownloadAssets(downloadId),
+      Entitlements.listEntitlements(
+        { contentId: downloadId, status: "active", page: 1, pageSize: 1 },
+        await authHeaders(),
+      ),
+    ]);
+    return {
+      assetCount: assets.length,
+      totalSize: assets.reduce((sum, a) => sum + a.size, 0),
+      entitledCount: entitled.total,
+    };
   },
 
   // students
   async listStudents(params: ListParams): Promise<Paginated<Student>> {
-    return await Students.listStudents(toQuery(params, []), await authHeaders());
+    return await Organizations.listStudents(toQuery(params, []), await authHeaders());
   },
   async getStudent(id: string): Promise<Student> {
-    return await Students.getStudent({ id }, await authHeaders());
+    return await Organizations.getStudent({ id }, await authHeaders());
   },
   async studentEntitlements(orgUserId: string): Promise<Entitlement[]> {
     const page = await Entitlements.listEntitlements(
-      { orgUserId, pageSize: 100 },
+      { orgUserId, page: 1, pageSize: 100 },
       await authHeaders(),
     );
-    return page.rows;
+    return composeEntitlements(page.rows);
   },
   async studentsLite(search?: string): Promise<{ id: string; name: string; email: string }[]> {
-    const page = await Students.listStudents(
-      { pageSize: 100, search: search || undefined, sort: "name" },
+    const page = await Organizations.listStudents(
+      { page: 1, pageSize: 100, search: search || undefined, sort: "name" },
       await authHeaders(),
     );
     return page.rows.map((s) => ({ id: s.id, name: fullName(s), email: s.email }));
@@ -132,17 +232,18 @@ export const serverApi = {
 
   // entitlements
   async listEntitlements(params: ListParams): Promise<Paginated<Entitlement>> {
-    return await Entitlements.listEntitlements(
+    const page = await Entitlements.listEntitlements(
       toQuery(params, ["status", "source"]),
       await authHeaders(),
     );
+    return { ...page, rows: await composeEntitlements(page.rows) };
   },
   async contentEntitlements(contentId: string): Promise<Entitlement[]> {
     const page = await Entitlements.listEntitlements(
-      { contentId, pageSize: 100 },
+      { contentId, page: 1, pageSize: 100 },
       await authHeaders(),
     );
-    return page.rows;
+    return composeEntitlements(page.rows);
   },
 
   // discussion (the comment list; settings ride on the course payload)

@@ -1,6 +1,6 @@
 {
   "title": "Organizations",
-  "description": "Organizations and member management",
+  "description": "The tenant: its members, roles, invites and students",
   "pages": [
     "createOrganization",
     "updateOrganization",
@@ -9,6 +9,13 @@
     "removeMember",
     "createInvite",
     "getInvite",
-    "acceptInvite"
+    "acceptInvite",
+    "getLearnOrg",
+    "getLearnViewer",
+    "listStudents",
+    "getStudent",
+    "updateStudent",
+    "deleteStudent",
+    "resendStudentInvite"
   ]
 }
