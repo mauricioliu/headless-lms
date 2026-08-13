@@ -121,7 +121,7 @@ export function ActivitySettingsForm({
   return (
     <form onSubmit={handleSubmit(onValid)} noValidate>
       <SettingsSurface>
-        <SettingsSection title="General" description="How this activity appears in the curriculum.">
+        <SettingsSection title="General">
           <SettingRow
             id="activity-title"
             label="Title"
@@ -151,7 +151,7 @@ export function ActivitySettingsForm({
           </SettingRow>
         </SettingsSection>
 
-        <SettingsSection title="Playback" description="How this activity behaves for a student.">
+        <SettingsSection title="Playback">
           <SettingRow
             id="activity-completion"
             label="Mark complete"

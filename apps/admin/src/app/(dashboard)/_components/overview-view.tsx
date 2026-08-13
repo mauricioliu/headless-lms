@@ -91,5 +91,5 @@ export function OverviewView({
 }
 
 function Section({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-4">{children}</div>;
+  return <div className="flex flex-col gap-8">{children}</div>;
 }

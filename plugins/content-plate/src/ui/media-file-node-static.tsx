@@ -3,8 +3,16 @@ import { FileUp } from 'lucide-react';
 import type { TFileElement } from 'platejs';
 import { SlateElement, type SlateElementProps } from 'platejs/static';
 
-export function MediaFileElementStatic(props: SlateElementProps<TFileElement>) {
-  const { name, url } = props.element;
+import type { ResolveAssetUrl } from '@headless-lms/editor';
+
+import { freshMediaUrl } from '../lib/media-url';
+
+export async function MediaFileElementStatic({
+  resolveAssetUrl,
+  ...props
+}: SlateElementProps<TFileElement> & { resolveAssetUrl?: ResolveAssetUrl }) {
+  const { name } = props.element;
+  const url = await freshMediaUrl(props.element, resolveAssetUrl);
 
   return (
     <SlateElement className="my-px rounded-sm" {...props}>

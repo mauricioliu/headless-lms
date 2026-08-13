@@ -7,6 +7,8 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    /** API-side correlation id (x-request-id) — quote it to find the server log line. */
+    public requestId?: string,
   ) {
     super(message);
     this.name = "ApiError";

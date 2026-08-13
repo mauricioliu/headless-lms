@@ -20,12 +20,17 @@ export async function buildServer(
     // Fastify's own request/response pair per call — noisy in a dev console,
     // useful as an access log in production. Our own logs are unaffected.
     disableRequestLogging: config.requestLogging === false,
+    // Adopt the caller's correlation id when it sends one, so one id joins
+    // the client's log line to this process's.
+    requestIdHeader: 'x-request-id',
   });
 
   // Enter the request-scoped log context: every line logged inside this
   // request's async scope carries its reqId (and orgId once resolveScope runs),
-  // wherever it is emitted.
-  app.addHook('onRequest', (request, _reply, done) => {
+  // wherever it is emitted. The id is echoed on the response so callers can
+  // quote it when reporting a failure.
+  app.addHook('onRequest', (request, reply, done) => {
+    reply.header('x-request-id', request.id);
     container.requestContext.run({ reqId: request.id }, done);
   });
 

@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 
 import { serverApi } from "@/lib/api/server";
-import { resolveAssetUrls } from "@/lib/api/resolve-asset-urls";
 import type { ActivitySettings } from "@/lib/api/types";
 import { formatContentType } from "@/lib/format";
 import editorModule from "@/editor.config";
@@ -35,10 +34,9 @@ export default async function ActivityEditorPage({
   // empty (saving replaces it).
   const foreignFormat =
     stored != null && (stored.type !== meta.type || stored.version !== meta.version);
-  // Media URLs in stored content are expired presigned URLs; re-sign fresh
-  // ones from the persisted asset ids before handing the config to the editor.
-  const initialConfig =
-    stored != null && !foreignFormat ? await resolveAssetUrls(stored.config) : null;
+  // Media URLs in stored content are expired presigns; the editor resolves
+  // fresh ones per node through its `resolveAssetUrl` callback (EditorShell).
+  const initialConfig = stored != null && !foreignFormat ? stored.config : null;
 
   return (
     <section className="editor-container flex flex-col gap-4">

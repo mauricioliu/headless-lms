@@ -91,7 +91,7 @@ export function EnrollmentsChart({
   const days = ENROLLMENT_RANGES.find((r) => r.key === range)?.days ?? 30;
 
   return (
-    <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5">
+    <div className="flex flex-col gap-4 bg-surface p-0">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <h2 className="text-sm font-medium text-ink">Enrollments</h2>

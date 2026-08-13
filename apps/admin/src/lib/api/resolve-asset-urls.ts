@@ -53,6 +53,8 @@ function swapUrls(value: unknown, urls: Map<string, string>): unknown {
   return out;
 }
 
+
+
 /** Replace every asset-referencing node's `url` with a freshly signed one. */
 export async function resolveAssetUrls(config: unknown): Promise<unknown> {
   const ids = new Set<string>();
@@ -65,7 +67,7 @@ export async function resolveAssetUrls(config: unknown): Promise<unknown> {
   await Promise.all(
     [...ids].map(async (id) => {
       try {
-        const ticket = await Assets.requestAssetDownload({ id }, headers);
+        const ticket = await Assets.requestAssetDownload({ id, filename: id }, headers);
         urls.set(id, ticket.url);
       } catch (e) {
         // A 401 redirects by throwing, so let Next's control-flow errors pass.

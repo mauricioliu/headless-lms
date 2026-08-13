@@ -2,15 +2,50 @@
 // Builds a server-side editor from the base kit and renders it with
 // PlateStatic (via EditorStatic), so no editor JS ships on routes
 // that only display content.
-import { createSlateEditor, type Value } from 'platejs';
+//
+// When the host supplies `resolveAssetUrl`, asset-backed media components are
+// overridden with wrappers that carry the broker: each node awaits a fresh
+// URL for its own assetId during server render, so the stored (expired)
+// presign in the config is never what reaches the browser.
+import { createSlateEditor, KEYS, type Value } from 'platejs';
+
+import type { ResolveAssetUrl } from '@headless-lms/editor';
 
 import { BaseEditorKit } from './editor/editor-base-kit';
 import { EditorStatic } from './ui/editor-static';
+import { MediaAudioElementStatic } from './ui/media-audio-node-static';
+import { MediaFileElementStatic } from './ui/media-file-node-static';
+import { ImageElementStatic } from './ui/media-image-node-static';
+import { MediaVideoElementStatic } from './ui/media-video-node-static';
 import { isNodeList } from './validate';
 
-export function Renderer({ config }: { config: unknown }) {
+const mediaComponents = (resolveAssetUrl: ResolveAssetUrl) => ({
+  [KEYS.img]: (props: object) => (
+    <ImageElementStatic {...(props)} resolveAssetUrl={resolveAssetUrl} />
+  ),
+  [KEYS.video]: (props: object) => (
+    <MediaVideoElementStatic {...(props as never)} resolveAssetUrl={resolveAssetUrl} />
+  ),
+  [KEYS.audio]: (props: object) => (
+    <MediaAudioElementStatic {...(props as never)} resolveAssetUrl={resolveAssetUrl} />
+  ),
+  [KEYS.file]: (props: object) => (
+    <MediaFileElementStatic {...(props as never)} resolveAssetUrl={resolveAssetUrl} />
+  ),
+});
+
+export function Renderer({
+  config,
+  resolveAssetUrl,
+}: {
+  config: unknown;
+  resolveAssetUrl?: ResolveAssetUrl;
+}) {
   const editor = createSlateEditor({
     plugins: BaseEditorKit,
+    ...(resolveAssetUrl
+      ? { override: { components: mediaComponents(resolveAssetUrl) } }
+      : {}),
     value: isNodeList(config) ? (config as Value) : [],
   });
 

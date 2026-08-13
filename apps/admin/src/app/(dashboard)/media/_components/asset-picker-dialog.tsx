@@ -110,10 +110,6 @@ export function AssetPickerDialog({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Choose from library</DialogTitle>
-          <DialogDescription>
-            Pick a {noun} you have already uploaded. Nothing is copied — the block
-            references the same file.
-          </DialogDescription>
         </DialogHeader>
 
         <div className="relative">

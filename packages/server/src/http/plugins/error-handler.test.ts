@@ -33,6 +33,9 @@ beforeAll(async () => {
     'conflict': () => {
       throw new ConflictError('A student with this email already exists');
     },
+    'unhandled': () => {
+      throw new Error('boom');
+    },
   };
   for (const [path, thrower] of Object.entries(throwers)) {
     app.get(`/${path}`, thrower);
@@ -82,5 +85,13 @@ describe('central error handler', () => {
     const res = await app.inject({ method: 'GET', url: '/invalid-config' });
     expect(res.statusCode).toBe(400);
     expect(res.json()).toMatchObject({ error: 'invalid_config' });
+  });
+
+  it('returns 500 internal_error with the request id for unhandled errors', async () => {
+    const res = await app.inject({ method: 'GET', url: '/unhandled' });
+    expect(res.statusCode).toBe(500);
+    const body = res.json();
+    expect(body.error).toBe('internal_error');
+    expect(body.requestId).toBeTypeOf('string');
   });
 });

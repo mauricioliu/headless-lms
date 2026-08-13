@@ -13,6 +13,7 @@ import type { PageEditorProps } from '@headless-lms/editor';
 
 import { EditorKit } from './editor/editor-kit';
 import { PickAssetProvider } from './hooks/use-pick-asset';
+import { ResolveAssetUrlProvider } from './hooks/use-resolve-asset-url';
 import { UploadProvider } from './hooks/use-upload-file';
 import { Editor as EditorArea, EditorContainer } from './ui/editor';
 import { isNodeList } from './validate';
@@ -24,6 +25,7 @@ export function Editor({
   onChange,
   onSave,
   pickAsset,
+  resolveAssetUrl,
   uploadFile,
 }: PageEditorProps) {
   const editor = usePlateEditor({
@@ -45,14 +47,16 @@ export function Editor({
   return (
     <UploadProvider uploadFile={uploadFile ?? null}>
       <PickAssetProvider pickAsset={pickAsset ?? null}>
-        <Plate
-          editor={editor}
-          onChange={({ value }) => onChange?.(value)}
-        >
-          <EditorContainer className="h-auto overflow-visible" variant="default">
-            <EditorArea placeholder="Type '/' for commands…" variant="default" />
-          </EditorContainer>
-        </Plate>
+        <ResolveAssetUrlProvider resolveAssetUrl={resolveAssetUrl ?? null}>
+          <Plate
+            editor={editor}
+            onChange={({ value }) => onChange?.(value)}
+          >
+            <EditorContainer className="h-auto overflow-visible" variant="default">
+              <EditorArea placeholder="Type '/' for commands…" variant="default" />
+            </EditorContainer>
+          </Plate>
+        </ResolveAssetUrlProvider>
       </PickAssetProvider>
     </UploadProvider>
   );

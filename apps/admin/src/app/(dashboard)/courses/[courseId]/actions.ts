@@ -149,6 +149,57 @@ export async function setCoursePublishedAction(
 }
 
 /**
+ * Duplicate a course by composing existing endpoints: create the course, copy
+ * its settings and thumbnail, then recreate every module and activity in seq
+ * order (activities carry their settings blob and asset links verbatim).
+ */
+export async function duplicateCourseAction(courseId: string): Promise<Course> {
+  const headers = await authHeaders();
+  const [course, modules, activities, links] = await Promise.all([
+    Content.getCourse({ id: courseId }, headers),
+    Content.listModules({ courseId }, headers),
+    Content.listActivities({ courseId }, headers),
+    Content.listActivityAssets({ courseId }, headers),
+  ]);
+
+  const copy = await Content.createCourse(
+    { title: `${course.title} (copy)`, description: course.description, category: course.category },
+    headers,
+  );
+  await Content.updateCourseSettings({ id: copy.id, ...course.settings }, headers);
+  if (course.thumbnailAssetId) {
+    await Content.updateCourse({ id: copy.id, thumbnailAssetId: course.thumbnailAssetId }, headers);
+  }
+
+  const copiedModuleIds = new Set<string>();
+  for (const mod of [...modules].sort((a, b) => a.seq - b.seq)) {
+    const created = await Content.createModule({ courseId: copy.id, title: mod.title }, headers);
+    const newModule = created.find((m) => !copiedModuleIds.has(m.id));
+    if (!newModule) throw new Error("Couldn't resolve the duplicated module");
+    copiedModuleIds.add(newModule.id);
+
+    const moduleActivities = activities
+      .filter((a) => a.moduleId === mod.id)
+      .sort((a, b) => a.seq - b.seq);
+    for (const activity of moduleActivities) {
+      const assetIds = links.filter((l) => l.activityId === activity.id).map((l) => l.assetId);
+      await Content.createActivity(
+        {
+          courseId: copy.id,
+          moduleId: newModule.id,
+          settings: activity.settings as JsonValueInput,
+          assetIds,
+        },
+        headers,
+      );
+    }
+  }
+
+  revalidateBuilder();
+  return copy;
+}
+
+/**
  * Course settings tab. Settings live in their own store behind
  * `PATCH /courses/:id/settings` — a partial patch, so omitted keys keep their
  * stored value. Returns the complete settings the server stored.

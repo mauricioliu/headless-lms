@@ -26,10 +26,10 @@ export function CourseHeader({ course }: { course: Course }) {
           </h1>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-ink-3">
             <CourseStatusBadge status={course.status} />
-            <span className="text-xs">Updated {relativeTime(course.updatedAt)}</span>
+            <p className="text-xs">Updated {relativeTime(course.updatedAt)}</p>
           </div>
         </div>
-        <CourseHeaderActions courseId={course.id} status={course.status} />
+        <CourseHeaderActions courseId={course.id} title={course.title} status={course.status} />
       </div>
 
       <CourseTabsNav courseId={course.id} />

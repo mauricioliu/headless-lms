@@ -11,7 +11,7 @@ import { NoActiveOrgError } from '../scope.js';
 import { UnauthorizedError } from './auth.js';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
-export function errorHandler(error: unknown, _request: FastifyRequest, reply: FastifyReply) {
+export function errorHandler(error: unknown, request: FastifyRequest, reply: FastifyReply) {
   if (error instanceof NotFoundError) {
     return reply.status(404).send({ error: 'not_found', message: error.message });
   }
@@ -52,6 +52,6 @@ export function errorHandler(error: unknown, _request: FastifyRequest, reply: Fa
       .status(err.statusCode)
       .send({ error: err.code ?? 'bad_request', message: err.message ?? 'Bad request' });
   }
-  _request.log.error(error);
-  return reply.status(500).send({ error: 'internal_error' });
+  request.log.error({ err: error }, `unhandled error in ${request.method} ${request.url}`);
+  return reply.status(500).send({ error: 'internal_error', requestId: request.id });
 }

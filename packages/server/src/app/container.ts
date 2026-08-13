@@ -410,25 +410,38 @@ export async function buildContainer(
   /*
    * Auth Adapter
    */
+  const authLogger = logger.child({ name: 'auth' });
+  // Hook failures otherwise surface through Better Auth's route as an opaque
+  // 500 — log which hook died before rethrowing.
+  const authHook =
+    <A extends unknown[], R>(name: string, fn: (...args: A) => Promise<R>) =>
+    async (...args: A): Promise<R> => {
+      try {
+        return await fn(...args);
+      } catch (err) {
+        authLogger.error(`auth hook ${name} failed`, { err });
+        throw err;
+      }
+    };
   const auth = new BetterAuth({
     db,
     baseUrl: config.authBaseURL,
     secret: config.authSecret,
     trustedOrigins: config.trustedOrigins,
     hooks: {
-      sendResetPassword: async (data) => {
+      sendResetPassword: authHook('sendResetPassword', async (data) => {
         await identity.sendPasswordReset({
           email: data.user.email,
           url: '',
         });
-      },
-      sendMagicLink: async ({ email, url }) => {
+      }),
+      sendMagicLink: authHook('sendMagicLink', async ({ email, url }) => {
         await identity.sendMagicLink({
           email,
           url,
         });
-      },
-      beforeUserCreate: async (user) => {
+      }),
+      beforeUserCreate: authHook('beforeUserCreate', async (user) => {
         const { email, name } = user;
         const [firstName, lastName] = name.split(' ');
         // Better Auth has not minted an id yet — the id returned below becomes
@@ -445,8 +458,8 @@ export async function buildContainer(
             id: domainUser.id,
           },
         };
-      },
-      beforeCreateSession: async (session) => {
+      }),
+      beforeCreateSession: authHook('beforeCreateSession', async (session) => {
         const person = await identity.getUserByExternalId(session.userId);
         if (!person) {
           return;
@@ -462,36 +475,39 @@ export async function buildContainer(
         }
 
         return { data: { ...session, activeOrganizationId: org.id } };
-      },
+      }),
       /*
        * We're making sure the domain org creates and using the same ID for better-auth org ID.
        */
-      beforeCreateOrganization: async ({ organization: org, user: baUser }) => {
-        const domainOrg = await organizations.createOrganization({
-          ownerId: baUser.id,
-          ...org,
-          logo: org.logo ?? undefined,
-        });
-        return { data: { ...org, id: domainOrg.id } };
-      },
-      beforeUpdateOrganization: async ({ organization }) => {
+      beforeCreateOrganization: authHook(
+        'beforeCreateOrganization',
+        async ({ organization: org, user: baUser }) => {
+          const domainOrg = await organizations.createOrganization({
+            ownerId: baUser.id,
+            ...org,
+            logo: org.logo ?? undefined,
+          });
+          return { data: { ...org, id: domainOrg.id } };
+        },
+      ),
+      beforeUpdateOrganization: authHook('beforeUpdateOrganization', async ({ organization }) => {
         await organizations.updateOrganization(organization.id, organization);
-      },
-      beforeDeleteOrganization: async ({ organization }) => {
+      }),
+      beforeDeleteOrganization: authHook('beforeDeleteOrganization', async ({ organization }) => {
         await organizations.deleteOrganization(organization.id);
-      },
-      beforeAddMember: async ({ member }) => {
+      }),
+      beforeAddMember: authHook('beforeAddMember', async ({ member }) => {
         await organizations.addOrgUser({
           orgId: member.organizationId,
           userId: member.userId,
           role: parseRole(member.role),
         });
-      },
-      beforeRemoveMember: async ({ member }) => {
+      }),
+      beforeRemoveMember: authHook('beforeRemoveMember', async ({ member }) => {
         await organizations.removeOrgUser(member.organizationId, member.userId);
-      },
+      }),
     },
-    logger: logger.child({ name: 'auth' }),
+    logger: authLogger,
     cookieDomain: config.cookieDomain,
     secureCookies: config.secureCookies,
   });

@@ -8,6 +8,8 @@ export type Matches<A, _B extends A> = true;
 export const ErrorBody = z.object({
   error: z.string(),
   message: z.string().optional(),
+  /** Server-side correlation id — quote it to find the matching API log line. */
+  requestId: z.string().optional(),
 });
 export type ErrorBody = z.infer<typeof ErrorBody>;
 

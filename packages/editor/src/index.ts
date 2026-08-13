@@ -22,9 +22,23 @@ export interface UploadedEditorFile {
   url: string;
 }
 
+/**
+ * Host-side asset URL broker. Media nodes that persist a durable asset id call
+ * this whenever they need a displayable URL — the embedded `url` in stored
+ * config is a presign from save time and may have expired. Resolves `null`
+ * when the asset is gone or inaccessible (nodes fall back to the stored URL).
+ */
+export type ResolveAssetUrl = (assetId: string) => Promise<string | null>;
+
 export interface PageEditorProps {
   /** The stored editor config blob, verbatim. `null`/invalid → start empty. */
   initialConfig: unknown;
+  /**
+   * Host-provided URL broker for media nodes referencing host assets. Stored
+   * configs embed save-time presigned URLs that expire; editors that support
+   * media resolve fresh ones through this when displaying existing content.
+   */
+  resolveAssetUrl?: ResolveAssetUrl;
   /** Persist the current config. The editor awaits this for pending state. */
   onSave: (config: unknown) => Promise<void>;
   /**
@@ -58,8 +72,10 @@ export interface EditorModule {
   Editor: ComponentType<PageEditorProps>;
   /** Entry must be RSC-safe: no 'use client', no hooks/browser APIs at top level.
    *  May render 'use client' islands internally. Props passed into islands must be
-   *  serializable; composition across the boundary only via children. */
-  Renderer: ComponentType<{ config: unknown }>;
+   *  serializable; composition across the boundary only via children.
+   *  `resolveAssetUrl` is awaited by asset-backed media nodes during server
+   *  render, so each node materializes with a currently-valid URL. */
+  Renderer: ComponentType<{ config: unknown; resolveAssetUrl?: ResolveAssetUrl }>;
   validate?: (config: unknown) => { ok: true } | { ok: false; errors: string[] };
   meta: {
     /** Unique identifier for this editor's config format, stored with every

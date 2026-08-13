@@ -6,15 +6,22 @@ import {
 } from 'platejs';
 import { SlateElement, type SlateElementProps } from 'platejs/static';
 
+import type { ResolveAssetUrl } from '@headless-lms/editor';
+
+import { freshMediaUrl } from '../lib/media-url';
 import { MediaVideoPlayer } from './media-video-player';
 
-export function MediaVideoElementStatic(
-  props: SlateElementProps<TVideoElement & TCaptionElement & TResizableProps>
-) {
-  const { align = 'center', caption, url, width } = props.element;
+export async function MediaVideoElementStatic({
+  resolveAssetUrl,
+  ...props
+}: SlateElementProps<TVideoElement & TCaptionElement & TResizableProps> & {
+  resolveAssetUrl?: ResolveAssetUrl;
+}) {
+  const { align = 'center', caption, width } = props.element;
   // Stable asset reference persisted by the upload flow; absent on external URLs.
   const assetId = (props.element as { assetId?: unknown }).assetId;
   const name = (props.element as { name?: unknown }).name;
+  const url = await freshMediaUrl(props.element, resolveAssetUrl);
 
   return (
     <SlateElement className="py-2.5" {...props}>
@@ -25,7 +32,7 @@ export function MediaVideoElementStatic(
         >
           <MediaVideoPlayer
             assetId={typeof assetId === 'string' ? assetId : undefined}
-            url={url}
+            url={url ?? ''}
             name={typeof name === 'string' ? name : undefined}
           />
           {caption && <figcaption>{NodeApi.string(caption[0])}</figcaption>}

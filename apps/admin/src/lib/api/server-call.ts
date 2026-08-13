@@ -40,18 +40,24 @@ export { API_URL };
 configureSdk({
   baseUrl: API_URL,
   onError: (error, response) => {
+    // The API echoes its correlation id; logging it here joins this line to
+    // the API-side error log without timestamp archaeology.
+    const requestId = response?.headers?.get("x-request-id") ?? undefined;
     // The API's own body, logged before it is flattened into an ApiError and
     // shown to the user as a generic message.
-    log.error({ body: error, status: response?.status, url: response?.url }, "api call failed");
+    log.error(
+      { body: error, status: response?.status, url: response?.url, requestId },
+      "api call failed",
+    );
     if (response?.status === 401) redirect("/login");
     // The SDK hands back the parsed response body, which for this API is
     // `{ error, message? }` — prefer that over the bare status so the toast
     // says what actually went wrong.
-    const body = error as { message?: string; error?: string } | undefined;
+    const body = error as { message?: string; error?: string; requestId?: string } | undefined;
     const status = response?.status ?? 500;
     const message =
       body?.message ?? body?.error ?? response?.statusText ?? `Request failed (${status})`;
-    return new ApiError(status, message);
+    return new ApiError(status, message, requestId ?? body?.requestId);
   },
 });
 
@@ -65,7 +71,13 @@ configureSdk({
  * is request-cached, so this costs one resolution per request no matter how
  * many calls a page makes.
  */
-export async function authHeaders(): Promise<{ headers: { cookie: string } }> {
+export async function authHeaders(): Promise<{
+  headers: { cookie: string; "x-request-id": string };
+}> {
   await requireOrgSession();
-  return { headers: { cookie: (await cookies()).toString() } };
+  // The API adopts this id (fastify requestIdHeader), so one id spans both
+  // processes' logs for the call.
+  return {
+    headers: { cookie: (await cookies()).toString(), "x-request-id": crypto.randomUUID() },
+  };
 }

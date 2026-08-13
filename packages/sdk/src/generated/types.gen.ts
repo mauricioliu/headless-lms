@@ -41,6 +41,7 @@ export type UpdateOrganizationErrors = {
   409: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -142,6 +143,7 @@ export type UpdateMemberRoleErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -149,6 +151,7 @@ export type UpdateMemberRoleErrors = {
   409: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -189,6 +192,7 @@ export type RemoveMemberErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -196,6 +200,7 @@ export type RemoveMemberErrors = {
   409: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -228,6 +233,7 @@ export type CreateInviteErrors = {
   409: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -265,6 +271,7 @@ export type GetInviteErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -299,6 +306,7 @@ export type AcceptInviteErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -421,6 +429,7 @@ export type DeleteCourseErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -449,6 +458,7 @@ export type GetCourseErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -506,6 +516,7 @@ export type UpdateCourseErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -565,6 +576,7 @@ export type UpdateCourseSettingsErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -677,6 +689,7 @@ export type DeleteDownloadErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -705,6 +718,7 @@ export type GetDownloadErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -753,6 +767,7 @@ export type UpdateDownloadErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -795,6 +810,7 @@ export type ListDownloadAssetsErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -836,6 +852,7 @@ export type AddDownloadAssetErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -875,6 +892,7 @@ export type ReorderDownloadAssetsErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -882,6 +900,7 @@ export type ReorderDownloadAssetsErrors = {
   409: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -922,6 +941,7 @@ export type RemoveDownloadAssetErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -963,6 +983,7 @@ export type RenameDownloadAssetErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1077,6 +1098,7 @@ export type GetLearnCourseErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1128,6 +1150,7 @@ export type ListLearnModulesErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1166,6 +1189,7 @@ export type ListLearnActivitiesErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1211,6 +1235,7 @@ export type ReportProgressErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1243,6 +1268,7 @@ export type GetLearnCourseProgressErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1284,6 +1310,7 @@ export type ListActivityCommentsErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1353,6 +1380,7 @@ export type PostCommentErrors = {
   403: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -1360,6 +1388,7 @@ export type PostCommentErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1416,6 +1445,7 @@ export type DeleteCommentErrors = {
   403: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -1423,6 +1453,7 @@ export type DeleteCommentErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1466,6 +1497,7 @@ export type EditCommentErrors = {
   403: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -1473,6 +1505,7 @@ export type EditCommentErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1529,6 +1562,7 @@ export type ClearCommentReactionErrors = {
   403: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -1536,6 +1570,7 @@ export type ClearCommentReactionErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1575,6 +1610,7 @@ export type SetCommentReactionErrors = {
   403: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -1582,6 +1618,7 @@ export type SetCommentReactionErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1620,6 +1657,7 @@ export type ReportCommentErrors = {
   403: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -1627,6 +1665,7 @@ export type ReportCommentErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1664,6 +1703,7 @@ export type GetAssetDownloadUrlErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -1671,6 +1711,7 @@ export type GetAssetDownloadUrlErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1745,6 +1786,7 @@ export type GetLearnDownloadErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1798,6 +1840,7 @@ export type GetLearnDownloadAssetErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1881,6 +1924,7 @@ export type ModerateRemoveCommentErrors = {
   403: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -1888,6 +1932,7 @@ export type ModerateRemoveCommentErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1933,6 +1978,7 @@ export type PublishCommentErrors = {
   403: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -1940,6 +1986,7 @@ export type PublishCommentErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -1981,6 +2028,7 @@ export type DismissCommentReportsErrors = {
   403: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -1988,6 +2036,7 @@ export type DismissCommentReportsErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -2019,6 +2068,7 @@ export type ReplyToCommentErrors = {
   403: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -2026,6 +2076,7 @@ export type ReplyToCommentErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -2428,6 +2479,7 @@ export type DeleteStudentErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -2456,6 +2508,7 @@ export type GetStudentErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -2501,6 +2554,7 @@ export type UpdateStudentErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -2508,6 +2562,7 @@ export type UpdateStudentErrors = {
   409: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -2549,6 +2604,7 @@ export type ResendStudentInviteErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -2556,6 +2612,7 @@ export type ResendStudentInviteErrors = {
   409: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -2655,6 +2712,7 @@ export type SetEntitlementStatusErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -2814,6 +2872,7 @@ export type DeleteAutomationErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -2842,6 +2901,7 @@ export type GetAutomationErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -2898,6 +2958,7 @@ export type UpdateAutomationErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3044,6 +3105,7 @@ export type RequestUploadErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3051,6 +3113,7 @@ export type RequestUploadErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3100,6 +3163,7 @@ export type ConfirmAssetErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3107,6 +3171,7 @@ export type ConfirmAssetErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3114,6 +3179,7 @@ export type ConfirmAssetErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3159,6 +3225,7 @@ export type ListAssetsErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3166,6 +3233,7 @@ export type ListAssetsErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3212,6 +3280,7 @@ export type DeleteAssetErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3219,6 +3288,7 @@ export type DeleteAssetErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3226,6 +3296,7 @@ export type DeleteAssetErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3254,6 +3325,7 @@ export type GetAssetErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3261,6 +3333,7 @@ export type GetAssetErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3268,6 +3341,7 @@ export type GetAssetErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3311,6 +3385,7 @@ export type RequestAssetDownloadErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3318,6 +3393,7 @@ export type RequestAssetDownloadErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3325,6 +3401,7 @@ export type RequestAssetDownloadErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3369,6 +3446,7 @@ export type ListAvailableIntegrationsErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3417,6 +3495,7 @@ export type ListConnectionsErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3424,6 +3503,7 @@ export type ListConnectionsErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3470,6 +3550,7 @@ export type ConnectIntegrationErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3477,6 +3558,7 @@ export type ConnectIntegrationErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3484,6 +3566,7 @@ export type ConnectIntegrationErrors = {
   409: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3525,6 +3608,7 @@ export type DisconnectIntegrationErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3532,6 +3616,7 @@ export type DisconnectIntegrationErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3539,6 +3624,7 @@ export type DisconnectIntegrationErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3568,6 +3654,7 @@ export type GetConnectionErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3575,6 +3662,7 @@ export type GetConnectionErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3582,6 +3670,7 @@ export type GetConnectionErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3627,6 +3716,7 @@ export type ConfigureConnectionErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3634,6 +3724,7 @@ export type ConfigureConnectionErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3641,6 +3732,7 @@ export type ConfigureConnectionErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3686,6 +3778,7 @@ export type ReconnectIntegrationErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3693,6 +3786,7 @@ export type ReconnectIntegrationErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3700,6 +3794,7 @@ export type ReconnectIntegrationErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
@@ -3747,6 +3842,7 @@ export type InvokeConnectionActionErrors = {
   400: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3754,6 +3850,7 @@ export type InvokeConnectionActionErrors = {
   401: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3761,6 +3858,7 @@ export type InvokeConnectionActionErrors = {
   404: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3768,6 +3866,7 @@ export type InvokeConnectionActionErrors = {
   409: {
     error: string;
     message?: string;
+    requestId?: string;
   };
   /**
    * Default Response
@@ -3775,6 +3874,7 @@ export type InvokeConnectionActionErrors = {
   502: {
     error: string;
     message?: string;
+    requestId?: string;
   };
 };
 
