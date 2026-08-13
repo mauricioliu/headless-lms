@@ -36,7 +36,7 @@ export async function coursesRoutes(app: FastifyInstance, container: Container):
     },
     handler: async (req) => {
       const scope = await resolveScope(container, req);
-      return courses.list(scope.orgId, req.query);
+      return courses.listCourses(scope.orgId, req.query);
     },
   });
 

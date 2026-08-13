@@ -125,7 +125,7 @@ function fakeContentService(over: Partial<ContentService> = {}): ContentService 
     throw new Error('not used');
   };
   return {
-    list: async () => ({ rows: [], total: 0, page: 1, pageSize: 20 }),
+    listCourses: async () => ({ rows: [], total: 0, page: 1, pageSize: 20 }),
     getCourse: async () => null,
     createCourse: rejectMutation,
     updateCourse: rejectMutation,

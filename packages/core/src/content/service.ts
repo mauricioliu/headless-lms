@@ -49,7 +49,7 @@ export class ContentServiceImpl implements ContentService {
     this.logger = params.logger ?? noopLogger;
   }
 
-  list(orgId: string, query: ListCoursesQuery): Promise<Page<Course>> {
+  listCourses(orgId: string, query: ListCoursesQuery): Promise<Page<Course>> {
     return this.repo.listCourses(orgId, query);
   }
 

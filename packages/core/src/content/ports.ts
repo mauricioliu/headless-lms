@@ -21,7 +21,7 @@ import type {
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 
 export interface ContentService {
-  list(orgId: string, query: ListCoursesQuery): Promise<Page<Course>>;
+  listCourses(orgId: string, query: ListCoursesQuery): Promise<Page<Course>>;
   getCourse(orgId: string, id: string): Promise<Course | null>;
   createCourse(orgId: string, input: CreateCourseInput): Promise<Course>;
   /** @throws NotFoundError when no course with this id exists in the org. */
