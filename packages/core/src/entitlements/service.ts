@@ -52,6 +52,7 @@ export class EntitlementsServiceImpl implements EntitlementsService {
       orgId,
       entitlementId: entitlement.id,
       orgUserId: entitlement.orgUserId,
+      bundleId: entitlement.bundleId,
       contentId: entitlement.contentId,
     });
     return entitlement;

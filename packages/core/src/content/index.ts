@@ -1,6 +1,12 @@
 // content context — public surface. Re-export only what other contexts may use.
 export { ContentService } from './service.js';
-export type { CourseManagementService, ContentRepository } from './ports.js';
+export type {
+  BundlesService,
+  CourseManagementService,
+  ContentRepository,
+  ContentService as ContentServicePort,
+  DownloadablesService,
+} from './ports.js';
 export type {
   Course,
   CourseStatus,
@@ -12,6 +18,8 @@ export type {
   DownloadStatus,
   Download,
   DownloadAsset,
+  Bundle,
+  BundleItem,
 } from './model.js';
 export type {
   CreateCourseInput,
@@ -23,6 +31,9 @@ export type {
   UpdateDownloadInput,
   AddDownloadAssetInput,
   ReorderDownloadAssetsInput,
+  ListBundlesQuery,
+  CreateBundleInput,
+  UpdateBundleInput,
 } from './types.js';
 export { contentEvents } from './events.js';
 export type {
@@ -40,5 +51,10 @@ export type {
   DownloadCreated,
   DownloadUpdated,
   DownloadDeleted,
+  BundleCreated,
+  BundleUpdated,
+  BundleDeleted,
+  BundleItemAdded,
+  BundleItemRemoved,
   ContentEvent,
 } from './events.js';

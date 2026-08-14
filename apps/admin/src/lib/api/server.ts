@@ -41,6 +41,7 @@ import { authHeaders } from "./server-call";
 import type {
   Asset,
   Automation,
+  BundleRow,
   AutomationTriggerInfo,
   AvailableAction,
   AvailableIntegration,
@@ -81,13 +82,15 @@ async function contentRefOf(
   }
 }
 
-/** Join bare grant rows with student identity + content titles (one fetch per
- *  unique id, in parallel) and derive the display status. */
+/** Join bare grant rows with student identity + target titles (one fetch per
+ *  unique id, in parallel) and derive the display status. A grant targets
+ *  either a content item or a bundle. */
 async function composeEntitlements(grants: EntitlementGrant[]): Promise<Entitlement[]> {
   const headers = await authHeaders();
   const studentIds = [...new Set(grants.map((g) => g.orgUserId))];
-  const contentIds = [...new Set(grants.map((g) => g.contentId))];
-  const [students, refs] = await Promise.all([
+  const contentIds = [...new Set(grants.map((g) => g.contentId).filter((id) => id !== null))];
+  const bundleIds = [...new Set(grants.map((g) => g.bundleId).filter((id) => id !== null))];
+  const [students, contentRefs, bundleRefs] = await Promise.all([
     Promise.all(
       studentIds.map(async (id) => {
         try {
@@ -98,18 +101,33 @@ async function composeEntitlements(grants: EntitlementGrant[]): Promise<Entitlem
       }),
     ),
     Promise.all(contentIds.map((id) => contentRefOf(id, headers))),
+    Promise.all(
+      bundleIds.map(async (id): Promise<Entitlement["content"]> => {
+        try {
+          const bundle = await Content.getBundle({ bundleId: id }, headers);
+          return { id, type: "bundle", title: bundle.name };
+        } catch {
+          return { id, type: "bundle", title: id };
+        }
+      }),
+    ),
   ]);
   const studentById = new Map(students.filter((s) => s !== null).map((s) => [s.id, s]));
-  const refById = new Map(refs.map((r) => [r.id, r]));
+  const refById = new Map([...contentRefs, ...bundleRefs].map((r) => [r.id, r]));
   return grants.map((g) => {
     const student = studentById.get(g.orgUserId);
+    const targetId = g.contentId ?? g.bundleId;
     return {
       ...g,
       status: entitlementStatusOf(g),
       firstName: student?.firstName ?? null,
       lastName: student?.lastName ?? null,
       email: student?.email ?? "",
-      content: refById.get(g.contentId) ?? { id: g.contentId, type: "course", title: g.contentId },
+      content: (targetId ? refById.get(targetId) : undefined) ?? {
+        id: targetId ?? g.id,
+        type: "course",
+        title: targetId ?? "Unknown",
+      },
     };
   });
 }
@@ -184,6 +202,23 @@ export const serverApi = {
       type: "download" as const,
     }));
     return [...courses, ...downloads].sort((a, b) => a.title.localeCompare(b.title));
+  },
+
+  // bundles
+  /** Rows joined with their item contentIds — count column + edit-dialog seed. */
+  async listBundles(params: ListParams): Promise<Paginated<BundleRow>> {
+    const headers = await authHeaders();
+    const page = await Content.listBundles(toQuery(params, []), headers);
+    const items = await Promise.all(
+      page.rows.map((b) => Content.listBundleItems({ bundleId: b.id }, headers)),
+    );
+    return {
+      ...page,
+      rows: page.rows.map((b, i) => ({
+        ...b,
+        contentIds: items[i].map((item) => item.contentId),
+      })),
+    };
   },
 
   // downloads

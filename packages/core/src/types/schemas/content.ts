@@ -22,11 +22,52 @@ export const activitySettingsSchema = z.object({
 }).strict();
 export type ActivitySettings = z.infer<typeof activitySettingsSchema>;
 
+export const bundleSchema = z.object({
+  orgId: idSchema,
+  id: idSchema,
+  name: z.string(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+}).strict();
+export type Bundle = z.output<typeof bundleSchema>;
+export type BundleInput = z.input<typeof bundleSchema>;
+
+export const bundleItemSchema = z.object({
+  orgId: idSchema,
+  bundleId: idSchema,
+  contentId: idSchema,
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+}).strict();
+export type BundleItem = z.output<typeof bundleItemSchema>;
+export type BundleItemInput = z.input<typeof bundleItemSchema>;
+
+export const listBundlesQuerySchema = z.object({
+  page: z.number().int().min(1),
+  pageSize: z.number().int().min(1),
+  search: z.string().optional(),
+  sort: z.string().optional(),
+}).strict();
+export type ListBundlesQuery = z.infer<typeof listBundlesQuerySchema>;
+
+export const createBundleInputSchema = z.object({
+  name: z.string(),
+  /** Content to put in the bundle at creation — bundle and items land together. */
+  contentIds: z.array(idSchema).optional(),
+}).strict();
+export type CreateBundleInput = z.infer<typeof createBundleInputSchema>;
+
+export const updateBundleInputSchema = z.object({
+  name: z.string().optional(),
+}).strict();
+export type UpdateBundleInput = z.infer<typeof updateBundleInputSchema>;
+
 export const contentItemSchema = z.object({
   orgId: idSchema,
   id: idSchema,
   type: contentTypeSchema,
   createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 }).strict();
 export type ContentItem = z.output<typeof contentItemSchema>;
 export type ContentItemInput = z.input<typeof contentItemSchema>;
@@ -78,6 +119,8 @@ export const activityAssetSchema = z.object({
   activityId: idSchema,
   assetId: idSchema,
   seq: z.number().int(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 }).strict();
 export type ActivityAsset = z.output<typeof activityAssetSchema>;
 export type ActivityAssetInput = z.input<typeof activityAssetSchema>;
@@ -140,6 +183,8 @@ export const downloadAssetSchema = z.object({
   assetId: idSchema,
   seq: z.number().int(),
   displayName: z.string().nullable(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 }).strict();
 export type DownloadAsset = z.output<typeof downloadAssetSchema>;
 export type DownloadAssetInput = z.input<typeof downloadAssetSchema>;

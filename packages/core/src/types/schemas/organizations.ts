@@ -53,6 +53,7 @@ export const inviteSchema = z.object({
   tokenHash: z.string().nullable(),
   expiresAt: z.coerce.date().nullable(),
   createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 }).strict();
 export type Invite = z.output<typeof inviteSchema>;
 export type InviteInput = z.input<typeof inviteSchema>;

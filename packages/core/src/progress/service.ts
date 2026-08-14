@@ -101,7 +101,7 @@ export class ProgressServiceImpl implements ProgressService {
       const events: NewProgressEvent[] = [];
       let record = await this.ensureActivityRecord(orgId, input, scope, events);
       const state = mergeReports(record.position, input.reports);
-      if (state.changed && !record.completedAt) {
+      if (state.changed) {
         record = (await scope.progress.update(orgId, record.id, { position: state.map })) ?? record;
       }
       if (!record.completedAt && completionSatisfied(activity.settings, state.claimed)) {
@@ -147,6 +147,7 @@ export class ProgressServiceImpl implements ProgressService {
       startedAt: now,
       position: null,
       completedAt: null,
+      createdAt: now,
       updatedAt: now,
     });
     if (!record) {
@@ -217,6 +218,7 @@ export class ProgressServiceImpl implements ProgressService {
         startedAt: now,
         position: null,
         completedAt: now,
+        createdAt: now,
         updatedAt: now,
       });
       if (inserted) {

@@ -8,11 +8,14 @@ const SAMPLE: Entitlement = {
   orgId: 'org-1',
   id: 'e1',
   orgUserId: 's1',
+  bundleId: null,
   contentId: 'c1',
   status: 'active',
   grantedAt: new Date('2026-01-01T00:00:00Z'),
   expiresAt: null,
   source: 'manual',
+  createdAt: new Date('2026-01-01T00:00:00Z'),
+  updatedAt: new Date('2026-01-01T00:00:00Z'),
 };
 
 function fakeRepo(over?: Partial<EntitlementsRepository>): EntitlementsRepository {

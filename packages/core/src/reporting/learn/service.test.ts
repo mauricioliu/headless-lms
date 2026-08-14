@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { LearnReportServiceImpl } from './service.js';
 import type { LearnEntitlementReader, ContentRef } from './index.js';
-import type { Activity, CourseManagementService, Course, Module } from '../../content/index.js';
+import type {
+  Activity,
+  ContentServicePort,
+  Course,
+  Module,
+} from '../../content/index.js';
 import type { ProgressRecord, ProgressService } from '../../progress/index.js';
 import type { Asset, AssetsService } from '../../assets/index.js';
 
@@ -28,6 +33,7 @@ function progressRecord(
     startedAt: new Date('2026-07-23T09:00:00Z'),
     position: null,
     completedAt: null,
+    createdAt: new Date('2026-07-23T09:00:00Z'),
     updatedAt: new Date('2026-07-23T09:00:00Z'),
     ...partial,
   };
@@ -78,12 +84,12 @@ function fakeContent(
   courses: Record<string, Course>,
   modules: Record<string, Module[]>,
   activities: Record<string, Activity[]> = {},
-): CourseManagementService {
+): ContentServicePort {
   return {
     getCourse: async (_org: string, id: string) => courses[id] ?? null,
     listCourseModules: async (_org: string, courseId: string) => modules[courseId] ?? [],
     listCourseActivities: async (_org: string, courseId: string) => activities[courseId] ?? [],
-  } as unknown as CourseManagementService;
+  } as unknown as ContentServicePort;
 }
 
 const SIGNED_ASSET: Asset = {
@@ -97,6 +103,7 @@ const SIGNED_ASSET: Asset = {
   status: 'ready',
   uploadedBy: 'u1',
   createdAt: AT,
+  updatedAt: AT,
 };
 
 // Neutral AssetsService fake for tests that don't exercise download delivery —
@@ -120,7 +127,7 @@ function fakeAssets(captured: { expiry?: number; filename?: string } = {}): Asse
 
 // Full-surface ContentService fake for the download-delivery suite: every
 // member rejects or returns empty by default, overridable per test.
-function fakeContentService(over: Partial<CourseManagementService> = {}): CourseManagementService {
+function fakeContentService(over: Partial<ContentServicePort> = {}): ContentServicePort {
   const rejectMutation = async (): Promise<never> => {
     throw new Error('not used');
   };
@@ -337,6 +344,8 @@ describe('download delivery', () => {
     assetId: 'a1',
     seq: 0,
     displayName: null,
+    createdAt: AT,
+    updatedAt: AT,
     ...over,
   });
 

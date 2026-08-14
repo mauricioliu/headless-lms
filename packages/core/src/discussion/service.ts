@@ -466,6 +466,7 @@ export class DiscussionServiceImpl implements DiscussionService {
     if (!config.enabled) {
       throw new ForbiddenError('discussion is not open on this activity');
     }
+    const now = new Date();
     const report: CommentReport = {
       id: genId('commentReport'),
       orgId,
@@ -473,7 +474,8 @@ export class DiscussionServiceImpl implements DiscussionService {
       orgUserId: actor.id,
       reason,
       resolvedAt: null,
-      createdAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     };
     return this.uow.run(async (scope) => {
       const saved = await scope.discussion.insertReport(orgId, report);

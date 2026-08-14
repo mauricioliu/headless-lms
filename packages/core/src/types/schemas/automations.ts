@@ -67,6 +67,8 @@ export const automationRunSchema = z.object({
   actionResults: z.array(automationActionResultSchema),
   startedAt: z.coerce.date(),
   finishedAt: z.coerce.date().nullable(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 }).strict();
 export type AutomationRun = z.output<typeof automationRunSchema>;
 export type AutomationRunInput = z.input<typeof automationRunSchema>;

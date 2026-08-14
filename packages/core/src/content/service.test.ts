@@ -54,6 +54,14 @@ function makeRepo(): ContentRepository {
     removeDownloadAsset: vi.fn(),
     renameDownloadAsset: vi.fn(),
     reorderDownloadAssets: vi.fn(),
+    listBundles: vi.fn(),
+    findBundleById: vi.fn(),
+    createBundle: vi.fn(),
+    updateBundle: vi.fn(),
+    deleteBundle: vi.fn(),
+    listBundleItems: vi.fn(),
+    addBundleItem: vi.fn(),
+    removeBundleItem: vi.fn(),
   };
 }
 
@@ -681,6 +689,8 @@ function makeDownloadAsset(over: Partial<DownloadAsset> = {}): DownloadAsset {
     assetId: 'a1',
     seq: 0,
     displayName: null,
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
     ...over,
   };
 }

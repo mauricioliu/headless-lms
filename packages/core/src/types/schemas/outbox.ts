@@ -10,6 +10,7 @@ export const eventOutboxSchema = z.object({
   nextAttemptAt: z.coerce.date(),
   lastError: z.string().nullable(),
   createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
   processedAt: z.coerce.date().nullable(),
 }).strict();
 export type EventOutbox = z.output<typeof eventOutboxSchema>;

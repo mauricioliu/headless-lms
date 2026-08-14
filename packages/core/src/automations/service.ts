@@ -107,6 +107,7 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
   private async dispatchOne(automation: Automation, event: DomainEvent): Promise<void> {
     let run: AutomationRun | null | undefined;
     try {
+      const now = new Date();
       run = await this.uow.run(async ({ runs, outbox }) => {
         const inserted = await runs.insert(event.orgId, {
           orgId: event.orgId,
@@ -115,8 +116,10 @@ export class AutomationsServiceImpl implements AutomationsService, AutomationExe
           event,
           status: 'running',
           actionResults: [],
-          startedAt: new Date(),
+          startedAt: now,
           finishedAt: null,
+          createdAt: now,
+          updatedAt: now,
         });
         if (!inserted) {
           // At-least-once redelivery of a trigger event already run for this automation — no-op.

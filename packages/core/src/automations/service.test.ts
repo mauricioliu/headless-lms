@@ -24,11 +24,14 @@ const SAMPLE_ENTITLEMENT: Entitlement = {
   orgId: 'org-1',
   id: 'e1',
   orgUserId: 's1',
+  bundleId: null,
   contentId: 'c1',
   status: 'active',
   grantedAt: new Date('2026-01-01T00:00:00Z'),
   expiresAt: null,
   source: 'manual',
+  createdAt: new Date('2026-01-01T00:00:00Z'),
+  updatedAt: new Date('2026-01-01T00:00:00Z'),
 };
 
 // Trigger events reach the automations service through the outbox relay, so
@@ -36,6 +39,8 @@ const SAMPLE_ENTITLEMENT: Entitlement = {
 const RELAYED_ENTITLEMENT = {
   ...SAMPLE_ENTITLEMENT,
   grantedAt: '2026-01-01T00:00:00.000Z',
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
 const ENTITLEMENT_CREATED_EVENT = {
@@ -81,6 +86,8 @@ const RUN: AutomationRun = {
   actionResults: [],
   startedAt: new Date('2026-01-02T00:00:00Z'),
   finishedAt: null,
+  createdAt: new Date('2026-01-02T00:00:00Z'),
+  updatedAt: new Date('2026-01-02T00:00:00Z'),
 };
 
 function fakeRepo(over?: Partial<AutomationsRepository>): AutomationsRepository {

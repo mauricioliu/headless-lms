@@ -1,6 +1,8 @@
 import type {
   Activity,
   ActivityAsset,
+  Bundle,
+  BundleItem,
   Course,
   CourseSettings,
   Download,
@@ -10,15 +12,20 @@ import type {
 } from './model.js';
 import type {
   AddDownloadAssetInput,
+  CreateBundleInput,
   CreateCourseInput,
   CreateDownloadInput,
+  ListBundlesQuery,
   ListCoursesQuery,
   ListDownloadsQuery,
   Page,
+  UpdateBundleInput,
   UpdateCourseInput,
   UpdateDownloadInput,
 } from './types.js';
 import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
+
+export interface ContentService extends DownloadablesService, CourseManagementService {}
 
 export interface CourseManagementService {
   listCourses(orgId: string, query: ListCoursesQuery): Promise<Page<Course>>;
@@ -100,12 +107,34 @@ export interface DownloadablesService {
   ): Promise<DownloadAsset[]>;
 }
 
+export interface BundlesService {
+  listBundles(orgId: string, query: ListBundlesQuery): Promise<Page<Bundle>>;
+  getBundle(orgId: string, id: string): Promise<Bundle | null>;
+  /** Bundle and its initial items are created together, or not at all.
+   *  @throws NotFoundError when an initial content id does not exist in the org. */
+  createBundle(orgId: string, input: CreateBundleInput): Promise<Bundle>;
+  /** @throws NotFoundError when no bundle with this id exists in the org. */
+  updateBundle(orgId: string, id: string, patch: UpdateBundleInput): Promise<Bundle>;
+  /** @throws NotFoundError when no bundle with this id exists in the org. */
+  deleteBundle(orgId: string, id: string): Promise<void>;
+
+  listBundleItems(orgId: string, bundleId: string): Promise<BundleItem[]>;
+  /** @throws NotFoundError when the bundle — or the content — does not exist in the org. */
+  addBundleItem(orgId: string, bundleId: string, contentId: string): Promise<BundleItem[]>;
+  /** @throws NotFoundError when no bundle with this id exists in the org. */
+  removeBundleItem(orgId: string, bundleId: string, contentId: string): Promise<BundleItem[]>;
+}
+
 export interface ContentRepository {
   listCourses(orgId: string, query: ListCoursesQuery): Promise<Page<Course>>;
   findCourseById(orgId: string, id: string): Promise<Course | null>;
   createCourse(orgId: string, input: CreateCourseInput, slug: string): Promise<Course>;
   updateCourse(orgId: string, id: string, patch: UpdateCourseInput): Promise<Course | null>;
-  patchCourseSettings(orgId: string, id: string, value: Partial<CourseSettings>): Promise<CourseSettings>;
+  patchCourseSettings(
+    orgId: string,
+    id: string,
+    value: Partial<CourseSettings>,
+  ): Promise<CourseSettings>;
   deleteCourse(orgId: string, id: string): Promise<boolean>;
 
   listCourseModules(orgId: string, courseId: string): Promise<Module[]>;
@@ -156,7 +185,22 @@ export interface ContentRepository {
     assetId: string,
     displayName: string | null,
   ): Promise<DownloadAsset[]>;
-  reorderDownloadAssets(orgId: string, downloadId: string, assetIds: string[]): Promise<DownloadAsset[]>;
+  reorderDownloadAssets(
+    orgId: string,
+    downloadId: string,
+    assetIds: string[],
+  ): Promise<DownloadAsset[]>;
+
+  listBundles(orgId: string, query: ListBundlesQuery): Promise<Page<Bundle>>;
+  findBundleById(orgId: string, id: string): Promise<Bundle | null>;
+  createBundle(orgId: string, input: CreateBundleInput): Promise<Bundle>;
+  updateBundle(orgId: string, id: string, patch: UpdateBundleInput): Promise<Bundle | null>;
+  deleteBundle(orgId: string, id: string): Promise<boolean>;
+
+  listBundleItems(orgId: string, bundleId: string): Promise<BundleItem[]>;
+  /** Content already in the bundle is left as it is — adding twice is a no-op. */
+  addBundleItem(orgId: string, bundleId: string, contentId: string): Promise<BundleItem[]>;
+  removeBundleItem(orgId: string, bundleId: string, contentId: string): Promise<BundleItem[]>;
 }
 
 export interface ContentTxScope {

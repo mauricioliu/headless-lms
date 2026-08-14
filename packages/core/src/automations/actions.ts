@@ -33,6 +33,10 @@ export const SEND_EMAIL_DERIVATIONS: SendEmailDerivations = {
         return undefined;
       }
       const entitlement = result.data.data;
+      // Bundle grants carry no content id — this email is per content item.
+      if (!entitlement.contentId) {
+        return undefined;
+      }
       const [to, content] = await Promise.all([
         lookups.orgUserEmail(entitlement.orgId, entitlement.orgUserId),
         lookups.contentInfo(entitlement.orgId, entitlement.contentId),
@@ -54,6 +58,10 @@ export const SEND_EMAIL_DERIVATIONS: SendEmailDerivations = {
         return undefined;
       }
       const entitlement = result.data.data;
+      // Bundle grants carry no content id — this email is per content item.
+      if (!entitlement.contentId) {
+        return undefined;
+      }
       const [to, content] = await Promise.all([
         lookups.orgUserEmail(entitlement.orgId, entitlement.orgUserId),
         lookups.contentInfo(entitlement.orgId, entitlement.contentId),

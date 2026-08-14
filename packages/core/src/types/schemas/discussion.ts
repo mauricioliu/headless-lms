@@ -54,6 +54,7 @@ export const commentReactionSchema = z.object({
   orgUserId: idSchema,
   emoji: reactionEmojiSchema,
   createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 }).strict();
 export type CommentReaction = z.output<typeof commentReactionSchema>;
 
@@ -65,6 +66,7 @@ export const commentReportSchema = z.object({
   reason: z.string(),
   resolvedAt: z.coerce.date().nullable(),
   createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 }).strict();
 export type CommentReport = z.output<typeof commentReportSchema>;
 export type CommentReportInput = z.input<typeof commentReportSchema>;

@@ -202,6 +202,24 @@ describe('ProgressService.report', () => {
     expect(appended).toHaveLength(before);
   });
 
+  it('state reported after completion still merges; completion stays untouched', async () => {
+    const { svc, appended } = makeService(structure());
+    await svc.report(
+      'org-1',
+      input('a1', [{ asset: 'ast_v1', seconds: 10, furthest: 0, watched: 0 }, { completed: true }]),
+    );
+    const before = appended.length;
+    const record = await svc.report(
+      'org-1',
+      input('a1', [{ asset: 'ast_v1', seconds: 198.7, furthest: 198.7, watched: 10.9 }]),
+    );
+    expect(record.position).toEqual({
+      ast_v1: { seconds: 198.7, furthest: 198.7, watched: 10.9 },
+    });
+    expect(record.completedAt).toEqual(new Date('2026-07-23T10:00:00.000Z'));
+    expect(appended).toHaveLength(before);
+  });
+
   it('last activity of a module completes the module; last module completes the course', async () => {
     const { svc, records, appended } = makeService(structure());
     await svc.report('org-1', input('a1', [{ completed: true }]));

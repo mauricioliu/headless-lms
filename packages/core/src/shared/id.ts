@@ -14,6 +14,7 @@ export const ID_PREFIXES = {
   student: 'stu',
   orgUser: 'orm',
   invite: 'ivt',
+  bundle: 'bun',
   course: 'crs',
   module: 'mod',
   activity: 'act',

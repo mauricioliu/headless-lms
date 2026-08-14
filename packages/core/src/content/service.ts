@@ -1,6 +1,8 @@
 import type {
   Activity,
   ActivityAsset,
+  Bundle,
+  BundleItem,
   Course,
   CourseSettings,
   Download,
@@ -9,6 +11,7 @@ import type {
   SaveActivityInput,
 } from './model.js';
 import type {
+  BundlesService,
   CourseManagementService,
   ContentRepository,
   ContentUnitOfWork,
@@ -16,11 +19,14 @@ import type {
 } from './ports.js';
 import type {
   AddDownloadAssetInput,
+  CreateBundleInput,
   CreateCourseInput,
   CreateDownloadInput,
+  ListBundlesQuery,
   ListCoursesQuery,
   ListDownloadsQuery,
   Page,
+  UpdateBundleInput,
   UpdateCourseInput,
   UpdateDownloadInput,
 } from './types.js';
@@ -43,7 +49,9 @@ export type ContentServiceParams = {
   logger?: Logger;
 };
 
-export class ContentService implements CourseManagementService, DownloadablesService {
+export class ContentService
+  implements CourseManagementService, DownloadablesService, BundlesService
+{
   private readonly repo: ContentRepository;
   private readonly uow: ContentUnitOfWork;
   private readonly logger: Logger;
@@ -456,5 +464,108 @@ export class ContentService implements CourseManagementService, DownloadablesSer
     });
     this.logger.debug('download assets reordered', { orgId, downloadId });
     return assets;
+  }
+
+  // --- bundles --------------------------------------------------------------
+
+  listBundles(orgId: string, query: ListBundlesQuery): Promise<Page<Bundle>> {
+    return this.repo.listBundles(orgId, query);
+  }
+
+  getBundle(orgId: string, id: string): Promise<Bundle | null> {
+    return this.repo.findBundleById(orgId, id);
+  }
+
+  async createBundle(orgId: string, input: CreateBundleInput): Promise<Bundle> {
+    const { bundle, items } = await this.uow.run(async ({ content, outbox }) => {
+      // The repository writes the bundle and its initial items as one unit —
+      // an unknown content id throws and nothing is created.
+      const created = await content.createBundle(orgId, input);
+      const initial = input.contentIds?.length
+        ? await content.listBundleItems(orgId, created.id)
+        : [];
+      await outbox.append([
+        contentEvents.bundleCreated.make({ orgId, data: created }),
+        ...(initial.length > 0
+          ? [
+              contentEvents.bundleItemAdded.make({
+                orgId,
+                data: { bundleId: created.id, items: initial },
+              }),
+            ]
+          : []),
+      ]);
+      return { bundle: created, items: initial };
+    });
+    this.logger.info('bundle created', {
+      orgId,
+      bundleId: bundle.id,
+      name: bundle.name,
+      itemCount: items.length,
+    });
+    return bundle;
+  }
+
+  async updateBundle(orgId: string, id: string, patch: UpdateBundleInput): Promise<Bundle> {
+    const bundle = await this.uow.run(async ({ content, outbox }) => {
+      const updated = await content.updateBundle(orgId, id, patch);
+      if (!updated) {
+        this.logger.warn('bundle update rejected — not found', { orgId, bundleId: id });
+        throw new NotFoundError('Bundle', id);
+      }
+      await outbox.append([contentEvents.bundleUpdated.make({ orgId, data: updated })]);
+      return updated;
+    });
+    this.logger.info('bundle updated', { orgId, bundleId: id, fields: Object.keys(patch) });
+    return bundle;
+  }
+
+  async deleteBundle(orgId: string, id: string): Promise<void> {
+    await this.uow.run(async ({ content, outbox }) => {
+      // Snapshot before the delete — the event carries the last known state.
+      const bundle = await content.findBundleById(orgId, id);
+      if (!bundle) {
+        this.logger.warn('bundle delete rejected — not found', { orgId, bundleId: id });
+        throw new NotFoundError('Bundle', id);
+      }
+      const ok = await content.deleteBundle(orgId, id);
+      if (!ok) {
+        throw new NotFoundError('Bundle', id);
+      }
+      await outbox.append([contentEvents.bundleDeleted.make({ orgId, data: bundle })]);
+    });
+    this.logger.info('bundle deleted', { orgId, bundleId: id });
+  }
+
+  listBundleItems(orgId: string, bundleId: string): Promise<BundleItem[]> {
+    return this.repo.listBundleItems(orgId, bundleId);
+  }
+
+  async addBundleItem(orgId: string, bundleId: string, contentId: string): Promise<BundleItem[]> {
+    const items = await this.uow.run(async ({ content, outbox }) => {
+      const all = await content.addBundleItem(orgId, bundleId, contentId);
+      await outbox.append([
+        contentEvents.bundleItemAdded.make({ orgId, data: { bundleId, items: all } }),
+      ]);
+      return all;
+    });
+    this.logger.info('bundle item added', { orgId, bundleId, contentId });
+    return items;
+  }
+
+  async removeBundleItem(
+    orgId: string,
+    bundleId: string,
+    contentId: string,
+  ): Promise<BundleItem[]> {
+    const items = await this.uow.run(async ({ content, outbox }) => {
+      const all = await content.removeBundleItem(orgId, bundleId, contentId);
+      await outbox.append([
+        contentEvents.bundleItemRemoved.make({ orgId, data: { bundleId, items: all } }),
+      ]);
+      return all;
+    });
+    this.logger.info('bundle item removed', { orgId, bundleId, contentId });
+    return items;
   }
 }

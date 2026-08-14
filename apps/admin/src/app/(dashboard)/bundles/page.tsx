@@ -1,0 +1,24 @@
+import { serverApi } from "@/lib/api/server";
+import { parseListParams } from "@/lib/table/parse-list-params";
+
+import { BundlesTable } from "./bundles-table";
+
+// Bundles list page: reads URL params, fetches server-side, renders the table.
+export default async function BundlesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const params = parseListParams(sp, {
+    pageSize: 20,
+    initialSort: [{ id: "updatedAt", desc: true }],
+  });
+
+  const [{ rows, total }, content] = await Promise.all([
+    serverApi.listBundles(params),
+    serverApi.contentLite(),
+  ]);
+
+  return <BundlesTable rows={rows} total={total} params={params} content={content} />;
+}

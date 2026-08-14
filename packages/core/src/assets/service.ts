@@ -49,6 +49,7 @@ export class AssetsServiceImpl implements AssetsService {
     const id = genId('asset');
     const key = `${orgPrefix(orgId)}${input.kind}/${id}/${sanitizeFilename(input.filename)}`;
     const presigned = await this.storage.presignUpload({ key, contentType: input.contentType });
+    const now = new Date();
     const asset = await this.uow.run(async ({ assets, outbox }) => {
       const asset = await assets.insert(orgId, {
         orgId,
@@ -60,7 +61,8 @@ export class AssetsServiceImpl implements AssetsService {
         size: 0,
         status: 'pending',
         uploadedBy: input.uploadedBy,
-        createdAt: new Date(),
+        createdAt: now,
+        updatedAt: now,
       });
       await outbox.append([assetEvents.assetCreated.make({ orgId, data: asset })]);
       return asset;

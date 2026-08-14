@@ -13,6 +13,7 @@ export const progressRecordSchema = z.object({
   startedAt: z.coerce.date(),
   position: jsonValueSchema.nullable(),
   completedAt: z.coerce.date().nullable(),
+  createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 }).strict();
 export type ProgressRecord = z.output<typeof progressRecordSchema>;

@@ -18,6 +18,7 @@ export const assetSchema = z.object({
   status: assetStatusSchema,
   uploadedBy: idSchema,
   createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 }).strict();
 export type Asset = z.output<typeof assetSchema>;
 export type AssetInput = z.input<typeof assetSchema>;

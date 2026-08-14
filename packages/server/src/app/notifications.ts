@@ -13,6 +13,10 @@ export function registerNotificationSubscribers(
 ): void {
   bus.subscribe(entitlementEvents.entitlementCreated, async (event) => {
     const { orgUserId, contentId } = event.data;
+    // Bundle grants carry no content id — these emails are per content item.
+    if (!contentId) {
+      return;
+    }
     const [to, content] = await Promise.all([
       lookups.orgUserEmail(event.orgId, orgUserId),
       lookups.contentInfo(event.orgId, contentId),
@@ -28,6 +32,10 @@ export function registerNotificationSubscribers(
 
   bus.subscribe(entitlementEvents.entitlementDeleted, async (event) => {
     const { orgUserId, contentId } = event.data;
+    // Bundle grants carry no content id — these emails are per content item.
+    if (!contentId) {
+      return;
+    }
     const [to, content] = await Promise.all([
       lookups.orgUserEmail(event.orgId, orgUserId),
       lookups.contentInfo(event.orgId, contentId),

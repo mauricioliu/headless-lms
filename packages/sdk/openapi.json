@@ -2432,6 +2432,14 @@
                       "displayName": {
                         "nullable": true,
                         "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
@@ -2440,7 +2448,9 @@
                       "downloadId",
                       "assetId",
                       "seq",
-                      "displayName"
+                      "displayName",
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -2548,6 +2558,14 @@
                       "displayName": {
                         "nullable": true,
                         "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
@@ -2556,7 +2574,9 @@
                       "downloadId",
                       "assetId",
                       "seq",
-                      "displayName"
+                      "displayName",
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -2666,6 +2686,14 @@
                       "displayName": {
                         "nullable": true,
                         "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
@@ -2674,7 +2702,9 @@
                       "downloadId",
                       "assetId",
                       "seq",
-                      "displayName"
+                      "displayName",
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -2813,6 +2843,14 @@
                       "displayName": {
                         "nullable": true,
                         "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
@@ -2821,7 +2859,9 @@
                       "downloadId",
                       "assetId",
                       "seq",
-                      "displayName"
+                      "displayName",
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -2914,6 +2954,14 @@
                       "displayName": {
                         "nullable": true,
                         "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
@@ -2922,7 +2970,754 @@
                       "downloadId",
                       "assetId",
                       "seq",
-                      "displayName"
+                      "displayName",
+                      "createdAt",
+                      "updatedAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bundles": {
+      "get": {
+        "operationId": "listBundles",
+        "summary": "List bundles",
+        "tags": [
+          "Content"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "in": "query",
+            "name": "page",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 20,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "in": "query",
+            "name": "pageSize",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "search",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "orgId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "orgId",
+                          "id",
+                          "name",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "page": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "rows",
+                    "total",
+                    "page",
+                    "pageSize"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createBundle",
+        "summary": "Create a bundle, optionally with initial content",
+        "tags": [
+          "Content"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "contentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "orgId",
+                    "id",
+                    "name",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bundles/{bundleId}": {
+      "get": {
+        "operationId": "getBundle",
+        "summary": "Get a bundle by id",
+        "tags": [
+          "Content"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "bundleId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "orgId",
+                    "id",
+                    "name",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateBundle",
+        "summary": "Update a bundle",
+        "tags": [
+          "Content"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "bundleId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "orgId",
+                    "id",
+                    "name",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteBundle",
+        "summary": "Delete a bundle (its content survives)",
+        "tags": [
+          "Content"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "bundleId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bundles/{bundleId}/items": {
+      "get": {
+        "operationId": "listBundleItems",
+        "summary": "List a bundle's content items",
+        "tags": [
+          "Content"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "bundleId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "bundleId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "contentId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "orgId",
+                      "bundleId",
+                      "contentId",
+                      "createdAt",
+                      "updatedAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "addBundleItem",
+        "summary": "Add a content item to a bundle",
+        "tags": [
+          "Content"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contentId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "contentId"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "bundleId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "bundleId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "contentId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "orgId",
+                      "bundleId",
+                      "contentId",
+                      "createdAt",
+                      "updatedAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bundles/{bundleId}/items/{contentId}": {
+      "delete": {
+        "operationId": "removeBundleItem",
+        "summary": "Remove a content item from a bundle (the content survives)",
+        "tags": [
+          "Content"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "bundleId",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "contentId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "bundleId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "contentId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "orgId",
+                      "bundleId",
+                      "contentId",
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -4975,6 +5770,10 @@
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -4987,7 +5786,8 @@
                         "size",
                         "status",
                         "uploadedBy",
-                        "createdAt"
+                        "createdAt",
+                        "updatedAt"
                       ],
                       "additionalProperties": false
                     }
@@ -5259,6 +6059,14 @@
                           "displayName": {
                             "nullable": true,
                             "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -5267,7 +6075,9 @@
                           "downloadId",
                           "assetId",
                           "seq",
-                          "displayName"
+                          "displayName",
+                          "createdAt",
+                          "updatedAt"
                         ],
                         "additionalProperties": false
                       }
@@ -6584,6 +7394,14 @@
                         "type": "integer",
                         "minimum": -9007199254740991,
                         "maximum": 9007199254740991
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
                       }
                     },
                     "required": [
@@ -6591,7 +7409,9 @@
                       "id",
                       "activityId",
                       "assetId",
-                      "seq"
+                      "seq",
+                      "createdAt",
+                      "updatedAt"
                     ],
                     "additionalProperties": false
                   }
@@ -7974,7 +8794,13 @@
                             "type": "string",
                             "minLength": 1
                           },
+                          "bundleId": {
+                            "nullable": true,
+                            "type": "string",
+                            "minLength": 1
+                          },
                           "contentId": {
+                            "nullable": true,
                             "type": "string",
                             "minLength": 1
                           },
@@ -7996,17 +8822,28 @@
                             "nullable": true,
                             "type": "string",
                             "format": "date-time"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
                           "orgId",
                           "id",
                           "orgUserId",
+                          "bundleId",
                           "contentId",
                           "status",
                           "source",
                           "grantedAt",
-                          "expiresAt"
+                          "expiresAt",
+                          "createdAt",
+                          "updatedAt"
                         ],
                         "additionalProperties": false
                       }
@@ -8092,7 +8929,13 @@
                       "type": "string",
                       "minLength": 1
                     },
+                    "bundleId": {
+                      "nullable": true,
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "contentId": {
+                      "nullable": true,
                       "type": "string",
                       "minLength": 1
                     },
@@ -8114,17 +8957,28 @@
                       "nullable": true,
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
                     "orgId",
                     "id",
                     "orgUserId",
+                    "bundleId",
                     "contentId",
                     "status",
                     "source",
                     "grantedAt",
-                    "expiresAt"
+                    "expiresAt",
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -8193,7 +9047,13 @@
                       "type": "string",
                       "minLength": 1
                     },
+                    "bundleId": {
+                      "nullable": true,
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "contentId": {
+                      "nullable": true,
                       "type": "string",
                       "minLength": 1
                     },
@@ -8215,17 +9075,28 @@
                       "nullable": true,
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
                     "orgId",
                     "id",
                     "orgUserId",
+                    "bundleId",
                     "contentId",
                     "status",
                     "source",
                     "grantedAt",
-                    "expiresAt"
+                    "expiresAt",
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -9124,6 +9995,14 @@
                             "nullable": true,
                             "type": "string",
                             "format": "date-time"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -9136,7 +10015,9 @@
                           "status",
                           "actionResults",
                           "startedAt",
-                          "finishedAt"
+                          "finishedAt",
+                          "createdAt",
+                          "updatedAt"
                         ],
                         "additionalProperties": false
                       }
@@ -9581,6 +10462,10 @@
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -9593,7 +10478,8 @@
                         "size",
                         "status",
                         "uploadedBy",
-                        "createdAt"
+                        "createdAt",
+                        "updatedAt"
                       ],
                       "additionalProperties": false
                     },
@@ -9757,6 +10643,10 @@
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -9769,7 +10659,8 @@
                     "size",
                     "status",
                     "uploadedBy",
-                    "createdAt"
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -9974,6 +10865,10 @@
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -9986,7 +10881,8 @@
                           "size",
                           "status",
                           "uploadedBy",
-                          "createdAt"
+                          "createdAt",
+                          "updatedAt"
                         ],
                         "additionalProperties": false
                       }
@@ -10143,6 +11039,10 @@
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -10155,7 +11055,8 @@
                     "size",
                     "status",
                     "uploadedBy",
-                    "createdAt"
+                    "createdAt",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }
@@ -10436,6 +11337,10 @@
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
                         }
                       },
                       "required": [
@@ -10448,7 +11353,8 @@
                         "size",
                         "status",
                         "uploadedBy",
-                        "createdAt"
+                        "createdAt",
+                        "updatedAt"
                       ],
                       "additionalProperties": false
                     }

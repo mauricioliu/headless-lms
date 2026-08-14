@@ -12,6 +12,7 @@ import type {
   GetAutomationResponse,
   GetCourseResponse,
   ListCommentsResponse,
+  GetBundleResponse,
   GetDownloadResponse,
   GetCourseAnalyticsResponse,
   GetEnrollmentSeriesResponse,
@@ -23,6 +24,8 @@ import type {
   ListAutomationActionsResponse,
   ListAutomationTriggersResponse,
   ListAvailableIntegrationsResponse,
+  ListBundleItemsResponse,
+  ListBundlesResponse,
   ListConnectionsResponse,
   ListCoursesResponse,
   ListDownloadAssetsResponse,
@@ -53,6 +56,12 @@ export type DownloadAsset = DownloadAssetLink & {
   contentType: string;
   size: number;
 };
+
+export type Bundle = GetBundleResponse;
+/** Bare bundle→content link row, exactly as the API stores it. */
+export type BundleItem = ListBundleItemsResponse[number];
+/** A bundle joined server-side with the ids of the content it contains. */
+export type BundleRow = Bundle & { contentIds: string[] };
 
 export type Module = ListModulesResponse[number];
 
@@ -120,14 +129,16 @@ export type EntitlementStatus = EntitlementGrant["status"] | "expired";
 
 /**
  * A grant row joined client-side with the student's identity and the granted
- * content's title (each its own resource on the API), plus the derived status.
+ * target's title (each its own resource on the API), plus the derived status.
+ * A grant targets either a content item or a bundle; `content` carries
+ * whichever one it is.
  */
 export type Entitlement = Omit<EntitlementGrant, "status"> & {
   status: EntitlementStatus;
   firstName: string | null;
   lastName: string | null;
   email: string;
-  content: { id: string; type: "course" | "download"; title: string };
+  content: { id: string; type: "course" | "download" | "bundle"; title: string };
 };
 
 export type Member = ListMembersResponse["rows"][number];
@@ -164,6 +175,7 @@ export type DownloadTicket = RequestAssetDownloadResponse;
 // Page envelopes (shape: { rows, total, page, pageSize }).
 export type CoursesPage = ListCoursesResponse;
 export type DownloadsPage = ListDownloadsResponse;
+export type BundlesPage = ListBundlesResponse;
 export type StudentsPage = ListStudentsResponse;
 export type EntitlementsPage = ListEntitlementsResponse;
 export type MembersPage = ListMembersResponse;

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import {
   activitySchema,
+  bundleItemSchema,
+  bundleSchema,
   courseSchema,
   downloadAssetSchema,
   downloadSchema,
@@ -17,6 +19,13 @@ const downloadAssetsEventSchema = z
   .object({
     downloadId: idSchema,
     assets: z.array(downloadAssetSchema),
+  })
+  .strict();
+
+const bundleItemsEventSchema = z
+  .object({
+    bundleId: idSchema,
+    items: z.array(bundleItemSchema),
   })
   .strict();
 
@@ -111,6 +120,31 @@ export const contentEvents = {
     version: 1,
     data: downloadAssetsEventSchema,
   }),
+  bundleCreated: defineEvent({
+    type: 'content.bundle.created',
+    version: 1,
+    data: bundleSchema,
+  }),
+  bundleUpdated: defineEvent({
+    type: 'content.bundle.updated',
+    version: 1,
+    data: bundleSchema,
+  }),
+  bundleDeleted: defineEvent({
+    type: 'content.bundle.deleted',
+    version: 1,
+    data: bundleSchema,
+  }),
+  bundleItemAdded: defineEvent({
+    type: 'content.bundle.item.added',
+    version: 1,
+    data: bundleItemsEventSchema,
+  }),
+  bundleItemRemoved: defineEvent({
+    type: 'content.bundle.item.removed',
+    version: 1,
+    data: bundleItemsEventSchema,
+  }),
 };
 
 export type CourseCreated = EventOf<typeof contentEvents.courseCreated>;
@@ -131,4 +165,9 @@ export type DownloadAssetAdded = EventOf<typeof contentEvents.downloadAssetAdded
 export type DownloadAssetRemoved = EventOf<typeof contentEvents.downloadAssetRemoved>;
 export type DownloadAssetRenamed = EventOf<typeof contentEvents.downloadAssetRenamed>;
 export type DownloadAssetsReordered = EventOf<typeof contentEvents.downloadAssetsReordered>;
+export type BundleCreated = EventOf<typeof contentEvents.bundleCreated>;
+export type BundleUpdated = EventOf<typeof contentEvents.bundleUpdated>;
+export type BundleDeleted = EventOf<typeof contentEvents.bundleDeleted>;
+export type BundleItemAdded = EventOf<typeof contentEvents.bundleItemAdded>;
+export type BundleItemRemoved = EventOf<typeof contentEvents.bundleItemRemoved>;
 export type ContentEvent = EventOfValues<typeof contentEvents>;

@@ -1,18 +1,7 @@
-// reporting/learn — service implementation. Composes the enrollment reader
-// (which published courses the student is actively enrolled in) with the content
-// service (the Course/Module payload). Activities are filtered to published;
-// `settings.published === false` is the only draft signal (missing ⇒ published).
-import type { CourseManagementService } from '../../content/index.js';
+import { type ContentServicePort } from '../../content/index.js';
 import type { ProgressService } from '../../progress/index.js';
 import type { AssetsService } from '../../assets/index.js';
-import type {
-  Activity,
-  Course,
-  Module,
-  CourseProgressView,
-  Download,
-  DownloadAsset,
-} from './model.js';
+import type { Activity, Course, CourseProgressView, Download, DownloadAsset, Module, } from './model.js';
 import type { LearnEntitlementReader, LearnReportService } from './ports.js';
 import type { Logger } from '../../shared/ports.js';
 import { noopLogger } from '../../shared/logger.js';
@@ -23,7 +12,7 @@ function isActivityPublished(settings: unknown): boolean {
 
 export type LearnReportServiceParams = {
   reader: LearnEntitlementReader;
-  content: CourseManagementService;
+  content: ContentServicePort;
   progress: ProgressService;
   assets: AssetsService;
   deliveryExpirySeconds: number;
@@ -32,7 +21,7 @@ export type LearnReportServiceParams = {
 
 export class LearnReportServiceImpl implements LearnReportService {
   private readonly reader: LearnEntitlementReader;
-  private readonly content: CourseManagementService;
+  private readonly content: ContentServicePort;
   private readonly progress: ProgressService;
   private readonly assets: AssetsService;
   private readonly deliveryExpirySeconds: number;

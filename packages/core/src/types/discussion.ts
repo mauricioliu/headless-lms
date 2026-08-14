@@ -43,5 +43,6 @@ export interface CommentReport {
   readonly reason: string;
   resolvedAt: Date | null;
   readonly createdAt: Date;
+  updatedAt: Date;
 }
 export type { Page } from "./shared.js";

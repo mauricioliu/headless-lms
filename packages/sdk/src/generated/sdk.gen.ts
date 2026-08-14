@@ -12,6 +12,8 @@ import { client } from "./client.gen";
 import type {
   AcceptInviteErrors,
   AcceptInviteResponses,
+  AddBundleItemErrors,
+  AddBundleItemResponses,
   AddDownloadAssetErrors,
   AddDownloadAssetResponses,
   ClearCommentReactionErrors,
@@ -24,6 +26,8 @@ import type {
   ConnectIntegrationResponses,
   CreateActivityResponses,
   CreateAutomationResponses,
+  CreateBundleErrors,
+  CreateBundleResponses,
   CreateCourseResponses,
   CreateDownloadResponses,
   CreateInviteErrors,
@@ -35,6 +39,8 @@ import type {
   DeleteAssetResponses,
   DeleteAutomationErrors,
   DeleteAutomationResponses,
+  DeleteBundleErrors,
+  DeleteBundleResponses,
   DeleteCommentErrors,
   DeleteCommentResponses,
   DeleteCourseErrors,
@@ -56,6 +62,8 @@ import type {
   GetAssetResponses,
   GetAutomationErrors,
   GetAutomationResponses,
+  GetBundleErrors,
+  GetBundleResponses,
   GetConnectionErrors,
   GetConnectionResponses,
   GetCourseAnalyticsErrors,
@@ -97,6 +105,9 @@ import type {
   ListAutomationTriggersResponses,
   ListAvailableIntegrationsErrors,
   ListAvailableIntegrationsResponses,
+  ListBundleItemsErrors,
+  ListBundleItemsResponses,
+  ListBundlesResponses,
   ListCommentsResponses,
   ListConnectionsErrors,
   ListConnectionsResponses,
@@ -122,6 +133,8 @@ import type {
   PublishCommentResponses,
   ReconnectIntegrationErrors,
   ReconnectIntegrationResponses,
+  RemoveBundleItemErrors,
+  RemoveBundleItemResponses,
   RemoveDownloadAssetErrors,
   RemoveDownloadAssetResponses,
   RemoveMemberErrors,
@@ -151,6 +164,8 @@ import type {
   UpdateActivityResponses,
   UpdateAutomationErrors,
   UpdateAutomationResponses,
+  UpdateBundleErrors,
+  UpdateBundleResponses,
   UpdateCourseErrors,
   UpdateCourseResponses,
   UpdateCourseSettingsErrors,
@@ -1196,6 +1211,259 @@ export class Content {
         ...options?.headers,
         ...params.headers,
       },
+    });
+  }
+
+  /**
+   * List bundles
+   */
+  public static listBundles<ThrowOnError extends boolean = false>(
+    parameters?: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      sort?: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListBundlesResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "page" },
+            { in: "query", key: "pageSize" },
+            { in: "query", key: "search" },
+            { in: "query", key: "sort" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).get<ListBundlesResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/bundles",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Create a bundle, optionally with initial content
+   */
+  public static createBundle<ThrowOnError extends boolean = false>(
+    parameters: {
+      name: string;
+      contentIds?: Array<string>;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<CreateBundleResponses, CreateBundleErrors, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "body", key: "name" },
+            { in: "body", key: "contentIds" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).post<
+      CreateBundleResponses,
+      CreateBundleErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/bundles",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * Delete a bundle (its content survives)
+   */
+  public static deleteBundle<ThrowOnError extends boolean = false>(
+    parameters: {
+      bundleId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<DeleteBundleResponses, DeleteBundleErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "bundleId" }] }]);
+    return (options?.client ?? client).delete<
+      DeleteBundleResponses,
+      DeleteBundleErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/bundles/{bundleId}",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Get a bundle by id
+   */
+  public static getBundle<ThrowOnError extends boolean = false>(
+    parameters: {
+      bundleId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetBundleResponses, GetBundleErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "bundleId" }] }]);
+    return (options?.client ?? client).get<
+      GetBundleResponses,
+      GetBundleErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/bundles/{bundleId}",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Update a bundle
+   */
+  public static updateBundle<ThrowOnError extends boolean = false>(
+    parameters: {
+      bundleId: string;
+      name?: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<UpdateBundleResponses, UpdateBundleErrors, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "bundleId" },
+            { in: "body", key: "name" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).patch<
+      UpdateBundleResponses,
+      UpdateBundleErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/bundles/{bundleId}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * List a bundle's content items
+   */
+  public static listBundleItems<ThrowOnError extends boolean = false>(
+    parameters: {
+      bundleId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListBundleItemsResponses, ListBundleItemsErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "bundleId" }] }]);
+    return (options?.client ?? client).get<
+      ListBundleItemsResponses,
+      ListBundleItemsErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/bundles/{bundleId}/items",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Add a content item to a bundle
+   */
+  public static addBundleItem<ThrowOnError extends boolean = false>(
+    parameters: {
+      bundleId: string;
+      contentId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<AddBundleItemResponses, AddBundleItemErrors, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "bundleId" },
+            { in: "body", key: "contentId" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).post<
+      AddBundleItemResponses,
+      AddBundleItemErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/bundles/{bundleId}/items",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * Remove a content item from a bundle (the content survives)
+   */
+  public static removeBundleItem<ThrowOnError extends boolean = false>(
+    parameters: {
+      bundleId: string;
+      contentId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<RemoveBundleItemResponses, RemoveBundleItemErrors, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "bundleId" },
+            { in: "path", key: "contentId" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).delete<
+      RemoveBundleItemResponses,
+      RemoveBundleItemErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/bundles/{bundleId}/items/{contentId}",
+      ...options,
+      ...params,
     });
   }
 

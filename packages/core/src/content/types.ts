@@ -9,4 +9,7 @@ export type {
   UpdateDownloadInput,
   AddDownloadAssetInput,
   ReorderDownloadAssetsInput,
+  ListBundlesQuery,
+  CreateBundleInput,
+  UpdateBundleInput,
 } from '../types/index.js';

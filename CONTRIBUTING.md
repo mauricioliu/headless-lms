@@ -28,3 +28,12 @@ The layering (what may import what, where schemas and repositories live, how
 integrations plug in) is documented in [AGENTS.md](AGENTS.md) and
 `docs/architecture.md`. ESLint enforces the boundaries; if `pnpm lint` rejects
 an import, the fix is moving the code, not silencing the rule.
+
+## Use of AI
+
+We use AI to improve the development speed and quality of the codebase. It's a great tool if you know what you're doing,
+and a terrible tool if you hand all responsibility to it.
+
+If you contribute code, we expect you to know the architecture of the system and how youyr 
+
+We won't accept massive AI generated PRs and AI generated garbage. 

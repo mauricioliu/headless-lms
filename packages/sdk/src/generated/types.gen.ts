@@ -827,6 +827,8 @@ export type ListDownloadAssetsResponses = {
     assetId: string;
     seq: number;
     displayName: string | null;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -869,6 +871,8 @@ export type AddDownloadAssetResponses = {
     assetId: string;
     seq: number;
     displayName: string | null;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -918,6 +922,8 @@ export type ReorderDownloadAssetsResponses = {
     assetId: string;
     seq: number;
     displayName: string | null;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -958,6 +964,8 @@ export type RemoveDownloadAssetResponses = {
     assetId: string;
     seq: number;
     displayName: string | null;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -1000,11 +1008,302 @@ export type RenameDownloadAssetResponses = {
     assetId: string;
     seq: number;
     displayName: string | null;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
 export type RenameDownloadAssetResponse =
   RenameDownloadAssetResponses[keyof RenameDownloadAssetResponses];
+
+export type ListBundlesData = {
+  body?: never;
+  path?: never;
+  query?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    sort?: string;
+  };
+  url: "/api/bundles";
+};
+
+export type ListBundlesResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    rows: Array<{
+      orgId: string;
+      id: string;
+      name: string;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    total: number;
+    page: number;
+    pageSize: number;
+  };
+};
+
+export type ListBundlesResponse = ListBundlesResponses[keyof ListBundlesResponses];
+
+export type CreateBundleData = {
+  body: {
+    name: string;
+    contentIds?: Array<string>;
+  };
+  path?: never;
+  query?: never;
+  url: "/api/bundles";
+};
+
+export type CreateBundleErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type CreateBundleError = CreateBundleErrors[keyof CreateBundleErrors];
+
+export type CreateBundleResponses = {
+  /**
+   * Default Response
+   */
+  201: {
+    orgId: string;
+    id: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+};
+
+export type CreateBundleResponse = CreateBundleResponses[keyof CreateBundleResponses];
+
+export type DeleteBundleData = {
+  body?: never;
+  path: {
+    bundleId: string;
+  };
+  query?: never;
+  url: "/api/bundles/{bundleId}";
+};
+
+export type DeleteBundleErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type DeleteBundleError = DeleteBundleErrors[keyof DeleteBundleErrors];
+
+export type DeleteBundleResponses = {
+  /**
+   * Default Response
+   */
+  204: unknown;
+};
+
+export type GetBundleData = {
+  body?: never;
+  path: {
+    bundleId: string;
+  };
+  query?: never;
+  url: "/api/bundles/{bundleId}";
+};
+
+export type GetBundleErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type GetBundleError = GetBundleErrors[keyof GetBundleErrors];
+
+export type GetBundleResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    orgId: string;
+    id: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+};
+
+export type GetBundleResponse = GetBundleResponses[keyof GetBundleResponses];
+
+export type UpdateBundleData = {
+  body: {
+    name?: string;
+  };
+  path: {
+    bundleId: string;
+  };
+  query?: never;
+  url: "/api/bundles/{bundleId}";
+};
+
+export type UpdateBundleErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type UpdateBundleError = UpdateBundleErrors[keyof UpdateBundleErrors];
+
+export type UpdateBundleResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    orgId: string;
+    id: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+};
+
+export type UpdateBundleResponse = UpdateBundleResponses[keyof UpdateBundleResponses];
+
+export type ListBundleItemsData = {
+  body?: never;
+  path: {
+    bundleId: string;
+  };
+  query?: never;
+  url: "/api/bundles/{bundleId}/items";
+};
+
+export type ListBundleItemsErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type ListBundleItemsError = ListBundleItemsErrors[keyof ListBundleItemsErrors];
+
+export type ListBundleItemsResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    orgId: string;
+    bundleId: string;
+    contentId: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+};
+
+export type ListBundleItemsResponse = ListBundleItemsResponses[keyof ListBundleItemsResponses];
+
+export type AddBundleItemData = {
+  body: {
+    contentId: string;
+  };
+  path: {
+    bundleId: string;
+  };
+  query?: never;
+  url: "/api/bundles/{bundleId}/items";
+};
+
+export type AddBundleItemErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type AddBundleItemError = AddBundleItemErrors[keyof AddBundleItemErrors];
+
+export type AddBundleItemResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    orgId: string;
+    bundleId: string;
+    contentId: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+};
+
+export type AddBundleItemResponse = AddBundleItemResponses[keyof AddBundleItemResponses];
+
+export type RemoveBundleItemData = {
+  body?: never;
+  path: {
+    bundleId: string;
+    contentId: string;
+  };
+  query?: never;
+  url: "/api/bundles/{bundleId}/items/{contentId}";
+};
+
+export type RemoveBundleItemErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type RemoveBundleItemError = RemoveBundleItemErrors[keyof RemoveBundleItemErrors];
+
+export type RemoveBundleItemResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    orgId: string;
+    bundleId: string;
+    contentId: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+};
+
+export type RemoveBundleItemResponse = RemoveBundleItemResponses[keyof RemoveBundleItemResponses];
 
 export type GetLearnOrgData = {
   body?: never;
@@ -1734,6 +2033,7 @@ export type GetAssetDownloadUrlResponses = {
       status: "pending" | "ready";
       uploadedBy: string;
       createdAt: string;
+      updatedAt: string;
     };
   };
 };
@@ -1817,6 +2117,8 @@ export type GetLearnDownloadResponses = {
       assetId: string;
       seq: number;
       displayName: string | null;
+      createdAt: string;
+      updatedAt: string;
     }>;
   };
 };
@@ -2217,6 +2519,8 @@ export type ListActivityAssetsResponses = {
     activityId: string;
     assetId: string;
     seq: number;
+    createdAt: string;
+    updatedAt: string;
   }>;
 };
 
@@ -2651,11 +2955,14 @@ export type ListEntitlementsResponses = {
       orgId: string;
       id: string;
       orgUserId: string;
-      contentId: string;
+      bundleId: string | null;
+      contentId: string | null;
       status: "active" | "revoked";
       source: string;
       grantedAt: string;
       expiresAt: string | null;
+      createdAt: string;
+      updatedAt: string;
     }>;
     total: number;
     page: number;
@@ -2684,11 +2991,14 @@ export type GrantEntitlementResponses = {
     orgId: string;
     id: string;
     orgUserId: string;
-    contentId: string;
+    bundleId: string | null;
+    contentId: string | null;
     status: "active" | "revoked";
     source: string;
     grantedAt: string;
     expiresAt: string | null;
+    createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -2727,11 +3037,14 @@ export type SetEntitlementStatusResponses = {
     orgId: string;
     id: string;
     orgUserId: string;
-    contentId: string;
+    bundleId: string | null;
+    contentId: string | null;
     status: "active" | "revoked";
     source: string;
     grantedAt: string;
     expiresAt: string | null;
+    createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -3034,6 +3347,8 @@ export type ListAutomationRunsResponses = {
       }>;
       startedAt: string;
       finishedAt: string | null;
+      createdAt: string;
+      updatedAt: string;
     }>;
     total: number;
     page: number;
@@ -3218,6 +3533,7 @@ export type RequestUploadResponses = {
       status: "pending" | "ready";
       uploadedBy: string;
       createdAt: string;
+      updatedAt: string;
     };
     uploadUrl: string;
     method: "PUT";
@@ -3283,6 +3599,7 @@ export type ConfirmAssetResponses = {
     status: "pending" | "ready";
     uploadedBy: string;
     createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -3338,6 +3655,7 @@ export type ListAssetsResponses = {
       status: "pending" | "ready";
       uploadedBy: string;
       createdAt: string;
+      updatedAt: string;
     }>;
     total: number;
     page: number;
@@ -3445,6 +3763,7 @@ export type GetAssetResponses = {
     status: "pending" | "ready";
     uploadedBy: string;
     createdAt: string;
+    updatedAt: string;
   };
 };
 
@@ -3508,6 +3827,7 @@ export type RequestAssetDownloadResponses = {
       status: "pending" | "ready";
       uploadedBy: string;
       createdAt: string;
+      updatedAt: string;
     };
   };
 };

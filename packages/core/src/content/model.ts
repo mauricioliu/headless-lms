@@ -3,6 +3,8 @@ export type {
   Activity,
   ActivityAsset,
   ActivitySettings,
+  Bundle,
+  BundleItem,
   ContentItem,
   ContentType,
   Course,
