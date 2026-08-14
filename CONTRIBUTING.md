@@ -31,9 +31,8 @@ an import, the fix is moving the code, not silencing the rule.
 
 ## Use of AI
 
-We use AI to improve the development speed and quality of the codebase. It's a great tool if you know what you're doing,
-and a terrible tool if you hand all responsibility to it.
+We use AI to improve the development speed and quality of the codebase.
+If you contribute code, please keep in mind that we'll review the PRs. We expect you to know the architecture of the system 
+and how everything fits together. We won't spend time reviewing massive AI generated PRs. Reach out to discuss 
+if you're planning on adding something :)
 
-If you contribute code, we expect you to know the architecture of the system and how youyr 
-
-We won't accept massive AI generated PRs and AI generated garbage. 
