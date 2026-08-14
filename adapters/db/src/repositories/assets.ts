@@ -28,6 +28,7 @@ function toAsset(row: Row): Asset {
     status: row.status as AssetStatus,
     uploadedBy: row.uploadedBy,
     createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 

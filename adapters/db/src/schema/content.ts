@@ -1,10 +1,3 @@
-// content tables — the content domain (owns all content types; today: course).
-// Course type: Course → Module → Activity, where an Activity is the leaf sitting
-// directly in a module. An Activity is UNIFORM content — the domain does not
-// categorise it: a `seq`, and an opaque `settings` jsonb blob holding whatever
-// that content needs (title, type, body, completion rule, …). Assets are the one
-// thing kept OUT of the blob (owned by the assets domain) and linked via the
-// many-to-many `activity_assets`. Org-scoped: composite (org_id, id) keys.
 import {
   pgTable,
   text,
@@ -20,6 +13,8 @@ import { sql } from 'drizzle-orm';
 import type {
   Activity,
   ActivityAsset,
+  Bundle,
+  BundleItem,
   ContentItem,
   Course,
   Download,
@@ -31,29 +26,84 @@ import { organizations } from './organizations.js';
 import { assets } from './assets.js';
 import type { Expect, NoDrift } from './drift.js';
 
-// The content registry (supertype table): one row per piece of content, any
-// type. A concrete content table shares its PK with a registry row (same id)
-// and references it via a type-pinned composite FK; the generic entitlements
-// table FKs here, so it never changes when a content type is added. Deletes go
-// through this table (cascade to the concrete row and the grants).
-export const contentItems = pgTable(
-  'content_items',
+
+// Bundles.
+export const bundles = pgTable(
+  "bundles",
   {
-    orgId: text('org_id')
+    orgId: text("org_id")
       .notNull()
       .references(() => organizations.id),
-    id: text('id').notNull(),
-    type: text('type', { enum: ['course', 'download'] }).notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    id: text("id").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.orgId, t.id] }),
+    typeUq: unique().on(t.orgId, t.id, t.name),
+  }),
+);
+
+
+// The content registry one row per piece of content, any
+// type. this is so we can PK to content items of different types.
+export const contentItems = pgTable(
+  "content_items",
+  {
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organizations.id),
+    id: text("id").notNull(),
+    type: text("type", { enum: ["course", "download"] }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),
     // FK target for type-pinned references from concrete content tables.
     typeUq: unique().on(t.orgId, t.id, t.type),
     // Widened per new content type.
-    typeCk: check('content_items_type_check', sql`${t.type} in ('course', 'download')`),
+    typeCk: check("content_items_type_check", sql`${t.type} in ('course', 'download')`),
   }),
 );
+
+// The content registry one row per piece of content, any
+// type. this is so we can PK to content items of different types.
+export const bundleItems = pgTable(
+  "bundle_items",
+  {
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organizations.id),
+    bundleId: text("bundle_id").notNull(),
+    contentId: text("content_id").notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.orgId, t.bundleId, t.contentId] }),
+    contentItemFk: foreignKey({
+      columns: [t.orgId, t.contentId],
+      foreignColumns: [contentItems.orgId, contentItems.id],
+    }).onDelete("cascade"),
+    bundleFk: foreignKey({
+      columns: [t.orgId, t.bundleId],
+      foreignColumns: [bundles.orgId, bundles.id],
+    }).onDelete("cascade"),
+  }),
+);
+
 
 export const courses = pgTable(
   'courses',
@@ -184,6 +234,11 @@ export const activityAssets = pgTable(
     activityId: text('activity_id').notNull(),
     assetId: text('asset_id').notNull(),
     seq: integer('seq').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),
@@ -263,6 +318,11 @@ export const downloadAssets = pgTable(
     seq: integer('seq').notNull().default(0),
     // Author's label; null falls back to the asset's filename.
     displayName: text('display_name'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),
@@ -281,6 +341,8 @@ export const downloadAssets = pgTable(
   }),
 );
 
+type _BundlesDrift = Expect<NoDrift<typeof bundles.$inferSelect, Bundle>>;
+type _BundleItemsDrift = Expect<NoDrift<typeof bundleItems.$inferSelect, BundleItem>>;
 type _ContentItemsDrift = Expect<NoDrift<typeof contentItems.$inferSelect, ContentItem>>;
 type _CoursesDrift = Expect<NoDrift<typeof courses.$inferSelect, Omit<Course, 'settings'>>>;
 type _ModulesDrift = Expect<NoDrift<typeof modules.$inferSelect, Module>>;

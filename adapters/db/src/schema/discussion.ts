@@ -93,6 +93,10 @@ export const commentReactions = pgTable(
     orgUserId: text('org_user_id').notNull(),
     emoji: text('emoji').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => ({
     // One reaction per person, per comment.
@@ -122,6 +126,10 @@ export const commentReports = pgTable(
     reason: text('reason').notNull().default(''),
     resolvedAt: timestamp('resolved_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.orgId, t.id] }),

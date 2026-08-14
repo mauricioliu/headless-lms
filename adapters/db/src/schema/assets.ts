@@ -26,6 +26,10 @@ export const assets = pgTable(
       .default('pending'),
     uploadedBy: text('uploaded_by').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => ({ pk: primaryKey({ columns: [t.orgId, t.id] }) }),
 );

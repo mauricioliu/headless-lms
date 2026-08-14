@@ -163,6 +163,8 @@ const runSelection = {
   actionResults: automationRuns.actionResults,
   startedAt: automationRuns.startedAt,
   finishedAt: automationRuns.finishedAt,
+  createdAt: automationRuns.createdAt,
+  updatedAt: automationRuns.updatedAt,
 };
 
 interface RunRow {
@@ -176,6 +178,8 @@ interface RunRow {
   actionResults: AutomationRun['actionResults'];
   startedAt: Date;
   finishedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 function toAutomationRun(row: RunRow): AutomationRun {
@@ -190,6 +194,8 @@ function toAutomationRun(row: RunRow): AutomationRun {
     actionResults: row.actionResults,
     startedAt: row.startedAt,
     finishedAt: row.finishedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 

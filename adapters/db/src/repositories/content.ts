@@ -21,25 +21,32 @@ import type {
   Activity,
   ActivityAsset,
   AddDownloadAssetInput,
+  Bundle,
+  BundleItem,
   ContentRepository,
   Course,
   CourseSettings,
   CourseStatus,
+  CreateBundleInput,
   CreateCourseInput,
   CreateDownloadInput,
   Download,
   DownloadAsset,
   DownloadStatus,
+  ListBundlesQuery,
   ListCoursesQuery,
   ListDownloadsQuery,
   Module,
   Page,
   SaveActivityInput,
+  UpdateBundleInput,
   UpdateCourseInput,
   UpdateDownloadInput,
 } from '@headless-lms/core/content';
 import { courseSettingsDefaults, type Setting } from '@headless-lms/core/schemas';
 import {
+  bundles,
+  bundleItems,
   contentItems,
   courses,
   modules,
@@ -100,6 +107,12 @@ const downloadSortColumns: Record<string, AnyColumn | SQL> = {
 function toDownload(row: typeof downloads.$inferSelect): Download {
   return { ...row, status: row.status as DownloadStatus };
 }
+
+const bundleSortColumns: Record<string, AnyColumn | SQL> = {
+  name: bundles.name,
+  createdAt: bundles.createdAt,
+  updatedAt: bundles.updatedAt,
+};
 
 export class DrizzleContentRepository implements ContentRepository {
   constructor(
@@ -320,6 +333,8 @@ export class DrizzleContentRepository implements ContentRepository {
         activityId: activityAssets.activityId,
         assetId: activityAssets.assetId,
         seq: activityAssets.seq,
+        createdAt: activityAssets.createdAt,
+        updatedAt: activityAssets.updatedAt,
       })
       .from(activityAssets)
       .innerJoin(
@@ -847,6 +862,177 @@ export class DrizzleContentRepository implements ContentRepository {
         );
     }
     return this.listDownloadAssets(orgId, downloadId);
+  }
+
+  // --- bundles ----------------------------------------------------------
+
+  async listBundles(orgId: string, query: ListBundlesQuery): Promise<Page<Bundle>> {
+    const conditions: SQL[] = [eq(bundles.orgId, orgId)];
+
+    const search = query.search?.trim();
+    if (search) {
+      conditions.push(ilike(bundles.name, `%${search}%`));
+    }
+
+    const where = and(...conditions);
+
+    // Resolve sort: `-` prefix = desc, default createdAt desc.
+    let sortKey = 'createdAt';
+    let direction: 'asc' | 'desc' = 'desc';
+    if (query.sort) {
+      const isDesc = query.sort.startsWith('-');
+      const key = isDesc ? query.sort.slice(1) : query.sort;
+      if (key in bundleSortColumns) {
+        sortKey = key;
+        direction = isDesc ? 'desc' : 'asc';
+      }
+    }
+    const sortExpr = bundleSortColumns[sortKey] ?? bundles.createdAt;
+    const orderBy = direction === 'desc' ? desc(sortExpr) : asc(sortExpr);
+
+    const rows = await this.db
+      .select()
+      .from(bundles)
+      .where(where)
+      .orderBy(orderBy)
+      .limit(query.pageSize)
+      .offset((query.page - 1) * query.pageSize);
+
+    const [totalRow] = await this.db.select({ value: count() }).from(bundles).where(where);
+
+    return {
+      rows,
+      total: totalRow?.value ?? 0,
+      page: query.page,
+      pageSize: query.pageSize,
+    };
+  }
+
+  async findBundleById(orgId: string, id: string): Promise<Bundle | null> {
+    const [row] = await this.db
+      .select()
+      .from(bundles)
+      .where(and(eq(bundles.orgId, orgId), eq(bundles.id, id)))
+      .limit(1);
+    return row ?? null;
+  }
+
+  /** The bundle and its initial items are one write: an unknown content id
+   *  rolls the bundle back rather than leaving it created and half-filled. */
+  async createBundle(orgId: string, input: CreateBundleInput): Promise<Bundle> {
+    const contentIds = [...new Set(input.contentIds ?? [])];
+    return this.tx(async (tx) => {
+      // A bundle is not content: it groups registry rows, so it gets no
+      // content_items row of its own.
+      const [row] = await tx
+        .insert(bundles)
+        .values({ orgId, id: genId('bundle'), name: input.name })
+        .returning();
+      if (!row) {
+        throw new Error('failed to load created bundle');
+      }
+
+      if (contentIds.length > 0) {
+        // Against the registry, so any content type can be bundled.
+        const found = await tx
+          .select({ id: contentItems.id })
+          .from(contentItems)
+          .where(and(eq(contentItems.orgId, orgId), inArray(contentItems.id, contentIds)));
+        const known = new Set(found.map((item) => item.id));
+        const missing = contentIds.find((id) => !known.has(id));
+        if (missing) {
+          throw new NotFoundError('Content', missing);
+        }
+
+        await tx
+          .insert(bundleItems)
+          .values(contentIds.map((contentId) => ({ orgId, bundleId: row.id, contentId })));
+      }
+
+      return row;
+    });
+  }
+
+  async updateBundle(orgId: string, id: string, patch: UpdateBundleInput): Promise<Bundle | null> {
+    const set: Record<string, unknown> = { updatedAt: new Date() };
+    if (patch.name !== undefined) {
+      set.name = patch.name;
+    }
+
+    const [row] = await this.db
+      .update(bundles)
+      .set(set)
+      .where(and(eq(bundles.orgId, orgId), eq(bundles.id, id)))
+      .returning();
+    return row ?? null;
+  }
+
+  async deleteBundle(orgId: string, id: string): Promise<boolean> {
+    // Cascades to the bundle's items and to the grants made on it. The content
+    // itself is untouched — a bundle only groups registry rows.
+    const deleted = await this.db
+      .delete(bundles)
+      .where(and(eq(bundles.orgId, orgId), eq(bundles.id, id)))
+      .returning({ id: bundles.id });
+    return deleted.length > 0;
+  }
+
+  async listBundleItems(orgId: string, bundleId: string): Promise<BundleItem[]> {
+    return this.db
+      .select()
+      .from(bundleItems)
+      .where(and(eq(bundleItems.orgId, orgId), eq(bundleItems.bundleId, bundleId)))
+      .orderBy(asc(bundleItems.createdAt));
+  }
+
+  /** Assert the bundle exists in the org; throw otherwise. */
+  private async assertBundle(orgId: string, bundleId: string): Promise<void> {
+    const [row] = await this.db
+      .select({ id: bundles.id })
+      .from(bundles)
+      .where(and(eq(bundles.orgId, orgId), eq(bundles.id, bundleId)))
+      .limit(1);
+    if (!row) {
+      throw new NotFoundError('Bundle', bundleId);
+    }
+  }
+
+  async addBundleItem(orgId: string, bundleId: string, contentId: string): Promise<BundleItem[]> {
+    await this.assertBundle(orgId, bundleId);
+    // Against the registry, so any content type can be bundled.
+    const [item] = await this.db
+      .select({ id: contentItems.id })
+      .from(contentItems)
+      .where(and(eq(contentItems.orgId, orgId), eq(contentItems.id, contentId)))
+      .limit(1);
+    if (!item) {
+      throw new NotFoundError('Content', contentId);
+    }
+    await this.db
+      .insert(bundleItems)
+      .values({ orgId, bundleId, contentId })
+      .onConflictDoNothing({
+        target: [bundleItems.orgId, bundleItems.bundleId, bundleItems.contentId],
+      });
+    return this.listBundleItems(orgId, bundleId);
+  }
+
+  async removeBundleItem(
+    orgId: string,
+    bundleId: string,
+    contentId: string,
+  ): Promise<BundleItem[]> {
+    await this.assertBundle(orgId, bundleId);
+    await this.db
+      .delete(bundleItems)
+      .where(
+        and(
+          eq(bundleItems.orgId, orgId),
+          eq(bundleItems.bundleId, bundleId),
+          eq(bundleItems.contentId, contentId),
+        ),
+      );
+    return this.listBundleItems(orgId, bundleId);
   }
 }
 translateDbErrors(DrizzleContentRepository);

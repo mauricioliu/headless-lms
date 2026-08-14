@@ -17,6 +17,7 @@ describe('event_outbox schema', () => {
       'payload',
       'processed_at',
       'type',
+      'updated_at',
     ]);
   });
 

@@ -24,6 +24,7 @@ function toRecord(row: Row): ProgressRecord {
     startedAt: row.startedAt,
     position: row.position ?? null,
     completedAt: row.completedAt,
+    createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
 }

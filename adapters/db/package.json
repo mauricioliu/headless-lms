@@ -22,6 +22,7 @@
     "build": "tsdown",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:push": "tsx --env-file=../../.env node_modules/drizzle-kit/bin.cjs push",
     "db:generate": "tsx --env-file=../../.env node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "tsx --env-file=../../.env node_modules/drizzle-kit/bin.cjs migrate"
   },

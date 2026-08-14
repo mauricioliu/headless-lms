@@ -35,6 +35,7 @@ export const progressRecords = pgTable(
     startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
     position: jsonb('position').$type<ProgressRecord['position']>(), // opaque typed payload; service interprets per target type
     completedAt: timestamp('completed_at', { withTimezone: true }), // null = in progress
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow()

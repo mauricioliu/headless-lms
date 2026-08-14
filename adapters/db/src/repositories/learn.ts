@@ -31,7 +31,7 @@ export class DrizzleLearnRepository implements LearnEntitlementReader {
 
   async activeRefs(orgId: string, orgUserId: string): Promise<ContentRef[]> {
     const rows = await this.db
-      .select({ orgId: entitlements.orgId, contentId: entitlements.contentId })
+      .select({ orgId: entitlements.orgId, contentId: courses.id })
       .from(entitlements)
       .innerJoin(
         courses,
@@ -43,7 +43,7 @@ export class DrizzleLearnRepository implements LearnEntitlementReader {
 
   async activeRef(orgId: string, orgUserId: string, courseId: string): Promise<ContentRef | null> {
     const [row] = await this.db
-      .select({ orgId: entitlements.orgId, contentId: entitlements.contentId })
+      .select({ orgId: entitlements.orgId, contentId: courses.id })
       .from(entitlements)
       .innerJoin(
         courses,
@@ -66,7 +66,7 @@ export class DrizzleLearnRepository implements LearnEntitlementReader {
 
   async activeDownloadRefs(orgId: string, orgUserId: string): Promise<ContentRef[]> {
     return this.db
-      .select({ orgId: entitlements.orgId, contentId: entitlements.contentId })
+      .select({ orgId: entitlements.orgId, contentId: downloads.id })
       .from(entitlements)
       .innerJoin(
         downloads,
@@ -81,7 +81,7 @@ export class DrizzleLearnRepository implements LearnEntitlementReader {
     downloadId: string,
   ): Promise<ContentRef | null> {
     const [row] = await this.db
-      .select({ orgId: entitlements.orgId, contentId: entitlements.contentId })
+      .select({ orgId: entitlements.orgId, contentId: downloads.id })
       .from(entitlements)
       .innerJoin(
         downloads,

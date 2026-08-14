@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import type { DbExecutor } from '../client.js';
 import type { EntitlementsRepository } from '@headless-lms/core/entitlements';
 import type {
@@ -10,7 +11,7 @@ import type {
   Page,
 } from '@headless-lms/core/types';
 import { entitlements, orgUsers, users } from '../schema/index.js';
-import { contentItems, courses, downloads } from '../schema/content.js';
+import { bundleItems, bundles, contentItems, courses, downloads } from '../schema/content.js';
 import { noopLogger } from '@headless-lms/core/shared/logger';
 import { translateDbErrors } from './pg-errors.js';
 
@@ -24,10 +25,11 @@ const derivedStatus = sql<ResolvedStatus>`case
   else 'active'
 end`;
 
-// Display name of the granted content, whatever its type. One LEFT JOIN per
-// concrete content table; exactly one hits per row (type-pinned FKs), so the
-// COALESCE picks the single non-null title. Extended per new content type.
-const contentTitle = sql<string>`coalesce(${courses.title}, ${downloads.title})`;
+// Display name of the grant's target, whatever it is. One LEFT JOIN per concrete
+// content table plus one for bundles; exactly one hits per row (a grant targets
+// either a bundle or a single content item), so the COALESCE picks the single
+// non-null title. Extended per new content type.
+const contentTitle = sql<string>`coalesce(${courses.title}, ${downloads.title}, ${bundles.name})`;
 
 // Sortable columns by the client-facing field name. `status` sorts on the derived
 // expression so the ordering matches the displayed value; `contentTitle` on the
@@ -47,22 +49,28 @@ const selection = {
   orgId: entitlements.orgId,
   id: entitlements.id,
   orgUserId: entitlements.orgUserId,
+  bundleId: entitlements.bundleId,
   contentId: entitlements.contentId,
   status: entitlements.status,
   source: entitlements.source,
   grantedAt: entitlements.grantedAt,
   expiresAt: entitlements.expiresAt,
+  createdAt: entitlements.createdAt,
+  updatedAt: entitlements.updatedAt,
 } as const;
 
 interface Row {
   orgId: string;
   id: string;
   orgUserId: string;
-  contentId: string;
+  bundleId: string | null;
+  contentId: string | null;
   status: EntitlementStatus;
   source: string;
   grantedAt: Date;
   expiresAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 function toEntitlement(row: Row): Entitlement {
@@ -70,11 +78,14 @@ function toEntitlement(row: Row): Entitlement {
     orgId: row.orgId,
     id: row.id,
     orgUserId: row.orgUserId,
+    bundleId: row.bundleId,
     contentId: row.contentId,
     status: row.status,
     source: row.source,
     grantedAt: row.grantedAt,
     expiresAt: row.expiresAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 
@@ -84,8 +95,9 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
     private readonly logger: Logger = noopLogger,
   ) {}
 
-  /** entitlements → org_users + content_items (type) + one LEFT JOIN per
-   *  concrete content table (title). */
+  /** entitlements → org_users + the grant's target: content_items (type) and one
+   *  LEFT JOIN per concrete content table (title), or bundles (name). Both target
+   *  joins are LEFT — a row carries one of the two, never both. */
   private joined(where: SQL | undefined) {
     return this.db
       .select(selection)
@@ -95,9 +107,13 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
         and(eq(orgUsers.orgId, entitlements.orgId), eq(orgUsers.id, entitlements.orgUserId)),
       )
       .innerJoin(users, eq(users.id, orgUsers.userId))
-      .innerJoin(
+      .leftJoin(
         contentItems,
         and(eq(contentItems.orgId, entitlements.orgId), eq(contentItems.id, entitlements.contentId)),
+      )
+      .leftJoin(
+        bundles,
+        and(eq(bundles.orgId, entitlements.orgId), eq(bundles.id, entitlements.bundleId)),
       )
       .leftJoin(
         courses,
@@ -123,6 +139,9 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
     }
     if (query.contentId) {
       conditions.push(eq(entitlements.contentId, query.contentId));
+    }
+    if (query.bundleId) {
+      conditions.push(eq(entitlements.bundleId, query.bundleId));
     }
     if (query.type) {
       conditions.push(eq(contentItems.type, query.type));
@@ -162,9 +181,14 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
         orgUsers,
         and(eq(orgUsers.orgId, entitlements.orgId), eq(orgUsers.id, entitlements.orgUserId)),
       )
-      .innerJoin(
+      .innerJoin(users, eq(users.id, orgUsers.userId))
+      .leftJoin(
         contentItems,
         and(eq(contentItems.orgId, entitlements.orgId), eq(contentItems.id, entitlements.contentId)),
+      )
+      .leftJoin(
+        bundles,
+        and(eq(bundles.orgId, entitlements.orgId), eq(bundles.id, entitlements.bundleId)),
       )
       .leftJoin(
         courses,
@@ -184,20 +208,30 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
     };
   }
 
+  /** A grant targets exactly one of a bundle or a content item (db check
+   *  constraint), so the upsert is inferred on whichever of the two partial
+   *  uniques the target uses. */
   async insert(orgId: string, input: GrantEntitlementInput): Promise<Entitlement> {
+    const bundleId = input.bundleId ?? null;
+    const contentId = input.contentId ?? null;
+    const target = bundleId
+      ? [entitlements.orgId, entitlements.orgUserId, entitlements.bundleId]
+      : [entitlements.orgId, entitlements.orgUserId, entitlements.contentId];
+
     const [row] = await this.db
       .insert(entitlements)
       .values({
         orgId,
         orgUserId: input.orgUserId,
-        contentId: input.contentId,
+        bundleId,
+        contentId,
         status: 'active',
         source: 'manual',
         grantedAt: new Date(),
         expiresAt: input.expiresAt,
       })
       .onConflictDoUpdate({
-        target: [entitlements.orgId, entitlements.orgUserId, entitlements.contentId],
+        target,
         set: {
           status: 'active',
           source: 'manual',
@@ -230,22 +264,38 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
 
   /** Existence check scoped to the course case: same status predicate as
    *  `list` (revoked never counts; an elapsed expiry reads as expired, not
-   *  active), joined to content_items and constrained to type = 'course' so a
-   *  grant on some other content type can never be mistaken for course access. */
+   *  active). The course is reachable two ways — granted directly, or granted
+   *  through a bundle that holds it — and either way the row is joined to
+   *  content_items and constrained to type = 'course', so a grant on some other
+   *  content type can never be mistaken for course access. */
   async hasCourseAccess(orgId: string, orgUserId: string, courseId: string): Promise<boolean> {
+    const bundledItems = alias(contentItems, 'bundled_content_items');
     const rows = await this.db
       .select({ id: entitlements.id })
       .from(entitlements)
-      .innerJoin(
+      .leftJoin(
         contentItems,
         and(eq(contentItems.orgId, entitlements.orgId), eq(contentItems.id, entitlements.contentId)),
+      )
+      .leftJoin(
+        bundleItems,
+        and(
+          eq(bundleItems.orgId, entitlements.orgId),
+          eq(bundleItems.bundleId, entitlements.bundleId),
+        ),
+      )
+      .leftJoin(
+        bundledItems,
+        and(eq(bundledItems.orgId, bundleItems.orgId), eq(bundledItems.id, bundleItems.contentId)),
       )
       .where(
         and(
           eq(entitlements.orgId, orgId),
           eq(entitlements.orgUserId, orgUserId),
-          eq(entitlements.contentId, courseId),
-          eq(contentItems.type, 'course'),
+          or(
+            and(eq(entitlements.contentId, courseId), eq(contentItems.type, 'course')),
+            and(eq(bundleItems.contentId, courseId), eq(bundledItems.type, 'course')),
+          ),
           sql`${derivedStatus} = 'active'`,
         ),
       )

@@ -36,6 +36,7 @@ function toInvite(row: typeof invites.$inferSelect): Invite {
     tokenHash: row.tokenHash,
     expiresAt: row.expiresAt,
     createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 
