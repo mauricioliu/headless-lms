@@ -89,11 +89,6 @@ export function BundleFormDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={isEdit ? "Edit bundle" : "New bundle"}
-      description={
-        isEdit
-          ? "Rename the bundle or change the content it includes."
-          : "Group courses and downloads so they can be offered together."
-      }
       formId={FORM_ID}
       submitLabel={isEdit ? "Save" : "Create bundle"}
       pending={pending}
