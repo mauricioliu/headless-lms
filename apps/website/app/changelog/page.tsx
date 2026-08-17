@@ -3,20 +3,18 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { changelog } from '@/lib/source'
 import { getMDXComponents } from '@/components/mdx'
+import { absoluteUrl, siteConfig } from '@/lib/site'
+import { pageMetadata } from '@/lib/metadata'
+import { jsonLdProps } from '@/lib/structured-data'
 
-export const metadata: Metadata = {
+const description = `Release notes for ${siteConfig.name}: new features, improvements, and fixes, newest first.`
+
+export const metadata: Metadata = pageMetadata({
   title: 'Changelog',
-  description: 'New features, improvements, and fixes in Headless LMS.',
-  alternates: {
-    canonical: '/changelog',
-  },
-  openGraph: {
-    title: 'Changelog | Headless LMS',
-    description: 'New features, improvements, and fixes in Headless LMS.',
-    url: '/changelog',
-    type: 'website',
-  },
-}
+  description,
+  path: '/changelog',
+  markdown: '/changelog.md',
+})
 
 const dateFormat = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
@@ -29,10 +27,29 @@ export default function ChangelogPage() {
     (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime(),
   )
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': absoluteUrl('/changelog'),
+    name: `${siteConfig.name} Changelog`,
+    description,
+    url: absoluteUrl('/changelog'),
+    inLanguage: 'en',
+    isPartOf: { '@id': absoluteUrl('/#website') },
+    hasPart: entries.map((entry) => ({
+      '@type': 'Article',
+      headline: entry.data.title,
+      description: entry.data.description,
+      datePublished: entry.data.date,
+      url: absoluteUrl(`/changelog#${entry.slugs[0]}`),
+    })),
+  }
+
   return (
     <div className="flex min-h-dvh flex-col">
       <SiteHeader />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-16 sm:px-6">
+        <script {...jsonLdProps(jsonLd)} />
         <h1 className="text-3xl font-semibold tracking-tight">Changelog</h1>
         <p className="mt-3 text-muted-foreground">
           New features, improvements, and fixes in Headless LMS.

@@ -3,25 +3,19 @@ import Link from 'next/link'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { blog } from '@/lib/source'
+import { absoluteUrl, siteConfig } from '@/lib/site'
+import { pageMetadata } from '@/lib/metadata'
+import { jsonLdProps } from '@/lib/structured-data'
 
-export const metadata: Metadata = {
+const description =
+  'Writing on building Headless LMS: system design, domain-driven design, and the engineering behind an API-first learning platform.'
+
+export const metadata: Metadata = pageMetadata({
   title: 'Blog',
-  description:
-    'Writing on building Headless LMS — system design, domain-driven design, and the engineering behind an API-first learning platform.',
-  alternates: {
-    canonical: '/blog',
-    types: {
-      'application/rss+xml': '/blog/rss.xml',
-    },
-  },
-  openGraph: {
-    title: 'Blog | Headless LMS',
-    description:
-      'Writing on building Headless LMS — system design, domain-driven design, and the engineering behind an API-first learning platform.',
-    url: '/blog',
-    type: 'website',
-  },
-}
+  description,
+  path: '/blog',
+  rss: true,
+})
 
 const dateFormat = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
@@ -34,13 +28,33 @@ export default function BlogIndexPage() {
     (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime(),
   )
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    '@id': absoluteUrl('/blog'),
+    name: `${siteConfig.name} Blog`,
+    description,
+    url: absoluteUrl('/blog'),
+    inLanguage: 'en',
+    publisher: { '@id': absoluteUrl('/#organization') },
+    blogPost: posts.map((post) => ({
+      '@type': 'BlogPosting',
+      headline: post.data.title,
+      description: post.data.description,
+      datePublished: post.data.date,
+      author: { '@type': 'Person', name: post.data.author },
+      url: absoluteUrl(post.url),
+    })),
+  }
+
   return (
     <div className="flex min-h-dvh flex-col">
       <SiteHeader />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-16 sm:px-6">
+        <script {...jsonLdProps(jsonLd)} />
         <h1 className="text-3xl font-semibold tracking-tight">Blog</h1>
         <p className="mt-3 text-muted-foreground">
-          Writing on building Headless LMS — system design, architecture, and
+          Writing on building Headless LMS: system design, architecture, and
           the decisions along the way.
         </p>
 

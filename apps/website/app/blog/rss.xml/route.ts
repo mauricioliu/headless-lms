@@ -21,21 +21,26 @@ export function GET() {
       (post) => `    <item>
       <title>${escapeXml(post.data.title)}</title>
       <link>${absoluteUrl(post.url)}</link>
-      <guid>${absoluteUrl(post.url)}</guid>
+      <guid isPermaLink="true">${absoluteUrl(post.url)}</guid>
       <description>${escapeXml(post.data.description ?? '')}</description>
-      <author>${escapeXml(post.data.author)}</author>
+      <dc:creator>${escapeXml(post.data.author)}</dc:creator>
       <pubDate>${new Date(post.data.date).toUTCString()}</pubDate>
     </item>`,
     )
     .join('\n')
 
+  const latest = posts[0] ? new Date(posts[0].data.date) : new Date()
+
   const rss = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>${escapeXml(`${siteConfig.name} Blog`)}</title>
     <link>${absoluteUrl('/blog')}</link>
+    <atom:link href="${absoluteUrl('/blog/rss.xml')}" rel="self" type="application/rss+xml" />
     <description>${escapeXml(siteConfig.description)}</description>
     <language>en</language>
+    <copyright>${escapeXml(`${siteConfig.name}, ${siteConfig.license} licensed`)}</copyright>
+    <lastBuildDate>${latest.toUTCString()}</lastBuildDate>
 ${items}
   </channel>
 </rss>`

@@ -6,6 +6,8 @@ import { SiteFooter } from '@/components/site-footer'
 import { blog } from '@/lib/source'
 import { getMDXComponents } from '@/components/mdx'
 import { absoluteUrl, siteConfig } from '@/lib/site'
+import { pageMetadata } from '@/lib/metadata'
+import { jsonLdProps } from '@/lib/structured-data'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -34,23 +36,20 @@ export default async function BlogPostPage(props: Props) {
       name: post.data.author,
     },
     datePublished: post.data.date,
+    dateModified: post.data.date,
     url: absoluteUrl(post.url),
     mainEntityOfPage: absoluteUrl(post.url),
-    publisher: {
-      '@type': 'Organization',
-      name: siteConfig.name,
-      url: siteConfig.url,
-    },
+    image: absoluteUrl(`${post.url}/opengraph-image`),
+    inLanguage: 'en',
+    isPartOf: { '@type': 'Blog', '@id': absoluteUrl('/blog') },
+    publisher: { '@id': absoluteUrl('/#organization') },
   }
 
   return (
     <div className="flex min-h-dvh flex-col">
       <SiteHeader />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-16 sm:px-6">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <script {...jsonLdProps(jsonLd)} />
         <article>
           <header>
             <Link
@@ -90,24 +89,21 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   if (!post) {notFound()}
 
   return {
-    title: post.data.title,
-    description: post.data.description,
     authors: [{ name: post.data.author }],
-    alternates: {
-      canonical: post.url,
-    },
-    openGraph: {
+    ...pageMetadata({
       title: post.data.title,
-      description: post.data.description,
-      url: post.url,
+      description: post.data.description ?? siteConfig.description,
+      path: post.url,
       type: 'article',
-      publishedTime: post.data.date,
-      authors: [post.data.author],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: post.data.title,
-      description: post.data.description,
-    },
+      markdown: `${post.url}.md`,
+      rss: true,
+      image: false,
+      article: {
+        publishedTime: post.data.date,
+        modifiedTime: post.data.date,
+        authors: [post.data.author],
+        section: 'Engineering',
+      },
+    }),
   }
 }

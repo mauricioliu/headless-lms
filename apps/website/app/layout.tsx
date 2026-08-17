@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { RootProvider } from 'fumadocs-ui/provider/next'
 import { siteConfig } from '@/lib/site'
+import { jsonLdProps, siteGraph } from '@/lib/structured-data'
 import './globals.css'
 
 const geistSans = Geist({
@@ -19,11 +20,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} — ${siteConfig.tagline}`,
+    default: `${siteConfig.name}: ${siteConfig.tagline}`,
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
+  authors: [{ name: siteConfig.author, url: siteConfig.githubUrl }],
+  creator: siteConfig.author,
+  publisher: siteConfig.name,
+  category: 'technology',
+  referrer: 'origin-when-cross-origin',
+  formatDetection: { telephone: false, address: false, email: false },
   keywords: [
     'headless LMS',
     'open source LMS',
@@ -35,19 +42,23 @@ export const metadata: Metadata = {
   ],
   alternates: {
     canonical: './',
+    types: {
+      'application/rss+xml': [{ url: '/blog/rss.xml', title: `${siteConfig.name} Blog` }],
+    },
   },
   openGraph: {
     type: 'website',
     siteName: siteConfig.name,
     url: siteConfig.url,
-    title: `${siteConfig.name} — ${siteConfig.tagline}`,
+    title: `${siteConfig.name}: ${siteConfig.tagline}`,
     description: siteConfig.description,
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
+    site: siteConfig.twitterHandle,
     creator: siteConfig.twitterHandle,
-    title: `${siteConfig.name} — ${siteConfig.tagline}`,
+    title: `${siteConfig.name}: ${siteConfig.tagline}`,
     description: siteConfig.description,
   },
   robots: {
@@ -82,6 +93,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="bg-background font-sans antialiased">
+        <script {...jsonLdProps(siteGraph)} />
         <RootProvider>{children}</RootProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

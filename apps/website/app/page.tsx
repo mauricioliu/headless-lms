@@ -6,29 +6,39 @@ import { Architecture } from '@/components/landing/architecture'
 import { SdkShowcase } from '@/components/landing/sdk-showcase'
 import { AppsMcp } from '@/components/landing/apps-mcp'
 import { Cta } from '@/components/landing/cta'
-import { siteConfig } from '@/lib/site'
+import { absoluteUrl, siteConfig } from '@/lib/site'
+import { jsonLdProps } from '@/lib/structured-data'
 
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
     {
-      '@type': 'WebSite',
-      name: siteConfig.name,
-      url: siteConfig.url,
-      description: siteConfig.description,
-    },
-    {
       '@type': 'SoftwareApplication',
+      '@id': absoluteUrl('/#software'),
       name: siteConfig.name,
       applicationCategory: 'DeveloperApplication',
+      applicationSubCategory: 'Learning Management System',
       operatingSystem: 'Any',
       url: siteConfig.url,
       description: siteConfig.description,
+      license: 'https://opensource.org/licenses/MIT',
+      softwareHelp: absoluteUrl('/docs'),
+      author: { '@id': absoluteUrl('/#organization') },
       offers: {
         '@type': 'Offer',
         price: '0',
         priceCurrency: 'USD',
       },
+    },
+    {
+      '@type': 'SoftwareSourceCode',
+      '@id': `${siteConfig.githubUrl}#source`,
+      name: siteConfig.name,
+      description: siteConfig.description,
+      codeRepository: siteConfig.githubUrl,
+      programmingLanguage: 'TypeScript',
+      runtimePlatform: 'Node.js',
+      license: 'https://opensource.org/licenses/MIT',
     },
   ],
 }
@@ -36,10 +46,7 @@ const jsonLd = {
 export default function HomePage() {
   return (
     <div className="isolate flex min-h-dvh flex-col">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script {...jsonLdProps(jsonLd)} />
       <SiteHeader />
       <main className="flex-1">
         <Hero />

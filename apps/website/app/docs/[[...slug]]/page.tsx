@@ -7,9 +7,23 @@ import { openapi } from '@/lib/openapi'
 import { OpenAPIPage } from '@/components/api-page'
 import type { OpenAPIPageProps_Preloaded } from 'fumadocs-openapi/ui'
 import { getMDXComponents } from '@/components/mdx'
+import { siteConfig } from '@/lib/site'
+import { pageMetadata } from '@/lib/metadata'
+import { breadcrumbs, jsonLdProps } from '@/lib/structured-data'
 
 type Props = {
   params: Promise<{ slug?: string[] }>
+}
+
+function trailFor(slug: string[] = []) {
+  const trail = [{ name: 'Docs', url: '/docs' }]
+  let url = '/docs'
+  for (const segment of slug) {
+    url = `${url}/${segment}`
+    const page = source.getPageByHref(url)
+    trail.push({ name: page?.page.data.title ?? segment, url })
+  }
+  return trail
 }
 
 export default async function Page(props: Props) {
@@ -21,6 +35,7 @@ export default async function Page(props: Props) {
 
   return (
     <DocsPage toc={page.data.toc} full={page.data.full}>
+      <script {...jsonLdProps(breadcrumbs(trailFor(params.slug)))} />
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
@@ -46,17 +61,11 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const page = source.getPage(params.slug)
   if (!page) {notFound()}
 
-  return {
+  return pageMetadata({
     title: page.data.title,
-    description: page.data.description,
-    alternates: {
-      canonical: page.url,
-    },
-    openGraph: {
-      title: page.data.title,
-      description: page.data.description,
-      url: page.url,
-      type: 'article',
-    },
-  }
+    description: page.data.description ?? `${page.data.title}. ${siteConfig.name} documentation.`,
+    path: page.url,
+    type: 'article',
+    markdown: `${page.url}.md`,
+  })
 }
