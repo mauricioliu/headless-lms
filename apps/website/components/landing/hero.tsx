@@ -3,24 +3,27 @@ import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { GithubIcon } from '@/components/logo'
 import { CodeBlock } from '@/components/code-block'
+import { CopyButton } from '@/components/copy-button'
 import { siteConfig } from '@/lib/site'
 
-const sdkSnippet = `import { createClient } from "@headless-lms/sdk"
+const sdkSnippet = `import {
+  Content, Entitlements, Organizations, configureSdk,
+} from "@headless-lms/sdk"
 
-const lms = createClient({
-  baseUrl: process.env.LMS_URL,
-  token: process.env.LMS_TOKEN,
-})
+configureSdk({ baseUrl: "https://lms.acme.dev" })
 
 // Fully typed against the OpenAPI spec
-const course = await lms.courses.create({
-  orgId,
+const course = await Content.createCourse({
   title: "Intro to Distributed Systems",
 })
 
-await lms.entitlements.grant({
-  studentId,
-  courseId: course.id,
+const { rows: [student] } =
+  await Organizations.listStudents({ search: "ada" })
+
+await Entitlements.grantEntitlement({
+  orgUserId: student.id,
+  contentId: course.id,
+  expiresAt: null,
 })`
 
 export function Hero() {
@@ -31,9 +34,7 @@ export function Hero() {
           <div>
             <h1 className="max-w-[24ch] text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
               The API-first LMS for building{' '}
-              <span className="text-primary dark:text-foreground">
-                learning systems
-              </span>
+              <span className="text-primary">learning systems</span>
             </h1>
 
             <p className="mt-6 max-w-[48ch] text-lg text-pretty text-muted-foreground">
@@ -52,15 +53,18 @@ export function Hero() {
                 render={<a href={siteConfig.githubUrl} target="_blank" rel="noreferrer" />}
               >
                 <GithubIcon className="size-4" />
-                View on GitHub
+                Star on GitHub
               </Button>
             </div>
 
             <div className="mt-8 font-mono text-sm">
-              <code className="inline-block rounded-lg border border-border bg-card px-4 py-2.5 text-foreground/90">
-                <span className="text-muted-foreground">$</span>{' '}
-                {siteConfig.installCommand}
-              </code>
+              <span className="inline-flex items-center gap-3 rounded-lg border border-border bg-card py-1.5 pr-1.5 pl-4 text-foreground/90">
+                <code>
+                  <span className="text-muted-foreground select-none">$</span>{' '}
+                  {siteConfig.installCommand}
+                </code>
+                <CopyButton code={siteConfig.installCommand} />
+              </span>
             </div>
           </div>
 

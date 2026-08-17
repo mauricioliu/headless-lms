@@ -10,51 +10,66 @@ import {
   HardDrive,
 } from 'lucide-react'
 
-const features = [
+const groups = [
   {
-    icon: BookOpen,
-    title: 'Course builder',
-    body: 'Author structured course content; students work through it activity by activity.',
+    label: 'Domain',
+    features: [
+      {
+        icon: BookOpen,
+        title: 'Course builder',
+        body: 'Author structured course content; students work through it activity by activity.',
+      },
+      {
+        icon: BarChart3,
+        title: 'Progress tracking',
+        body: 'Per-student, per-activity completion, rolled up into course progress and reporting.',
+      },
+      {
+        icon: KeyRound,
+        title: 'Entitlements',
+        body: 'Grant and revoke student access to content with a first-class access model.',
+      },
+    ],
   },
   {
-    icon: BarChart3,
-    title: 'Progress tracking',
-    body: 'Per-student, per-activity completion, rolled up into course progress and reporting.',
+    label: 'Platform',
+    features: [
+      {
+        icon: Building2,
+        title: 'Multi-tenant',
+        body: 'One deployment serves many orgs. Every student, course, and session is org-scoped.',
+      },
+      {
+        icon: HardDrive,
+        title: 'Media & file assets',
+        body: 'Object storage with presigned upload and download URLs, behind a swappable adapter.',
+      },
+      {
+        icon: Mail,
+        title: 'Transactional email',
+        body: 'Invitation and auth mail, swappable behind an adapter you control.',
+      },
+    ],
   },
   {
-    icon: KeyRound,
-    title: 'Entitlements',
-    body: 'Grant and revoke student access to content with a first-class access model.',
-  },
-  {
-    icon: Building2,
-    title: 'Multi-tenant',
-    body: 'One deployment serves many orgs. Every student, course, and session is org-scoped.',
-  },
-  {
-    icon: HardDrive,
-    title: 'Media & file assets',
-    body: 'Object storage with presigned upload and download URLs, behind a swappable adapter.',
-  },
-  {
-    icon: Plug,
-    title: 'Integrations',
-    body: "Drop a plugin folder into your installation and it's live at startup. Write your own.",
-  },
-  {
-    icon: Bot,
-    title: 'MCP endpoint',
-    body: 'AI agents connect over OAuth and operate the LMS through the same domain layer.',
-  },
-  {
-    icon: FileCode2,
-    title: 'Typed SDK & OpenAPI',
-    body: 'Routes validate against shared Zod schemas; the SDK is generated from the spec.',
-  },
-  {
-    icon: Mail,
-    title: 'Transactional email',
-    body: 'Invitation and auth mail, swappable behind an adapter you control.',
+    label: 'Interfaces',
+    features: [
+      {
+        icon: FileCode2,
+        title: 'Typed SDK & OpenAPI',
+        body: 'Routes validate against shared Zod schemas; the SDK is generated from the spec.',
+      },
+      {
+        icon: Bot,
+        title: 'MCP endpoint',
+        body: 'AI agents are first-class clients, connecting over OAuth.',
+      },
+      {
+        icon: Plug,
+        title: 'Plugins',
+        body: "Drop a plugin folder into your installation and it's live at startup. Write your own.",
+      },
+    ],
   },
 ]
 
@@ -70,19 +85,26 @@ export function Features() {
           you need and swap the ones you don&apos;t.
         </p>
 
-        <dl className="mt-16 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <div key={feature.title}>
-              <dt className="flex items-center gap-2.5 font-medium">
-                <feature.icon aria-hidden className="size-5 shrink-0 text-primary" />
-                {feature.title}
-              </dt>
-              <dd className="mt-2 text-base/7 text-pretty text-muted-foreground sm:text-sm/6">
-                {feature.body}
-              </dd>
+        <div className="mt-16 grid gap-x-8 gap-y-12 md:grid-cols-3">
+          {groups.map((group) => (
+            <div key={group.label}>
+              <h3 className="text-sm font-medium text-muted-foreground">{group.label}</h3>
+              <dl className="mt-6 space-y-8">
+                {group.features.map((feature) => (
+                  <div key={feature.title}>
+                    <dt className="flex items-center gap-2.5 font-medium">
+                      <feature.icon aria-hidden className="size-5 shrink-0 text-primary" />
+                      {feature.title}
+                    </dt>
+                    <dd className="mt-2 text-base/7 text-pretty text-muted-foreground sm:text-sm/6">
+                      {feature.body}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           ))}
-        </dl>
+        </div>
       </div>
     </section>
   )

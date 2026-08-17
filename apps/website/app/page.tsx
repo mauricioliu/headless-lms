@@ -3,7 +3,6 @@ import { SiteFooter } from '@/components/site-footer'
 import { Hero } from '@/components/landing/hero'
 import { Features } from '@/components/landing/features'
 import { Architecture } from '@/components/landing/architecture'
-import { SdkShowcase } from '@/components/landing/sdk-showcase'
 import { AppsMcp } from '@/components/landing/apps-mcp'
 import { Cta } from '@/components/landing/cta'
 import { absoluteUrl, siteConfig } from '@/lib/site'
@@ -47,14 +46,18 @@ export default function HomePage() {
   return (
     <div className="isolate flex min-h-dvh flex-col">
       <script {...jsonLdProps(jsonLd)} />
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:rounded-md focus:border focus:border-border focus:bg-background focus:px-3 focus:py-2 focus:text-sm"
+      >
+        Skip to content
+      </a>
       <SiteHeader />
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <Hero />
         <Features />
         <AppsMcp />
         <Architecture />
-
-        <SdkShowcase />
 
         <Cta />
       </main>

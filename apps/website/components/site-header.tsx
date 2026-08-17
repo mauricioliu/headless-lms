@@ -11,7 +11,12 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-xl">
+    <header
+      className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-xl"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setOpen(false);
+      }}
+    >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-8">
           <Link href="/" aria-label="Homepage" className="flex items-center gap-2.5">
@@ -53,6 +58,7 @@ export function SiteHeader() {
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
           aria-expanded={open}
+          aria-controls="mobile-menu"
         >
           <span
             className="absolute top-1/2 left-1/2 size-[max(100%,3rem)] -translate-1/2 pointer-fine:hidden"
@@ -63,7 +69,7 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <div className="border-t border-border/70 bg-background md:hidden">
+        <div id="mobile-menu" className="border-t border-border/70 bg-background md:hidden">
           <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-4 sm:px-6">
             {primaryNav.map((item) => (
               <Link

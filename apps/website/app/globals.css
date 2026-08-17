@@ -153,6 +153,26 @@
   }
 }
 
+:root,
+.dark {
+  --shiki-background: transparent;
+  --shiki-foreground: color-mix(in oklab, var(--foreground) 90%, transparent);
+  --shiki-token-comment: var(--muted-foreground);
+  --shiki-token-keyword: var(--primary);
+  --shiki-token-string: color-mix(in oklab, var(--chart-3) 80%, var(--foreground));
+  --shiki-token-string-expression: color-mix(in oklab, var(--chart-3) 80%, var(--foreground));
+  --shiki-token-function: var(--chart-2);
+  --shiki-token-constant: var(--chart-4);
+  --shiki-token-parameter: var(--foreground);
+  --shiki-token-punctuation: color-mix(in oklab, var(--foreground) 65%, transparent);
+  --shiki-token-link: var(--primary);
+}
+
+.landing-code pre {
+  margin: 0;
+  background-color: transparent;
+}
+
 /* Align fumadocs UI tokens with the site palette (dark-only). */
 :root,
 .dark {

@@ -1,27 +1,30 @@
-import { Layers, ShieldCheck, Boxes } from 'lucide-react'
+import { Layers, ShieldCheck, Boxes, ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const layers = [
   {
-    label: 'Clients',
-    items: ['Admin dashboard', 'Student portal', 'Your frontend', 'AI agents (MCP)'],
-    tone: 'text-foreground',
+    label: 'Your apps',
+    detail: (
+      <>
+        Admin | Student portal | <span className="text-foreground">Your frontend</span> |{' '}
+        <span className="text-foreground">AI agents</span>
+      </>
+    ),
+    core: false,
   },
   {
-    label: 'HTTP layer — Fastify',
-    items: ['Zod-validated requests & responses', 'OpenAPI spec', 'Generated typed SDK'],
-    tone: 'text-primary',
+    label: 'One API for every client',
+    detail: 'OpenAPI · generated SDK',
+    core: false,
   },
   {
-    label: 'Domain core — framework-free',
-    items: ['Courses', 'Progress', 'Entitlements', 'Orgs & sessions'],
-    tone: 'text-foreground',
-  },
-  {
-    label: 'Adapters & persistence',
-    items: ['Drizzle / Postgres', 'Object storage', 'Email', 'Plugins'],
-    tone: 'text-muted-foreground',
+    label: 'Domain core',
+    detail: 'Courses · Progress · Entitlements · Orgs',
+    core: true,
   },
 ]
+
+const adapterSlots = ['Database', 'Storage', 'Email', 'Auth']
 
 const principles = [
   {
@@ -32,7 +35,7 @@ const principles = [
   {
     icon: Boxes,
     title: 'Composable installations',
-    body: 'An installation composes what it wants with sane defaults. Swap for your own storage, email auth adapters freely.',
+    body: 'An installation composes what it wants with sane defaults. Swap in your own storage, email, and auth adapters freely.',
   },
   {
     icon: ShieldCheck,
@@ -41,12 +44,18 @@ const principles = [
   },
 ]
 
+function Connector({ dashed = false }: { dashed?: boolean }) {
+  return (
+    <div className="flex flex-col items-center py-0.5" aria-hidden="true">
+      <div className={cn('h-3 w-px', dashed ? 'border-l border-dashed border-primary/50' : 'bg-primary/50')} />
+      <ChevronDown className="-mt-1 size-3 text-primary/60" />
+    </div>
+  )
+}
+
 export function Architecture() {
   return (
-    <section
-      id="architecture"
-      className="scroll-mt-20 border-t border-border/70 bg-secondary/20 py-20"
-    >
+    <section id="architecture" className="scroll-mt-20 border-t border-border/70 py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="grid gap-x-8 gap-y-12 lg:grid-cols-2 lg:items-center">
           <div>
@@ -54,11 +63,15 @@ export function Architecture() {
               Bring your own adapters
             </h2>
             <p className="mt-4 max-w-[48ch] text-lg text-pretty text-muted-foreground">
-              The backend ships as{' '}
+              The backend ships as two libraries:{' '}
+              <code className="rounded-md bg-card px-1.5 py-0.5 font-mono text-foreground/90">
+                @headless-lms/core
+              </code>
+              , a framework-free domain, and{' '}
               <code className="rounded-md bg-card px-1.5 py-0.5 font-mono text-foreground/90">
                 @headless-lms/server
               </code>
-               a framework-free domain core which means you can bring your own adapters.
+              , the Fastify layer that wires core to the adapters you choose.
             </p>
 
             <dl className="mt-8 space-y-6">
@@ -76,27 +89,35 @@ export function Architecture() {
             </dl>
           </div>
 
-          <div className="space-y-3">
+          <div>
             {layers.map((layer) => (
-              <div
-                key={layer.label}
-                className="rounded-2xl border border-border bg-card p-5"
-              >
-                <p className={`text-sm font-medium ${layer.tone}`}>
-                  {layer.label}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {layer.items.map((item) => (
-                    <div
-                      key={item}
-                      className="rounded-md border border-border bg-secondary/50 px-2.5 py-1 text-xs text-muted-foreground"
-                    >
-                      {item}
-                    </div>
-                  ))}
+              <div key={layer.label}>
+                <div
+                  className={cn(
+                    'rounded-2xl border p-5',
+                    layer.core ? 'border-primary/40 bg-primary/5' : 'border-border bg-card',
+                  )}
+                >
+                  <p className="font-medium">{layer.label}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{layer.detail}</p>
                 </div>
+                <Connector dashed={layer.core} />
               </div>
             ))}
+
+            <div className="rounded-2xl border border-border p-5">
+              <p className="font-medium">Swappable adapters</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {adapterSlots.map((slot) => (
+                  <span
+                    key={slot}
+                    className="rounded-md border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground"
+                  >
+                    {slot}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

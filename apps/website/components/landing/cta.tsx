@@ -24,7 +24,7 @@ export function Cta() {
 
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Button size="lg" render={<Link href="/docs" />}>
-              Read the docs
+              Get started
               <ArrowRight className="size-4" />
             </Button>
             <Button

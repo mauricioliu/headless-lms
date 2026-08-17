@@ -8,7 +8,6 @@ const footerLinks = [
     links: [
       { label: 'Features', href: '/#features' },
       { label: 'Architecture', href: '/#architecture' },
-      { label: 'Typed SDK', href: '/#sdk' },
       { label: 'MCP endpoint', href: '/#mcp' },
     ],
   },
@@ -65,12 +64,23 @@ export function SiteFooter() {
             <ul role="list" className="space-y-2.5">
               {group.links.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    href={link.href}
-                    className="text-sm font-normal text-muted-foreground hover:text-foreground"
-                  >
-                    {link.label}
-                  </Link>
+                  {link.href.startsWith('http') ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-normal text-muted-foreground hover:text-foreground"
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      href={link.href}
+                      className="text-sm font-normal text-muted-foreground hover:text-foreground"
+                    >
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -79,7 +89,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-border/70">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p>MIT Licensed. Built with Fastify, Drizzle, and Zod.</p>
+          <p>MIT Licensed.</p>
           <p className="font-mono">{siteConfig.installCommand}</p>
         </div>
       </div>

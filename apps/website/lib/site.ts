@@ -2,7 +2,7 @@ export const siteConfig = {
   name: 'Headless LMS',
   tagline: 'The API-first platform for building learning systems',
   description:
-    'An open-source, API-first headless LMS built in modern TypeScript with Fastify, Drizzle, and Zod. Composable adapters, org-scoped multi-tenancy, a typed SDK, and an MCP endpoint.',
+    'An open-source, API-first headless LMS built in modern TypeScript. Composable adapters and extendable with plugins.',
   url: 'https://headless-lms.dev',
   githubUrl: 'https://github.com/mdwt/headless-lms',
   installCommand: 'npm create headless-lms',

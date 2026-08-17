@@ -1,14 +1,5 @@
+import Image from "next/image";
 import { LayoutDashboard, GraduationCap, Bot, PaintbrushIcon } from "lucide-react";
-import { CodeBlock } from "@/components/code-block";
-
-const mcpSnippet = `# AI agents connect over OAuth and operate the LMS
-# through the same domain layer as every other client.
-
-POST /mcp
-Authorization: Bearer <oauth-token>
-
-> tools/call enroll_student
-  { "orgId": "...", "studentId": "...", "courseId": "..." }`;
 
 const surfaces = [
   {
@@ -61,7 +52,27 @@ export function AppsMcp() {
               ))}
             </dl>
           </div>
-          <CodeBlock code={mcpSnippet} filename="mcp.http" language="http" />
+
+          <div className="space-y-4 lg:relative lg:space-y-0 lg:pb-20">
+            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+              <Image
+                src="/screenshots/admin-course.jpg"
+                alt="Admin back-office showing a course curriculum with modules and lessons"
+                width={1568}
+                height={714}
+                className="w-full"
+              />
+            </div>
+            <div className="overflow-hidden rounded-xl border border-border bg-card lg:absolute lg:right-0 lg:bottom-0 lg:w-[58%]">
+              <Image
+                src="/screenshots/student-library.jpg"
+                alt="Student portal library showing enrolled courses with progress"
+                width={1568}
+                height={714}
+                className="w-full"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </section>
