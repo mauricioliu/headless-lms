@@ -23,9 +23,17 @@ export default async function StudentDetailPage({
     serverApi.getStudent(studentId),
     serverApi.studentEntitlements(studentId),
     serverApi.contentLite(),
+    serverApi.studentAnalytics(studentId),
   ]);
   await requireManager(dataPromise);
-  const [student, entitlements, content] = await dataPromise;
+  const [student, entitlements, content, analytics] = await dataPromise;
 
-  return <StudentDetailView student={student} entitlements={entitlements} content={content} />;
+  return (
+    <StudentDetailView
+      student={student}
+      entitlements={entitlements}
+      content={content}
+      analytics={analytics}
+    />
+  );
 }

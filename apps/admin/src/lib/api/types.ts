@@ -17,6 +17,7 @@ import type {
   GetCourseAnalyticsResponse,
   GetEnrollmentSeriesResponse,
   GetOverviewResponse,
+  GetStudentAnalyticsResponse,
   GetStudentResponse,
   ListActivitiesResponse,
   ListActivityAssetsResponse,
@@ -150,6 +151,8 @@ export type EnrollmentSeries = GetEnrollmentSeriesResponse;
 export type EnrollmentPoint = EnrollmentSeries[number];
 export type CourseAnalytics = GetCourseAnalyticsResponse;
 export type CourseActivityEngagement = CourseAnalytics["activities"][number];
+export type StudentAnalytics = GetStudentAnalyticsResponse;
+export type StudentCourseProgress = StudentAnalytics["courses"][number];
 
 // --- media library (assets) ------------------------------------------------
 

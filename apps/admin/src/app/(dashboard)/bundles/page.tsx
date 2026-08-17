@@ -20,5 +20,8 @@ export default async function BundlesPage({
     serverApi.contentLite(),
   ]);
 
-  return <BundlesTable rows={rows} total={total} params={params} content={content} />;
+  // A bundle's contents are single items — bundles can't contain bundles.
+  const bundleable = content.filter((c) => c.type !== "bundle");
+
+  return <BundlesTable rows={rows} total={total} params={params} content={bundleable} />;
 }

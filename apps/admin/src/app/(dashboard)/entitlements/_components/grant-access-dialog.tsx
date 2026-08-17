@@ -24,12 +24,24 @@ const FORM_ID = "grant-access-form";
 
 /** Static lookup option sources fetched by the Server Component and passed in. */
 export type LiteStudent = { id: string; name: string; email: string };
-export type LiteContent = { id: string; title: string; type: "course" | "download" };
+export type LiteContent = {
+  id: string;
+  title: string;
+  type: "course" | "download" | "bundle";
+  /** For bundles: titles of the content items it contains. */
+  itemTitles?: string[];
+};
+
+const GROUP_LABEL: Record<LiteContent["type"], string> = {
+  course: "Courses",
+  download: "Downloads",
+  bundle: "Bundles",
+};
 
 const schema = z
   .object({
     studentId: z.string().min(1, "Select a student"),
-    contentId: z.string().min(1, "Select a course or download"),
+    contentId: z.string().min(1, "Select a course, download or bundle"),
     expiryMode: z.enum(["never", "date"]),
     expiresAt: z.string().optional(),
   })
@@ -80,15 +92,18 @@ export function GrantAccessDialog({
       content.map((c) => ({
         value: c.id,
         label: c.title,
-        group: c.type === "course" ? "Courses" : "Downloads",
+        description: c.itemTitles?.length ? c.itemTitles.join(", ") : undefined,
+        group: GROUP_LABEL[c.type],
       })),
     [content],
   );
 
   const onSubmit = handleSubmit((values) => {
+    const isBundle = content.find((c) => c.id === values.contentId)?.type === "bundle";
     const input = {
       orgUserId: values.studentId,
-      contentId: values.contentId,
+      contentId: isBundle ? null : values.contentId,
+      bundleId: isBundle ? values.contentId : null,
       expiresAt:
         values.expiryMode === "never" || !values.expiresAt
           ? null
@@ -110,7 +125,7 @@ export function GrantAccessDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Grant access"
-      description="Grant a student access to a course or download manually. They'll get immediate access."
+      description="Grant a student access to a course, download or bundle manually. They'll get immediate access."
       formId={FORM_ID}
       submitLabel="Grant access"
       pending={pending}
@@ -145,8 +160,8 @@ export function GrantAccessDialog({
                 value={field.value}
                 onValueChange={field.onChange}
                 options={contentOptions}
-                placeholder="Select a course or download"
-                searchPlaceholder="Search courses and downloads…"
+                placeholder="Select a course, download or bundle"
+                searchPlaceholder="Search courses, downloads and bundles…"
                 emptyText="No content matches"
                 aria-invalid={!!errors.contentId}
               />

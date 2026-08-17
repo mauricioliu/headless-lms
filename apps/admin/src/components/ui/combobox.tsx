@@ -130,10 +130,12 @@ export function Combobox({
                       setQuery("");
                     }}
                   >
-                    <span className="min-w-0 flex-1 truncate">
-                      {option.label}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{option.label}</span>
                       {option.description ? (
-                        <span className="text-ink-3"> · {option.description}</span>
+                        <span className="block truncate text-xs text-ink-3">
+                          {option.description}
+                        </span>
                       ) : null}
                     </span>
                     {option.value === value ? (

@@ -44,6 +44,25 @@ export function relativeTime(iso: string | null): string {
   return "just now";
 }
 
+/** Compact relative time for stat values ("15h", "3d", "now"). Past only. */
+export function relativeTimeCompact(iso: string | null): string {
+  if (!iso) return "—";
+  const abs = Math.abs(new Date(iso).getTime() - Date.now());
+  const units: [number, string][] = [
+    [365 * DAY, "y"],
+    [30 * DAY, "mo"],
+    [7 * DAY, "w"],
+    [DAY, "d"],
+    [3_600_000, "h"],
+    [60_000, "m"],
+  ];
+  for (const [ms, label] of units) {
+    const n = Math.floor(abs / ms);
+    if (n >= 1) return `${n}${label}`;
+  }
+  return "now";
+}
+
 export function formatDate(iso: string | null): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-US", {

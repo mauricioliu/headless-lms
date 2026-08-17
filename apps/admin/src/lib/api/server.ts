@@ -60,6 +60,7 @@ import type {
   Paginated,
   CommentListItem,
   Student,
+  StudentAnalytics,
 } from "./types";
 
 /** Resolve a granted content id to its type + display title. The grant row
@@ -184,24 +185,45 @@ export const serverApi = {
     ]);
     return buildModuleTree(modules, activities, links);
   },
-  // Both content types offered by the entitlements grant pickers, tagged with
-  // their type so the UI can group course vs. download options.
-  async contentLite(): Promise<{ id: string; title: string; type: "course" | "download" }[]> {
-    const [coursesPage, downloadsPage] = await Promise.all([
-      Content.listCourses({ pageSize: 100, sort: "title" }, await authHeaders()),
-      Content.listDownloads({ pageSize: 100, sort: "title" }, await authHeaders()),
+  // Every grantable target offered by the entitlements grant pickers, tagged
+  // with its type so the UI can group them. Bundles lead the list and carry
+  // their item titles so the picker can show what a bundle contains.
+  async contentLite(): Promise<
+    (
+      | { id: string; title: string; type: "course" | "download" }
+      | { id: string; title: string; type: "bundle"; itemTitles: string[] }
+    )[]
+  > {
+    const headers = await authHeaders();
+    const [coursesPage, downloadsPage, bundlesPage] = await Promise.all([
+      Content.listCourses({ pageSize: 100, sort: "title" }, headers),
+      Content.listDownloads({ pageSize: 100, sort: "title" }, headers),
+      Content.listBundles({ pageSize: 100, sort: "name" }, headers),
     ]);
-    const courses = coursesPage.rows.map((c) => ({
-      id: c.id,
-      title: c.title,
-      type: "course" as const,
-    }));
-    const downloads = downloadsPage.rows.map((d) => ({
-      id: d.id,
-      title: d.title,
-      type: "download" as const,
-    }));
-    return [...courses, ...downloads].sort((a, b) => a.title.localeCompare(b.title));
+    const bundleItems = await Promise.all(
+      bundlesPage.rows.map((b) => Content.listBundleItems({ bundleId: b.id }, headers)),
+    );
+    const titleById = new Map([
+      ...coursesPage.rows.map((c) => [c.id, c.title] as const),
+      ...downloadsPage.rows.map((d) => [d.id, d.title] as const),
+    ]);
+    const byTitle = (a: { title: string }, b: { title: string }) =>
+      a.title.localeCompare(b.title);
+    const bundles = bundlesPage.rows
+      .map((b, i) => ({
+        id: b.id,
+        title: b.name,
+        type: "bundle" as const,
+        itemTitles: bundleItems[i].map((item) => titleById.get(item.contentId) ?? item.contentId),
+      }))
+      .sort(byTitle);
+    const courses = coursesPage.rows
+      .map((c) => ({ id: c.id, title: c.title, type: "course" as const }))
+      .sort(byTitle);
+    const downloads = downloadsPage.rows
+      .map((d) => ({ id: d.id, title: d.title, type: "download" as const }))
+      .sort(byTitle);
+    return [...bundles, ...courses, ...downloads];
   },
 
   // bundles
@@ -256,6 +278,9 @@ export const serverApi = {
   },
   async getStudent(id: string): Promise<Student> {
     return await Organizations.getStudent({ id }, await authHeaders());
+  },
+  async studentAnalytics(id: string): Promise<StudentAnalytics> {
+    return await Reporting.getStudentAnalytics({ id }, await authHeaders());
   },
   async studentEntitlements(orgUserId: string): Promise<Entitlement[]> {
     const page = await Entitlements.listEntitlements(

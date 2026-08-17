@@ -8,9 +8,11 @@ import { Entitlements } from "@headless-lms/sdk";
 import { authHeaders } from "@/lib/api/server-call";
 import type { EntitlementGrant } from "@/lib/api/types";
 
+/** A grant targets exactly one of: a single content item or a bundle. */
 export interface GrantEntitlementInput {
   orgUserId: string;
-  contentId: string;
+  contentId?: string | null;
+  bundleId?: string | null;
   expiresAt: string | null;
 }
 
@@ -35,5 +37,6 @@ export async function setEntitlementStatusAction(
   const status: EntitlementGrant["status"] = action === "revoke" ? "revoked" : "active";
   const entitlement = await Entitlements.setEntitlementStatus({ id, status }, await authHeaders());
   revalidatePath("/entitlements");
+  revalidatePath(`/students/${entitlement.orgUserId}`);
   return entitlement;
 }

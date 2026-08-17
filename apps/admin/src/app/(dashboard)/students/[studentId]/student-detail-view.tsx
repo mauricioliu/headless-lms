@@ -17,10 +17,11 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrentUser } from "@/lib/auth/session-context";
 import { isManager } from "@/lib/roles";
-import { formatDate, fullName, relativeTime } from "@/lib/format";
-import type { Entitlement, Student } from "@/lib/api/types";
+import { formatDate, fullName, relativeTime, relativeTimeCompact } from "@/lib/format";
+import type { Entitlement, Student, StudentAnalytics, StudentCourseProgress } from "@/lib/api/types";
 
 import { GrantAccessDialog, type LiteContent } from "../_components/grant-access-dialog";
+import { setEntitlementStatusAction } from "../../entitlements/actions";
 import { deleteStudentAction, resendStudentInviteAction } from "../actions";
 import { StudentDetailsForm } from "./student-details-form";
 
@@ -34,17 +35,21 @@ export function StudentDetailView({
   student,
   entitlements,
   content,
+  analytics,
 }: {
   student: Student;
   entitlements: Entitlement[];
   content: LiteContent[];
+  analytics: StudentAnalytics;
 }) {
   const user = useCurrentUser();
   const router = useRouter();
   const [grantOpen, setGrantOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [revokeTarget, setRevokeTarget] = useState<Entitlement | null>(null);
   const [deleting, startDelete] = useTransition();
   const [resending, startResend] = useTransition();
+  const [updatingAccess, startAccessUpdate] = useTransition();
 
   if (!isManager(user.role)) return <ForbiddenView />;
 
@@ -58,6 +63,32 @@ export function StudentDetailView({
         toast.error("Couldn't send the invite", { description: (err as Error).message });
       }
     });
+
+  const onReinstate = (e: Entitlement) =>
+    startAccessUpdate(async () => {
+      try {
+        await setEntitlementStatusAction(e.id, "reinstate");
+        toast.success("Access reinstated");
+        router.refresh();
+      } catch (err) {
+        toast.error("Couldn't update access", { description: (err as Error).message });
+      }
+    });
+
+  const confirmRevoke = () => {
+    if (!revokeTarget) return;
+    const target = revokeTarget;
+    startAccessUpdate(async () => {
+      try {
+        await setEntitlementStatusAction(target.id, "revoke");
+        toast.success("Access revoked");
+        setRevokeTarget(null);
+        router.refresh();
+      } catch (err) {
+        toast.error("Couldn't update access", { description: (err as Error).message });
+      }
+    });
+  };
 
   // On success we leave the page — the list is revalidated by the action.
   const onDelete = () =>
@@ -93,6 +124,7 @@ export function StudentDetailView({
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="access">Access</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
@@ -117,10 +149,19 @@ export function StudentDetailView({
           ) : (
             <ul className="divide-y divide-line">
               {entitlements.map((e) => (
-                <EntitlementRow key={e.id} entitlement={e} />
+                <EntitlementRow
+                  key={e.id}
+                  entitlement={e}
+                  onRevoke={() => setRevokeTarget(e)}
+                  onReinstate={() => onReinstate(e)}
+                />
               ))}
             </ul>
           )}
+        </TabsContent>
+
+        <TabsContent value="analytics" className="flex flex-col gap-8">
+          <StudentAnalyticsPanel analytics={analytics} />
         </TabsContent>
       </Tabs>
 
@@ -129,6 +170,26 @@ export function StudentDetailView({
         onOpenChange={setGrantOpen}
         studentId={student.id}
         content={content}
+      />
+
+      <ConfirmDialog
+        open={!!revokeTarget}
+        onOpenChange={(o) => !o && setRevokeTarget(null)}
+        title="Revoke access?"
+        description={
+          revokeTarget ? (
+            <>
+              <span className="font-medium text-ink">{fullName(student)}</span> will immediately
+              lose access to {revokeTarget.content.title}. You can reinstate it later.
+            </>
+          ) : (
+            ""
+          )
+        }
+        confirmLabel="Revoke access"
+        destructive
+        pending={updatingAccess}
+        onConfirm={confirmRevoke}
       />
 
       <ConfirmDialog
@@ -168,7 +229,7 @@ function StudentHeader({
   const stats: { label: string; value: string }[] = [
     { label: "Entitlements", value: String(student.entitlementCount) },
     { label: "Avg. progress", value: `${Math.round(student.avgProgress)}%` },
-    { label: "Last active", value: relativeTime(student.lastActiveAt) },
+    { label: "Last active", value: relativeTimeCompact(student.lastActiveAt) },
   ];
 
   return (
@@ -221,7 +282,16 @@ function StudentHeader({
   );
 }
 
-function EntitlementRow({ entitlement: e }: { entitlement: Entitlement }) {
+function EntitlementRow({
+  entitlement: e,
+  onRevoke,
+  onReinstate,
+}: {
+  entitlement: Entitlement;
+  onRevoke: () => void;
+  onReinstate: () => void;
+}) {
+  const canReinstate = e.status === "revoked" || e.status === "expired";
   return (
     <li className="flex flex-col gap-3 py-4 first:pt-1 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <div className="flex min-w-0 flex-col gap-1.5">
@@ -234,6 +304,18 @@ function EntitlementRow({ entitlement: e }: { entitlement: Entitlement }) {
           {" · "}
           {e.expiresAt ? `Expires ${relativeTime(e.expiresAt)}` : "No expiry"}
         </p>
+      </div>
+      <div className="flex shrink-0 justify-end">
+        <RowActions label="Entitlement actions">
+          {e.status === "active" ? (
+            <DropdownMenuItem variant="danger" onSelect={onRevoke}>
+              Revoke access
+            </DropdownMenuItem>
+          ) : null}
+          {canReinstate ? (
+            <DropdownMenuItem onSelect={onReinstate}>Reinstate access</DropdownMenuItem>
+          ) : null}
+        </RowActions>
       </div>
     </li>
   );
@@ -249,5 +331,112 @@ function EmptyEntitlements() {
         </p>
       </div>
     </div>
+  );
+}
+
+function ProgressCell({ progress }: { progress: number }) {
+  const pct = Math.max(0, Math.min(100, progress));
+  return (
+    <div className="ml-auto flex w-36 items-center justify-end gap-2.5">
+      <div
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3"
+      >
+        <div className="h-full rounded-full bg-brand" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-9 shrink-0 text-right text-xs text-ink-3">{pct}%</span>
+    </div>
+  );
+}
+
+function CourseProgressRow({ course }: { course: StudentCourseProgress }) {
+  return (
+    <tr>
+      <td className="py-2.5 pr-4">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="truncate text-ink">{course.title}</span>
+          {course.completedAt && <Badge variant="success">Completed</Badge>}
+        </div>
+      </td>
+      <td className="py-2.5 pr-4 whitespace-nowrap text-right text-ink-2 tabular-nums">
+        {course.completedActivities}/{course.totalActivities}
+      </td>
+      <td className="py-2.5 pr-4 whitespace-nowrap text-right text-ink-2">
+        {relativeTime(course.lastActivityAt)}
+      </td>
+      <td className="py-2.5">
+        <ProgressCell progress={course.progress} />
+      </td>
+    </tr>
+  );
+}
+
+/**
+ * Learner record: KPI row (same flat treatment as the course analytics tab)
+ * over a per-course progress table, computed against the courses the student
+ * currently holds an active entitlement to.
+ */
+function StudentAnalyticsPanel({ analytics }: { analytics: StudentAnalytics }) {
+  const stats: { label: string; value: string }[] = [
+    { label: "Courses", value: String(analytics.enrolled) },
+    { label: "Started", value: String(analytics.started) },
+    { label: "Completed", value: String(analytics.completed) },
+    { label: "Avg. progress", value: `${analytics.avgProgress}%` },
+  ];
+
+  return (
+    <>
+      <div className="@container">
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-6 @md:grid-cols-4">
+          {stats.map((s) => (
+            <div key={s.label} className="flex flex-col gap-1 border-l-2 border-line pl-4">
+              <dt className="truncate text-[0.8125rem] text-ink-3">{s.label}</dt>
+              <dd className="text-[1.75rem] leading-9 font-semibold tracking-tight text-ink proportional-nums">
+                {s.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+
+      {analytics.courses.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-line px-6 py-10 text-center">
+          <h3 className="text-sm font-medium text-ink">No course access</h3>
+          <p className="text-sm text-ink-3">
+            Progress will appear here once this student has access to a course.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-0.5">
+            <h2 className="text-sm font-medium text-ink">Course progress</h2>
+            <p className="text-sm text-ink-3">
+              Completed activities and last activity per course, across current access.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-line text-left text-xs text-ink-3">
+                  <th className="py-2 pr-4 font-medium">Course</th>
+                  <th className="w-24 py-2 pr-4 text-right font-medium">Activities</th>
+                  <th className="w-28 py-2 pr-4 text-right font-medium">Last activity</th>
+                  <th className="w-40 py-2 text-right font-medium">Progress</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {analytics.courses.map((c) => (
+                  <CourseProgressRow key={c.courseId} course={c} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
