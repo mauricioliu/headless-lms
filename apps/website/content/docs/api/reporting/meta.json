@@ -2,7 +2,10 @@
   "title": "Reporting",
   "description": "Reporting and analytics",
   "pages": [
+    "getStudentAnalytics",
     "getOverview",
-    "getEnrollmentSeries"
+    "getEnrollmentSeries",
+    "getCourseAnalytics",
+    "getCourseEnrollmentSeries"
   ]
 }

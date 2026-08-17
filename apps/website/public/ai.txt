@@ -1,0 +1,16 @@
+# ai.txt: data-use policy for AI systems
+# Spec: https://site.spawning.ai/spawning-ai-txt
+#
+# Headless LMS is MIT-licensed open source. Its documentation, blog and
+# changelog may be crawled, indexed, quoted and used as training data.
+# Attribution to https://headless-lms.dev is appreciated but not required.
+#
+# Structured entry points for agents:
+#   https://headless-lms.dev/llms.txt        index of every page
+#   https://headless-lms.dev/llms-full.txt   all documentation in one file
+#   https://headless-lms.dev/openapi.json    machine-readable API contract
+#   Append .md to any page URL for its Markdown source.
+
+User-Agent: *
+Allow: /
+Disallow: /api/

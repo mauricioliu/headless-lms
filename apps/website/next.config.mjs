@@ -8,6 +8,13 @@ const redirectHosts = ['www.headless-lms.dev', 'headless-lms.com', 'www.headless
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async rewrites() {
+    return [
+      { source: '/docs/:slug*.md', destination: '/md/docs/:slug*' },
+      { source: '/blog/:slug.md', destination: '/md/blog/:slug' },
+      { source: '/changelog.md', destination: '/md/changelog' },
+    ]
+  },
   async redirects() {
     return redirectHosts.map((host) => ({
       source: '/:path*',
