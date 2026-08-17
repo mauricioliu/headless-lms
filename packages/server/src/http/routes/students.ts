@@ -8,6 +8,7 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
   ErrorBody,
   Student,
+  StudentAnalytics,
   StudentIdParam,
   StudentsPage,
   StudentsQuery,
@@ -56,6 +57,27 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
         throw new NotFoundError('Student', req.params.id);
       }
       return student;
+    },
+  });
+
+  r.route({
+    method: 'GET',
+    url: '/api/students/:id/analytics',
+    preHandler: app.requireOrgSession,
+    schema: {
+      operationId: 'getStudentAnalytics',
+      tags: ['Reporting'],
+      summary: "A student's learner record: per-course progress and completion",
+      params: StudentIdParam,
+      response: { 200: StudentAnalytics, 404: ErrorBody },
+    },
+    handler: async (req) => {
+      const scope = await resolveScope(container, req);
+      const analytics = await students.analytics(scope.orgId, req.params.id);
+      if (!analytics) {
+        throw new NotFoundError('Student', req.params.id);
+      }
+      return analytics;
     },
   });
 

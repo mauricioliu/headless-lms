@@ -87,6 +87,8 @@ import type {
   GetLearnOrgResponses,
   GetLearnViewerResponses,
   GetOverviewResponses,
+  GetStudentAnalyticsErrors,
+  GetStudentAnalyticsResponses,
   GetStudentErrors,
   GetStudentResponses,
   GrantEntitlementResponses,
@@ -2693,6 +2695,129 @@ export class Assets {
   }
 }
 
+export class Reporting {
+  /**
+   * A student's learner record: per-course progress and completion
+   */
+  public static getStudentAnalytics<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetStudentAnalyticsResponses, GetStudentAnalyticsErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).get<
+      GetStudentAnalyticsResponses,
+      GetStudentAnalyticsErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/students/{id}/analytics",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Back-office overview stats
+   */
+  public static getOverview<ThrowOnError extends boolean = false>(
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetOverviewResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<GetOverviewResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/overview",
+      ...options,
+    });
+  }
+
+  /**
+   * Enrollments granted per day over a trailing window
+   */
+  public static getEnrollmentSeries<ThrowOnError extends boolean = false>(
+    parameters?: {
+      days?: number;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetEnrollmentSeriesResponses, unknown, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "days" }] }]);
+    return (options?.client ?? client).get<
+      GetEnrollmentSeriesResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/overview/enrollments",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Completion and engagement stats for a course
+   */
+  public static getCourseAnalytics<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetCourseAnalyticsResponses, GetCourseAnalyticsErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).get<
+      GetCourseAnalyticsResponses,
+      GetCourseAnalyticsErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/courses/{id}/analytics",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Enrollments granted per day for a course over a trailing window
+   */
+  public static getCourseEnrollmentSeries<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+      days?: number;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<
+    GetCourseEnrollmentSeriesResponses,
+    GetCourseEnrollmentSeriesErrors,
+    ThrowOnError,
+    "data"
+  > {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "query", key: "days" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).get<
+      GetCourseEnrollmentSeriesResponses,
+      GetCourseEnrollmentSeriesErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/courses/{id}/analytics/enrollments",
+      ...options,
+      ...params,
+    });
+  }
+}
+
 export class Entitlements {
   /**
    * List entitlements
@@ -2748,7 +2873,8 @@ export class Entitlements {
   public static grantEntitlement<ThrowOnError extends boolean = false>(
     parameters: {
       orgUserId: string;
-      contentId: string;
+      contentId?: string | null;
+      bundleId?: string | null;
       expiresAt: unknown;
     },
     options?: Options<never, ThrowOnError>,
@@ -2760,6 +2886,7 @@ export class Entitlements {
           args: [
             { in: "body", key: "orgUserId" },
             { in: "body", key: "contentId" },
+            { in: "body", key: "bundleId" },
             { in: "body", key: "expiresAt" },
           ],
         },
@@ -3063,106 +3190,6 @@ export class Automations {
     >({
       responseStyle: "data",
       url: "/api/automations/{id}/runs",
-      ...options,
-      ...params,
-    });
-  }
-}
-
-export class Reporting {
-  /**
-   * Back-office overview stats
-   */
-  public static getOverview<ThrowOnError extends boolean = false>(
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GetOverviewResponses, unknown, ThrowOnError, "data"> {
-    return (options?.client ?? client).get<GetOverviewResponses, unknown, ThrowOnError, "data">({
-      responseStyle: "data",
-      url: "/api/overview",
-      ...options,
-    });
-  }
-
-  /**
-   * Enrollments granted per day over a trailing window
-   */
-  public static getEnrollmentSeries<ThrowOnError extends boolean = false>(
-    parameters?: {
-      days?: number;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GetEnrollmentSeriesResponses, unknown, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "days" }] }]);
-    return (options?.client ?? client).get<
-      GetEnrollmentSeriesResponses,
-      unknown,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/overview/enrollments",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Completion and engagement stats for a course
-   */
-  public static getCourseAnalytics<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<GetCourseAnalyticsResponses, GetCourseAnalyticsErrors, ThrowOnError, "data"> {
-    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
-    return (options?.client ?? client).get<
-      GetCourseAnalyticsResponses,
-      GetCourseAnalyticsErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/courses/{id}/analytics",
-      ...options,
-      ...params,
-    });
-  }
-
-  /**
-   * Enrollments granted per day for a course over a trailing window
-   */
-  public static getCourseEnrollmentSeries<ThrowOnError extends boolean = false>(
-    parameters: {
-      id: string;
-      days?: number;
-    },
-    options?: Options<never, ThrowOnError>,
-  ): RequestResult<
-    GetCourseEnrollmentSeriesResponses,
-    GetCourseEnrollmentSeriesErrors,
-    ThrowOnError,
-    "data"
-  > {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "id" },
-            { in: "query", key: "days" },
-          ],
-        },
-      ],
-    );
-    return (options?.client ?? client).get<
-      GetCourseEnrollmentSeriesResponses,
-      GetCourseEnrollmentSeriesErrors,
-      ThrowOnError,
-      "data"
-    >({
-      responseStyle: "data",
-      url: "/api/courses/{id}/analytics/enrollments",
       ...options,
       ...params,
     });

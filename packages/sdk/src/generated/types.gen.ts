@@ -2892,6 +2892,53 @@ export type UpdateStudentResponses = {
 
 export type UpdateStudentResponse = UpdateStudentResponses[keyof UpdateStudentResponses];
 
+export type GetStudentAnalyticsData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/students/{id}/analytics";
+};
+
+export type GetStudentAnalyticsErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type GetStudentAnalyticsError = GetStudentAnalyticsErrors[keyof GetStudentAnalyticsErrors];
+
+export type GetStudentAnalyticsResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    enrolled: number;
+    started: number;
+    completed: number;
+    avgProgress: number;
+    courses: Array<{
+      courseId: string;
+      title: string;
+      totalActivities: number;
+      completedActivities: number;
+      progress: number;
+      startedAt: string | null;
+      lastActivityAt: string | null;
+      completedAt: string | null;
+    }>;
+  };
+};
+
+export type GetStudentAnalyticsResponse =
+  GetStudentAnalyticsResponses[keyof GetStudentAnalyticsResponses];
+
 export type ResendStudentInviteData = {
   body?: never;
   path: {
@@ -2975,7 +3022,8 @@ export type ListEntitlementsResponse = ListEntitlementsResponses[keyof ListEntit
 export type GrantEntitlementData = {
   body: {
     orgUserId: string;
-    contentId: string;
+    contentId?: string | null;
+    bundleId?: string | null;
     expiresAt: unknown;
   };
   path?: never;

@@ -38,11 +38,17 @@ export type EntitlementsQuery = z.infer<typeof EntitlementsQuery>;
 export const EntitlementsPage = paginated(Entitlement);
 export type EntitlementsPage = z.infer<typeof EntitlementsPage>;
 
-export const GrantEntitlement = z.object({
-  orgUserId: z.string(),
-  contentId: z.string(),
-  expiresAt: z.coerce.date().nullable(),
-});
+/** A grant targets exactly one of: a single content item or a bundle. */
+export const GrantEntitlement = z
+  .object({
+    orgUserId: z.string(),
+    contentId: z.string().nullish(),
+    bundleId: z.string().nullish(),
+    expiresAt: z.coerce.date().nullable(),
+  })
+  .refine((v) => (v.contentId != null) !== (v.bundleId != null), {
+    message: "Provide exactly one of contentId or bundleId",
+  });
 export type GrantEntitlement = z.infer<typeof GrantEntitlement>;
 
 /** Revoke/reinstate access by setting the active|revoked status. */

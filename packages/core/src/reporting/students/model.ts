@@ -15,6 +15,30 @@ export interface Student extends OrgUserProfile {
   lastActiveAt: string | null;
 }
 
+// Learner record: every course the student holds an effective-active
+// entitlement to, with their progress through each.
+export interface StudentCourseProgress {
+  courseId: string;
+  title: string;
+  /** Published activities in the course. */
+  totalActivities: number;
+  completedActivities: number;
+  /** 0–100, completed published activities over the total. */
+  progress: number;
+  startedAt: string | null;
+  lastActivityAt: string | null;
+  completedAt: string | null;
+}
+
+export interface StudentAnalytics {
+  enrolled: number;
+  started: number;
+  completed: number;
+  /** Mean of the per-course progress percentages (0–100). */
+  avgProgress: number;
+  courses: StudentCourseProgress[];
+}
+
 export interface StudentsQuery {
   page: number;
   pageSize: number;

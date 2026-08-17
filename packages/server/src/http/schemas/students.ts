@@ -17,6 +17,28 @@ export const Student = OrgUserProfileSchema.extend({
 });
 export type Student = z.infer<typeof Student>;
 
+export const StudentCourseProgress = z.object({
+  courseId: z.string(),
+  title: z.string(),
+  totalActivities: z.number().int(),
+  completedActivities: z.number().int(),
+  /** 0–100, completed published activities over the course's total. */
+  progress: z.number().int(),
+  startedAt: z.string().nullable(),
+  lastActivityAt: z.string().nullable(),
+  completedAt: z.string().nullable(),
+});
+export type StudentCourseProgress = z.infer<typeof StudentCourseProgress>;
+
+export const StudentAnalytics = z.object({
+  enrolled: z.number().int(),
+  started: z.number().int(),
+  completed: z.number().int(),
+  avgProgress: z.number().int(),
+  courses: z.array(StudentCourseProgress),
+});
+export type StudentAnalytics = z.infer<typeof StudentAnalytics>;
+
 export const StudentsQuery = ListQuery;
 export type StudentsQuery = z.infer<typeof StudentsQuery>;
 
