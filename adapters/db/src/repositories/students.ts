@@ -10,6 +10,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type {
   Page,
   Student,
+  StudentAnalytics,
+  StudentCourseProgress,
   StudentsQuery,
   StudentsReportRepository,
 } from '@headless-lms/core/reporting/students';
@@ -26,6 +28,13 @@ const entitlementCountExpr = sql<number>`count(${entitlements.id})`;
 // Completion now lives in the progress domain; the students report no longer
 // derives a percentage from entitlements. Placeholder until wired to progress.
 const avgProgressExpr = sql<number>`0`;
+// Last learning activity: the newest touch on any of the student's progress
+// records. A scalar subquery so it neither fans out the entitlement count nor
+// widens the GROUP BY.
+const lastActiveExpr = sql<Date | null>`(
+  select max(pr.updated_at) from progress_records pr
+  where pr.org_id = ${orgUsers.orgId} and pr.org_user_id = ${orgUsers.id}
+)`;
 
 interface StudentRow {
   id: string;
@@ -37,6 +46,7 @@ interface StudentRow {
   createdAt: Date;
   entitlementCount: number;
   avgProgress: number;
+  lastActiveAt: Date | null;
 }
 
 function toStudent(row: StudentRow): Student {
@@ -50,7 +60,7 @@ function toStudent(row: StudentRow): Student {
     entitlementCount: Number(row.entitlementCount),
     avgProgress: Number(row.avgProgress),
     joinedAt: row.createdAt.toISOString(),
-    lastActiveAt: null,
+    lastActiveAt: row.lastActiveAt ? new Date(row.lastActiveAt).toISOString() : null,
   };
 }
 
@@ -90,6 +100,7 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
         createdAt: orgUsers.createdAt,
         entitlementCount: entitlementCountExpr,
         avgProgress: avgProgressExpr,
+        lastActiveAt: lastActiveExpr,
       })
       .from(orgUsers)
       .leftJoin(
@@ -130,6 +141,7 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
         createdAt: orgUsers.createdAt,
         entitlementCount: entitlementCountExpr,
         avgProgress: avgProgressExpr,
+        lastActiveAt: lastActiveExpr,
       })
       .from(orgUsers)
       .leftJoin(
@@ -152,6 +164,95 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
     return row ? toStudent(row) : null;
   }
 
+  // Learner record: one row per course the student holds an effective-active
+  // entitlement to (mirroring the course-analytics cohort rule), with progress
+  // computed over published activities the same way reporting/courses does.
+  async analytics(orgId: string, id: string): Promise<StudentAnalytics | null> {
+    const [exists] = await this.db
+      .select({ id: orgUsers.id })
+      .from(orgUsers)
+      .where(and(eq(orgUsers.orgId, orgId), eq(orgUsers.id, id), eq(orgUsers.role, STUDENT_ROLE)));
+    if (!exists) {
+      return null;
+    }
+
+    const result = await this.db.execute(sql`
+      with cohort_courses as (
+        select c.id, c.title
+        from entitlements e
+        join courses c on c.org_id = e.org_id and c.id = e.content_id
+        where e.org_id = ${orgId}
+          and e.org_user_id = ${id}
+          and e.status = 'active'
+          and (e.expires_at is null or e.expires_at >= now())
+      ),
+      acts as (
+        select a.course_id, a.id
+        from activities a
+        where a.org_id = ${orgId}
+          and a.course_id in (select id from cohort_courses)
+          and coalesce((a.settings ->> 'published')::boolean, true)
+      )
+      select
+        cc.id as course_id,
+        cc.title,
+        count(a.id)::int as total_activities,
+        count(pr.id) filter (where pr.completed_at is not null)::int as completed_activities,
+        min(pr.started_at) as started_at,
+        max(pr.updated_at) as last_activity_at,
+        (
+          select prc.completed_at from progress_records prc
+          where prc.org_id = ${orgId}
+            and prc.org_user_id = ${id}
+            and prc.target_type = 'course'
+            and prc.target_id = cc.id
+        ) as completed_at
+      from cohort_courses cc
+      left join acts a on a.course_id = cc.id
+      left join progress_records pr
+        on pr.org_id = ${orgId}
+        and pr.org_user_id = ${id}
+        and pr.target_type = 'activity'
+        and pr.target_id = a.id
+      group by cc.id, cc.title
+      order by cc.title
+    `);
+
+    const courses: StudentCourseProgress[] = (
+      result.rows as {
+        course_id: string;
+        title: string;
+        total_activities: number;
+        completed_activities: number;
+        started_at: Date | string | null;
+        last_activity_at: Date | string | null;
+        completed_at: Date | string | null;
+      }[]
+    ).map((r) => {
+      const total = Number(r.total_activities);
+      const done = Number(r.completed_activities);
+      return {
+        courseId: r.course_id,
+        title: r.title,
+        totalActivities: total,
+        completedActivities: done,
+        progress: total > 0 ? Math.round(Math.min(done / total, 1) * 100) : 0,
+        startedAt: r.started_at ? new Date(r.started_at).toISOString() : null,
+        lastActivityAt: r.last_activity_at ? new Date(r.last_activity_at).toISOString() : null,
+        completedAt: r.completed_at ? new Date(r.completed_at).toISOString() : null,
+      };
+    });
+
+    const started = courses.filter((c) => c.startedAt !== null).length;
+    const completed = courses.filter((c) => c.completedAt !== null).length;
+    const avgProgress =
+      courses.length > 0
+        ? Math.round(courses.reduce((sum, c) => sum + c.progress, 0) / courses.length)
+        : 0;
+
+    return { enrolled: courses.length, started, completed, avgProgress, courses };
+  }
+
   private resolveOrder(sort?: string): SQL[] {
     const descending = sort?.startsWith('-') ?? false;
     const field = sort ? (descending ? sort.slice(1) : sort) : 'firstName';
@@ -165,6 +266,8 @@ export class DrizzleStudentsRepository implements StudentsReportRepository {
         return [dir(avgProgressExpr)];
       case 'joinedAt':
         return [dir(orgUsers.createdAt)];
+      case 'lastActiveAt':
+        return [dir(lastActiveExpr)];
       case 'lastName':
         return [dir(users.lastName), dir(users.firstName)];
       case 'firstName':
