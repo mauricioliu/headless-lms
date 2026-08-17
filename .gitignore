@@ -12,7 +12,7 @@ build/
 .env.*
 !.env.example
 
-# test
+# tes
 coverage/
 *.lcov
 
@@ -69,7 +69,8 @@ CLAUDE.local.md
 .continue/
 .windsurf/
 .codeium/
-.github/copilot-instructions.local.md
+.github/
+!.github/workflows
 .gemini/
 .roo/
 .cline/
@@ -79,3 +80,5 @@ CLAUDE.local.md
 .playwright-mcp
 tmp
 .mcp.json
+.agents
+.codex
