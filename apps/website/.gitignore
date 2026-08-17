@@ -16,3 +16,4 @@ node_modules
 
 # fumadocs-mdx generated collections
 .source/
+.impeccable
