@@ -1,5 +1,6 @@
 // Default in-process engine — runs a dispatched automation immediately, one
-// attempt per action; durable engines (Hatchet, …) are installation adapters.
+// attempt per action; durable engines are installation adapters over the same
+// AutomationEngine port.
 import type {
   AutomationActionResult,
   AutomationDispatch,

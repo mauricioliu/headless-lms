@@ -12,7 +12,7 @@ The core holds all business logic and depends on nothing outward — no framewor
 - An **inbound port** is what a context _offers_: its use cases, like "list courses" or "grant access".
 - An **outbound port** is what a context _needs_: capabilities like "store a file" or "send an email".
 
-Adapters implement the outbound ports — Postgres for persistence, Better Auth for identity, S3-compatible storage for files, Resend for email, Hatchet for durable workflows. Because the core only knows the port interfaces, any adapter can be replaced without touching business logic.
+Adapters implement the outbound ports — Postgres for persistence, Better Auth for identity, S3-compatible storage for files, Resend for email, an in-process engine for automations. Because the core only knows the port interfaces, any adapter can be replaced without touching business logic.
 
 The inbound entry point is the HTTP layer. It calls into the core's services and owns no business logic of its own.
 

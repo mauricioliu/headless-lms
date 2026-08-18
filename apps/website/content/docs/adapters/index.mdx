@@ -16,14 +16,13 @@ import { createContainer, buildServer } from "@headless-lms/server";
 import { ResendEmailAdapter } from "@headless-lms/adapter-email-resend";
 import { MinioStorageAdapter } from "@headless-lms/adapter-storage-minio";
 import { ReactEmailTemplateRenderer } from "@headless-lms/adapter-email-templates";
-import { HatchetAutomationEngine } from "@headless-lms/adapter-workflow-hatchet";
 
 const container = await createContainer(config, {
   adapters: {
     email: new ResendEmailAdapter({ apiKey, from }),
     storage: new MinioStorageAdapter(storageConfig),
     templates: new ReactEmailTemplateRenderer(),
-    workflows: new HatchetAutomationEngine(),
+    // No `workflows` override — the in-process InlineAutomationEngine applies.
   },
 });
 ```
@@ -38,8 +37,8 @@ Every slot is optional, with a sensible default, so you can start with nothing c
 | `email` | `EmailSender` | [`@headless-lms/adapter-email-resend`](/docs/adapters/email/resend) | Stub that fails loudly on send |
 | `templates` | `TemplateRenderer` | [`@headless-lms/adapter-email-templates`](/docs/adapters/email/react-email) | Stub that fails loudly on render |
 | `storage` | `ObjectStorage` | [`@headless-lms/adapter-storage-minio`](/docs/adapters/storage/minio) | Stub that fails loudly on use |
-| `workflows` | `AutomationEngine` | [`@headless-lms/adapter-workflow-hatchet`](/docs/adapters/workflows/hatchet) | In-process engine, one attempt per action |
+| `workflows` | `AutomationEngine` | In-process engine (`InlineAutomationEngine`, bundled in `@headless-lms/adapter-defaults`) | In-process engine, one attempt per action |
 
 Because each slot is just an interface, you can replace any adapter with your own implementation — implement the port from `@headless-lms/core/types` and pass it in the same way.
 
-An installation scaffolded with `npm create headless-lms` comes with one adapter wired: MinIO storage, and only when `STORAGE_ENDPOINT` is set. Every other slot sits on its default, so a fresh project boots against nothing but Postgres. Add the adapters above as you need them — `apps/api` in the repository is the fully wired reference (Resend, MinIO, React Email, Hatchet).
+An installation scaffolded with `npm create headless-lms` comes with one adapter wired: MinIO storage, and only when `STORAGE_ENDPOINT` is set. Every other slot sits on its default, so a fresh project boots against nothing but Postgres. Add the adapters above as you need them — `apps/api` in the repository is the fully wired reference (Resend, MinIO, React Email).

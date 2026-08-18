@@ -27,7 +27,6 @@ adapters/
   email-resend/      @headless-lms/adapter-email-resend — EmailSender via Resend
   email-templates/   @headless-lms/adapter-email-templates — TemplateRenderer via React Email
   storage-minio/     @headless-lms/adapter-storage-minio — ObjectStorage via MinIO/S3
-  workflow-hatchet/  @headless-lms/adapter-workflow-hatchet — AutomationEngine via Hatchet
 ```
 
 `@headless-lms/adapter-db` owns `drizzle.config.ts`, the generated `drizzle/`
@@ -45,8 +44,8 @@ Everything with a build step builds with **tsdown** (`tsdown.config.ts` per
 workspace). Two shapes:
 
 - **Bundled per entry**, to `dist/` with `.d.ts` — `utils`, `editor`, `plugins/slack`,
-  and the four leaf adapters (`email-resend`, `email-templates`, `storage-minio`,
-  `workflow-hatchet`). The cli bundles to a single bin.
+  and the three leaf adapters (`email-resend`, `email-templates`, `storage-minio`).
+  The cli bundles to a single bin.
 - **Transpiled file-for-file** (`unbundle: true`) — `core`, the three db-backed
   adapters (`db`, `auth`, `defaults`), the server, the api installation and the
   scaffolder's project template (`create-headless-lms/templates`). Core and the
@@ -111,8 +110,8 @@ const container = await createContainer(config, {
 A slot left absent falls back to the default from `@headless-lms/adapter-defaults`
 — for email, storage and templates, a stub that fails loudly on use; for workflows,
 the in-process `InlineAutomationEngine`. `apps/api/src/config.ts` is the only file
-on the backend that touches `process.env`; `adapters/email-resend`,
-`storage-minio` and `workflow-hatchet` each carry a README for the env they expect.
+on the backend that touches `process.env`; `adapters/email-resend` and
+`storage-minio` each carry a README for the env they expect.
 
 `@headless-lms/core/integrations` holds the code that must exist at runtime — the
 zod adapters (`zodConfig`, `zodSecrets`, `zodAction`) that turn zod schemas into

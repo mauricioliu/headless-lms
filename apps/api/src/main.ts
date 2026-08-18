@@ -3,7 +3,6 @@ import { fileURLToPath } from "node:url";
 import { buildServer, createContainer } from "@headless-lms/server";
 import { ResendEmailAdapter } from "@headless-lms/adapter-email-resend";
 import { MinioStorageAdapter } from "@headless-lms/adapter-storage-minio";
-import { HatchetAutomationEngine } from "@headless-lms/adapter-workflow-hatchet";
 import { ReactEmailTemplateRenderer } from "@headless-lms/adapter-email-templates";
 import { loadEmailConfig, loadServerConfig, loadStorageConfig } from "./config.js";
 
@@ -15,7 +14,8 @@ const container = await createContainer(config, {
     email: emailConfig && new ResendEmailAdapter(emailConfig),
     storage: new MinioStorageAdapter(loadStorageConfig()),
     templates: new ReactEmailTemplateRenderer(),
-    workflows: new HatchetAutomationEngine(),
+    // No `workflows` override: the container default (InlineAutomationEngine)
+    // applies — v1 runs nothing through a durable automation engine (ticket #18).
   },
 });
 const app = await buildServer(config, container);

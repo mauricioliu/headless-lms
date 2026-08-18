@@ -1,6 +1,15 @@
 // HTTP routes for the automations context: rules that match a trigger (a
 // domain event type) against enabled automations and run an ordered list of
 // actions, plus the run history each automation accumulates.
+//
+// The registrar is split in two: `automationsRoutes` (reads) is mounted in
+// v1; `automationsMutationRoutes` (create/update/delete) is deliberately NOT
+// registered — nothing in the v1 pilot goes through the automation engine, so
+// the Client Admin surface exposes no route that could activate one. The
+// handlers stay here intact; v2 reopens activation by registering them again
+// (ticket #18 — the AutomationEngine port is the durable-engine valve, this
+// is the HTTP valve). The checked-in SDK keeps describing these operations;
+// regenerate it when they are remounted.
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
@@ -19,6 +28,7 @@ import { NotFoundError } from '@headless-lms/core/shared/errors';
 import type { Container } from '../../app/container.js';
 import { resolveScope } from '../scope.js';
 
+/** v1-mounted reads: list/get catalogs and run history. Never activates anything. */
 export async function automationsRoutes(app: FastifyInstance, container: Container): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();
   const automations = container.automations;
@@ -74,24 +84,6 @@ export async function automationsRoutes(app: FastifyInstance, container: Contain
   });
 
   r.route({
-    method: 'POST',
-    url: '/api/automations',
-    preHandler: app.requireOrgSession,
-    schema: {
-      operationId: 'createAutomation',
-      tags,
-      summary: 'Create an automation',
-      body: CreateAutomationBody,
-      response: { 201: Automation },
-    },
-    handler: async (req, reply) => {
-      const scope = await resolveScope(container, req);
-      const automation = await automations.create(scope.orgId, req.body);
-      return reply.code(201).send(automation);
-    },
-  });
-
-  r.route({
     method: 'GET',
     url: '/api/automations/:id',
     preHandler: app.requireOrgSession,
@@ -109,6 +101,53 @@ export async function automationsRoutes(app: FastifyInstance, container: Contain
         throw new NotFoundError('Automation', req.params.id);
       }
       return automation;
+    },
+  });
+
+  r.route({
+    method: 'GET',
+    url: '/api/automations/:id/runs',
+    preHandler: app.requireOrgSession,
+    schema: {
+      operationId: 'listAutomationRuns',
+      tags,
+      summary: "List an automation's runs — a deleted automation's runs remain reachable (audit trail)",
+      params: AutomationIdParam,
+      querystring: AutomationRunsQuery,
+      response: { 200: AutomationRunsPage },
+    },
+    handler: async (req) => {
+      const scope = await resolveScope(container, req);
+      // No existence pre-check: runs deliberately survive automation deletion (audit trail).
+      return automations.listRuns(scope.orgId, req.params.id, req.query);
+    },
+  });
+}
+
+/** NOT mounted in v1 — create/update/delete. Kept intact for v2 (see file header). */
+export async function automationsMutationRoutes(
+  app: FastifyInstance,
+  container: Container,
+): Promise<void> {
+  const r = app.withTypeProvider<ZodTypeProvider>();
+  const automations = container.automations;
+  const tags = ['Automations'];
+
+  r.route({
+    method: 'POST',
+    url: '/api/automations',
+    preHandler: app.requireOrgSession,
+    schema: {
+      operationId: 'createAutomation',
+      tags,
+      summary: 'Create an automation',
+      body: CreateAutomationBody,
+      response: { 201: Automation },
+    },
+    handler: async (req, reply) => {
+      const scope = await resolveScope(container, req);
+      const automation = await automations.create(scope.orgId, req.body);
+      return reply.code(201).send(automation);
     },
   });
 
@@ -152,25 +191,6 @@ export async function automationsRoutes(app: FastifyInstance, container: Contain
         throw new NotFoundError('Automation', req.params.id);
       }
       return reply.code(204).send();
-    },
-  });
-
-  r.route({
-    method: 'GET',
-    url: '/api/automations/:id/runs',
-    preHandler: app.requireOrgSession,
-    schema: {
-      operationId: 'listAutomationRuns',
-      tags,
-      summary: "List an automation's runs — a deleted automation's runs remain reachable (audit trail)",
-      params: AutomationIdParam,
-      querystring: AutomationRunsQuery,
-      response: { 200: AutomationRunsPage },
-    },
-    handler: async (req) => {
-      const scope = await resolveScope(container, req);
-      // No existence pre-check: runs deliberately survive automation deletion (audit trail).
-      return automations.listRuns(scope.orgId, req.params.id, req.query);
     },
   });
 }

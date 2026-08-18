@@ -13,18 +13,18 @@ npm create headless-lms
 
 ## Run the repo locally
 
-To develop against the source, you'll need **Node ≥ 22**, **pnpm 10**, and **Docker**. The following brings up Postgres, MinIO and Hatchet, applies migrations, and starts the api, admin and student apps.
+To develop against the source, you'll need **Node ≥ 22**, **pnpm 10**, and **Docker**. The following brings up Postgres and MinIO, applies migrations, and starts the api, admin and student apps.
 
 ```bash
 pnpm install
-docker compose -f docker/docker-compose.yml up -d   # Postgres, MinIO, Hatchet
+docker compose -f docker/docker-compose.yml up -d   # Postgres, MinIO
 cp .env.example .env        # set BETTER_AUTH_SECRET and CREDENTIAL_STORE_KEY
                             # (openssl rand -base64 32 for each)
 pnpm db:generate && pnpm db:migrate
 pnpm dev                    # api :8000 · admin :8001 · student :8002
 ```
 
-`.env.example` documents every variable and the command that mints a Hatchet token for the local `hatchet` container.
+`.env.example` documents every variable the apps read.
 
 These commands run across all workspaces:
 
@@ -37,4 +37,3 @@ These commands run across all workspaces:
 - `:8001` — Admin dashboard
 - `:8002` — Student portal
 - `:8005` — Postgres · `:8006/:8007` — MinIO (API / console)
-- `:8008/:8009` — Hatchet (gRPC / dashboard)

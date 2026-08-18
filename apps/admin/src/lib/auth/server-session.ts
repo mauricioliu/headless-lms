@@ -23,7 +23,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { API_URL } from "../api/api-url";
-import { isManager } from "../roles";
+import { isManager, visibleNav } from "../roles";
 import { logger } from "@/lib/log";
 
 const log = logger.child({ name: "auth" });
@@ -192,6 +192,31 @@ export async function requireManager(
 ): Promise<AuthenticatedSession> {
   const session = await getServerSession();
   if (!session || session.status !== "authenticated" || !isManager(session.role)) {
+    for (const p of pending) void p.catch(() => {});
+    if (!session) redirect("/login");
+    if (session.status !== "authenticated") redirect("/onboarding");
+    notFound();
+  }
+  return session as AuthenticatedSession;
+}
+
+/**
+ * Gate a Server Component on the Automations surface being exposed for the
+ * caller's role. `visibleNav` is the single valve — the nav item and the
+ * automations section layout share it — and v1 keeps it closed for every
+ * role: nothing in the pilot goes through the automation engine (ticket #18),
+ * so the whole section serves `notFound()` until the valve reopens. Same
+ * `pending` contract as `requireAuth`.
+ */
+export async function requireAutomationsSurface(
+  ...pending: Promise<unknown>[]
+): Promise<AuthenticatedSession> {
+  const session = await getServerSession();
+  const exposed =
+    !!session &&
+    session.status === "authenticated" &&
+    visibleNav(session.role).automations;
+  if (!exposed) {
     for (const p of pending) void p.catch(() => {});
     if (!session) redirect("/login");
     if (session.status !== "authenticated") redirect("/onboarding");
