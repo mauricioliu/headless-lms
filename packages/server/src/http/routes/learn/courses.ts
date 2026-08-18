@@ -4,6 +4,7 @@ import {
   ActivityList,
   Course,
   ErrorBody,
+  EvaluationView,
   LearnCourseIdParam,
   LearnCourses,
   LearnModules,
@@ -59,6 +60,34 @@ export async function learnCoursesRoutes(
         throw new NotFoundError('Course', req.params.courseId);
       }
       return course;
+    },
+  });
+
+  r.route({
+    method: 'GET',
+    url: '/api/learn/courses/:courseId/evaluation',
+    preHandler: app.requireOrgSession,
+    schema: {
+      operationId: 'getLearnCourseEvaluation',
+      tags: ['Evaluation'],
+      summary: "Get an enrolled published Course's Evaluation",
+      params: LearnCourseIdParam,
+      response: { 200: EvaluationView, 404: ErrorBody },
+    },
+    handler: async (req) => {
+      const orgUser = await container.organizations.getOrgUser(req.orgId, req.userId);
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
+      const course = await learn.getCourse(req.orgId, orgUser.id, req.params.courseId);
+      if (!course) {
+        throw new NotFoundError('Course', req.params.courseId);
+      }
+      const evaluation = await container.evaluation.get(req.orgId, req.params.courseId);
+      if (!evaluation) {
+        throw new NotFoundError('Evaluation', req.params.courseId);
+      }
+      return evaluation;
     },
   });
 

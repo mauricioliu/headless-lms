@@ -14,6 +14,7 @@ import { dashboardRoutes } from './routes/dashboard.js';
 import { courseAnalyticsRoutes } from './routes/course-analytics.js';
 import { assetsRoutes } from './routes/assets.js';
 import { integrationsRoutes } from './routes/integrations.js';
+import { evaluationsRoutes } from './routes/evaluations.js';
 
 export function registerRoutes(
   app: FastifyInstance,
@@ -41,5 +42,6 @@ export function registerRoutes(
     await courseAnalyticsRoutes(instance, container);
     await assetsRoutes(instance, container);
     await integrationsRoutes(instance, container);
+    await evaluationsRoutes(instance, container);
   });
 }

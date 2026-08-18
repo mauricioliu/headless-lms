@@ -11,6 +11,7 @@ import {
   DrizzleDashboardRepository,
   DrizzleDiscussionRepository,
   DrizzleEntitlementsRepository,
+  DrizzleEvaluationRepository,
   DrizzleIdentityRepository,
   DrizzleLearnRepository,
   DrizzleMembersRepository,
@@ -42,6 +43,7 @@ import { BetterAuth } from '@headless-lms/adapter-auth';
 import { ContentService } from '@headless-lms/core/content';
 import { EntitlementsServiceImpl } from '@headless-lms/core/entitlements';
 import { ProgressServiceImpl } from '@headless-lms/core/progress';
+import { EvaluationService } from '@headless-lms/core/evaluation';
 import { DiscussionServiceImpl } from '@headless-lms/core/discussion';
 import { IdentityServiceImpl, type SessionAdmin } from '@headless-lms/core/identity';
 import { type OrgAdmin, OrganizationServiceImpl, parseRole } from '@headless-lms/core/organizations';
@@ -156,6 +158,7 @@ export interface Container {
   identity: IdentityServiceImpl;
   organizations: OrganizationServiceImpl;
   content: ContentService;
+  evaluation: EvaluationService;
   entitlements: EntitlementsServiceImpl;
   progress: ProgressServiceImpl;
   discussion: DiscussionServiceImpl;
@@ -205,6 +208,7 @@ export async function buildContainer(
   // One child per domain — a context's service and repositories share it.
 
   const contentLogger = logger.child({ name: 'content' });
+  const evaluationLogger = logger.child({ name: 'evaluation' });
   const entitlementsLogger = logger.child({ name: 'entitlements' });
   const progressLogger = logger.child({ name: 'progress' });
   const discussionLogger = logger.child({ name: 'discussion' });
@@ -274,6 +278,15 @@ export async function buildContainer(
     repo: new DrizzleContentRepository(db, contentLogger),
     uow: contentUow,
     logger: contentLogger,
+  });
+  const evaluation = new EvaluationService({
+    repo: new DrizzleEvaluationRepository(db, evaluationLogger),
+    uow: new DrizzleUnitOfWork(db, (tx) => ({
+      evaluations: new DrizzleEvaluationRepository(tx, evaluationLogger),
+      outbox: new DrizzleOutboxAppender(tx, outboxLogger),
+    })),
+    courses: content,
+    logger: evaluationLogger,
   });
   // Entitlements: reads on the root db; writes + outbox append in one tx.
   const entitlementsUow = new DrizzleUnitOfWork(db, (tx) => ({
@@ -527,6 +540,7 @@ export async function buildContainer(
     // Better Auth owns org writes; the same instance fulfils the OrgAdmin port.
     orgProvider: auth,
     content,
+    evaluation,
     entitlements,
     progress,
     discussion,

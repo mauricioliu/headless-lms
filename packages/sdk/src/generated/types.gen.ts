@@ -1433,6 +1433,51 @@ export type GetLearnCourseResponses = {
 
 export type GetLearnCourseResponse = GetLearnCourseResponses[keyof GetLearnCourseResponses];
 
+export type GetLearnCourseEvaluationData = {
+  body?: never;
+  path: {
+    courseId: string;
+  };
+  query?: never;
+  url: "/api/learn/courses/{courseId}/evaluation";
+};
+
+export type GetLearnCourseEvaluationErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type GetLearnCourseEvaluationError =
+  GetLearnCourseEvaluationErrors[keyof GetLearnCourseEvaluationErrors];
+
+export type GetLearnCourseEvaluationResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    courseId: string;
+    cutoff: number;
+    feedbackMode: "score_only" | "answer_review";
+    questions: Array<{
+      id: string;
+      prompt: string;
+      options: Array<{
+        id: string;
+        text: string;
+      }>;
+    }>;
+  };
+};
+
+export type GetLearnCourseEvaluationResponse =
+  GetLearnCourseEvaluationResponses[keyof GetLearnCourseEvaluationResponses];
+
 export type ListLearnModulesData = {
   body?: never;
   path: {
@@ -4297,3 +4342,116 @@ export type InvokeConnectionActionResponses = {
 
 export type InvokeConnectionActionResponse =
   InvokeConnectionActionResponses[keyof InvokeConnectionActionResponses];
+
+export type GetCourseEvaluationData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/courses/{id}/evaluation";
+};
+
+export type GetCourseEvaluationErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type GetCourseEvaluationError = GetCourseEvaluationErrors[keyof GetCourseEvaluationErrors];
+
+export type GetCourseEvaluationResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    courseId: string;
+    cutoff: number;
+    feedbackMode: "score_only" | "answer_review";
+    questions: Array<{
+      id: string;
+      prompt: string;
+      options: Array<{
+        id: string;
+        text: string;
+      }>;
+    }>;
+  };
+};
+
+export type GetCourseEvaluationResponse =
+  GetCourseEvaluationResponses[keyof GetCourseEvaluationResponses];
+
+export type ReplaceCourseEvaluationData = {
+  body: {
+    cutoff?: number;
+    feedbackMode?: "score_only" | "answer_review";
+    questions: Array<{
+      id: string;
+      prompt: string;
+      options: Array<{
+        id: string;
+        text: string;
+      }>;
+      correctOptionId: string;
+    }>;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/courses/{id}/evaluation";
+};
+
+export type ReplaceCourseEvaluationErrors = {
+  /**
+   * Default Response
+   */
+  400: {
+    error: string;
+    message?: string;
+    requestId?: string;
+    issues: Array<{
+      path: string;
+      message: string;
+    }>;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type ReplaceCourseEvaluationError =
+  ReplaceCourseEvaluationErrors[keyof ReplaceCourseEvaluationErrors];
+
+export type ReplaceCourseEvaluationResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    courseId: string;
+    cutoff: number;
+    feedbackMode: "score_only" | "answer_review";
+    questions: Array<{
+      id: string;
+      prompt: string;
+      options: Array<{
+        id: string;
+        text: string;
+      }>;
+    }>;
+  };
+};
+
+export type ReplaceCourseEvaluationResponse =
+  ReplaceCourseEvaluationResponses[keyof ReplaceCourseEvaluationResponses];
