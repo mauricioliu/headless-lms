@@ -72,10 +72,6 @@ export function visibleNav(role: Role): {
     // Anyone who builds course content can manage media.
     media: true,
     students: manager,
-    // v1: closed for every role — nothing in the pilot goes through the
-    // automation engine (ticket #18). This flag is the valve the nav item and
-    // the automations section layout share; flipping it back to `manager`
-    // (and remounting the mutation routes) reopens the feature in v2.
     automations: false,
     // Settings is visible to everyone: the Account and Apps tabs are available
     // to all roles; the Team tab inside is manager-only (gated in the layout).

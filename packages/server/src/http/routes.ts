@@ -36,10 +36,6 @@ export function registerRoutes(
     await activitiesRoutes(instance, container);
     await studentsRoutes(instance, container);
     await entitlementsRoutes(instance, container);
-    // Automations stay read-only in v1 (ticket #18): reads are mounted, the
-    // create/update/delete registrar (`automationsMutationRoutes`) is not —
-    // nothing in the pilot goes through the automation engine, so no route
-    // reachable from the Client Admin surface can activate an automation.
     await automationsRoutes(instance, container);
     await dashboardRoutes(instance, container);
     await courseAnalyticsRoutes(instance, container);

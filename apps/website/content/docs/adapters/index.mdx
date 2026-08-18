@@ -22,7 +22,6 @@ const container = await createContainer(config, {
     email: new ResendEmailAdapter({ apiKey, from }),
     storage: new MinioStorageAdapter(storageConfig),
     templates: new ReactEmailTemplateRenderer(),
-    // No `workflows` override — the in-process InlineAutomationEngine applies.
   },
 });
 ```

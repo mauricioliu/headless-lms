@@ -1,7 +1,5 @@
 // automations context — ports. AutomationDispatch/Executor/Engine are owned by
-// @headless-lms/core/types and re-exported here so every engine implementation
-// (the bundled in-process default, a durable engine if v2 demands one, …)
-// shares one definition.
+// @headless-lms/core/types and re-exported here for every engine implementation.
 import type { Automation, AutomationRun, Page } from './model.js';
 import type {
   AutomationRunsQuery,

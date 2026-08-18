@@ -14,8 +14,6 @@ const container = await createContainer(config, {
     email: emailConfig && new ResendEmailAdapter(emailConfig),
     storage: new MinioStorageAdapter(loadStorageConfig()),
     templates: new ReactEmailTemplateRenderer(),
-    // No `workflows` override: the container default (InlineAutomationEngine)
-    // applies — v1 runs nothing through a durable automation engine (ticket #18).
   },
 });
 const app = await buildServer(config, container);
