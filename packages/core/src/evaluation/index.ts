@@ -11,6 +11,7 @@ export type {
 } from './model.js';
 export type {
   EvaluationCourseReader,
+  EvaluationCourseRef,
   EvaluationRepository,
   EvaluationTxScope,
   EvaluationUnitOfWork,

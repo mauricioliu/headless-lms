@@ -4,13 +4,13 @@ import { z } from "zod";
 /** Fails typecheck when a schema and its domain type drift apart. */
 export type Matches<A, _B extends A> = true;
 
-/** Uniform error envelope returned by every non-2xx response. */
 export const ValidationIssue = z.object({
   path: z.string(),
   message: z.string(),
 });
 export type ValidationIssue = z.infer<typeof ValidationIssue>;
 
+/** Uniform error envelope returned by every non-2xx response. */
 export const ErrorBody = z.object({
   error: z.string(),
   message: z.string().optional(),
@@ -23,6 +23,32 @@ export const ValidationErrorBody = ErrorBody.extend({
   issues: z.array(ValidationIssue),
 });
 export type ValidationErrorBody = z.infer<typeof ValidationErrorBody>;
+
+export function validationErrorBody(error: Error): ValidationErrorBody {
+  const validation = (
+    error as Error & {
+      validation?: Array<{
+        instancePath?: string;
+        message?: string;
+        params?: { issue?: { path?: PropertyKey[]; message?: string } };
+      }>;
+    }
+  ).validation;
+  return {
+    error: 'validation_error',
+    message: error.message,
+    issues: (validation ?? []).map((item) => {
+      const issue = item.params?.issue;
+      return {
+        path:
+          issue?.path?.map(String).join('.') ??
+          item.instancePath?.replace(/^\//, '').replaceAll('/', '.') ??
+          '',
+        message: issue?.message ?? item.message ?? 'Invalid value',
+      };
+    }),
+  };
+}
 
 /**
  * Common list query for page-based collections. `z.coerce` because query-string

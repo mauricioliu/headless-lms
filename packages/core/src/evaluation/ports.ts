@@ -6,8 +6,12 @@ export interface EvaluationRepository {
   replace(orgId: string, courseId: string, input: ReplaceEvaluationInput): Promise<Evaluation>;
 }
 
+export interface EvaluationCourseRef {
+  id: string;
+}
+
 export interface EvaluationCourseReader {
-  getCourse(orgId: string, courseId: string): Promise<unknown | null>;
+  getCourse(orgId: string, courseId: string): Promise<EvaluationCourseRef | null>;
 }
 
 export interface EvaluationTxScope {

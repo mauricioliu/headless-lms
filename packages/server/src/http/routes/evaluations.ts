@@ -9,33 +9,8 @@ import {
   EvaluationView,
   ReplaceEvaluation,
   ValidationErrorBody,
+  validationErrorBody,
 } from '../schemas/index.js';
-
-function validationErrorBody(error: Error) {
-  const validation = (
-    error as Error & {
-      validation?: Array<{
-        instancePath?: string;
-        message?: string;
-        params?: { issue?: { path?: PropertyKey[]; message?: string } };
-      }>;
-    }
-  ).validation;
-  return {
-    error: 'validation_error',
-    message: error.message,
-    issues: (validation ?? []).map((item) => {
-      const issue = item.params?.issue;
-      return {
-        path:
-          issue?.path?.map(String).join('.') ??
-          item.instancePath?.replace(/^\//, '').replaceAll('/', '.') ??
-          '',
-        message: issue?.message ?? item.message ?? 'Invalid value',
-      };
-    }),
-  };
-}
 
 export async function evaluationsRoutes(app: FastifyInstance, container: Container): Promise<void> {
   const r = app.withTypeProvider<ZodTypeProvider>();

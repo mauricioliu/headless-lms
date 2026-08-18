@@ -26,6 +26,7 @@ export function registerOpenApi(app: FastifyInstance, config: ServerConfig): voi
       tags: [
         { name: 'Organizations', description: 'The tenant: its members, roles, invites and students' },
         { name: 'Content', description: 'Authored content: courses and downloads, their structure and delivery' },
+        { name: 'Evaluation', description: 'The multiple-choice evaluation a course carries: authoring and learner delivery' },
         { name: 'Entitlements', description: 'Access grants to content' },
         { name: 'Progress', description: 'Per-student progress and completion through course content' },
         { name: 'Discussion', description: 'Learner comments, replies, reactions and moderation' },
