@@ -68,9 +68,6 @@ describe('linkOrCreateUser', () => {
   });
 
   it('self-links a fresh signup so the auth account id resolves to the person', async () => {
-    // The signup hook (beforeUserCreate) has no auth id yet — it adopts the
-    // returned user's id as the account id, so the row must carry it as
-    // external_id or every org-scoped lookup 401s (spike #4).
     const { service, repo } = build();
 
     const user = await service.linkOrCreateUser({

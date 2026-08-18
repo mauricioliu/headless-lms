@@ -5,7 +5,7 @@ export default defineConfig({
   // layout intact and lets the integrations loader resolve compiled plugin
   // folders in consumers.
   unbundle: true,
-  entry: ['src/**/*.ts', '!src/**/*.test.ts', '!src/**/__fixtures__/**'],
+  entry: ['src/**/*.ts', '!src/**/*.test.ts', '!src/**/__fixtures__/**', '!src/app/testing/**'],
   outDir: 'dist',
   format: ['esm'],
   fixedExtension: false,

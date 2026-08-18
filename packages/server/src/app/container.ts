@@ -192,8 +192,6 @@ export interface Container {
   requestContext: RequestLogContext;
   /** Identity's session-write port; the auth adapter fulfils it. */
   sessions: SessionAdmin;
-  /** Releases the resources the container owns (the database pool).
-   *  buildServer calls it onClose; installations may call it on shutdown. */
   close(): Promise<void>;
 }
 

@@ -41,10 +41,6 @@ export class IdentityServiceImpl implements IdentityService {
   async linkOrCreateUser(input: CreateUserInput): Promise<User> {
     const existing = await this.repo.findUserByEmail(input.email);
     if (!existing) {
-      // The signup hook arrives with no auth id — it adopts the created
-      // user's id as the account id, so the row self-links exactly like the
-      // invited path below. Without the stamp users.external_id stays NULL
-      // and every org-scoped lookup misses the person.
       const id = input.id ?? genId('user');
       return this.createUser({ ...input, id, externalId: input.externalId ?? id });
     }

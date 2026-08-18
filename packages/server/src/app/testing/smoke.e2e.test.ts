@@ -1,7 +1,3 @@
-// E2E smoke over the Sustrato's main seam: the Fastify app wired to a real
-// test Postgres and the capturing mailer. It walks the minimal delivery flow
-// every following ticket builds on — bootstrap an account, publish a Curso,
-// invite a Trabajador — and asserts the invite link landed in captured email.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildTestApp, CookieJar, TEST_STUDENT_PORTAL_URL, type TestApp } from './test-app.js';
@@ -34,11 +30,6 @@ describe('Sustrato delivery smoke', () => {
     jar.store(signup.headers['set-cookie']);
     expect(jar.get('better-auth.session_token')).toBeTruthy();
 
-    // Regression (spike #4): the domain person must be self-linked at
-    // bootstrap, or every org-scoped route 401s with "no domain user".
-    const person = await harness.container.identity.getUserByEmail(owner.email);
-    expect(person?.externalId).toBe(person?.id);
-
     const org = await app.inject({
       method: 'POST',
       url: '/api/organizations',
@@ -47,8 +38,6 @@ describe('Sustrato delivery smoke', () => {
     });
     expect(org.statusCode).toBe(201);
 
-    // The 5-minute session cookie cache predates the org grant — drop it so
-    // the session is read from the database with its active organization.
     jar.drop('better-auth.session_data');
 
     const coursesBefore = await app.inject({
@@ -108,9 +97,16 @@ describe('Sustrato delivery smoke', () => {
 
     const captured = harness.mailer.to(trabajadora.email);
     expect(captured).toHaveLength(1);
-    const linkPrefix = `${TEST_STUDENT_PORTAL_URL}/welcome?token=`;
-    expect(captured[0]?.text).toContain(linkPrefix);
-    const token = captured[0]?.text.split(linkPrefix)[1]?.split('"')[0];
+    const rendered = JSON.parse(captured[0]!.text) as {
+      template: string;
+      params: { inviteUrl: string };
+    };
+    expect(rendered.template).toBe('studentInvite');
+    const inviteUrl = new URL(rendered.params.inviteUrl);
+    expect(`${inviteUrl.origin}${inviteUrl.pathname}`).toBe(
+      `${TEST_STUDENT_PORTAL_URL}/welcome`,
+    );
+    const token = inviteUrl.searchParams.get('token');
     expect(token).toBeTruthy();
 
     const peek = await app.inject({

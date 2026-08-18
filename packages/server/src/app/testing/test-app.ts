@@ -1,7 +1,3 @@
-// Test harness for the Sustrato's main seam: one call boots the Fastify app
-// with its full container wired to an ephemeral test Postgres (migrated from
-// scratch) and the capturing TestMailer, ready for app.inject() calls.
-// Every DB-backed test in the repo builds on this factory.
 import { randomBytes } from 'node:crypto';
 import pg from 'pg';
 import type { FastifyInstance } from 'fastify';
@@ -14,17 +10,12 @@ export const TEST_AUTH_BASE_URL = 'http://api.test.local';
 export const TEST_STUDENT_PORTAL_URL = 'http://student.test.local';
 export const TEST_ADMIN_APP_URL = 'http://admin.test.local';
 
-/** Admin Postgres the harness provisions per-run databases in. Default: the
- *  repo's docker-compose service (docker/docker-compose.yml); override with
- *  TEST_DATABASE_URL. */
 export function testDatabaseAdminUrl(): string {
   return process.env.TEST_DATABASE_URL ?? 'postgres://postgres:postgres@localhost:8005/postgres';
 }
 
 export interface TestDatabase {
-  /** Connection string of the provisioned database. */
   url: string;
-  /** Drops the database (forced). Call after the app using it is closed. */
   drop(): Promise<void>;
 }
 
@@ -44,7 +35,6 @@ function databaseUrlFor(adminUrl: string, name: string): string {
   return parsed.toString();
 }
 
-/** Creates an empty, uniquely-named database so parallel runs never collide. */
 export async function createTestDatabase(): Promise<TestDatabase> {
   const adminUrl = testDatabaseAdminUrl();
   const name = `hlms_test_${randomBytes(6).toString('hex')}`;
@@ -57,10 +47,6 @@ export async function createTestDatabase(): Promise<TestDatabase> {
   };
 }
 
-/** Collects set-cookie headers across app.inject() calls into one Cookie
- *  header. `drop('better-auth.session_data')` defeats the 5-minute signed
- *  session cache — the cached copy predates any active-org stamp, so a raw
- *  client must discard it to see the database session. */
 export class CookieJar {
   private readonly cookies = new Map<string, string>();
 
@@ -96,9 +82,7 @@ export interface TestApp {
   app: FastifyInstance;
   container: Container;
   mailer: TestMailer;
-  /** The app's own origin — send it as the `origin` header on every inject. */
   origin: string;
-  /** Closes the app (draining its pool) and drops the test database. */
   close(): Promise<void>;
 }
 

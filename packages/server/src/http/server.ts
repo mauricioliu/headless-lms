@@ -45,8 +45,7 @@ export async function buildServer(
 
   registerRoutes(app, container);
 
-  // Drain + stop the outbox relay and the automation engine, then release
-  // the container's resources (database pool) on shutdown.
+  // Drain + stop the outbox relay and the automation engine on shutdown.
   // Harmless when neither was started (gen-openapi boots this app with
   // ready() + close() only).
   app.addHook('onClose', async () => {
