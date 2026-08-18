@@ -71,6 +71,8 @@ import type {
   GetCourseEnrollmentSeriesErrors,
   GetCourseEnrollmentSeriesResponses,
   GetCourseErrors,
+  GetCourseEvaluationErrors,
+  GetCourseEvaluationResponses,
   GetCourseResponses,
   GetDownloadErrors,
   GetDownloadResponses,
@@ -78,6 +80,8 @@ import type {
   GetInviteErrors,
   GetInviteResponses,
   GetLearnCourseErrors,
+  GetLearnCourseEvaluationErrors,
+  GetLearnCourseEvaluationResponses,
   GetLearnCourseProgressErrors,
   GetLearnCourseProgressResponses,
   GetLearnCourseResponses,
@@ -145,6 +149,8 @@ import type {
   ReorderDownloadAssetsErrors,
   ReorderDownloadAssetsResponses,
   ReorderModulesResponses,
+  ReplaceCourseEvaluationErrors,
+  ReplaceCourseEvaluationResponses,
   ReplyToCommentErrors,
   ReplyToCommentResponses,
   ReportCommentErrors,
@@ -1977,6 +1983,115 @@ export class Content {
     >({
       responseStyle: "data",
       url: "/api/courses/{courseId}/modules/{moduleId}/activities/{activityId}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+}
+
+export class Evaluation {
+  /**
+   * Get an enrolled published Course's Evaluation
+   */
+  public static getLearnCourseEvaluation<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<
+    GetLearnCourseEvaluationResponses,
+    GetLearnCourseEvaluationErrors,
+    ThrowOnError,
+    "data"
+  > {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "courseId" }] }]);
+    return (options?.client ?? client).get<
+      GetLearnCourseEvaluationResponses,
+      GetLearnCourseEvaluationErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/courses/{courseId}/evaluation",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Get a Course Evaluation without its correction key
+   */
+  public static getCourseEvaluation<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetCourseEvaluationResponses, GetCourseEvaluationErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).get<
+      GetCourseEvaluationResponses,
+      GetCourseEvaluationErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/courses/{id}/evaluation",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Create or completely replace a Course Evaluation
+   */
+  public static replaceCourseEvaluation<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+      cutoff?: number;
+      feedbackMode?: "score_only" | "answer_review";
+      questions: Array<{
+        id: string;
+        prompt: string;
+        options: Array<{
+          id: string;
+          text: string;
+        }>;
+        correctOptionId: string;
+      }>;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<
+    ReplaceCourseEvaluationResponses,
+    ReplaceCourseEvaluationErrors,
+    ThrowOnError,
+    "data"
+  > {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "id" },
+            { in: "body", key: "cutoff" },
+            { in: "body", key: "feedbackMode" },
+            { in: "body", key: "questions" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).put<
+      ReplaceCourseEvaluationResponses,
+      ReplaceCourseEvaluationErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/courses/{id}/evaluation",
       ...options,
       ...params,
       headers: {
