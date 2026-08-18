@@ -67,6 +67,24 @@ describe('linkOrCreateUser', () => {
     expect(appended.map((e) => e.type)).toEqual(['identity.user.created']);
   });
 
+  it('self-links a fresh signup so the auth account id resolves to the person', async () => {
+    // The signup hook (beforeUserCreate) has no auth id yet — it adopts the
+    // returned user's id as the account id, so the row must carry it as
+    // external_id or every org-scoped lookup 401s (spike #4).
+    const { service, repo } = build();
+
+    const user = await service.linkOrCreateUser({
+      email: 'free@example.com',
+      firstName: 'Free',
+      lastName: 'Signup',
+    });
+
+    expect(repo.insertUser).toHaveBeenCalledWith(
+      expect.objectContaining({ externalId: expect.any(String) }),
+    );
+    expect(user.externalId).toBe(user.id);
+  });
+
   it('links a provisioned user instead of inserting a duplicate', async () => {
     const repo = fakeRepo({ findUserByEmail: vi.fn().mockResolvedValue(PROVISIONED) });
     const { service, appended } = build(repo);

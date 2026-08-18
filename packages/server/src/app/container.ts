@@ -192,6 +192,9 @@ export interface Container {
   requestContext: RequestLogContext;
   /** Identity's session-write port; the auth adapter fulfils it. */
   sessions: SessionAdmin;
+  /** Releases the resources the container owns (the database pool).
+   *  buildServer calls it onClose; installations may call it on shutdown. */
+  close(): Promise<void>;
 }
 
 export async function buildContainer(
@@ -544,5 +547,8 @@ export async function buildContainer(
     requestContext: requestLogContext,
     // Better Auth owns the session store; the same instance fulfils SessionAdmin.
     sessions: auth,
+    close: async () => {
+      await db.$client.end();
+    },
   };
 }

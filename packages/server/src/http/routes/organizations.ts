@@ -165,7 +165,7 @@ export async function organizationsRoutes(
       body: CreateInvite,
       response: { 201: Invite, 409: ErrorBody },
     },
-    handler: async (req) => {
+    handler: async (req, reply) => {
       // Domain ids, not the session's auth ids: invites FK to organizations.id
       // and users.id.
       const scope = await resolveScope(container, req);
@@ -180,7 +180,7 @@ export async function organizationsRoutes(
       });
 
       req.log.debug({ invite }, 'created invite');
-      return invite;
+      return reply.code(201).send(invite);
     },
   });
 

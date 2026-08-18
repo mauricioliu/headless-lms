@@ -41,8 +41,17 @@ describe('translateDbErrors (class boundary)', () => {
     expect((err as DbQueryError).pg).toEqual({ code: '57014' });
   });
 
-  it('translates synchronous throws without leaking schema internals', () => {
-    expect(() => new FakeRepo().sync()).toThrow('A record this depends on does not exist');
+  it('keeps a synchronous foreign-key throw internal, sanitized like any query failure', () => {
+    let thrown: unknown;
+    try {
+      new FakeRepo().sync();
+    } catch (err) {
+      thrown = err;
+    }
+    expect(thrown).toBeInstanceOf(DbQueryError);
+    expect((thrown as DbQueryError).message).toBe('driver failure');
+    expect((thrown as DbQueryError).pg).toEqual({ code: '23503', constraint: 'fk' });
+    expect((thrown as DbQueryError).message).not.toContain('Key (');
   });
 
   it('leaves successful calls untouched', async () => {
