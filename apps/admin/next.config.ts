@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
   // Dev-only: each server-side fetch is logged, so an API call and the line it
   // produced sit together.
   logging: { fetches: { fullUrl: true } },
+  allowedDevOrigins: ["mliu", "mliu.tail731318.ts.net", "*.tail731318.ts.net"],
 };
 
 export default nextConfig;
