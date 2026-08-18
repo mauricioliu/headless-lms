@@ -250,6 +250,56 @@ describe('Evaluation authoring HTTP seam', () => {
     expect(put.statusCode).toBe(404);
   });
 
+  it('hides another organization\'s Course Evaluation from that org\'s staff', async () => {
+    const otherJar = new CookieJar();
+    const otherHeaders = () => ({ origin: harness.origin, cookie: otherJar.header() });
+
+    const signup = await app.inject({
+      method: 'POST',
+      url: '/api/auth/sign-up/email',
+      headers: otherHeaders(),
+      payload: {
+        email: 'faena.ajena@nuvora.test',
+        password: 'pilot-password-1',
+        name: 'Operador Ajeno',
+      },
+    });
+    expect(signup.statusCode).toBeLessThan(400);
+    otherJar.store(signup.headers['set-cookie']);
+
+    const org = await app.inject({
+      method: 'POST',
+      url: '/api/organizations',
+      headers: otherHeaders(),
+      payload: { name: 'Faena Ajena', slug: 'faena-ajena' },
+    });
+    expect(org.statusCode).toBe(201);
+    otherJar.drop('better-auth.session_data');
+
+    const get = await app.inject({
+      method: 'GET',
+      url: `/api/courses/${courseId}/evaluation`,
+      headers: otherHeaders(),
+    });
+    expect(get.statusCode).toBe(404);
+
+    const put = await app.inject({
+      method: 'PUT',
+      url: `/api/courses/${courseId}/evaluation`,
+      headers: otherHeaders(),
+      payload: evaluationInput,
+    });
+    expect(put.statusCode).toBe(404);
+
+    const owner = await app.inject({
+      method: 'GET',
+      url: `/api/courses/${courseId}/evaluation`,
+      headers: headers(),
+    });
+    expect(owner.statusCode).toBe(200);
+    expect(owner.json()).toEqual(publicEvaluation);
+  });
+
   it('fully replaces the document and has no publication state of its own', async () => {
     const id = await createCourse('Evaluación reemplazable');
     await app.inject({
@@ -372,6 +422,14 @@ describe('Evaluation authoring HTTP seam', () => {
       headers: studentHeaders(),
     });
     expect(draft.statusCode).toBe(404);
+
+    const forbiddenAuthoring = await app.inject({
+      method: 'PUT',
+      url: `/api/courses/${id}/evaluation`,
+      headers: studentHeaders(),
+      payload: evaluationInput,
+    });
+    expect(forbiddenAuthoring.statusCode).toBe(403);
 
     const published = await app.inject({
       method: 'PATCH',

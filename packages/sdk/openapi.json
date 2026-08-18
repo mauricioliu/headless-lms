@@ -13118,6 +13118,10 @@
       "description": "Authored content: courses and downloads, their structure and delivery"
     },
     {
+      "name": "Evaluation",
+      "description": "The multiple-choice evaluation a course carries: authoring and learner delivery"
+    },
+    {
       "name": "Entitlements",
       "description": "Access grants to content"
     },

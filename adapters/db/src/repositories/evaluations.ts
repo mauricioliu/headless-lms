@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { NotFoundError } from "@headless-lms/core/shared/errors";
 import type {
   Evaluation,
   EvaluationRepository,
@@ -8,7 +9,9 @@ import type {
 import type { Logger } from "@headless-lms/core/types";
 import { noopLogger } from "@headless-lms/core/shared/logger";
 import { evaluations } from "../schema/evaluations.js";
-import { translateDbErrors } from "./pg-errors.js";
+import { pgErrorFields, translateDbErrors } from "./pg-errors.js";
+
+const COURSES_FK = "evaluations_org_id_course_id_courses_org_id_id_fk";
 
 function toEvaluation(row: typeof evaluations.$inferSelect): Evaluation {
   return {
@@ -38,19 +41,27 @@ export class DrizzleEvaluationRepository implements EvaluationRepository {
     courseId: string,
     input: ReplaceEvaluationInput,
   ): Promise<Evaluation> {
-    const [row] = await this.db
-      .insert(evaluations)
-      .values({ orgId, courseId, ...input })
-      .onConflictDoUpdate({
-        target: [evaluations.orgId, evaluations.courseId],
-        set: { ...input, updatedAt: new Date() },
-      })
-      .returning();
-    if (!row) {
-      throw new Error("evaluation replacement returned no row");
+    try {
+      const [row] = await this.db
+        .insert(evaluations)
+        .values({ orgId, courseId, ...input })
+        .onConflictDoUpdate({
+          target: [evaluations.orgId, evaluations.courseId],
+          set: { ...input, updatedAt: new Date() },
+        })
+        .returning();
+      if (!row) {
+        throw new Error("evaluation replacement returned no row");
+      }
+      this.logger.debug("evaluation.replace", { orgId, courseId });
+      return toEvaluation(row);
+    } catch (err) {
+      const pg = pgErrorFields(err);
+      if (pg?.code === "23503" && pg.constraint === COURSES_FK) {
+        throw new NotFoundError("Course", courseId);
+      }
+      throw err;
     }
-    this.logger.debug("evaluation.replace", { orgId, courseId });
-    return toEvaluation(row);
   }
 }
 translateDbErrors(DrizzleEvaluationRepository);
