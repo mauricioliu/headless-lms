@@ -1,16 +1,18 @@
-import type { EmailTemplateParams, TemplateContext } from '@headless-lms/core/types';
-import { EmailButton, Layout, Paragraph, PREVIEW_CTX } from './layout.js';
+import type { EmailTemplateParams, TemplateContext } from "@headless-lms/core/types";
+import { EmailButton, Layout, Paragraph, PREVIEW_CTX } from "./layout.js";
 
-type Params = EmailTemplateParams['accessGranted'];
+type Params = EmailTemplateParams["accessGranted"];
 
 export const subject = (_ctx: TemplateContext, params: Params) =>
-  `You now have access to ${params.contentTitle}`;
+  `Ya tienes acceso a ${params.contentTitle}`;
 
 export default function AccessGranted({ ctx, params }: { ctx: TemplateContext; params: Params }) {
   return (
-    <Layout ctx={ctx} heading={`${params.contentTitle} is ready for you`}>
-      <Paragraph>You've been granted access. Jump in whenever you're ready.</Paragraph>
-      <EmailButton href={`${ctx.studentPortalUrl}/courses/${params.contentId}`}>Start learning</EmailButton>
+    <Layout ctx={ctx} heading={`${params.contentTitle} ya está disponible`}>
+      <Paragraph>Te dieron acceso. Entra cuando quieras.</Paragraph>
+      <EmailButton href={`${ctx.studentPortalUrl}/courses/${params.contentId}`}>
+        Empezar a aprender
+      </EmailButton>
     </Layout>
   );
 }
@@ -18,7 +20,7 @@ export default function AccessGranted({ ctx, params }: { ctx: TemplateContext; p
 AccessGranted.PreviewProps = {
   ctx: PREVIEW_CTX,
   params: {
-    contentTitle: 'Fly Tying 101',
-    contentId: 'demo',
+    contentTitle: "Fly Tying 101",
+    contentId: "demo",
   },
 };

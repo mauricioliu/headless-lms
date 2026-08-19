@@ -35,7 +35,7 @@ export async function acceptInvite(token: string): Promise<AcceptInviteState> {
 
 function messageFor(e: ApiError): string {
   if (e.status === 400) {
-    return "This invitation is no longer valid. Ask your course admin for a new one.";
+    return "Esta invitación ya no es válida. Pide una nueva al administrador de tus cursos.";
   }
-  return e.message;
+  return "No pudimos aceptar la invitación. Inténtalo de nuevo.";
 }

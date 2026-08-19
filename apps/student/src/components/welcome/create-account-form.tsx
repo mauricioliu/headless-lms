@@ -21,8 +21,8 @@ import { Label } from "@/components/ui/label";
 import { signUp } from "@/lib/auth/client";
 
 const schema = z.object({
-  name: z.string().trim().min(1, "Enter your name"),
-  password: z.string().min(8, "Use at least 8 characters"),
+  name: z.string().trim().min(1, "Ingresa tu nombre"),
+  password: z.string().min(8, "Usa al menos 8 caracteres"),
 });
 
 type Values = z.infer<typeof schema>;
@@ -61,7 +61,7 @@ export function CreateAccountForm({
         await onOutcome("account-exists");
         return;
       }
-      setError(authError.message ?? "Couldn't create your account.");
+      setError("No pudimos crear tu cuenta. Inténtalo de nuevo.");
       return;
     }
 
@@ -84,7 +84,7 @@ export function CreateAccountForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Nombre</FormLabel>
               <FormControl>
                 <Input autoComplete="name" autoFocus {...field} />
               </FormControl>
@@ -100,12 +100,12 @@ export function CreateAccountForm({
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Contraseña</FormLabel>
               <FormControl>
                 <Input
                   type="password"
                   autoComplete="new-password"
-                  placeholder="At least 8 characters"
+                  placeholder="Al menos 8 caracteres"
                   {...field}
                 />
               </FormControl>
@@ -121,7 +121,7 @@ export function CreateAccountForm({
           disabled={form.formState.isSubmitting}
         >
           {form.formState.isSubmitting && <Loader2 className="animate-spin" />}
-          Accept invitation
+          Aceptar invitación
         </Button>
       </form>
     </Form>
@@ -132,7 +132,7 @@ export function CreateAccountForm({
 export function ReadOnlyEmail({ id, email }: { id: string; email: string }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>Email</Label>
+      <Label htmlFor={id}>Correo</Label>
       <Input id={id} type="email" value={email} readOnly tabIndex={-1} />
     </div>
   );

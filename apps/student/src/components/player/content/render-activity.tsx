@@ -15,12 +15,12 @@ export function renderActivityContent(content: ActivityContent | null): ReactNod
   const { Renderer, meta } = editorModule;
 
   if (content == null) {
-    return <div className="mx-auto max-w-[720px] px-6 py-16 text-ink-3">No content yet.</div>;
+    return <div className="mx-auto max-w-[720px] px-6 py-16 text-ink-3">Aún no hay contenido.</div>;
   }
   if (content.type !== meta.type || content.version !== meta.version) {
     return (
       <div className="mx-auto max-w-[720px] px-6 py-16 text-ink-3">
-        This content was saved in a format the player can&apos;t display.
+        Este contenido se guardó en un formato que el reproductor no puede mostrar.
       </div>
     );
   }

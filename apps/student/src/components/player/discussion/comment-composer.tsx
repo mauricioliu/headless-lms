@@ -55,7 +55,7 @@ export function CommentComposer({
         className="w-full resize-none rounded-card border border-line bg-surface px-3.5 py-2.5 text-[14px] leading-relaxed text-ink outline-none transition-colors placeholder:text-ink-4 focus:border-line-hover"
       />
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[11.5px] text-ink-4">Press ⌘↵ to post</span>
+        <span className="text-[11.5px] text-ink-4">Presiona ⌘↵ para publicar</span>
         <div className="flex items-center gap-1">
           {onCancel && (
             <button
@@ -63,7 +63,7 @@ export function CommentComposer({
               onClick={onCancel}
               className="rounded-md px-2.5 py-1.5 text-[13px] font-medium text-ink-3 transition-colors hover:bg-hover-surface hover:text-ink"
             >
-              Cancel
+              Cancelar
             </button>
           )}
           <button
@@ -72,7 +72,7 @@ export function CommentComposer({
             disabled={!trimmed || busy}
             className="rounded-md bg-brand px-3 py-1.5 text-[13px] font-semibold text-brand-contrast transition-colors hover:bg-brand-strong disabled:opacity-40"
           >
-            {busy ? "Saving…" : submitLabel}
+            {busy ? "Guardando…" : submitLabel}
           </button>
         </div>
       </div>

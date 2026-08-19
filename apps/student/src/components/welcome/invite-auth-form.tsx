@@ -13,7 +13,6 @@ import { useRouter } from "next/navigation";
 
 type Mode = "create" | "signin";
 
-
 export function InviteAuthForm({
   token,
   email,
@@ -59,17 +58,17 @@ export function InviteAuthForm({
   if (mode === "signin") {
     return (
       <>
-        <AuthHeading title="Sign in to accept">
+        <AuthHeading title="Ingresa para aceptar">
           {fellBack
-            ? "This address already has an account."
-            : "Sign in to link this invitation to your account."}
+            ? "Este correo ya tiene una cuenta."
+            : "Ingresa para vincular esta invitación a tu cuenta."}
         </AuthHeading>
 
         {fellBack && (
           <Alert variant="info" className="mt-4">
             <Info />
             <AlertDescription>
-              Enter the password for your existing account to accept the invitation.
+              Ingresa la contraseña de tu cuenta existente para aceptar la invitación.
             </AlertDescription>
           </Alert>
         )}
@@ -77,8 +76,8 @@ export function InviteAuthForm({
         <SignInForm email={email} onSignedIn={accept} />
 
         <ModeSwitch
-          prompt="Need a new account instead?"
-          action="Create account"
+          prompt="¿Necesitas una cuenta nueva?"
+          action="Crear cuenta"
           onClick={() => {
             setFellBack(false);
             setMode("create");
@@ -90,17 +89,13 @@ export function InviteAuthForm({
 
   return (
     <>
-      <AuthHeading title="Welcome">
-        You&apos;ve been invited. Create your account to start learning.
+      <AuthHeading title="Recibiste una invitación">
+        Crea tu cuenta para empezar a aprender.
       </AuthHeading>
 
       <CreateAccountForm email={email} name={name} onOutcome={onCreateOutcome} />
 
-      <ModeSwitch
-        prompt="Already have an account?"
-        action="Sign in"
-        onClick={() => setMode("signin")}
-      />
+      <ModeSwitch prompt="¿Ya tienes cuenta?" action="Ingresar" onClick={() => setMode("signin")} />
     </>
   );
 }

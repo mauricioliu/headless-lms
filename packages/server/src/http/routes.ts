@@ -3,6 +3,7 @@ import type { Container } from '../app/container.js';
 import { coursesRoutes } from './routes/courses.js';
 import { downloadsRoutes } from './routes/downloads.js';
 import { bundlesRoutes } from './routes/bundles.js';
+import { learnBrandingRoutes } from './routes/learn/branding.js';
 import { learnRoutes } from './routes/learn/index.js';
 import { discussionRoutes } from './routes/discussion.js';
 import { activitiesRoutes } from './routes/activities.js';
@@ -22,6 +23,9 @@ export function registerRoutes(app: FastifyInstance, container: Container): void
   app.get('/health', async () => ({ status: 'ok' }));
 
   app.register(async (instance) => {
+    // Public pre-session surface: the branding the student portal's login and
+    // invite landing theme against.
+    await learnBrandingRoutes(instance, container);
     // instance.addHook('onRequest', instance.requireSession);
     await organizationsRoutes(instance, container);
   });

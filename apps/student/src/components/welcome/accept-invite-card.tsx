@@ -55,9 +55,9 @@ export function AcceptInviteCard({
         <Alert variant="destructive">
           <AlertTriangle />
           <AlertDescription>
-            This invitation was sent to <strong className="font-medium">{invitedEmail}</strong>, but
-            you&apos;re signed in as <strong className="font-medium">{sessionEmail}</strong>. Switch
-            accounts to accept it.
+            Esta invitación se envió a <strong className="font-medium">{invitedEmail}</strong>, pero
+            has iniciado sesión como <strong className="font-medium">{sessionEmail}</strong>. Cambia
+            de cuenta para aceptarla.
           </AlertDescription>
         </Alert>
       )}
@@ -70,7 +70,7 @@ export function AcceptInviteCard({
         onClick={onAccept}
       >
         {pending && <Loader2 className="animate-spin" />}
-        Accept invitation
+        Aceptar invitación
       </Button>
 
       <button
@@ -78,7 +78,7 @@ export function AcceptInviteCard({
         onClick={() => void signOut()}
         className="text-center text-sm text-ink-3 underline-offset-4 hover:text-ink hover:underline"
       >
-        Use a different account
+        Usar otra cuenta
       </button>
     </div>
   );

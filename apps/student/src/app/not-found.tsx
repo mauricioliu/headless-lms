@@ -10,12 +10,12 @@ export default function NotFound() {
       <div className="mb-6 grid size-16 place-items-center rounded-[18px] border border-line bg-surface text-ink-faintest">
         <SearchX className="size-7" strokeWidth={1.5} />
       </div>
-      <h1 className="mb-3 text-[28px] font-semibold tracking-[-0.01em]">Page not found</h1>
+      <h1 className="mb-3 text-[28px] font-semibold tracking-[-0.01em]">Página no encontrada</h1>
       <p className="mb-[26px] text-[15.5px] leading-[1.6] text-ink-2">
-        This page doesn&apos;t exist, or you no longer have access to it.
+        Esta página no existe o ya no tienes acceso a ella.
       </p>
       <Button variant="brand" size="pillSm" asChild>
-        <Link href="/">Back to my courses</Link>
+        <Link href="/">Volver a mis cursos</Link>
       </Button>
     </main>
   );

@@ -7,12 +7,12 @@ import type { ReactNode } from "react";
  * browser. Pages compose it and drop a client island into `children` only where
  * interactivity is genuinely needed.
  */
-export function AuthShell({ children }: { children: ReactNode }) {
+export function AuthShell({ brandName, children }: { brandName: string; children: ReactNode }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
       <div className="flex flex-col bg-surface">
         <div className="flex h-16 items-center px-6 sm:px-10">
-          <span className="text-lg font-semibold tracking-tight text-ink">Headless LMS</span>
+          <span className="text-lg font-semibold tracking-tight text-ink">{brandName}</span>
         </div>
         <div className="flex flex-1 items-center justify-center px-6 py-10 sm:px-10">
           <div className="w-full max-w-xs">{children}</div>
@@ -24,10 +24,10 @@ export function AuthShell({ children }: { children: ReactNode }) {
         <div className="relative flex h-full flex-col justify-end p-12">
           <blockquote className="max-w-md">
             <p className="text-2xl font-medium tracking-tight text-surface text-balance">
-              Your courses, in one calm place. Pick up right where you left off.
+              Tus cursos, en un solo lugar tranquilo. Retoma justo donde lo dejaste.
             </p>
             <footer className="mt-4 text-sm text-surface/60">
-              Headless LMS · Course platform
+              Plataforma de cursos por Nuvora
             </footer>
           </blockquote>
         </div>
@@ -37,13 +37,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
 }
 
 /** Heading + supporting line above a form. Server-rendered with the shell. */
-export function AuthHeading({
-  title,
-  children,
-}: {
-  title: string;
-  children?: ReactNode;
-}) {
+export function AuthHeading({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
       <h1 className="text-2xl font-semibold tracking-tight text-ink text-balance">{title}</h1>

@@ -93,7 +93,7 @@ export function EvaluationScreen(props: EvaluationScreenProps) {
         <div className="flex min-w-0 items-center gap-3">
           <Link
             href={`/courses/${props.courseId}`}
-            aria-label="Back to course"
+            aria-label="Volver al curso"
             className="grid size-9 flex-none place-items-center rounded-lg text-ink-2 hover:bg-hover-surface-2"
           >
             <ChevronLeft className="size-5" />
@@ -104,7 +104,7 @@ export function EvaluationScreen(props: EvaluationScreenProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="hidden text-xs text-ink-3 sm:inline">Course watched</span>
+          <span className="hidden text-xs text-ink-3 sm:inline">Curso visto</span>
           <span className="rounded-full bg-brand-soft px-2.5 py-1 text-xs font-semibold text-brand">
             {props.percent}%
           </span>
@@ -122,14 +122,16 @@ function LockedState({ percent }: { percent: number }) {
         <Lock className="size-5" />
       </span>
       <div className="max-w-sm">
-        <h1 className="text-xl font-semibold tracking-tight">The evaluation unlocks at 100%</h1>
+        <h1 className="text-xl font-semibold tracking-tight">
+          La evaluación se desbloquea al llegar al 100%
+        </h1>
         <p className="mt-2 text-sm leading-6 text-ink-3">
-          You&apos;ve watched {percent}% of the course. Finish every segment to unlock the
-          evaluation.
+          Has visto el {percent}% del curso. Completa todos los segmentos para desbloquear la
+          evaluación.
         </p>
       </div>
       <Button variant="brand" size="pill" asChild>
-        <Link href="/">Back to my courses</Link>
+        <Link href="/">Volver a mis cursos</Link>
       </Button>
     </div>
   );
@@ -139,10 +141,10 @@ function Eyebrow({ current, total }: { current?: number; total?: number }) {
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-brand">
       <ClipboardCheck className="size-4" />
-      <span>Course evaluation</span>
+      <span>Evaluación del curso</span>
       {current && total ? (
         <span className="text-ink-4">
-          · Question {current} of {total}
+          · Pregunta {current} de {total}
         </span>
       ) : null}
     </div>
@@ -242,12 +244,12 @@ function AnswerState({
       onGraded(graded);
     } catch (err) {
       if (isApiErrorWithStatus(err, 403)) {
-        onError("The evaluation is locked — watch every segment of the course first.");
+        onError("La evaluación está bloqueada: primero mira todos los segmentos del curso.");
         router.refresh();
-      } else if (err instanceof ApiError) {
-        onError(err.message);
+      } else if (isApiErrorWithStatus(err, 404)) {
+        onError("No encontramos la evaluación. Vuelve a entrar al curso.");
       } else {
-        onError("Something went wrong submitting your evaluation. Try again.");
+        onError("No pudimos enviar tu evaluación. Inténtalo de nuevo.");
       }
       setSubmitting(false);
     }
@@ -273,7 +275,7 @@ function AnswerState({
           href={`/courses/${courseId}`}
           className="text-xs font-medium text-ink-3 hover:text-ink"
         >
-          Exit and continue later
+          Salir y continuar después
         </Link>
       </div>
       <div className="mt-5">
@@ -287,7 +289,7 @@ function AnswerState({
       {error ? (
         <Alert variant="destructive" className="mt-5">
           <X className="size-4" />
-          <AlertTitle>Couldn&apos;t submit your evaluation</AlertTitle>
+          <AlertTitle>No pudimos enviar tu evaluación</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}
@@ -314,7 +316,7 @@ function AnswerState({
           disabled={index === 0 || submitting}
           onClick={() => setIndex((i) => Math.max(0, i - 1))}
         >
-          <ArrowLeft /> Previous
+          <ArrowLeft /> Anterior
         </Button>
         {isLast ? (
           <Button
@@ -324,7 +326,7 @@ function AnswerState({
             onClick={() => void submit()}
           >
             {submitting ? <Loader2 className="animate-spin" /> : <Send />}
-            Submit evaluation
+            Enviar evaluación
           </Button>
         ) : (
           <Button
@@ -333,7 +335,7 @@ function AnswerState({
             disabled={!currentAnswer || submitting}
             onClick={() => setIndex((i) => Math.min(questions.length - 1, i + 1))}
           >
-            Next <ArrowRight />
+            Siguiente <ArrowRight />
           </Button>
         )}
       </div>
@@ -362,34 +364,34 @@ function ReviewState({
         <div>
           <Eyebrow />
           <h1 className="mt-4 text-3xl font-semibold tracking-tight">
-            You scored {feedback.score}%
+            Obtuviste un {feedback.score}%
           </h1>
           <p className={cn("mt-2 font-semibold", passed ? "text-brand" : "text-quiz-wrong-fg")}>
             {passed ? (
               <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="size-4" /> You passed — this course is complete
+                <CheckCircle2 className="size-4" /> Aprobaste: el curso está completado
               </span>
             ) : (
-              `You haven't reached the ${feedback.cutoff ?? cutoff}% cutoff`
+              `Aún no alcanzas el corte de ${feedback.cutoff ?? cutoff}%`
             )}
           </p>
           {questions.length > 0 ? (
             <p className="mt-2 text-sm text-ink-3">
-              You answered {hits} of {questions.length} questions correctly.
+              Respondiste correctamente {hits} de {questions.length} preguntas.
             </p>
           ) : (
             <p className="mt-2 text-sm text-ink-3">
-              Attempt {feedback.attemptNumber} · the cutoff is {feedback.cutoff ?? cutoff}%.
+              Intento {feedback.attemptNumber} · el corte es {feedback.cutoff ?? cutoff}%.
             </p>
           )}
         </div>
         <div className="flex flex-col gap-2 sm:items-end">
           <Button variant="brand" size="pill" asChild>
-            <Link href={`/courses/${courseId}`}>Back to course</Link>
+            <Link href={`/courses/${courseId}`}>Volver al curso</Link>
           </Button>
           {!passed ? (
             <Button variant="ghostOutline" size="pillSm" onClick={onRetry}>
-              Try again
+              Intentar de nuevo
             </Button>
           ) : null}
         </div>
@@ -398,9 +400,9 @@ function ReviewState({
       {questions.length > 0 ? (
         <>
           <div className="py-8">
-            <h2 className="text-xl font-semibold">Review your answers</h2>
+            <h2 className="text-xl font-semibold">Revisa tus respuestas</h2>
             <p className="mt-2 text-sm text-ink-3">
-              The correct options for the questions you missed are not marked.
+              Las opciones correctas de las preguntas que fallaste no están marcadas.
             </p>
           </div>
           <div>
@@ -433,7 +435,7 @@ function QuestionReview({ number, review }: { number: number; review: AttemptQue
               review.correct ? "text-brand" : "text-quiz-wrong-fg",
             )}
           >
-            Question {number} · {review.correct ? "Correct" : "Incorrect"}
+            Pregunta {number} · {review.correct ? "Correcta" : "Incorrecta"}
           </span>
           <h2 className="text-lg font-semibold leading-7">{review.prompt}</h2>
         </div>
@@ -468,7 +470,7 @@ function QuestionReview({ number, review }: { number: number; review: AttemptQue
               <span className="min-w-0 flex-1 text-sm font-medium leading-6">{option.text}</span>
               {selected ? (
                 <span className="flex-none rounded-full bg-surface px-2 py-1 text-xs font-semibold text-ink">
-                  Your answer
+                  Tu respuesta
                 </span>
               ) : null}
             </div>
@@ -477,7 +479,7 @@ function QuestionReview({ number, review }: { number: number; review: AttemptQue
       </div>
       {!review.correct ? (
         <p className="text-xs leading-5 text-ink-3 sm:pl-10">
-          The correct answer isn&apos;t shown. Review the course and try again.
+          La respuesta correcta no se muestra. Repasa el curso y vuelve a intentarlo.
         </p>
       ) : null}
     </section>

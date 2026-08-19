@@ -8,10 +8,17 @@ import { Discussion } from "@headless-lms/sdk";
 import type { CommentAuthor, CommentView, ReactionEmoji } from "@/lib/api/types";
 
 import { ensureClientSdk } from "@/lib/api/client-sdk";
+import { statusOf } from "@/lib/api/shared";
 import { initialCommentsState, commentsReducer, type CommentsPanelState } from "./comment-state";
 
+/** The API's English message never reaches the reader — each status maps to
+ *  Spanish text at this call-site. */
 function message(err: unknown): string {
-  return err instanceof Error && err.message ? err.message : "Something went wrong";
+  const status = statusOf(err);
+  if (status === 403) return "No puedes hacer eso en esta conversación.";
+  if (status === 404) return "El comentario ya no existe.";
+  if (status === 422) return "El comentario no pasó la validación. Revisa el texto.";
+  return "Algo salió mal. Inténtalo de nuevo.";
 }
 
 export interface UseComments extends CommentsPanelState {

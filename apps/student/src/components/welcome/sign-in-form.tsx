@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { signIn } from "@/lib/auth/client";
 import { ReadOnlyEmail } from "./create-account-form";
 
-const schema = z.object({ password: z.string().min(1, "Enter your password") });
+const schema = z.object({ password: z.string().min(1, "Ingresa tu contraseña") });
 type Values = z.infer<typeof schema>;
 
 export function SignInForm({
@@ -41,7 +41,11 @@ export function SignInForm({
     setError(null);
     const { error: authError } = await signIn.email({ email, password: values.password });
     if (authError) {
-      setError(authError.message ?? "Invalid email or password.");
+      setError(
+        authError.status === 401
+          ? "Correo o contraseña incorrectos."
+          : "No pudimos iniciar sesión. Inténtalo de nuevo.",
+      );
       return;
     }
     const failure = await onSignedIn();
@@ -65,7 +69,7 @@ export function SignInForm({
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Contraseña</FormLabel>
               <FormControl>
                 <Input
                   type="password"
@@ -87,7 +91,7 @@ export function SignInForm({
           disabled={form.formState.isSubmitting}
         >
           {form.formState.isSubmitting && <Loader2 className="animate-spin" />}
-          Sign in and accept
+          Entrar y aceptar
         </Button>
       </form>
     </Form>

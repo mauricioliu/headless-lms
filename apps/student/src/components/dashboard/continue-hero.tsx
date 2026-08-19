@@ -27,12 +27,10 @@ export function ContinueHero({ course, percent, done }: CourseView) {
       </CourseCover>
 
       <div className="flex min-w-0 flex-1 flex-col justify-center px-7 py-[26px]">
-        <div className="mb-3 text-[11px] tracking-[0.04em] text-brand">
-          Pick up where you left off
-        </div>
+        <div className="mb-3 text-[11px] tracking-[0.04em] text-brand">Retoma donde lo dejaste</div>
         <h3 className="mb-1.5 text-[24px] font-semibold tracking-[-0.01em]">{course.title}</h3>
         <div className="mb-5 text-[14.5px] text-ink-2">
-          {done} of {course.lessonCount} lessons complete
+          {done} de {course.lessonCount} segmentos completados
         </div>
         <div className="mb-[22px] flex max-w-[440px] items-center gap-3.5">
           <ProgressBar percent={percent} trackClassName="h-[7px]" />
@@ -44,9 +42,9 @@ export function ContinueHero({ course, percent, done }: CourseView) {
             className={cn(buttonVariants({ variant: "brand", size: "pill" }), "gap-[9px]")}
           >
             <Play className="size-[17px]" fill="currentColor" strokeWidth={0} />
-            Continue learning
+            Continuar aprendiendo
           </Link>
-          <span className="text-[13.5px] text-ink-3">{lessonsLeft} lessons left</span>
+          <span className="text-[13.5px] text-ink-3">Te quedan {lessonsLeft} segmentos</span>
         </div>
       </div>
     </section>

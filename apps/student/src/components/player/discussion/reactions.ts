@@ -8,22 +8,22 @@ export interface ReactionChoice {
 }
 
 export const REACTIONS: ReactionChoice[] = [
-  { emoji: "👍", label: "Like" },
-  { emoji: "❤️", label: "Love" },
-  { emoji: "😂", label: "Haha" },
-  { emoji: "🎉", label: "Celebrate" },
-  { emoji: "💡", label: "Insightful" },
-  { emoji: "🤔", label: "Curious" },
-  { emoji: "🔥", label: "Fire" },
-  { emoji: "👏", label: "Applause" },
-  { emoji: "😮", label: "Wow" },
-  { emoji: "🙏", label: "Thank you" },
-  { emoji: "💯", label: "Nailed it" },
-  { emoji: "✅", label: "Got it" },
-  { emoji: "🚀", label: "Let's go" },
-  { emoji: "🤯", label: "Mind blown" },
-  { emoji: "😅", label: "Relatable" },
-  { emoji: "🥳", label: "Party" },
+  { emoji: "👍", label: "Me gusta" },
+  { emoji: "❤️", label: "Me encanta" },
+  { emoji: "😂", label: "Jaja" },
+  { emoji: "🎉", label: "A celebrar" },
+  { emoji: "💡", label: "Buen punto" },
+  { emoji: "🤔", label: "Pensativo" },
+  { emoji: "🔥", label: "Fuego" },
+  { emoji: "👏", label: "Aplausos" },
+  { emoji: "😮", label: "Guau" },
+  { emoji: "🙏", label: "Gracias" },
+  { emoji: "💯", label: "Perfecto" },
+  { emoji: "✅", label: "Entendido" },
+  { emoji: "🚀", label: "Vamos" },
+  { emoji: "🤯", label: "Me voló la cabeza" },
+  { emoji: "😅", label: "Me identifico" },
+  { emoji: "🥳", label: "Fiesta" },
 ];
 
 const ORDER = new Map(REACTIONS.map((r, i) => [r.emoji, i]));

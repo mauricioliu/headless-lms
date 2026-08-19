@@ -54,8 +54,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
         <GreetingStats
           studentName={session.user.name}
           stats={[
-            { value: String(totals.inProgress), label: "in progress" },
-            { value: String(totals.completed), label: "completed" },
+            { value: String(totals.inProgress), label: "en progreso" },
+            { value: String(totals.completed), label: "completados" },
           ]}
         />
 

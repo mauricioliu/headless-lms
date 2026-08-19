@@ -42,13 +42,13 @@ export function DiscussionPanel({
       <section className="mx-auto w-full max-w-3xl px-6 pb-10">
         <div className="border-t border-line pt-6">
           <p className="text-[13.5px] text-ink-3">
-            The discussion could not be loaded.{" "}
+            No pudimos cargar los comentarios.{" "}
             <button
               type="button"
               onClick={() => window.location.reload()}
               className="font-semibold underline"
             >
-              Retry
+              Reintentar
             </button>
           </p>
         </div>
@@ -66,7 +66,7 @@ export function DiscussionPanel({
       <div className="flex flex-col gap-5 border-t border-line pt-6">
         <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink">
           <MessageCircle className="size-4 text-ink-3" />
-          Discussion
+          Comentarios
           {count > 0 && <span className="font-normal text-ink-3 tabular-nums">{count}</span>}
         </h2>
 
@@ -75,22 +75,22 @@ export function DiscussionPanel({
             <CommentAvatar name={viewerName} />
             <div className="min-w-0 flex-1">
               <CommentComposer
-                placeholder="Ask a question or share what helped"
-                submitLabel="Post"
+                placeholder="Pregunta o comparte lo que te sirvió"
+                submitLabel="Publicar"
                 onSubmit={(body) => panel.post(body, null)}
               />
             </div>
           </div>
         ) : (
           <p className="text-[13.5px] text-ink-3">
-            This discussion is closed. You can still read what has been posted.
+            Esta conversación está cerrada, pero puedes leer lo publicado.
           </p>
         )}
 
         {nodes.length === 0 ? (
           open && (
             <p className="border-t border-line-divider pt-6 text-center text-[13.5px] text-ink-3">
-              No comments yet.
+              Aún no hay comentarios.
             </p>
           )
         ) : (
@@ -109,7 +109,7 @@ export function DiscussionPanel({
                 onReport={async (reason) => {
                   try {
                     await panel.report(comment.id, reason);
-                    showToast("Reported — thank you");
+                    showToast("Reportado. Gracias");
                   } catch {
                     // Already surfaced via the panel.error effect above.
                   }
@@ -131,7 +131,7 @@ export function DiscussionPanel({
                           onReport={async (reason) => {
                             try {
                               await panel.report(reply.id, reason);
-                              showToast("Reported — thank you");
+                              showToast("Reportado. Gracias");
                             } catch {
                               // Already surfaced via the panel.error effect above.
                             }

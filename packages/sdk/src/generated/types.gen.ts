@@ -24,6 +24,25 @@ export type JsonValue =
     }
   | null;
 
+export type GetLearnBrandingData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/learn/branding";
+};
+
+export type GetLearnBrandingResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    brandName: string;
+    logoUrl?: string;
+  };
+};
+
+export type GetLearnBrandingResponse = GetLearnBrandingResponses[keyof GetLearnBrandingResponses];
+
 export type UpdateOrganizationData = {
   body: {
     name: string;

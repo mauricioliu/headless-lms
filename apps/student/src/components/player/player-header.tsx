@@ -44,13 +44,13 @@ export function PlayerHeader({
           className="inline-flex flex-none items-center gap-[7px] rounded-[9px] px-[11px] py-2 text-[13.5px] font-medium text-ink-2 hover:bg-hover-surface-2"
         >
           <ArrowLeft className="size-[17px]" />
-          <span className="whitespace-nowrap">Library</span>
+          <span className="whitespace-nowrap">Mis cursos</span>
         </Link>
         <button
           type="button"
           onClick={onToggleSidebar}
-          aria-label="Toggle curriculum"
-          title="Toggle curriculum"
+          aria-label="Mostrar u ocultar el temario"
+          title="Mostrar u ocultar el temario"
           className={`flex size-9 flex-none items-center justify-center rounded-[9px] hover:bg-hover-surface-2 ${sidebarActive ? "text-brand" : "text-ink-2"}`}
         >
           <PanelLeft className="size-[19px]" />
@@ -63,16 +63,12 @@ export function PlayerHeader({
 
       <div className="flex flex-none items-center gap-4">
         <div className="flex items-center gap-2.5">
-          <ProgressRing
-            percent={coursePercent}
-            size={30}
-            innerClassName="bg-surface-warm"
-          />
+          <ProgressRing percent={coursePercent} size={30} innerClassName="bg-surface-warm" />
           <div className="flex flex-col leading-[1.15]">
             <span className="text-[12.5px] font-medium">
               {doneCount}/{total}
             </span>
-            <span className="text-[10.5px] text-ink-4">lessons</span>
+            <span className="text-[10.5px] text-ink-4">segmentos</span>
           </div>
         </div>
         <div className="flex size-[34px] items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold text-brand">

@@ -66,6 +66,39 @@
     }
   },
   "paths": {
+    "/api/learn/branding": {
+      "get": {
+        "operationId": "getLearnBranding",
+        "summary": "Get the deployment's student-portal branding",
+        "tags": [
+          "Organizations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "brandName": {
+                      "type": "string"
+                    },
+                    "logoUrl": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "brandName"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/organizations": {
       "post": {
         "operationId": "createOrganization",

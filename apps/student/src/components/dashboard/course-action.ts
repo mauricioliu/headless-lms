@@ -13,12 +13,12 @@ export interface CourseAction {
 export function courseAction(state: CourseState): CourseAction {
   switch (state) {
     case "not-started":
-      return { label: "Start", variant: "brand", icon: true };
+      return { label: "Comenzar", variant: "brand", icon: true };
     case "completed":
-      return { label: "Review", variant: "ghostOutline", icon: false };
+      return { label: "Repasar", variant: "ghostOutline", icon: false };
     case "expired":
-      return { label: "Renew", variant: "ghostOutline", icon: false };
+      return { label: "Renovar", variant: "ghostOutline", icon: false };
     default:
-      return { label: "Continue", variant: "brand", icon: true };
+      return { label: "Continuar", variant: "brand", icon: true };
   }
 }

@@ -31,7 +31,7 @@ export default async function DownloadDetailPage({
         className="mb-6 inline-flex items-center gap-1.5 text-[13.5px] text-ink-2 hover:text-ink"
       >
         <ArrowLeft className="size-4" strokeWidth={1.7} />
-        All downloads
+        Todas las descargas
       </Link>
 
       <div className="mb-8 flex items-start gap-5">
@@ -61,7 +61,7 @@ export default async function DownloadDetailPage({
           >
             <div className="min-w-0">
               <div className="truncate text-[14.5px] font-medium">
-                {asset.displayName ?? `File ${i + 1}`}
+                {asset.displayName ?? `Archivo ${i + 1}`}
               </div>
             </div>
             <Button asChild variant="brand" size="pillSm" className="shrink-0">
@@ -69,7 +69,7 @@ export default async function DownloadDetailPage({
                 href={`${API_URL}/api/learn/downloads/${download.id}/assets/${asset.assetId}`}
                 download
               >
-                Download
+                Descargar
               </a>
             </Button>
           </div>

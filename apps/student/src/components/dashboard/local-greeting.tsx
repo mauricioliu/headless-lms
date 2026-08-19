@@ -5,7 +5,7 @@ import { useLocalNow } from "@/lib/local-clock";
 
 /**
  * Date eyebrow + time-of-day greeting — the only thing on this page that
- * genuinely needs the client, since "Good evening" is the *viewer's* evening.
+ * genuinely needs the client, since "Buenas noches" is the *viewer's* night.
  * `serverNow` renders the first paint, then the local clock takes over.
  */
 export function LocalGreeting({ name, serverNow }: { name: string; serverNow: string }) {

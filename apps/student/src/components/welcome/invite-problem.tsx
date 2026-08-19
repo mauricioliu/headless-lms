@@ -10,13 +10,13 @@ import { AuthHeading } from "@/components/auth/auth-shell";
 export function InviteProblem({ message }: { message: string }) {
   return (
     <>
-      <AuthHeading title="Invitation not found" />
+      <AuthHeading title="Invitación no encontrada" />
       <Alert variant="destructive" className="mt-4">
         <AlertTriangle />
         <AlertDescription>{message}</AlertDescription>
       </Alert>
       <p className="mt-4 text-sm text-ink-3 text-pretty">
-        Ask your course admin to send a new invitation.
+        Pide al administrador de tus cursos que te envíe una nueva invitación.
       </p>
     </>
   );

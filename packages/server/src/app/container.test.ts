@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
+  DEFAULT_BRAND_NAME,
   LOGGING_DEFAULTS,
   OUTBOX_DEFAULTS,
+  resolveBranding,
   resolveLoggingConfig,
   resolveOutboxConfig,
 } from './container.js';
@@ -40,5 +42,36 @@ describe('resolveLoggingConfig', () => {
 
   it('ignores explicit undefined (default wins)', () => {
     expect(resolveLoggingConfig({ level: undefined }).level).toBe('info');
+  });
+});
+
+describe('resolveBranding', () => {
+  const base = {
+    databaseUrl: 'postgres://x',
+    authBaseURL: 'http://api.test.local',
+    authSecret: 's',
+    trustedOrigins: [],
+    credentialStoreKey: 'k',
+    studentPortalUrl: 'http://student.test.local',
+    adminAppUrl: 'http://admin.test.local',
+    deliveryExpirySeconds: 300,
+  };
+
+  it('carries the configured Empresa Cliente brand', () => {
+    expect(
+      resolveBranding({
+        ...base,
+        emailBranding: {
+          brandName: 'Minera Los Andes',
+          baseUrl: 'http://admin.test.local',
+          logoUrl: 'https://cdn/logo.png',
+        },
+      }),
+    ).toEqual({ brandName: 'Minera Los Andes', logoUrl: 'https://cdn/logo.png' });
+  });
+
+  it('defaults to the operator brand, never the substrate name', () => {
+    expect(resolveBranding(base)).toEqual({ brandName: DEFAULT_BRAND_NAME });
+    expect(DEFAULT_BRAND_NAME).not.toContain('LMS');
   });
 });

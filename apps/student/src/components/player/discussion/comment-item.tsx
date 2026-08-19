@@ -54,8 +54,8 @@ export function CommentItem({
     return (
       <p className="py-2 text-[13px] text-ink-4 italic">
         {comment.removedBy
-          ? `Comment removed by ${fullName(comment.removedBy)}`
-          : "Comment removed"}
+          ? `Comentario eliminado por ${fullName(comment.removedBy)}`
+          : "Comentario eliminado"}
       </p>
     );
   }
@@ -93,7 +93,7 @@ export function CommentItem({
               )}
               {comment.status === "pending" && (
                 <span className="rounded bg-status-progress-bg px-1.5 py-0.5 text-[10.5px] font-medium text-status-progress-fg">
-                  Awaiting review
+                  En revisión
                 </span>
               )}
               <span className="text-[11.5px] text-ink-4">{relativeTime(comment.createdAt)}</span>
@@ -103,7 +103,7 @@ export function CommentItem({
               <DropdownMenu>
                 <DropdownMenuTrigger
                   className="-mr-1 grid size-6 shrink-0 place-items-center rounded-md text-ink-4 transition-colors hover:bg-hover-surface hover:text-ink"
-                  aria-label="Comment actions"
+                  aria-label="Acciones del comentario"
                 >
                   <MoreHorizontal className="size-4" />
                 </DropdownMenuTrigger>
@@ -111,19 +111,19 @@ export function CommentItem({
                   {p.canReply && onReply && (
                     <DropdownMenuItem onSelect={() => setReplying(true)}>
                       <CornerUpLeft />
-                      Reply
+                      Responder
                     </DropdownMenuItem>
                   )}
                   {p.canEdit && (
                     <DropdownMenuItem onSelect={() => setEditing(true)}>
                       <Pencil />
-                      Edit
+                      Editar
                     </DropdownMenuItem>
                   )}
                   {p.canReport && (
                     <DropdownMenuItem onSelect={() => void onReport("")}>
                       <Flag />
-                      Report
+                      Reportar
                     </DropdownMenuItem>
                   )}
                   {p.canRemove && (
@@ -131,7 +131,7 @@ export function CommentItem({
                       <DropdownMenuSeparator />
                       <DropdownMenuItem variant="danger" onSelect={() => void onRemove()}>
                         <Trash2 />
-                        Delete
+                        Eliminar
                       </DropdownMenuItem>
                     </>
                   )}
@@ -143,8 +143,8 @@ export function CommentItem({
           {editing ? (
             <div className="mt-2">
               <CommentComposer
-                placeholder="Edit your comment"
-                submitLabel="Save"
+                placeholder="Edita tu comentario"
+                submitLabel="Guardar"
                 initialValue={comment.body ?? ""}
                 rows={3}
                 autoFocus
@@ -177,7 +177,7 @@ export function CommentItem({
               onClick={() => setReplying((v) => !v)}
               className="text-[12px] font-medium text-ink-3 transition-colors hover:text-ink"
             >
-              Reply
+              Responder
             </button>
           )}
         </div>
@@ -189,8 +189,8 @@ export function CommentItem({
             <CommentAvatar name={viewerName} size="sm" />
             <div className="min-w-0 flex-1">
               <CommentComposer
-                placeholder={`Reply to ${author}`}
-                submitLabel="Reply"
+                placeholder={`Responder a ${author}`}
+                submitLabel="Responder"
                 rows={2}
                 autoFocus
                 onSubmit={onReply}

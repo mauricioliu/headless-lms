@@ -8,7 +8,7 @@ import { signIn, useSession } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function LoginView() {
+export function LoginView({ brandName }: { brandName: string }) {
   const router = useRouter();
   const params = useSearchParams();
   // Where the proxy wanted the user to land before it bounced them here.
@@ -30,16 +30,16 @@ export function LoginView() {
       {/* Form column */}
       <div className="flex flex-col bg-surface">
         <div className="flex h-16 items-center px-6 sm:px-10">
-          <span className="text-lg font-semibold tracking-tight text-ink">Headless LMS</span>
+          <span className="text-lg font-semibold tracking-tight text-ink">{brandName}</span>
         </div>
         <div className="flex flex-1 items-center justify-center px-6 py-10 sm:px-10">
           <div className="w-full max-w-xs">
             <div className="flex flex-col gap-1.5">
               <h1 className="text-2xl font-semibold tracking-tight text-ink text-balance">
-                Sign in
+                Iniciar sesión
               </h1>
               <p className="text-sm text-ink-3 text-pretty">
-                Welcome back. Enter your credentials to continue your courses.
+                Bienvenido de nuevo. Ingresa tus datos para continuar tus cursos.
               </p>
             </div>
             <SignInForm onDone={() => router.replace(next)} />
@@ -53,9 +53,11 @@ export function LoginView() {
         <div className="relative flex h-full flex-col justify-end p-12">
           <blockquote className="max-w-md">
             <p className="text-2xl font-medium tracking-tight text-surface text-balance">
-              Your courses, in one calm place. Pick up right where you left off.
+              Tus cursos, en un solo lugar tranquilo. Retoma justo donde lo dejaste.
             </p>
-            <footer className="mt-4 text-sm text-surface/60">Headless LMS · Course platform</footer>
+            <footer className="mt-4 text-sm text-surface/60">
+              Plataforma de cursos por Nuvora
+            </footer>
           </blockquote>
         </div>
       </div>
@@ -75,7 +77,11 @@ function SignInForm({ onDone }: { onDone: () => void }) {
     setSubmitting(true);
     const { error } = await signIn.email({ email, password });
     if (error) {
-      setError(error.message ?? "Invalid email or password");
+      setError(
+        error.status === 401
+          ? "Correo o contraseña incorrectos."
+          : "No pudimos iniciar sesión. Inténtalo de nuevo.",
+      );
       setSubmitting(false);
       return;
     }
@@ -92,13 +98,13 @@ function SignInForm({ onDone }: { onDone: () => void }) {
       )}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="email" className="text-sm font-medium text-ink">
-          Email
+          Correo
         </label>
         <input
           id="email"
           type="email"
           autoComplete="email"
-          placeholder="you@example.com"
+          placeholder="tu@ejemplo.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={inputClass}
@@ -106,7 +112,7 @@ function SignInForm({ onDone }: { onDone: () => void }) {
       </div>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="password" className="text-sm font-medium text-ink">
-          Password
+          Contraseña
         </label>
         <input
           id="password"
@@ -120,7 +126,7 @@ function SignInForm({ onDone }: { onDone: () => void }) {
       </div>
       <Button type="submit" variant="brand" disabled={submitting} className="mt-1 w-full">
         {submitting && <Loader2 className="animate-spin" />}
-        Sign in
+        Iniciar sesión
       </Button>
     </form>
   );

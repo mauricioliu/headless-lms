@@ -100,8 +100,10 @@ export interface Config {
   authBaseURL: string;
   authSecret: string;
   trustedOrigins: string[];
-  /** Branding threaded into every email template. Default: brandName "Headless LMS", baseUrl = adminAppUrl.
-   *  (studentPortalUrl is composed in from the top-level config field.) */
+  /** Branding threaded into every email template and the student portal
+   *  (pre-session surfaces read it via GET /api/learn/branding). Default:
+   *  brandName "Nuvora", baseUrl = adminAppUrl. (studentPortalUrl is composed
+   *  in from the top-level config field.) */
   emailBranding?: Omit<TemplateContext, 'studentPortalUrl'>;
   /** base64-encoded 32-byte key for the credential store (CREDENTIAL_STORE_KEY). */
   credentialStoreKey: string;
@@ -158,6 +160,24 @@ export function resolveLoggingConfig(config: LoggingConfig = {}): Required<Loggi
   return { level: config.level ?? LOGGING_DEFAULTS.level };
 }
 
+/** The brand the Trabajador sees when the deployment configures none: the
+ *  operator's own name, never the upstream substrate's. */
+export const DEFAULT_BRAND_NAME = 'Nuvora';
+
+export interface Branding {
+  brandName: string;
+  logoUrl?: string;
+}
+
+/** One branding config serves two readers — the mailer's TemplateContext and
+ *  the student portal's pre-session surfaces (login, invite landing). */
+export function resolveBranding(config: Config): Branding {
+  return {
+    brandName: config.emailBranding?.brandName ?? DEFAULT_BRAND_NAME,
+    ...(config.emailBranding?.logoUrl ? { logoUrl: config.emailBranding.logoUrl } : {}),
+  };
+}
+
 export interface Container {
   auth: BetterAuth;
   // Org Provider
@@ -188,6 +208,9 @@ export interface Container {
   };
   storage: ObjectStorage;
   mailer: Mailer;
+  /** The deployment's branding — drives both email templates and the public
+   *  GET /api/learn/branding the student portal reads. */
+  branding: Branding;
   /** Shared secure credential store — encrypted at rest, org-scoped, decrypt at point of use. */
   credentials: CredentialStore;
   /** The outbox relay — constructed but NEVER started by the container; the
@@ -239,8 +262,9 @@ export async function buildContainer(
     options?.adapters?.templates ?? new StubTemplateRenderer(logger.child({ name: 'email' }));
   const automationEngine: AutomationEngine =
     options?.adapters?.workflows ?? new InlineAutomationEngine();
+  const branding = resolveBranding(config);
   const mailer = new Mailer(templates, email, {
-    ...(config.emailBranding ?? { brandName: 'Headless LMS', baseUrl: config.adminAppUrl }),
+    ...(config.emailBranding ?? { brandName: branding.brandName, baseUrl: config.adminAppUrl }),
     studentPortalUrl: config.studentPortalUrl,
   });
 
@@ -605,6 +629,7 @@ export async function buildContainer(
     reporting,
     storage,
     mailer,
+    branding,
     credentials: credentialStore,
     outboxRelay,
     automationEngine,

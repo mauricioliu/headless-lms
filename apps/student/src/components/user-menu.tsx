@@ -34,7 +34,7 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
       <DropdownMenu.Trigger asChild>
         <button
           type="button"
-          aria-label="Account menu"
+          aria-label="Menú de cuenta"
           className="grid size-[38px] place-items-center rounded-full bg-brand-soft text-[12.5px] font-bold text-brand outline-1 -outline-offset-1 outline-black/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand dark:outline-white/10"
         >
           {initials(name)}
@@ -52,15 +52,27 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
           </div>
           <DropdownMenu.Separator className="-mx-1.5 h-px bg-line-divider" />
           <div className="flex items-center justify-between gap-3 px-2.5 py-2">
-            <span className="text-[13px] text-ink-2">Theme</span>
+            <span className="text-[13px] text-ink-2">Tema</span>
             <SegmentedControl
               size="icon"
               value={(theme ?? "system") as ThemeValue}
               onChange={setTheme}
               options={[
-                { value: "light", title: "Light", icon: <Sun className="size-4" strokeWidth={1.7} /> },
-                { value: "system", title: "System", icon: <Monitor className="size-4" strokeWidth={1.7} /> },
-                { value: "dark", title: "Dark", icon: <Moon className="size-4" strokeWidth={1.7} /> },
+                {
+                  value: "light",
+                  title: "Claro",
+                  icon: <Sun className="size-4" strokeWidth={1.7} />,
+                },
+                {
+                  value: "system",
+                  title: "Sistema",
+                  icon: <Monitor className="size-4" strokeWidth={1.7} />,
+                },
+                {
+                  value: "dark",
+                  title: "Oscuro",
+                  icon: <Moon className="size-4" strokeWidth={1.7} />,
+                },
               ]}
             />
           </div>
@@ -71,7 +83,7 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
             className="flex cursor-pointer items-center gap-2.5 rounded-[9px] px-2.5 py-2 text-[13.5px] font-medium text-ink-2 outline-none data-disabled:opacity-50 data-highlighted:bg-hover-surface data-highlighted:text-ink"
           >
             <LogOut className="size-4 shrink-0" strokeWidth={1.7} />
-            Sign out
+            Cerrar sesión
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>

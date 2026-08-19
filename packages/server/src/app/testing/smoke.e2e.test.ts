@@ -15,8 +15,18 @@ afterAll(async () => {
 }, 60_000);
 
 describe('Sustrato delivery smoke', () => {
+  it('exposes the deployment branding publicly for the pre-session portal', async () => {
+    const branding = await app.inject({ method: 'GET', url: '/api/learn/branding' });
+    expect(branding.statusCode).toBe(200);
+    expect(branding.json()).toEqual({ brandName: 'Nuvora' });
+  });
+
   it('bootstrap → published Curso → invited Trabajador → invite email captured', async () => {
-    const owner = { email: 'operador@nuvora.test', password: 'pilot-password-1', name: 'Ana Admin' };
+    const owner = {
+      email: 'operador@nuvora.test',
+      password: 'pilot-password-1',
+      name: 'Ana Admin',
+    };
     const jar = new CookieJar();
     const headers = () => ({ origin: harness.origin, cookie: jar.header() });
 
@@ -64,9 +74,11 @@ describe('Sustrato delivery smoke', () => {
       payload: { title: 'Segmento 1' },
     });
     expect(modules.statusCode).toBe(200);
-    const moduleId = (modules.json().find((m: { title: string }) => m.title === 'Segmento 1') as {
-      id: string;
-    }).id;
+    const moduleId = (
+      modules.json().find((m: { title: string }) => m.title === 'Segmento 1') as {
+        id: string;
+      }
+    ).id;
     expect(moduleId).toBeTruthy();
 
     const activities = await app.inject({
@@ -103,9 +115,7 @@ describe('Sustrato delivery smoke', () => {
     };
     expect(rendered.template).toBe('studentInvite');
     const inviteUrl = new URL(rendered.params.inviteUrl);
-    expect(`${inviteUrl.origin}${inviteUrl.pathname}`).toBe(
-      `${TEST_STUDENT_PORTAL_URL}/welcome`,
-    );
+    expect(`${inviteUrl.origin}${inviteUrl.pathname}`).toBe(`${TEST_STUDENT_PORTAL_URL}/welcome`);
     const token = inviteUrl.searchParams.get('token');
     expect(token).toBeTruthy();
 

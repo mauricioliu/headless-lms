@@ -11,7 +11,7 @@ export function CompletedPill({ className }: { className?: string }) {
       )}
     >
       <Check className="size-3" strokeWidth={2.4} />
-      Completed
+      Completado
     </span>
   );
 }
@@ -25,7 +25,7 @@ export function ExpiredPill({ className }: { className?: string }) {
       )}
       style={{ background: "rgba(20,20,18,0.5)" }}
     >
-      Expired
+      Expirado
     </span>
   );
 }
@@ -42,7 +42,11 @@ export function StatusChip({
     "not-started": "bg-status-idle-bg text-status-idle-fg",
     completed: "bg-brand-soft text-brand",
   } as const;
-  const label = { "in-progress": "In progress", "not-started": "Not started", completed: "Completed" };
+  const label = {
+    "in-progress": "En progreso",
+    "not-started": "Sin empezar",
+    completed: "Completado",
+  };
   return (
     <span
       className={cn(

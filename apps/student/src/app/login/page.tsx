@@ -1,13 +1,20 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { LoginView } from "./login-view";
+import { getBranding } from "@/lib/api/branding";
 
-export const metadata: Metadata = { title: "Sign in — Headless LMS" };
+export const dynamic = "force-dynamic";
 
-export default function LoginPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const { brandName } = await getBranding();
+  return { title: `Iniciar sesión — ${brandName}` };
+}
+
+export default async function LoginPage() {
+  const { brandName } = await getBranding();
   return (
     <Suspense>
-      <LoginView />
+      <LoginView brandName={brandName} />
     </Suspense>
   );
 }

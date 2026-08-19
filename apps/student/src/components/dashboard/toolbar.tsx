@@ -34,22 +34,22 @@ export function Toolbar(params: DashboardParams) {
         value={view.filter}
         onChange={(filter) => go({ filter })}
         options={[
-          { value: "all", label: "All" },
-          { value: "inprogress", label: "In progress" },
-          { value: "completed", label: "Completed" },
+          { value: "all", label: "Todos" },
+          { value: "inprogress", label: "En progreso" },
+          { value: "completed", label: "Completados" },
         ]}
       />
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-[7px] text-[13px] text-ink-3">
-          <span>Sort</span>
+          <span>Ordenar</span>
           <select
             value={view.sort}
             onChange={(e) => go({ sort: e.target.value as SortValue })}
             className="cursor-pointer rounded-[9px] border border-line bg-surface px-3 py-[7px] text-[13px] text-ink-btn"
           >
-            <option value="recent">Recently accessed</option>
-            <option value="progress">Progress</option>
-            <option value="title">Title (A–Z)</option>
+            <option value="recent">Acceso más reciente</option>
+            <option value="progress">Avance</option>
+            <option value="title">Título (A–Z)</option>
           </select>
         </label>
         <SegmentedControl
@@ -59,12 +59,12 @@ export function Toolbar(params: DashboardParams) {
           options={[
             {
               value: "grid",
-              title: "Grid",
+              title: "Cuadrícula",
               icon: <LayoutGrid className="size-[17px]" strokeWidth={1.7} />,
             },
             {
               value: "list",
-              title: "List",
+              title: "Lista",
               icon: <List className="size-[17px]" strokeWidth={1.7} />,
             },
           ]}

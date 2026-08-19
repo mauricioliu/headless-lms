@@ -83,6 +83,7 @@ import type {
   GetInviteResponses,
   GetLatestCourseEvaluationAttemptErrors,
   GetLatestCourseEvaluationAttemptResponses,
+  GetLearnBrandingResponses,
   GetLearnCourseErrors,
   GetLearnCourseEvaluationErrors,
   GetLearnCourseEvaluationResponses,
@@ -221,6 +222,24 @@ export type Options<
 };
 
 export class Organizations {
+  /**
+   * Get the deployment's student-portal branding
+   */
+  public static getLearnBranding<ThrowOnError extends boolean = false>(
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetLearnBrandingResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<
+      GetLearnBrandingResponses,
+      unknown,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/branding",
+      ...options,
+    });
+  }
+
   /**
    * Update the active organization
    */

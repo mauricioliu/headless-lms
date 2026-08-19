@@ -16,10 +16,14 @@ import { InviteAuthForm } from "@/components/welcome/invite-auth-form";
 import { AcceptInviteCard } from "@/components/welcome/accept-invite-card";
 import { getServerSession } from "@/lib/auth/server-session";
 import { authHeaders } from "@/lib/api/server-call";
+import { getBranding } from "@/lib/api/branding";
 import { ApiError } from "@/lib/api/shared";
 import { fullName } from "@/lib/format";
 
-export const metadata: Metadata = { title: "Welcome — Headless LMS" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { brandName } = await getBranding();
+  return { title: `Invitación — ${brandName}` };
+}
 
 // The link carries a one-time token, so there is nothing cacheable here.
 export const dynamic = "force-dynamic";
@@ -30,6 +34,7 @@ export default async function WelcomePage({
   searchParams: Promise<{ token?: string }>;
 }) {
   const { token = "" } = await searchParams;
+  const { brandName } = await getBranding();
 
   let invite: GetInviteResponse | undefined;
   if (token) {
@@ -44,8 +49,8 @@ export default async function WelcomePage({
 
   if (!invite) {
     return (
-      <AuthShell>
-        <InviteProblem message="This invitation link is invalid or has expired." />
+      <AuthShell brandName={brandName}>
+        <InviteProblem message="Este enlace de invitación no es válido o ya expiró." />
       </AuthShell>
     );
   }
@@ -53,11 +58,11 @@ export default async function WelcomePage({
   const session = await getServerSession();
 
   return (
-    <AuthShell>
+    <AuthShell brandName={brandName}>
       {session ? (
         <>
-          <AuthHeading title="You're invited">
-            Accept this invitation to add the course to your account.
+          <AuthHeading title="Recibiste una invitación">
+            Acepta esta invitación para agregar el curso a tu cuenta.
           </AuthHeading>
           <AcceptInviteCard
             token={token}

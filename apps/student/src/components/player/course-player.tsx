@@ -81,14 +81,14 @@ function EvaluationBanner({ courseId }: { courseId: string }) {
         style={{ color: "var(--brand-strong)" }}
       >
         <ClipboardCheck className="size-[17px]" />
-        You&apos;ve watched every lesson — take the evaluation to complete the course.
+        Ya viste todos los segmentos: rendí la evaluación para completar el curso.
       </span>
       <Link
         href={`/courses/${courseId}/evaluation`}
         className="rounded-full px-[18px] py-[9px] text-[13.5px] font-semibold"
         style={{ background: "var(--brand)", color: "var(--brand-contrast)" }}
       >
-        Take evaluation
+        Rendir evaluación
       </Link>
     </div>
   );
@@ -280,7 +280,7 @@ export function CoursePlayer({
       if (nxt) {
         goToLesson(nxt.id);
       } else if (fromComplete) {
-        showToast("Course complete — nicely done");
+        showToast("Curso completado. ¡Bien hecho!");
       }
     },
     [course, curLessonId, goToLesson, showToast],
@@ -306,7 +306,7 @@ export function CoursePlayer({
     void reporter.completed().then((status) => {
       if (status !== "completed") return;
       setLessonStatus(curLessonId, "completed");
-      showToast("Lesson completed");
+      showToast("Segmento completado");
       if (autoAdvance) {
         window.setTimeout(() => goNext(true), AUTO_ADVANCE_MS);
       }
@@ -351,7 +351,7 @@ export function CoursePlayer({
       {flat.length === 0 ? (
         <div className="grid flex-1 place-items-center px-6 text-center">
           <p className="max-w-sm text-[14px] text-ink-3">
-            This course has no published lessons yet.
+            Este curso aún no tiene segmentos publicados.
           </p>
         </div>
       ) : (
@@ -392,7 +392,7 @@ export function CoursePlayer({
                   }}
                 >
                   <span className="text-[13.5px] font-semibold">
-                    You&apos;ve completed this course. Revisit any lesson anytime.
+                    Completaste este curso. Puedes revisar cualquier segmento cuando quieras.
                   </span>
                 </div>
               )}

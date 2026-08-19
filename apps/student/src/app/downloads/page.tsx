@@ -31,7 +31,7 @@ export default async function DownloadsPage() {
 
   return (
     <div className="mx-auto max-w-[1180px] px-7 pb-[70px] pt-[30px]">
-      <h1 className="mb-6 text-[28px] font-semibold tracking-[-0.01em]">Downloads</h1>
+      <h1 className="mb-6 text-[28px] font-semibold tracking-[-0.01em]">Descargas</h1>
 
       {downloads.length === 0 ? (
         <div className="mx-auto max-w-[560px] px-7 py-[90px] text-center">
@@ -39,10 +39,10 @@ export default async function DownloadsPage() {
             <Inbox className="size-7" strokeWidth={1.5} />
           </div>
           <h2 className="mb-3 text-[21px] font-semibold tracking-[-0.01em]">
-            No downloads yet
+            Aún no hay descargas
           </h2>
           <p className="text-[14.5px] leading-[1.6] text-ink-2">
-            You aren&apos;t entitled to any downloads right now.
+            Ahora no tienes descargas disponibles.
           </p>
         </div>
       ) : (
@@ -75,7 +75,7 @@ export default async function DownloadsPage() {
                 </p>
                 <div className="mt-auto text-[12.5px] text-ink-3">
                   {fileCounts.get(download.id)}{" "}
-                  {fileCounts.get(download.id) === 1 ? "file" : "files"}
+                  {fileCounts.get(download.id) === 1 ? "archivo" : "archivos"}
                 </div>
               </div>
             </Link>

@@ -39,7 +39,7 @@ export function FooterNav({
         style={ghost(prevDisabled)}
       >
         <ChevronLeft className="size-4" />
-        Previous
+        Anterior
       </button>
 
       {showMarkComplete ? (
@@ -54,10 +54,10 @@ export function FooterNav({
           }
         >
           {isCompleted && <Check className="size-4" strokeWidth={2.4} />}
-          {isCompleted ? "Completed" : "Mark as complete"}
+          {isCompleted ? "Completado" : "Marcar como completado"}
         </button>
       ) : (
-        <span className="text-[13px] text-ink-3">Completes when you watch to the end</span>
+        <span className="text-[13px] text-ink-3">Se completa al ver el video hasta el final</span>
       )}
 
       <button
@@ -67,7 +67,7 @@ export function FooterNav({
         className="inline-flex items-center gap-[7px] rounded-full px-4 py-2.5 text-[13.5px] font-semibold"
         style={ghost(nextDisabled)}
       >
-        {nextDisabled ? "Finish" : "Next lesson"}
+        {nextDisabled ? "Terminar" : "Siguiente"}
         <ChevronRight className="size-4" />
       </button>
     </div>

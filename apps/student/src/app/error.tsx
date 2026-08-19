@@ -25,16 +25,16 @@ export default function RootError({
       <div className="mb-6 grid size-16 place-items-center rounded-[18px] border border-line bg-surface text-ink-faintest">
         <TriangleAlert className="size-7" strokeWidth={1.5} />
       </div>
-      <h1 className="mb-3 text-[28px] font-semibold tracking-[-0.01em]">Something went wrong</h1>
+      <h1 className="mb-3 text-[28px] font-semibold tracking-[-0.01em]">Algo salió mal</h1>
       <p className="mb-[26px] text-[15.5px] leading-[1.6] text-ink-2">
-        This page couldn&apos;t be loaded. Try again, or head back to your courses.
+        No pudimos cargar esta página. Inténtalo de nuevo o vuelve a tus cursos.
       </p>
       <div className="flex items-center gap-2.5">
         <Button variant="brand" size="pillSm" onClick={reset}>
-          Try again
+          Reintentar
         </Button>
         <Button variant="ghostOutline" size="pillSm" asChild>
-          <Link href="/">Back to my courses</Link>
+          <Link href="/">Volver a mis cursos</Link>
         </Button>
       </div>
       {error.digest ? (

@@ -59,7 +59,7 @@ export function ReactionBar({
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger
             className="grid size-6 place-items-center rounded-full text-ink-3 transition-colors hover:bg-hover-surface hover:text-ink"
-            aria-label="Add reaction"
+            aria-label="Agregar reacción"
           >
             <SmilePlus className="size-4" />
           </PopoverTrigger>

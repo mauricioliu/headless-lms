@@ -14,8 +14,6 @@ export function loadEmailConfig(): ResendEmailConfig | undefined {
   return { apiKey, from: process.env.EMAIL_FROM ?? "onboarding@resend.dev" };
 }
 
-
-
 export function loadStorageConfig(): MinioStorageConfig {
   return {
     endPoint: process.env.STORAGE_ENDPOINT ?? "localhost",
@@ -68,7 +66,9 @@ function loadContainerConfig(): ContainerConfig {
     authSecret: process.env.BETTER_AUTH_SECRET ?? "",
     trustedOrigins,
     emailBranding: {
-      brandName: process.env.BRAND_NAME ?? "Headless LMS",
+      // The Empresa Cliente's brand — what the Trabajador sees in every email
+      // and on the student portal. Fallback when unset: the operator's own.
+      brandName: process.env.BRAND_NAME ?? "Nuvora",
       baseUrl: adminAppUrl,
       logoUrl: process.env.EMAIL_LOGO_URL || undefined,
     },

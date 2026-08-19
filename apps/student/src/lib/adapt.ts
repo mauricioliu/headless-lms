@@ -41,7 +41,7 @@ function adaptModule(m: WireModule, activities: WireActivity[]): Module {
         const s = (a.settings ?? {}) as ActivitySettings;
         return {
           id: a.id,
-          title: s.title?.trim() || "Untitled activity",
+          title: s.title?.trim() || "Actividad sin título",
           order: a.seq,
           content: s.content ?? null,
           completionRule: s.completion,
