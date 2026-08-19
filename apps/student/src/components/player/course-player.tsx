@@ -28,7 +28,7 @@ import {
   type VideoAssetSeed,
 } from "@/lib/video-tracking";
 import editorMedia from "@/editor-media.config";
-import type { MediaTrackingEvent } from "@headless-lms/editor";
+import type { MediaPlaybackPolicy, MediaTrackingEvent } from "@headless-lms/editor";
 import { Assets } from "@headless-lms/sdk";
 
 import { PlayerHeader } from "./player-header";
@@ -58,6 +58,8 @@ export interface CoursePlayerProps {
 }
 
 const AUTO_ADVANCE_MS = 420;
+/** Segment playback rule: no speed beyond 2x. */
+const MAX_PLAYBACK_RATE = 2;
 
 /** Promote a lesson to in-progress only if not started — never demotes a
  *  completed one. Returns the same object when nothing changes. */
@@ -170,6 +172,17 @@ export function CoursePlayer({
     [assetSeed, curLessonId],
   );
 
+  // Segment playback gate: the seek ceiling is the asset's live high-water
+  // mark (seeded across sessions, advancing with real watching), the rate cap
+  // is the 2x rule. Read at event time, so it never goes stale mid-lesson.
+  const playbackPolicy = useCallback(
+    (assetId: string): MediaPlaybackPolicy => ({
+      seekCeiling: tracker?.ceiling(assetId) ?? 0,
+      maxRate: MAX_PLAYBACK_RATE,
+    }),
+    [tracker],
+  );
+
   const refreshUrl = useCallback(async (assetId: string): Promise<string | null> => {
     ensureClientSdk();
     try {
@@ -253,9 +266,11 @@ export function CoursePlayer({
   const courseCompleted = isCourseCompleted(course, completion);
   const curStatus = lessonStatus(completion, curLessonId);
   const isCompleted = curStatus === "completed";
+  // A Segment completes by watching to the end — no manual claim path.
+  const completesByVideo = curLesson?.completionRule === "video";
 
   const markComplete = useCallback(() => {
-    if (isCompleted || !reporter) return;
+    if (isCompleted || !reporter || completesByVideo) return;
     void reporter.completed().then((status) => {
       if (status !== "completed") return;
       setLessonStatus(curLessonId, "completed");
@@ -264,7 +279,16 @@ export function CoursePlayer({
         window.setTimeout(() => goNext(true), AUTO_ADVANCE_MS);
       }
     });
-  }, [isCompleted, reporter, curLessonId, setLessonStatus, showToast, autoAdvance, goNext]);
+  }, [
+    isCompleted,
+    reporter,
+    completesByVideo,
+    curLessonId,
+    setLessonStatus,
+    showToast,
+    autoAdvance,
+    goNext,
+  ]);
 
   const sidebarShownDesktop = !isNarrow && sidebarOpen;
   const sidebarShownMobile = isNarrow && mobileSidebar;
@@ -344,6 +368,7 @@ export function CoursePlayer({
                 onEvent={onMediaEvent}
                 startPosition={startPosition}
                 refreshUrl={refreshUrl}
+                playbackPolicy={playbackPolicy}
               >
                 <ContentArea node={curLesson ? renderedContent[curLessonId] : null} />
               </editorMedia.MediaProvider>
@@ -359,6 +384,7 @@ export function CoursePlayer({
 
             <FooterNav
               isCompleted={isCompleted}
+              showMarkComplete={!completesByVideo}
               prevDisabled={curIdx <= 0}
               nextDisabled={curIdx >= flat.length - 1}
               onPrev={goPrev}

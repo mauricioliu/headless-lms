@@ -10,11 +10,12 @@ export function MediaProvider({
   onEvent,
   startPosition,
   refreshUrl,
+  playbackPolicy,
   children,
 }: MediaTracking & { children: ReactNode }) {
   const value = useMemo(
-    () => ({ onEvent, startPosition, refreshUrl }),
-    [onEvent, startPosition, refreshUrl],
+    () => ({ onEvent, startPosition, refreshUrl, playbackPolicy }),
+    [onEvent, startPosition, refreshUrl, playbackPolicy],
   );
   return <MediaTrackingContext.Provider value={value}>{children}</MediaTrackingContext.Provider>;
 }

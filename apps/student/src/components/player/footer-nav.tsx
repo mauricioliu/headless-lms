@@ -6,6 +6,7 @@ import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 /** Sticky bottom footer nav (handoff §12). */
 export function FooterNav({
   isCompleted,
+  showMarkComplete = true,
   prevDisabled,
   nextDisabled,
   onPrev,
@@ -13,6 +14,8 @@ export function FooterNav({
   onMarkComplete,
 }: {
   isCompleted: boolean;
+  /** False when the lesson completes by watching (Segmento) — no manual path. */
+  showMarkComplete?: boolean;
   prevDisabled: boolean;
   nextDisabled: boolean;
   onPrev: () => void;
@@ -39,19 +42,23 @@ export function FooterNav({
         Previous
       </button>
 
-      <button
-        type="button"
-        onClick={onMarkComplete}
-        className="inline-flex items-center gap-2 rounded-full py-[11px] text-[14px] font-semibold"
-        style={
-          isCompleted
-            ? { background: "var(--brand-soft)", color: "var(--brand)", padding: "11px 22px" }
-            : { background: "var(--brand)", color: "var(--brand-contrast)", padding: "11px 24px" }
-        }
-      >
-        {isCompleted && <Check className="size-4" strokeWidth={2.4} />}
-        {isCompleted ? "Completed" : "Mark as complete"}
-      </button>
+      {showMarkComplete ? (
+        <button
+          type="button"
+          onClick={onMarkComplete}
+          className="inline-flex items-center gap-2 rounded-full py-[11px] text-[14px] font-semibold"
+          style={
+            isCompleted
+              ? { background: "var(--brand-soft)", color: "var(--brand)", padding: "11px 22px" }
+              : { background: "var(--brand)", color: "var(--brand-contrast)", padding: "11px 24px" }
+          }
+        >
+          {isCompleted && <Check className="size-4" strokeWidth={2.4} />}
+          {isCompleted ? "Completed" : "Mark as complete"}
+        </button>
+      ) : (
+        <span className="text-[13px] text-ink-3">Completes when you watch to the end</span>
+      )}
 
       <button
         type="button"

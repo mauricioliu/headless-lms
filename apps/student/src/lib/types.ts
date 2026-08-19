@@ -11,6 +11,8 @@ export interface Lesson {
   order: number;
   /** The activity's `settings.content` Plate value, or null when unset. */
   content: ActivityContent | null;
+  /** The activity's authored completion rule; undefined = manual claim. */
+  completionRule?: "view" | "video" | "manual";
 }
 
 export interface Module {
