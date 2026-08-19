@@ -3206,6 +3206,7 @@ export type GrantEntitlementData = {
     orgUserId: string;
     contentId: string;
     expiresAt: unknown;
+    source?: string;
   };
   path?: never;
   query?: never;
@@ -4639,3 +4640,124 @@ export type ReplaceCourseEvaluationResponses = {
 
 export type ReplaceCourseEvaluationResponse =
   ReplaceCourseEvaluationResponses[keyof ReplaceCourseEvaluationResponses];
+
+export type ListWavesData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/waves";
+};
+
+export type ListWavesResponses = {
+  /**
+   * Default Response
+   */
+  200: Array<{
+    orgId: string;
+    id: string;
+    name: string;
+    courseId: string;
+    memberCount: number;
+    createdAt: string;
+  }>;
+};
+
+export type ListWavesResponse = ListWavesResponses[keyof ListWavesResponses];
+
+export type IngestWaveData = {
+  body: {
+    name: string;
+    courseId: string;
+    csv: string;
+  };
+  path?: never;
+  query?: never;
+  url: "/api/waves";
+};
+
+export type IngestWaveErrors = {
+  /**
+   * Default Response
+   */
+  400: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type IngestWaveError = IngestWaveErrors[keyof IngestWaveErrors];
+
+export type IngestWaveResponses = {
+  /**
+   * Default Response
+   */
+  201: {
+    orgId: string;
+    id: string;
+    name: string;
+    courseId: string;
+    memberCount: number;
+    createdAt: string;
+    invited: number;
+    alreadyActive: number;
+  };
+};
+
+export type IngestWaveResponse = IngestWaveResponses[keyof IngestWaveResponses];
+
+export type GetWaveData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/waves/{id}";
+};
+
+export type GetWaveErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type GetWaveError = GetWaveErrors[keyof GetWaveErrors];
+
+export type GetWaveResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    orgId: string;
+    id: string;
+    name: string;
+    courseId: string;
+    memberCount: number;
+    createdAt: string;
+    members: Array<{
+      waveId: string;
+      orgUserId: string;
+      email: string;
+      firstName: string | null;
+      lastName: string | null;
+      status: "invited" | "active";
+      rut: string | null;
+      phone: string | null;
+    }>;
+  };
+};
+
+export type GetWaveResponse = GetWaveResponses[keyof GetWaveResponses];

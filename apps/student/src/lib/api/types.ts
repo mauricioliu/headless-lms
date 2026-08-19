@@ -51,4 +51,6 @@ export interface ActivitySettings {
   title?: string;
   published?: boolean;
   content?: ActivityContent;
+  /** What marks the activity complete — mirrors the admin-authored rule. */
+  completion?: "view" | "video" | "manual";
 }

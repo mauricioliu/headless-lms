@@ -38,6 +38,15 @@ export class IdentityServiceImpl implements IdentityService {
     return created;
   }
 
+  async findOrCreateUser(input: CreateUserInput): Promise<{ user: User; created: boolean }> {
+    const existing = await this.repo.findUserByEmail(input.email);
+    if (existing) {
+      return { user: existing, created: false };
+    }
+    const user = await this.createUser(input);
+    return { user, created: true };
+  }
+
   async linkOrCreateUser(input: CreateUserInput): Promise<User> {
     const existing = await this.repo.findUserByEmail(input.email);
     if (!existing) {

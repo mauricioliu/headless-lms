@@ -12,6 +12,8 @@ const PROVISIONED: User = {
   email: 'invited@example.com',
   firstName: 'Ada',
   lastName: 'Lovelace',
+  rut: null,
+  phone: null,
   createdAt: new Date('2026-01-01'),
   updatedAt: new Date('2026-01-01'),
 };

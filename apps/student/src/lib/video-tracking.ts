@@ -30,6 +30,10 @@ export interface VideoTracker {
   handleEvent(event: MediaTrackingEvent): void;
   /** Drain unsent state (for page-leave); marks it sent. */
   flush(): VideoReportItem[];
+  /** The asset's current high-water mark — seeds from prior state on first
+   *  touch, then advances only through continuous playback. The playback gate's
+   *  seek ceiling. */
+  ceiling(assetId: string): number;
 }
 
 const HEARTBEAT_MS = 10_000;
@@ -148,6 +152,9 @@ export function createVideoTracker(opts: {
           break;
         }
       }
+    },
+    ceiling(assetId: string): number {
+      return state(assetId).furthest;
     },
     flush() {
       const items: VideoReportItem[] = [];

@@ -190,7 +190,7 @@ describe('ProgressService.report', () => {
 
   it('completed claim with an unmet rule records nothing', async () => {
     const { svc, appended } = makeService(
-      structure({ a1Settings: { completion: { rule: 'watch-percent', percent: 80 } } }),
+      structure({ a1Settings: { completion: 'percent' } }),
     );
     const record = await svc.report('org-1', input('a1', [{ completed: true }]));
     expect(record.completedAt).toBeNull();
@@ -275,11 +275,109 @@ describe('ProgressService.report', () => {
 
   it('completed claim on an explicit manual rule completes it', async () => {
     const { svc, appended } = makeService(
-      structure({ a1Settings: { completion: { rule: 'manual' } } }),
+      structure({ a1Settings: { completion: 'manual' } }),
     );
     const record = await svc.report('org-1', input('a1', [{ completed: true }]));
     expect(record.completedAt).toEqual(new Date('2026-07-23T10:00:00.000Z'));
     expect(appended.filter((e) => e.type === 'progress.record.completed')).toHaveLength(1);
+  });
+});
+
+describe('video completion rule', () => {
+  const videoSettings = { completion: 'video' };
+  const watch = (furthest: number, duration = 180, seconds = furthest) => ({
+    asset: 'ast_v1',
+    seconds,
+    furthest,
+    watched: furthest,
+    duration,
+  });
+
+  it('completes only when every tracked video reached its end', async () => {
+    const { svc, appended } = makeService(structure({ a1Settings: videoSettings }));
+    const partial = await svc.report('org-1', input('a1', [watch(45)]));
+    expect(partial.completedAt).toBeNull();
+    const done = await svc.report('org-1', input('a1', [watch(180, 180, 180)]));
+    expect(done.completedAt).toEqual(new Date('2026-07-23T10:00:00.000Z'));
+    expect(appended.filter((e) => e.type === 'progress.record.completed')).toHaveLength(1);
+  });
+
+  it('a manual claim never completes a video-rule activity', async () => {
+    const { svc } = makeService(structure({ a1Settings: videoSettings }));
+    const record = await svc.report('org-1', input('a1', [{ completed: true }]));
+    expect(record.completedAt).toBeNull();
+  });
+
+  it('completes without any claim when the end-of-video facts arrive', async () => {
+    const { svc } = makeService(structure({ a1Settings: videoSettings }));
+    const record = await svc.report('org-1', input('a1', [watch(180)]));
+    expect(record.completedAt).toEqual(new Date('2026-07-23T10:00:00.000Z'));
+  });
+
+  it('a furthest short of the end does not complete — even with the claim', async () => {
+    const { svc } = makeService(structure({ a1Settings: videoSettings }));
+    const record = await svc.report(
+      'org-1',
+      input('a1', [watch(171), { completed: true }]),
+    );
+    expect(record.completedAt).toBeNull();
+  });
+
+  it('tolerates small player drift between the end and the measured duration', async () => {
+    const { svc } = makeService(structure({ a1Settings: videoSettings }));
+    const record = await svc.report('org-1', input('a1', [watch(178.6, 180)]));
+    expect(record.completedAt).toEqual(new Date('2026-07-23T10:00:00.000Z'));
+  });
+
+  it('an unknown duration never completes', async () => {
+    const { svc } = makeService(structure({ a1Settings: videoSettings }));
+    const record = await svc.report('org-1', input('a1', [watch(180, null as unknown as number)]));
+    expect(record.completedAt).toBeNull();
+  });
+
+  it('accumulates state across reports: earlier facts survive a bare end report', async () => {
+    const { svc } = makeService(structure({ a1Settings: videoSettings }));
+    await svc.report('org-1', input('a1', [watch(90)]));
+    const record = await svc.report(
+      'org-1',
+      input('a1', [{ asset: 'ast_v1', seconds: 180, furthest: 180, watched: 92, duration: 180 }]),
+    );
+    expect(record.completedAt).toEqual(new Date('2026-07-23T10:00:00.000Z'));
+  });
+
+  it('with several videos, all must reach their end', async () => {
+    const { svc } = makeService(structure({ a1Settings: videoSettings }));
+    const done = { asset: 'ast_v1', seconds: 60, furthest: 60, watched: 60, duration: 60 };
+    const pending = { asset: 'ast_v2', seconds: 30, furthest: 30, watched: 30, duration: 90 };
+    const first = await svc.report('org-1', input('a1', [done, pending]));
+    expect(first.completedAt).toBeNull();
+    const second = await svc.report(
+      'org-1',
+      input('a1', [{ asset: 'ast_v2', seconds: 90, furthest: 90, watched: 90, duration: 90 }]),
+    );
+    expect(second.completedAt).toEqual(new Date('2026-07-23T10:00:00.000Z'));
+  });
+
+  it('non-video subjects in the state map do not block completion', async () => {
+    const { svc } = makeService(structure({ a1Settings: videoSettings }));
+    const record = await svc.report(
+      'org-1',
+      input('a1', [watch(180), { page: 3 }]),
+    );
+    expect(record.completedAt).toEqual(new Date('2026-07-23T10:00:00.000Z'));
+  });
+
+  it('a video-rule completion cascades to module and course like any other', async () => {
+    const { svc, records } = makeService(structure({ a1Settings: videoSettings }));
+    await svc.report('org-1', input('a1', [watch(180)]));
+    await svc.report('org-1', input('a2', [{ completed: true }]));
+    expect(
+      records.find((r) => r.targetType === 'module' && r.targetId === 'm1')?.completedAt,
+    ).toBeTruthy();
+    await svc.report('org-1', input('a3', [{ completed: true }]));
+    expect(
+      records.find((r) => r.targetType === 'course' && r.targetId === 'c1')?.completedAt,
+    ).toBeTruthy();
   });
 });
 

@@ -4,6 +4,10 @@ import type { OutboxAppender, UnitOfWork } from '../shared/ports.js';
 
 export interface UserProvisioner {
   createUser(input: CreateUserInput): Promise<User>;
+  /** Finds the person by email (case-insensitive), creating them when absent.
+   *  `created` says whether a row appeared — invite provisioning uses it to
+   *  refresh roster fields on an existing person instead of colliding. */
+  findOrCreateUser(input: CreateUserInput): Promise<{ user: User; created: boolean }>;
   /** Auth signup entry point. Claims a person provisioned at invite time by
    *  stamping `externalId`; creates the person when the email is unknown.
    *  Throws ConflictError when the email is already linked to an account. */

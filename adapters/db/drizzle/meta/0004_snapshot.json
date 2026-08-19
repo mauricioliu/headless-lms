@@ -1,6 +1,6 @@
 {
-  "id": "8470bbfd-3749-465f-8946-3bc1a0dbdc93",
-  "prevId": "c96fa7d7-20fe-45d2-9cc8-b298a406f4da",
+  "id": "cd0db510-78d3-4207-9a60-54a311a329f8",
+  "prevId": "8470bbfd-3749-465f-8946-3bc1a0dbdc93",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3035,6 +3035,143 @@
         "evaluations_cutoff_range": {
           "name": "evaluations_cutoff_range",
           "value": "\"evaluations\".\"cutoff\" between 1 and 100"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.evaluation_attempts": {
+      "name": "evaluation_attempts",
+      "schema": "",
+      "columns": {
+        "org_id": {
+          "name": "org_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "course_id": {
+          "name": "course_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_user_id": {
+          "name": "org_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempt_number": {
+          "name": "attempt_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "answers": {
+          "name": "answers",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "score": {
+          "name": "score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cutoff": {
+          "name": "cutoff",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "passed": {
+          "name": "passed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "evaluation_attempts_org_id_course_id_courses_org_id_id_fk": {
+          "name": "evaluation_attempts_org_id_course_id_courses_org_id_id_fk",
+          "tableFrom": "evaluation_attempts",
+          "tableTo": "courses",
+          "columnsFrom": [
+            "org_id",
+            "course_id"
+          ],
+          "columnsTo": [
+            "org_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "evaluation_attempts_org_id_org_user_id_org_users_org_id_id_fk": {
+          "name": "evaluation_attempts_org_id_org_user_id_org_users_org_id_id_fk",
+          "tableFrom": "evaluation_attempts",
+          "tableTo": "org_users",
+          "columnsFrom": [
+            "org_id",
+            "org_user_id"
+          ],
+          "columnsTo": [
+            "org_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "evaluation_attempts_org_id_course_id_org_user_id_attempt_number_pk": {
+          "name": "evaluation_attempts_org_id_course_id_org_user_id_attempt_number_pk",
+          "columns": [
+            "org_id",
+            "course_id",
+            "org_user_id",
+            "attempt_number"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "evaluation_attempts_score_range": {
+          "name": "evaluation_attempts_score_range",
+          "value": "\"evaluation_attempts\".\"score\" is null or \"evaluation_attempts\".\"score\" between 0 and 100"
+        },
+        "evaluation_attempts_cutoff_range": {
+          "name": "evaluation_attempts_cutoff_range",
+          "value": "\"evaluation_attempts\".\"cutoff\" is null or \"evaluation_attempts\".\"cutoff\" between 1 and 100"
         }
       },
       "isRLSEnabled": false

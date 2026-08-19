@@ -15,6 +15,10 @@ export const users = pgTable('users', {
   email: text('email').notNull().unique(),
   firstName: text('first_name'),
   lastName: text('last_name'),
+  // Roster attributes (RUT, teléfono) carried by an Empresa Cliente's CSV.
+  // Stored for admin reads and reporting only — never consulted by auth.
+  rut: text('rut'),
+  phone: text('phone'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()

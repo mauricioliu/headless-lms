@@ -51,13 +51,41 @@ function mergeReports(
   return { map, changed, claimed };
 }
 
-/** The completion-rule seam. Only `manual` ships: no authored rule → the
- *  learner's claim decides. Authored rules are never satisfied until their
- *  evaluators exist. Future rules evaluate against the accumulated state map. */
-function completionSatisfied(settings: unknown, claimed: boolean): boolean {
-  const rule = (settings as { completion?: { rule?: string } } | null)?.completion?.rule;
-  if (!rule || rule === 'manual') {
+/** The completion-rule seam. Absent rule or `manual` → the learner's claim
+ *  decides. `video` → every tracked video asset must have reached its end.
+ *  Other authored rules are never satisfied until their evaluators exist. */
+const VIDEO_END_TOLERANCE_S = 2;
+
+interface AssetWatchState {
+  seconds?: unknown;
+  furthest?: unknown;
+  duration?: unknown;
+}
+
+function videoEndReached(state: unknown): boolean {
+  const { furthest, duration } = (state ?? {}) as AssetWatchState;
+  if (typeof furthest !== 'number' || typeof duration !== 'number') {
+    return false;
+  }
+  return (
+    Number.isFinite(duration) &&
+    duration > 0 &&
+    furthest >= duration - VIDEO_END_TOLERANCE_S
+  );
+}
+
+function completionSatisfied(
+  settings: unknown,
+  claimed: boolean,
+  position: Record<string, JsonValue>,
+): boolean {
+  const rule = (settings as { completion?: unknown } | null)?.completion;
+  if (rule === undefined || rule === 'manual') {
     return claimed;
+  }
+  if (rule === 'video') {
+    const assets = Object.entries(position).filter(([subject]) => subject !== 'self');
+    return assets.length > 0 && assets.every(([, state]) => videoEndReached(state));
   }
   return false;
 }
@@ -108,7 +136,7 @@ export class ProgressServiceImpl implements ProgressService {
       if (state.changed) {
         record = (await scope.progress.update(orgId, record.id, { position: state.map })) ?? record;
       }
-      if (!record.completedAt && completionSatisfied(activity.settings, state.claimed)) {
+      if (!record.completedAt && completionSatisfied(activity.settings, state.claimed, state.map)) {
         record =
           (await scope.progress.update(orgId, record.id, {
             completedAt: new Date(),

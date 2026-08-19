@@ -1,6 +1,7 @@
 import { ConflictError, ForbiddenError, NotFoundError } from '@headless-lms/core/shared/errors';
 import { InvalidAttemptAnswersError } from '@headless-lms/core/evaluation';
 import { OrganizationRuleError } from '@headless-lms/core/organizations';
+import { WaveCsvError } from '@headless-lms/core/waves';
 import {
   ActionInvocationError,
   AlreadyConnectedError,
@@ -31,6 +32,9 @@ export function errorHandler(error: unknown, request: FastifyRequest, reply: Fas
   }
   if (error instanceof OrganizationRuleError) {
     return reply.status(409).send({ error: 'conflict', message: error.message });
+  }
+  if (error instanceof WaveCsvError) {
+    return reply.status(400).send({ error: 'invalid_csv', message: error.message });
   }
   if (error instanceof AlreadyConnectedError) {
     return reply.status(409).send({ error: 'already_connected', message: error.message });

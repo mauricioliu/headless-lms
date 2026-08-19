@@ -23,6 +23,7 @@ export const ID_PREFIXES = {
   downloadAsset: 'dla',
   asset: 'ast',
   entitlement: 'ent',
+  wave: 'wav',
   progress: 'prg',
   credential: 'crd',
   connection: 'con',

@@ -25,6 +25,8 @@ export class DrizzleIdentityRepository implements IdentityRepository {
         email: input.email,
         firstName: input.firstName ?? null,
         lastName: input.lastName ?? null,
+        rut: input.rut ?? null,
+        phone: input.phone ?? null,
       })
       .returning();
     if (!row) {

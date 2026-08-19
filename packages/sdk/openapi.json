@@ -9604,6 +9604,10 @@
                   },
                   "expiresAt": {
                     "nullable": true
+                  },
+                  "source": {
+                    "type": "string",
+                    "minLength": 1
                   }
                 },
                 "required": [
@@ -13648,6 +13652,362 @@
                   "required": [
                     "error",
                     "issues"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/waves": {
+      "post": {
+        "operationId": "ingestWave",
+        "summary": "Ingest an Ola from a roster CSV (RUT, nombre, teléfono, correo)",
+        "tags": [
+          "Waves"
+        ],
+        "description": "Creates the Ola, provisions a Trabajador per CSV row, inscribes each one in the Curso, and emails an invitation to every Trabajador not yet active. The access token exists only in that email. The correo is the identity; RUT and teléfono are stored roster data that never authenticates.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "courseId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "csv": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "name",
+                  "courseId",
+                  "csv"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "courseId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "memberCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "invited": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "alreadyActive": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "orgId",
+                    "id",
+                    "name",
+                    "courseId",
+                    "memberCount",
+                    "createdAt",
+                    "invited",
+                    "alreadyActive"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "listWaves",
+        "summary": "List the organization Olas",
+        "tags": [
+          "Waves"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "orgId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "courseId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "memberCount": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "orgId",
+                      "id",
+                      "name",
+                      "courseId",
+                      "memberCount",
+                      "createdAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/waves/{id}": {
+      "get": {
+        "operationId": "getWave",
+        "summary": "Get an Ola with its Trabajadores",
+        "tags": [
+          "Waves"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orgId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "courseId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "memberCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "members": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "waveId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "orgUserId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "email": {
+                            "type": "string",
+                            "format": "email",
+                            "pattern": "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+                          },
+                          "firstName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "lastName": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "invited",
+                              "active"
+                            ]
+                          },
+                          "rut": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "phone": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "waveId",
+                          "orgUserId",
+                          "email",
+                          "firstName",
+                          "lastName",
+                          "status",
+                          "rut",
+                          "phone"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "orgId",
+                    "id",
+                    "name",
+                    "courseId",
+                    "memberCount",
+                    "createdAt",
+                    "members"
                   ],
                   "additionalProperties": false
                 }

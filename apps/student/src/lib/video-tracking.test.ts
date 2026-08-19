@@ -135,6 +135,40 @@ describe("createVideoTracker", () => {
     ev("pause", 1, 100);
     expect(sent.at(-1)![0]).toMatchObject({ seconds: 1, furthest: 0, duration: 100 });
   });
+
+  it("ceiling() exposes the live high-water mark for the playback gate", () => {
+    const { tracker, ev } = harness();
+    expect(tracker.ceiling("vid_1")).toBe(0);
+    ev("play", 0);
+    ev("timeupdate", 5);
+    ev("timeupdate", 6);
+    expect(tracker.ceiling("vid_1")).toBe(6);
+  });
+
+  it("ceiling() seeds from prior state before any event, so a returning session keeps its gate", () => {
+    const { tracker } = harness({
+      initial: () => ({ seconds: 32, furthest: 70, duration: 90 }),
+    });
+    expect(tracker.ceiling("vid_1")).toBe(70);
+  });
+
+  it("ceiling() never rises on the forward seek itself", () => {
+    const { tracker, ev, tick } = harness();
+    ev("play", 0);
+    ev("timeupdate", 2);
+    tick(5000);
+    ev("seeked", 80);
+    expect(tracker.ceiling("vid_1")).toBe(2);
+  });
+
+  it("ceiling() is per asset", () => {
+    const { tracker } = harness();
+    for (const s of [1, 2, 3, 4]) {
+      tracker.handleEvent({ assetId: "vid_2", kind: "timeupdate", seconds: s, duration: 50 });
+    }
+    expect(tracker.ceiling("vid_2")).toBe(4);
+    expect(tracker.ceiling("vid_1")).toBe(0);
+  });
 });
 
 describe("recordSessionItems", () => {

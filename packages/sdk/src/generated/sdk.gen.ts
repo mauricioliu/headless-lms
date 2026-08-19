@@ -95,7 +95,11 @@ import type {
   GetOverviewResponses,
   GetStudentErrors,
   GetStudentResponses,
+  GetWaveErrors,
+  GetWaveResponses,
   GrantEntitlementResponses,
+  IngestWaveErrors,
+  IngestWaveResponses,
   InvokeConnectionActionErrors,
   InvokeConnectionActionResponses,
   JsonValueInput,
@@ -131,6 +135,7 @@ import type {
   ListMembersResponses,
   ListModulesResponses,
   ListStudentsResponses,
+  ListWavesResponses,
   ModerateRemoveCommentErrors,
   ModerateRemoveCommentResponses,
   PostCommentErrors,
@@ -2976,6 +2981,7 @@ export class Entitlements {
       orgUserId: string;
       contentId: string;
       expiresAt: unknown;
+      source?: string;
     },
     options?: Options<never, ThrowOnError>,
   ): RequestResult<GrantEntitlementResponses, unknown, ThrowOnError, "data"> {
@@ -2987,6 +2993,7 @@ export class Entitlements {
             { in: "body", key: "orgUserId" },
             { in: "body", key: "contentId" },
             { in: "body", key: "expiresAt" },
+            { in: "body", key: "source" },
           ],
         },
       ],
@@ -3667,6 +3674,82 @@ export class Integrations {
         ...options?.headers,
         ...params.headers,
       },
+    });
+  }
+}
+
+export class Waves {
+  /**
+   * List the organization Olas
+   */
+  public static listWaves<ThrowOnError extends boolean = false>(
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ListWavesResponses, unknown, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<ListWavesResponses, unknown, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/waves",
+      ...options,
+    });
+  }
+
+  /**
+   * Ingest an Ola from a roster CSV (RUT, nombre, teléfono, correo)
+   *
+   * Creates the Ola, provisions a Trabajador per CSV row, inscribes each one in the Curso, and emails an invitation to every Trabajador not yet active. The access token exists only in that email. The correo is the identity; RUT and teléfono are stored roster data that never authenticates.
+   */
+  public static ingestWave<ThrowOnError extends boolean = false>(
+    parameters: {
+      name: string;
+      courseId: string;
+      csv: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<IngestWaveResponses, IngestWaveErrors, ThrowOnError, "data"> {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "body", key: "name" },
+            { in: "body", key: "courseId" },
+            { in: "body", key: "csv" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).post<
+      IngestWaveResponses,
+      IngestWaveErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/waves",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * Get an Ola with its Trabajadores
+   */
+  public static getWave<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetWaveResponses, GetWaveErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).get<GetWaveResponses, GetWaveErrors, ThrowOnError, "data">({
+      responseStyle: "data",
+      url: "/api/waves/{id}",
+      ...options,
+      ...params,
     });
   }
 }

@@ -4,6 +4,8 @@ import {
   captureError,
   consumeSeekSuppression,
   createResumeState,
+  gateRate,
+  gateSeek,
   resumeTarget,
   videoMimeType,
 } from './media-playback';
@@ -71,5 +73,44 @@ describe('videoMimeType', () => {
   it('defaults to mp4 when the name is absent or unknown', () => {
     expect(videoMimeType(undefined)).toBe('video/mp4');
     expect(videoMimeType('clip.xyz')).toBe('video/mp4');
+  });
+});
+
+describe('playback gate', () => {
+  it('a seek beyond the ceiling snaps back to it', () => {
+    expect(gateSeek(120, 45)).toBe(45);
+  });
+
+  it('seeking to exactly the ceiling is allowed', () => {
+    expect(gateSeek(45, 45)).toBeNull();
+  });
+
+  it('rewinding below the ceiling is always allowed', () => {
+    expect(gateSeek(10, 45)).toBeNull();
+    expect(gateSeek(0, 0)).toBeNull();
+  });
+
+  it('no ceiling leaves seeks unconstrained', () => {
+    expect(gateSeek(900, undefined)).toBeNull();
+  });
+
+  it('a non-finite ceiling leaves seeks unconstrained', () => {
+    expect(gateSeek(900, Number.NaN)).toBeNull();
+  });
+
+  it('a rate above the cap clamps down to it', () => {
+    expect(gateRate(4, 2)).toBe(2);
+    expect(gateRate(2.5, 2)).toBe(2);
+  });
+
+  it('a rate at or below the cap passes, including slower speeds', () => {
+    expect(gateRate(2, 2)).toBeNull();
+    expect(gateRate(1, 2)).toBeNull();
+    expect(gateRate(0.5, 2)).toBeNull();
+  });
+
+  it('no cap leaves the rate unconstrained', () => {
+    expect(gateRate(16, undefined)).toBeNull();
+    expect(gateRate(16, 0)).toBeNull();
   });
 });

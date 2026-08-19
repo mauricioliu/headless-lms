@@ -21,6 +21,8 @@ import {
   captureError,
   consumeSeekSuppression,
   createResumeState,
+  gateRate,
+  gateSeek,
   resumeTarget,
   videoMimeType,
 } from './media-playback';
@@ -34,7 +36,7 @@ export function MediaVideoPlayer({
   url: string;
   name?: string;
 }) {
-  const { onEvent, startPosition, refreshUrl } = useMediaTracking();
+  const { onEvent, startPosition, refreshUrl, playbackPolicy } = useMediaTracking();
   const playerRef = useRef<MediaPlayerInstance>(null);
   const stateRef = useRef(createResumeState());
   const [src, setSrc] = useState(url);
@@ -69,6 +71,22 @@ export function MediaVideoPlayer({
         stateRef.current = next;
         if (report) {
           emit('seeked', playerRef.current?.currentTime ?? 0);
+        }
+      }}
+      onSeeking={(target: number) => {
+        // Consulted at event time; the corrective seek re-fires seeking at the
+        // ceiling, which the gate then allows — self-terminating.
+        const policy = assetId ? playbackPolicy?.(assetId) : undefined;
+        const clamped = gateSeek(target, policy?.seekCeiling);
+        if (clamped != null && playerRef.current) {
+          playerRef.current.currentTime = clamped;
+        }
+      }}
+      onRateChange={(rate: number) => {
+        const policy = assetId ? playbackPolicy?.(assetId) : undefined;
+        const capped = gateRate(rate, policy?.maxRate);
+        if (capped != null && playerRef.current) {
+          playerRef.current.playbackRate = capped;
         }
       }}
       onEnded={() => emit('ended', playerRef.current?.duration ?? 0)}

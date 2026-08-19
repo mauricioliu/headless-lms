@@ -40,6 +40,7 @@ export const grantEntitlementInputSchema = z.object({
   contentId: idSchema.nullish(),
   bundleId: idSchema.nullish(),
   expiresAt: z.coerce.date().nullable(),
+  source: z.string().trim().min(1).optional(),
 }).strict().refine((v) => (v.contentId != null) !== (v.bundleId != null), {
   message: "Provide exactly one of contentId or bundleId",
 });
