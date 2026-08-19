@@ -79,6 +79,8 @@ import type {
   GetEnrollmentSeriesResponses,
   GetInviteErrors,
   GetInviteResponses,
+  GetLatestCourseEvaluationAttemptErrors,
+  GetLatestCourseEvaluationAttemptResponses,
   GetLearnCourseErrors,
   GetLearnCourseEvaluationErrors,
   GetLearnCourseEvaluationResponses,
@@ -167,6 +169,10 @@ import type {
   SetCommentReactionResponses,
   SetEntitlementStatusErrors,
   SetEntitlementStatusResponses,
+  StartCourseEvaluationAttemptErrors,
+  StartCourseEvaluationAttemptResponses,
+  SubmitCourseEvaluationAttemptErrors,
+  SubmitCourseEvaluationAttemptResponses,
   UpdateActivityResponses,
   UpdateAutomationErrors,
   UpdateAutomationResponses,
@@ -2018,6 +2024,111 @@ export class Evaluation {
     >({
       responseStyle: "data",
       url: "/api/learn/courses/{courseId}/evaluation",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Start (or resume) the latest Evaluation attempt — requires 100% course progress
+   */
+  public static startCourseEvaluationAttempt<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<
+    StartCourseEvaluationAttemptResponses,
+    StartCourseEvaluationAttemptErrors,
+    ThrowOnError,
+    "data"
+  > {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "courseId" }] }]);
+    return (options?.client ?? client).post<
+      StartCourseEvaluationAttemptResponses,
+      StartCourseEvaluationAttemptErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/courses/{courseId}/evaluation/attempts",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Submit an open attempt; the server grades it against the correction key
+   */
+  public static submitCourseEvaluationAttempt<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+      attemptNumber: number;
+      answers: Array<{
+        questionId: string;
+        optionId: string;
+      }>;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<
+    SubmitCourseEvaluationAttemptResponses,
+    SubmitCourseEvaluationAttemptErrors,
+    ThrowOnError,
+    "data"
+  > {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "courseId" },
+            { in: "path", key: "attemptNumber" },
+            { in: "body", key: "answers" },
+          ],
+        },
+      ],
+    );
+    return (options?.client ?? client).post<
+      SubmitCourseEvaluationAttemptResponses,
+      SubmitCourseEvaluationAttemptErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/courses/{courseId}/evaluation/attempts/{attemptNumber}/submission",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    });
+  }
+
+  /**
+   * The learner's latest Evaluation attempt with feedback per feedbackMode
+   */
+  public static getLatestCourseEvaluationAttempt<ThrowOnError extends boolean = false>(
+    parameters: {
+      courseId: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<
+    GetLatestCourseEvaluationAttemptResponses,
+    GetLatestCourseEvaluationAttemptErrors,
+    ThrowOnError,
+    "data"
+  > {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "courseId" }] }]);
+    return (options?.client ?? client).get<
+      GetLatestCourseEvaluationAttemptResponses,
+      GetLatestCourseEvaluationAttemptErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/learn/courses/{courseId}/evaluation/attempts/latest",
       ...options,
       ...params,
     });

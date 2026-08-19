@@ -96,18 +96,21 @@ function fakeContent(modules: Module[], activities: Activity[]): CourseManagemen
   return {
     listCourseModules: async () => modules,
     listCourseActivities: async () => activities,
-    getActivity: async (_orgId: string, id: string) =>
-      activities.find((a) => a.id === id) ?? null,
+    getActivity: async (_orgId: string, id: string) => activities.find((a) => a.id === id) ?? null,
     getModule: async (_orgId: string, id: string) => modules.find((m) => m.id === id) ?? null,
   } as unknown as CourseManagementService;
 }
 
-function makeService(structure: { modules: Module[]; activities: Activity[] }) {
+function makeService(
+  structure: { modules: Module[]; activities: Activity[] },
+  approval: { passed: boolean } | null = null,
+) {
   const { repo, records } = fakeRepo();
   const { uow, appended } = fakeUow(repo);
   const svc = new ProgressServiceImpl({
     repo,
     content: fakeContent(structure.modules, structure.activities),
+    evaluation: { latestApproval: async () => approval },
     uow,
   });
   return { svc, records, appended };
@@ -288,5 +291,84 @@ describe('ProgressService reads', () => {
     expect(rec?.completedAt).toBeTruthy();
     const list = await svc.listByTargets('org-1', 's1', ['a1', 'a2']);
     expect(list).toHaveLength(1);
+  });
+
+  it('coursePercent derives completed ÷ published activities, rounded', async () => {
+    const { svc } = makeService(structure());
+    expect(await svc.coursePercent('org-1', 's1', 'c1')).toBe(0);
+    await svc.report('org-1', input('a1', [{ completed: true }]));
+    expect(await svc.coursePercent('org-1', 's1', 'c1')).toBe(33);
+    await svc.report('org-1', input('a2', [{ completed: true }]));
+    await svc.report('org-1', input('a3', [{ completed: true }]));
+    expect(await svc.coursePercent('org-1', 's1', 'c1')).toBe(100);
+  });
+});
+
+describe('Completado conjunction with an evaluation', () => {
+  it('holds the course record back while the latest attempt is not approved', async () => {
+    const { svc, records, appended } = makeService(structure(), { passed: false });
+    await svc.report('org-1', input('a1', [{ completed: true }]));
+    await svc.report('org-1', input('a2', [{ completed: true }]));
+    await svc.report('org-1', input('a3', [{ completed: true }]));
+    expect(records.find((r) => r.targetType === 'course')).toBeUndefined();
+    expect(
+      appended.filter((e) => e.type === 'progress.record.completed').map((e) => e.data.targetType),
+    ).not.toContain('course');
+    expect(
+      records.find((r) => r.targetType === 'module' && r.targetId === 'm2')?.completedAt,
+    ).toBeTruthy();
+  });
+
+  it('completes the course when approval already stands', async () => {
+    const { svc, records } = makeService(structure(), { passed: true });
+    await svc.report('org-1', input('a1', [{ completed: true }]));
+    await svc.report('org-1', input('a2', [{ completed: true }]));
+    await svc.report('org-1', input('a3', [{ completed: true }]));
+    expect(
+      records.find((r) => r.targetType === 'course' && r.targetId === 'c1')?.completedAt,
+    ).toBeTruthy();
+  });
+
+  it('refreshCourseCompletion completes once activities and approval coincide', async () => {
+    let approval: { passed: boolean } | null = { passed: false };
+    const { repo, records } = fakeRepo();
+    const { uow, appended } = fakeUow(repo);
+    const svc = new ProgressServiceImpl({
+      repo,
+      content: fakeContent(structure().modules, structure().activities),
+      evaluation: { latestApproval: async () => approval },
+      uow,
+    });
+    for (const id of ['a1', 'a2', 'a3']) {
+      await svc.report('org-1', input(id, [{ completed: true }]));
+    }
+    expect(await svc.refreshCourseCompletion('org-1', 's1', 'c1')).toBeNull();
+
+    approval = { passed: true };
+    const record = await svc.refreshCourseCompletion('org-1', 's1', 'c1');
+    expect(record?.completedAt).toBeTruthy();
+    const courseEvents = appended.filter(
+      (e) =>
+        e.type === 'progress.record.completed' &&
+        (e as { data: { targetType: string } }).data.targetType === 'course',
+    );
+    expect(courseEvents).toHaveLength(1);
+    expect(await svc.refreshCourseCompletion('org-1', 's1', 'c1')).toMatchObject({
+      targetType: 'course',
+    });
+    expect(
+      appended.filter(
+        (e) =>
+          e.type === 'progress.record.completed' &&
+          (e as { data: { targetType: string } }).data.targetType === 'course',
+      ),
+    ).toHaveLength(1);
+    expect(records.filter((r) => r.targetType === 'course')).toHaveLength(1);
+  });
+
+  it('refreshCourseCompletion is a no-op before every activity is complete', async () => {
+    const { svc } = makeService(structure(), { passed: true });
+    await svc.report('org-1', input('a1', [{ completed: true }]));
+    expect(await svc.refreshCourseCompletion('org-1', 's1', 'c1')).toBeNull();
   });
 });

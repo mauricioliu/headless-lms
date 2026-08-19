@@ -1,4 +1,5 @@
 import { ConflictError, ForbiddenError, NotFoundError } from '@headless-lms/core/shared/errors';
+import { InvalidAttemptAnswersError } from '@headless-lms/core/evaluation';
 import { OrganizationRuleError } from '@headless-lms/core/organizations';
 import {
   ActionInvocationError,
@@ -12,6 +13,13 @@ import { UnauthorizedError } from './auth.js';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
 export function errorHandler(error: unknown, request: FastifyRequest, reply: FastifyReply) {
+  if (error instanceof InvalidAttemptAnswersError) {
+    return reply.status(400).send({
+      error: 'invalid_answers',
+      message: error.message,
+      issues: [{ path: 'answers', message: error.message }],
+    });
+  }
   if (error instanceof NotFoundError) {
     return reply.status(404).send({ error: 'not_found', message: error.message });
   }

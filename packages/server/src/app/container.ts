@@ -11,6 +11,7 @@ import {
   DrizzleDashboardRepository,
   DrizzleDiscussionRepository,
   DrizzleEntitlementsRepository,
+  DrizzleEvaluationAttemptRepository,
   DrizzleEvaluationRepository,
   DrizzleIdentityRepository,
   DrizzleLearnRepository,
@@ -46,7 +47,11 @@ import { ProgressServiceImpl } from '@headless-lms/core/progress';
 import { EvaluationService } from '@headless-lms/core/evaluation';
 import { DiscussionServiceImpl } from '@headless-lms/core/discussion';
 import { IdentityServiceImpl, type SessionAdmin } from '@headless-lms/core/identity';
-import { type OrgAdmin, OrganizationServiceImpl, parseRole } from '@headless-lms/core/organizations';
+import {
+  type OrgAdmin,
+  OrganizationServiceImpl,
+  parseRole,
+} from '@headless-lms/core/organizations';
 import { AssetsServiceImpl } from '@headless-lms/core/assets';
 import { IntegrationsServiceImpl } from '@headless-lms/core/integrations';
 import { AutomationsServiceImpl } from '@headless-lms/core/automations';
@@ -279,13 +284,30 @@ export async function buildContainer(
     uow: contentUow,
     logger: contentLogger,
   });
+  // evaluation and progress read each other's facts (the rendir gate reads
+  // progress; the Completado conjunction reads evaluation approval), so the
+  // cross-ports are late-bound: evaluation closes over the progress ref,
+  // which the progress construction below fills in.
+  const progressRef: { current: ProgressServiceImpl | null } = { current: null };
   const evaluation = new EvaluationService({
     repo: new DrizzleEvaluationRepository(db, evaluationLogger),
+    attempts: new DrizzleEvaluationAttemptRepository(db, evaluationLogger),
     uow: new DrizzleUnitOfWork(db, (tx) => ({
       evaluations: new DrizzleEvaluationRepository(tx, evaluationLogger),
+      attempts: new DrizzleEvaluationAttemptRepository(tx, evaluationLogger),
       outbox: new DrizzleOutboxAppender(tx, outboxLogger),
     })),
     courses: content,
+    gate: {
+      coursePercent: (orgId, orgUserId, courseId) =>
+        progressRef.current!.coursePercent(orgId, orgUserId, courseId),
+    },
+    completion: {
+      refreshCourseCompletion: (orgId, orgUserId, courseId) =>
+        progressRef
+          .current!.refreshCourseCompletion(orgId, orgUserId, courseId)
+          .then(() => undefined),
+    },
     logger: evaluationLogger,
   });
   // Entitlements: reads on the root db; writes + outbox append in one tx.
@@ -307,9 +329,14 @@ export async function buildContainer(
   const progress = new ProgressServiceImpl({
     repo: new DrizzleProgressRepository(db, progressLogger),
     content,
+    evaluation: {
+      latestApproval: (orgId, courseId, orgUserId) =>
+        evaluation.latestApproval(orgId, courseId, orgUserId),
+    },
     uow: progressUow,
     logger: progressLogger,
   });
+  progressRef.current = progress;
 
   const discussion = new DiscussionServiceImpl({
     repo: new DrizzleDiscussionRepository(db, discussionLogger),

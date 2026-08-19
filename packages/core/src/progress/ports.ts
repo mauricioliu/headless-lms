@@ -15,6 +15,27 @@ export interface ProgressService {
   get(orgId: string, target: ProgressTarget): Promise<ProgressRecord | null>;
   /** Records for a set of target ids — the read the reporting layer composes. */
   listByTargets(orgId: string, orgUserId: string, targetIds: string[]): Promise<ProgressRecord[]>;
+  /** Derived course percentage (0–100) against the current published structure —
+   *  the fact the evaluation gate consumes. */
+  coursePercent(orgId: string, orgUserId: string, courseId: string): Promise<number>;
+  /** Re-evaluate the Completado conjunction for one student+course — the trigger
+   *  the evaluation context calls after a passed attempt. Returns the course
+   *  record when the course completes, else null. */
+  refreshCourseCompletion(
+    orgId: string,
+    orgUserId: string,
+    courseId: string,
+  ): Promise<ProgressRecord | null>;
+}
+
+/** The evaluation half of the Completado conjunction: null = the course has no
+ *  evaluation (no gate); otherwise the latest attempt's approval stands. */
+export interface CourseEvaluationApprovalReader {
+  latestApproval(
+    orgId: string,
+    courseId: string,
+    orgUserId: string,
+  ): Promise<{ passed: boolean } | null>;
 }
 
 // Outbound port (persistence contract the repository fulfils).

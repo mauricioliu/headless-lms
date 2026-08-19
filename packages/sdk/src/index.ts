@@ -14,6 +14,7 @@ import {
   Content as ContentGen,
   Discussion as DiscussionGen,
   Entitlements as EntitlementsGen,
+  Evaluation as EvaluationGen,
   Integrations as IntegrationsGen,
   Organizations as OrganizationsGen,
   Progress as ProgressGen,
@@ -38,6 +39,7 @@ export const Automations = AutomationsGen as Throwing<typeof AutomationsGen>;
 export const Content = ContentGen as Throwing<typeof ContentGen>;
 export const Discussion = DiscussionGen as Throwing<typeof DiscussionGen>;
 export const Entitlements = EntitlementsGen as Throwing<typeof EntitlementsGen>;
+export const Evaluation = EvaluationGen as Throwing<typeof EvaluationGen>;
 export const Integrations = IntegrationsGen as Throwing<typeof IntegrationsGen>;
 export const Organizations = OrganizationsGen as Throwing<typeof OrganizationsGen>;
 export const Progress = ProgressGen as Throwing<typeof ProgressGen>;
