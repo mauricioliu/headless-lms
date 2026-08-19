@@ -75,11 +75,14 @@ export function MediaVideoPlayer({
       }}
       onSeeking={(target: number) => {
         // Consulted at event time; the corrective seek re-fires seeking at the
-        // ceiling, which the gate then allows — self-terminating.
+        // ceiling, which the gate then allows — self-terminating. The
+        // correction goes through remoteControl: the currentTime setter can
+        // silently drop the write when it equals the throttled internal
+        // signal, letting the user's forward seek land.
         const policy = assetId ? playbackPolicy?.(assetId) : undefined;
         const clamped = gateSeek(target, policy?.seekCeiling);
         if (clamped != null && playerRef.current) {
-          playerRef.current.currentTime = clamped;
+          playerRef.current.remoteControl.seek(clamped);
         }
       }}
       onRateChange={(rate: number) => {
