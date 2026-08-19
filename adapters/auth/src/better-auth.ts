@@ -145,6 +145,8 @@ export class BetterAuth implements SessionVerifier, OrgAdmin, SessionAdmin {
         firstName: res.user.name,
         externalId: res.user.id,
         lastName: res.user.name,
+        rut: null,
+        phone: null,
         updatedAt: res.user.updatedAt,
       },
       session: {

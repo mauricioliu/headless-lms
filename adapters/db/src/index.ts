@@ -20,4 +20,5 @@ export * from './repositories/progress.js';
 export * from './repositories/settings.js';
 export * from './repositories/students.js';
 export * from './repositories/evaluations.js';
+export * from './repositories/evaluation-attempts.js';
 export * from './repositories/waves.js';

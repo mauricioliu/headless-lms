@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { idSchema } from './shared.js';
+import { idSchema, isoDateStringSchema } from './shared.js';
 
 export const feedbackModeSchema = z.enum(['score_only', 'answer_review']);
 
@@ -67,5 +67,72 @@ export const evaluationViewSchema = z
     cutoff: z.number().int().min(1).max(100),
     feedbackMode: feedbackModeSchema,
     questions: z.array(evaluationQuestionViewSchema),
+  })
+  .strict();
+
+export const attemptAnswerSchema = z
+  .object({
+    questionId: idSchema,
+    optionId: idSchema,
+  })
+  .strict();
+export type AttemptAnswer = z.output<typeof attemptAnswerSchema>;
+
+export const submitAttemptInputSchema = z
+  .object({
+    answers: z.array(attemptAnswerSchema).min(1).max(100),
+  })
+  .strict()
+  .superRefine((input, ctx) => {
+    const ids = input.answers.map((answer) => answer.questionId);
+    if (new Set(ids).size !== ids.length) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['answers'],
+        message: 'Each question may be answered once',
+      });
+    }
+  });
+
+export const attemptRecordSchema = z
+  .object({
+    orgId: idSchema,
+    courseId: idSchema,
+    orgUserId: idSchema,
+    attemptNumber: z.number().int().min(1),
+    startedAt: z.coerce.date(),
+    submittedAt: z.coerce.date().nullable(),
+    answers: z.array(attemptAnswerSchema).nullable(),
+    score: z.number().int().min(0).max(100).nullable(),
+    cutoff: z.number().int().min(1).max(100).nullable(),
+    passed: z.boolean().nullable(),
+  })
+  .strict();
+
+export const attemptStatusSchema = z
+  .object({
+    attemptNumber: z.number().int().min(1),
+    startedAt: isoDateStringSchema,
+    submittedAt: isoDateStringSchema.nullable(),
+    score: z.number().int().min(0).max(100).nullable(),
+    cutoff: z.number().int().min(1).max(100).nullable(),
+    passed: z.boolean().nullable(),
+  })
+  .strict();
+
+export const attemptQuestionReviewSchema = z
+  .object({
+    questionId: idSchema,
+    prompt: z.string().min(1),
+    options: z.array(evaluationOptionSchema),
+    selectedOptionId: idSchema,
+    correct: z.boolean(),
+  })
+  .strict();
+
+export const attemptFeedbackSchema = attemptStatusSchema
+  .extend({
+    feedbackMode: feedbackModeSchema,
+    questions: z.array(attemptQuestionReviewSchema).optional(),
   })
   .strict();

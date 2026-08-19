@@ -13,8 +13,9 @@ Owns per-student progress through the lessons and assessments of a course — wh
 
 - **Record a start** — when a student opens a lesson or assessment, create its progress record. Access is gated by entitlements first (see boundaries); progress only records once the student is allowed in.
 - **Record position** — update a student's position within a lesson or assessment as it is reported, so they can resume where they left off.
-- **Evaluate and record completion** — apply the item's completion rule to the reported position and mark the record complete when satisfied (e.g. a video watched past its threshold, a lesson marked complete, an assessment finished). Cascades to module and course completion when the last item is done.
+- **Evaluate and record completion** — apply the item's completion rule to the reported position and mark the record complete when satisfied (e.g. a video watched past its threshold, a lesson marked complete, an assessment finished). Cascades to module completion when the module's last item is done; **course completion is the Completado conjunction** — avance 100% _and_ the course's evaluation approved (when the course carries one). A course without an evaluation has no gate: 100% avance completes it.
 - **Report progress** — return a student's progress for a course (what's complete, the derived percentage, and which item to resume), or for a single item (its completion and the position to resume within it). Resume is relative to the scope asked: a course resolves which item; an item resolves the position within it.
+- **Expose the course percentage** — the derived avance (0–100) a course's evaluation gate consumes: progress owns the fact, evaluation owns the gate.
 
 ## Model
 
@@ -40,6 +41,7 @@ Progress is measured against the course's current published structure, so adding
 1. **progress → courses** — progress references the lessons and assessments it tracks and reads the current structure to derive percentage; courses owns that structure and knows nothing of progress.
 2. **progress → entitlements** — opening an item is gated: entitlements resolves access (active grant, unlocked by drip/unlock rules) before progress records a start. Entitlements also reads progress during access resolution to evaluate those unlock rules. Entitlements decides access; progress records activity.
 3. **progress → identity** — progress references the user on each record; identity owns the user.
+4. **progress ↔ evaluation** — progress owns the Completado conjunction: the course-completion cascade consults the course's evaluation approval (a read port), and evaluation asks progress to re-evaluate completion after a passed attempt. Each reads the other's fact; neither writes the other's state.
 
 ## Events
 

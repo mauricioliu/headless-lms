@@ -9,6 +9,7 @@ import { learnAssetsRoutes } from './assets.js';
 import { learnCommentsRoutes } from './comments.js';
 import { learnCoursesRoutes } from './courses.js';
 import { learnDownloadsRoutes } from './downloads.js';
+import { learnEvaluationAttemptRoutes } from './evaluation-attempts.js';
 import { learnOrgRoutes } from './org.js';
 import { learnProgressRoutes } from './progress.js';
 
@@ -16,6 +17,7 @@ export async function learnRoutes(app: FastifyInstance, container: Container): P
   await learnOrgRoutes(app, container);
   await learnCoursesRoutes(app, container);
   await learnProgressRoutes(app, container);
+  await learnEvaluationAttemptRoutes(app, container);
   await learnCommentsRoutes(app, container);
   await learnAssetsRoutes(app, container);
   await learnDownloadsRoutes(app, container);

@@ -1638,6 +1638,190 @@ export type GetLearnCourseProgressResponses = {
 export type GetLearnCourseProgressResponse =
   GetLearnCourseProgressResponses[keyof GetLearnCourseProgressResponses];
 
+export type StartCourseEvaluationAttemptData = {
+  body?: never;
+  path: {
+    courseId: string;
+  };
+  query?: never;
+  url: "/api/learn/courses/{courseId}/evaluation/attempts";
+};
+
+export type StartCourseEvaluationAttemptErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type StartCourseEvaluationAttemptError =
+  StartCourseEvaluationAttemptErrors[keyof StartCourseEvaluationAttemptErrors];
+
+export type StartCourseEvaluationAttemptResponses = {
+  /**
+   * Default Response
+   */
+  201: {
+    attemptNumber: number;
+    startedAt: string;
+    submittedAt: string | null;
+    score: number | null;
+    cutoff: number | null;
+    passed: boolean | null;
+  };
+};
+
+export type StartCourseEvaluationAttemptResponse =
+  StartCourseEvaluationAttemptResponses[keyof StartCourseEvaluationAttemptResponses];
+
+export type SubmitCourseEvaluationAttemptData = {
+  body: {
+    answers: Array<{
+      questionId: string;
+      optionId: string;
+    }>;
+  };
+  path: {
+    courseId: string;
+    attemptNumber: number;
+  };
+  query?: never;
+  url: "/api/learn/courses/{courseId}/evaluation/attempts/{attemptNumber}/submission";
+};
+
+export type SubmitCourseEvaluationAttemptErrors = {
+  /**
+   * Default Response
+   */
+  400: {
+    error: string;
+    message?: string;
+    requestId?: string;
+    issues: Array<{
+      path: string;
+      message: string;
+    }>;
+  };
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+  /**
+   * Default Response
+   */
+  409: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type SubmitCourseEvaluationAttemptError =
+  SubmitCourseEvaluationAttemptErrors[keyof SubmitCourseEvaluationAttemptErrors];
+
+export type SubmitCourseEvaluationAttemptResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    attemptNumber: number;
+    startedAt: string;
+    submittedAt: string | null;
+    score: number | null;
+    cutoff: number | null;
+    passed: boolean | null;
+    feedbackMode: "score_only" | "answer_review";
+    questions?: Array<{
+      questionId: string;
+      prompt: string;
+      options: Array<{
+        id: string;
+        text: string;
+      }>;
+      selectedOptionId: string;
+      correct: boolean;
+    }>;
+  };
+};
+
+export type SubmitCourseEvaluationAttemptResponse =
+  SubmitCourseEvaluationAttemptResponses[keyof SubmitCourseEvaluationAttemptResponses];
+
+export type GetLatestCourseEvaluationAttemptData = {
+  body?: never;
+  path: {
+    courseId: string;
+  };
+  query?: never;
+  url: "/api/learn/courses/{courseId}/evaluation/attempts/latest";
+};
+
+export type GetLatestCourseEvaluationAttemptErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type GetLatestCourseEvaluationAttemptError =
+  GetLatestCourseEvaluationAttemptErrors[keyof GetLatestCourseEvaluationAttemptErrors];
+
+export type GetLatestCourseEvaluationAttemptResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    attemptNumber: number;
+    startedAt: string;
+    submittedAt: string | null;
+    score: number | null;
+    cutoff: number | null;
+    passed: boolean | null;
+    feedbackMode: "score_only" | "answer_review";
+    questions?: Array<{
+      questionId: string;
+      prompt: string;
+      options: Array<{
+        id: string;
+        text: string;
+      }>;
+      selectedOptionId: string;
+      correct: boolean;
+    }>;
+  };
+};
+
+export type GetLatestCourseEvaluationAttemptResponse =
+  GetLatestCourseEvaluationAttemptResponses[keyof GetLatestCourseEvaluationAttemptResponses];
+
 export type ListActivityCommentsData = {
   body?: never;
   path: {

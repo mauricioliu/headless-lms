@@ -34,7 +34,11 @@ export interface CourseView {
 
 export type SearchParams = Record<string, string | string[] | undefined>;
 
-function pick<T extends string>(allowed: readonly T[], raw: string | string[] | undefined, fallback: T): T {
+function pick<T extends string>(
+  allowed: readonly T[],
+  raw: string | string[] | undefined,
+  fallback: T,
+): T {
   const value = Array.isArray(raw) ? raw[0] : raw;
   return allowed.includes(value as T) ? (value as T) : fallback;
 }
@@ -57,16 +61,20 @@ export function dashboardHref(params: DashboardParams): string {
   return qs ? `/?${qs}` : "/";
 }
 
-export function toCourseView(course: CourseSummaryVM, completion: Completion): CourseView {
+export function toCourseView(
+  course: CourseSummaryVM,
+  completion: Completion,
+  completed = false,
+): CourseView {
   const statuses = Object.values(completion);
   const done = statuses.filter((s) => s === "completed").length;
   const started = statuses.filter((s) => s === "in-progress").length;
   const percent = percentOf(done, started, course.lessonCount);
-  return { course, percent, done, state: stateOf(percent, done, started) };
+  return { course, percent, done, state: stateOf(percent, done, started, completed) };
 }
 
-function stateOf(percent: number, done: number, started: number): CourseState {
-  if (percent >= 100) return "completed";
+function stateOf(percent: number, done: number, started: number, completed: boolean): CourseState {
+  if (percent >= 100 && completed) return "completed";
   if (done === 0 && started === 0) return "not-started";
   return "in-progress";
 }
@@ -80,7 +88,8 @@ export function filterCourses(views: CourseView[], filter: FilterValue): CourseV
 /** "recent" is source order — the API already returns most-recent-first. */
 export function sortCourses(views: CourseView[], sort: SortValue): CourseView[] {
   if (sort === "progress") return [...views].sort((a, b) => b.percent - a.percent);
-  if (sort === "title") return [...views].sort((a, b) => a.course.title.localeCompare(b.course.title));
+  if (sort === "title")
+    return [...views].sort((a, b) => a.course.title.localeCompare(b.course.title));
   return views;
 }
 

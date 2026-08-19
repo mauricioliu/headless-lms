@@ -1,4 +1,9 @@
 export type {
+  Attempt,
+  AttemptAnswer,
+  AttemptFeedback,
+  AttemptQuestionReview,
+  AttemptStatus,
   Evaluation,
   EvaluationOption,
   EvaluationQuestion,
@@ -6,4 +11,5 @@ export type {
   EvaluationView,
   FeedbackMode,
   ReplaceEvaluationInput,
+  SubmitAttemptInput,
 } from '../types/index.js';

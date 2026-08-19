@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ClipboardCheck } from "lucide-react";
 
 import { initials } from "@/lib/format";
 import {
@@ -52,6 +54,10 @@ export interface CoursePlayerProps {
   initialPositions?: Record<string, unknown>;
   /** Where the student left off — server-derived from their progress records. */
   initialLessonId?: string;
+  /** The course carries an evaluation — the Completado gate beyond the lessons. */
+  hasEvaluation?: boolean;
+  /** The server's Completado fact (avance 100% + evaluation approved, if any). */
+  courseCompletedServer?: boolean;
   sidebarStyle?: SidebarStyle;
   sequentialLocking?: boolean;
   autoAdvance?: boolean;
@@ -60,6 +66,33 @@ export interface CoursePlayerProps {
 const AUTO_ADVANCE_MS = 420;
 /** Segment playback rule: no speed beyond 2x. */
 const MAX_PLAYBACK_RATE = 2;
+
+function EvaluationBanner({ courseId }: { courseId: string }) {
+  return (
+    <div
+      className="flex flex-wrap items-center justify-between gap-3 border-b px-6 py-3.5"
+      style={{
+        background: "var(--brand-soft)",
+        borderColor: "var(--brand)",
+      }}
+    >
+      <span
+        className="flex items-center gap-[9px] text-[13.5px] font-semibold"
+        style={{ color: "var(--brand-strong)" }}
+      >
+        <ClipboardCheck className="size-[17px]" />
+        You&apos;ve watched every lesson — take the evaluation to complete the course.
+      </span>
+      <Link
+        href={`/courses/${courseId}/evaluation`}
+        className="rounded-full px-[18px] py-[9px] text-[13.5px] font-semibold"
+        style={{ background: "var(--brand)", color: "var(--brand-contrast)" }}
+      >
+        Take evaluation
+      </Link>
+    </div>
+  );
+}
 
 /** Promote a lesson to in-progress only if not started — never demotes a
  *  completed one. Returns the same object when nothing changes. */
@@ -78,6 +111,8 @@ export function CoursePlayer({
   initialCompletion,
   initialPositions,
   initialLessonId,
+  hasEvaluation = false,
+  courseCompletedServer = false,
   sidebarStyle = "detailed",
   sequentialLocking = true,
   autoAdvance = true,
@@ -159,10 +194,7 @@ export function CoursePlayer({
     });
   }, [reporter, curLessonId, sessionPositions, assetSeed]);
 
-  const onMediaEvent = useCallback(
-    (e: MediaTrackingEvent) => tracker?.handleEvent(e),
-    [tracker],
-  );
+  const onMediaEvent = useCallback((e: MediaTrackingEvent) => tracker?.handleEvent(e), [tracker]);
 
   const startPosition = useCallback(
     (assetId: string): number | undefined => {
@@ -350,7 +382,7 @@ export function CoursePlayer({
 
           <main className="flex min-w-0 flex-1 flex-col bg-surface-warm-2">
             <div className="flex-1 overflow-y-auto">
-              {courseCompleted && (
+              {courseCompletedServer && (
                 <div
                   className="flex items-center gap-[11px] border-b px-6 py-[13px]"
                   style={{
@@ -363,6 +395,9 @@ export function CoursePlayer({
                     You&apos;ve completed this course. Revisit any lesson anytime.
                   </span>
                 </div>
+              )}
+              {hasEvaluation && !courseCompletedServer && courseCompleted && (
+                <EvaluationBanner courseId={course.id} />
               )}
               <editorMedia.MediaProvider
                 onEvent={onMediaEvent}

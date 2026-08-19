@@ -10,6 +10,7 @@ import { genId } from '../shared/id.js';
 import { NotFoundError } from '../shared/errors.js';
 import type { ProgressRecord } from './model.js';
 import type {
+  CourseEvaluationApprovalReader,
   ProgressRepository,
   ProgressService,
   ProgressUnitOfWork,
@@ -92,6 +93,7 @@ function completionSatisfied(
 export type ProgressServiceParams = {
   repo: ProgressRepository;
   content: CourseManagementService;
+  evaluation: CourseEvaluationApprovalReader;
   uow: ProgressUnitOfWork;
   logger?: Logger;
 };
@@ -99,12 +101,14 @@ export type ProgressServiceParams = {
 export class ProgressServiceImpl implements ProgressService {
   private readonly repo: ProgressRepository;
   private readonly content: CourseManagementService;
+  private readonly evaluation: CourseEvaluationApprovalReader;
   private readonly uow: ProgressUnitOfWork;
   private readonly logger: Logger;
 
   constructor(params: ProgressServiceParams) {
     this.repo = params.repo;
     this.content = params.content;
+    this.evaluation = params.evaluation;
     this.uow = params.uow;
     this.logger = params.logger ?? noopLogger;
   }
@@ -137,10 +141,16 @@ export class ProgressServiceImpl implements ProgressService {
           (await scope.progress.update(orgId, record.id, {
             completedAt: new Date(),
           })) ?? record;
-        events.push(
-          progressEvents.progressCompleted.make({ orgId, data: record }),
+        events.push(progressEvents.progressCompleted.make({ orgId, data: record }));
+        await this.completeContainers(
+          orgId,
+          input,
+          courseId,
+          modules,
+          courseActivities,
+          scope,
+          events,
         );
-        await this.completeContainers(orgId, input, courseId, modules, courseActivities, scope, events);
         this.logger.info('progress completed', { orgId, recordId: record.id });
       }
       if (events.length > 0) {
@@ -215,22 +225,39 @@ export class ProgressServiceImpl implements ProgressService {
     );
     const containing = byModule.find((m) => m.activityIds.includes(input.activityId));
     if (containing && containing.activityIds.every((id) => done.has(id))) {
-      await this.ensureContainerComplete(orgId, input, 'module', containing.id, scope, events);
+      await this.ensureContainerComplete(
+        orgId,
+        input.orgUserId,
+        'module',
+        containing.id,
+        scope,
+        events,
+      );
     }
     if (allIds.length > 0 && allIds.every((id) => done.has(id))) {
-      await this.ensureContainerComplete(orgId, input, 'course', courseId, scope, events);
+      const approval = await this.evaluation.latestApproval(orgId, courseId, input.orgUserId);
+      if (approval === null || approval.passed) {
+        await this.ensureContainerComplete(
+          orgId,
+          input.orgUserId,
+          'course',
+          courseId,
+          scope,
+          events,
+        );
+      }
     }
   }
 
   private async ensureContainerComplete(
     orgId: string,
-    input: ReportProgressInput,
+    orgUserId: string,
     targetType: 'module' | 'course',
     targetId: string,
     scope: ProgressWriteScope,
     events: NewProgressEvent[],
   ): Promise<void> {
-    const target: ProgressTarget = { orgUserId: input.orgUserId, targetType, targetId };
+    const target: ProgressTarget = { orgUserId, targetType, targetId };
     let existing = await scope.progress.findByTarget(orgId, target);
     if (existing?.completedAt) {
       return;
@@ -240,7 +267,7 @@ export class ProgressServiceImpl implements ProgressService {
       const inserted = await scope.progress.insert(orgId, {
         id: genId('progress'),
         orgId,
-        orgUserId: input.orgUserId,
+        orgUserId,
         targetType,
         targetId,
         startedAt: now,
@@ -250,9 +277,7 @@ export class ProgressServiceImpl implements ProgressService {
         updatedAt: now,
       });
       if (inserted) {
-        events.push(
-          progressEvents.progressCompleted.make({ orgId, data: inserted }),
-        );
+        events.push(progressEvents.progressCompleted.make({ orgId, data: inserted }));
         return;
       }
       // Lost a concurrent insert: re-read the winner's row.
@@ -277,5 +302,50 @@ export class ProgressServiceImpl implements ProgressService {
 
   listByTargets(orgId: string, orgUserId: string, targetIds: string[]): Promise<ProgressRecord[]> {
     return this.repo.findByTargets(orgId, orgUserId, targetIds);
+  }
+
+  async coursePercent(orgId: string, orgUserId: string, courseId: string): Promise<number> {
+    const activities = await this.content.listCourseActivities(orgId, courseId);
+    const ids = activities.filter((a) => isActivityPublished(a.settings)).map((a) => a.id);
+    if (ids.length === 0) {
+      return 0;
+    }
+    const records = await this.repo.findByTargets(orgId, orgUserId, ids);
+    const done = records.filter((r) => r.targetType === 'activity' && r.completedAt).length;
+    return Math.round((done / ids.length) * 100);
+  }
+
+  async refreshCourseCompletion(
+    orgId: string,
+    orgUserId: string,
+    courseId: string,
+  ): Promise<ProgressRecord | null> {
+    const activities = await this.content.listCourseActivities(orgId, courseId);
+    const published = activities.filter((a) => isActivityPublished(a.settings));
+    const ids = published.map((a) => a.id);
+    return this.uow.run(async (scope) => {
+      if (ids.length === 0) {
+        return null;
+      }
+      const records = await scope.progress.findByTargets(orgId, orgUserId, ids, {
+        forUpdate: true,
+      });
+      const done = new Set(
+        records.filter((r) => r.targetType === 'activity' && r.completedAt).map((r) => r.targetId),
+      );
+      if (!ids.every((id) => done.has(id))) {
+        return null;
+      }
+      const approval = await this.evaluation.latestApproval(orgId, courseId, orgUserId);
+      if (approval !== null && !approval.passed) {
+        return null;
+      }
+      const events: NewProgressEvent[] = [];
+      await this.ensureContainerComplete(orgId, orgUserId, 'course', courseId, scope, events);
+      if (events.length > 0) {
+        await scope.outbox.append(events);
+      }
+      return this.repo.findByTarget(orgId, { orgUserId, targetType: 'course', targetId: courseId });
+    });
   }
 }
