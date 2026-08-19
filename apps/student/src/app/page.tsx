@@ -34,7 +34,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
     Promise.all(rawCourses.map((c) => learnApi.listActivities(c.id))),
   ]);
   const courses = rawCourses.map((c, i) => adaptCourseSummary(c, activityLists[i]?.length ?? 0));
-  const views = courses.map((course, i) => toCourseView(course, progress[i]?.activities ?? {}));
+  const views = courses.map((course, i) =>
+    toCourseView(course, progress[i]?.activities ?? {}, progress[i]?.completed ?? false),
+  );
 
   const view = parseDashboardParams(sp);
   const totals = countByState(views);

@@ -1,5 +1,7 @@
 import type {
   GetLearnViewerResponse,
+  GetLearnCourseEvaluationResponse,
+  GetLatestCourseEvaluationAttemptResponse,
   ListActivityCommentsResponse,
   GetLearnCourseResponse,
   GetLearnDownloadResponse,
@@ -8,6 +10,7 @@ import type {
   ListLearnDownloadsResponse,
   ListLearnActivitiesResponse,
   ListLearnModulesResponse,
+  StartCourseEvaluationAttemptResponse,
 } from "@headless-lms/sdk";
 
 export type Course = GetLearnCourseResponse;
@@ -26,6 +29,14 @@ export type ReactionEmoji = NonNullable<CommentView["viewerReaction"]>;
 export type ReactionCounts = CommentView["reactions"];
 /** Who the caller is inside the session's org. */
 export type Viewer = GetLearnViewerResponse;
+/** The sanitized evaluation a published course carries (no correction key). */
+export type EvaluationView = GetLearnCourseEvaluationResponse;
+export type EvaluationQuestion = EvaluationView["questions"][number];
+export type EvaluationOption = EvaluationQuestion["options"][number];
+/** The learner's latest attempt: status, score, and review per feedbackMode. */
+export type AttemptFeedback = GetLatestCourseEvaluationAttemptResponse;
+export type AttemptQuestionReview = NonNullable<AttemptFeedback["questions"]>[number];
+export type StartedAttempt = StartCourseEvaluationAttemptResponse;
 export type Download = ListLearnDownloadsResponse[number];
 export type DownloadDetail = GetLearnDownloadResponse;
 export type DownloadAsset = DownloadDetail["assets"][number];

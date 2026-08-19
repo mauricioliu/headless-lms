@@ -11,16 +11,18 @@ import "server-only";
  * rejected session before handing over to /login.
  */
 import { unstable_rethrow } from "next/navigation";
-import { Assets, Content, Organizations, Progress } from "@headless-lms/sdk";
+import { Assets, Content, Evaluation, Organizations, Progress } from "@headless-lms/sdk";
 
 import { statusOf } from "./shared";
 import { authHeaders } from "./server-call";
 import type {
   Activity,
+  AttemptFeedback,
   Course,
   CourseSummary,
   Download,
   DownloadDetail,
+  EvaluationView,
   Module,
   Org,
   Viewer,
@@ -76,10 +78,22 @@ export const learnApi = {
    *  taking the page down. */
   async courseProgress(courseId: string): Promise<{
     activities: Record<string, "in-progress" | "completed">;
+    completed: boolean;
+    percent: number;
     positions: Record<string, unknown>;
   } | null> {
     const headers = await authHeaders();
     return orNull(() => Progress.getLearnCourseProgress({ courseId }, headers));
+  },
+  /** The course's sanitized evaluation — null when the course carries none. */
+  async getCourseEvaluation(courseId: string): Promise<EvaluationView | null> {
+    const headers = await authHeaders();
+    return orNullOn404(() => Evaluation.getLearnCourseEvaluation({ courseId }, headers));
+  },
+  /** The learner's latest attempt, or null before the first one. */
+  async latestEvaluationAttempt(courseId: string): Promise<AttemptFeedback | null> {
+    const headers = await authHeaders();
+    return orNullOn404(() => Evaluation.getLatestCourseEvaluationAttempt({ courseId }, headers));
   },
   async listDownloads(): Promise<Download[]> {
     return await Content.listLearnDownloads(await authHeaders());

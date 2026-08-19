@@ -14,13 +14,14 @@ export default async function CoursePlayerPage({
 }) {
   const { courseId } = await params;
   const session = await requireAuth();
-  const [course, modules, activities, org, viewer, progress] = await Promise.all([
+  const [course, modules, activities, org, viewer, progress, evaluation] = await Promise.all([
     learnApi.getCourse(courseId),
     learnApi.listModules(courseId),
     learnApi.listActivities(courseId),
     learnApi.org(),
     learnApi.viewer(),
     learnApi.courseProgress(courseId),
+    learnApi.getCourseEvaluation(courseId),
   ]);
   if (!course || !modules || !activities) notFound();
 
@@ -51,6 +52,8 @@ export default async function CoursePlayerPage({
       initialCompletion={completion}
       initialPositions={progress?.positions ?? {}}
       initialLessonId={resumeLessonId}
+      hasEvaluation={evaluation !== null}
+      courseCompletedServer={progress?.completed ?? false}
     />
   );
 }
