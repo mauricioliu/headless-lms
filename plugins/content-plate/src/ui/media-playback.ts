@@ -66,6 +66,32 @@ export function consumeSeekSuppression(st: ResumeState): {
   return { report: false, next: { ...st, suppressSeekReport: false } };
 }
 
+/** Host playback gate: the corrected seek target, or null when the seek may
+ *  proceed as-is. A target beyond the ceiling snaps back to it (rewinding is
+ *  always allowed); an absent ceiling leaves the seek unconstrained. */
+export function gateSeek(target: number, ceiling: number | undefined): number | null {
+  if (ceiling == null || !Number.isFinite(ceiling)) {
+    return null;
+  }
+  if (target <= ceiling) {
+    return null;
+  }
+  return Math.max(0, ceiling);
+}
+
+/** Host playback gate: the corrected rate, or null when it may proceed. Rates
+ *  above the cap clamp down to it; rates at or below it (including rewinding
+ *  to slower speeds) pass. An absent cap leaves the rate unconstrained. */
+export function gateRate(rate: number, max: number | undefined): number | null {
+  if (max == null || !Number.isFinite(max) || max <= 0) {
+    return null;
+  }
+  if (rate <= max) {
+    return null;
+  }
+  return max;
+}
+
 /** The subset of Vidstack's closed VideoMimeType union we can produce. */
 export type VideoMime = "video/mp4" | "video/webm" | "video/ogg";
 

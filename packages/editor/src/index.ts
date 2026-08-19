@@ -97,6 +97,17 @@ export interface MediaTrackingEvent {
   duration: number | null;
 }
 
+/** Host-imposed playback constraints for one asset. Supplied per asset so the
+ *  host can derive each ceiling from its own watch state; absent = unconstrained. */
+export interface MediaPlaybackPolicy {
+  /** Highest position the viewer may reach by seeking. Attempts beyond it snap
+   *  back here; rewinding is always allowed. High-water watch positions are the
+   *  natural ceiling. */
+  seekCeiling?: number;
+  /** Highest playback rate allowed; faster rates clamp down to it. */
+  maxRate?: number;
+}
+
 /** Host-provided callbacks for media playback: facts out, resume/refresh in. */
 export interface MediaTracking {
   onEvent?: (event: MediaTrackingEvent) => void;
@@ -104,6 +115,8 @@ export interface MediaTracking {
   startPosition?: (assetId: string) => number | undefined;
   /** Fresh playback URL when the embedded presign has expired. */
   refreshUrl?: (assetId: string) => Promise<string | null>;
+  /** Playback constraints for an asset, consulted at event time (never cached). */
+  playbackPolicy?: (assetId: string) => MediaPlaybackPolicy | undefined;
 }
 
 /**

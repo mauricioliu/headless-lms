@@ -20,14 +20,21 @@ describe('media entry', () => {
     const onEvent = () => {};
     const startPosition = () => 42;
     const refreshUrl = async () => 'https://example.com/refresh';
+    const playbackPolicy = () => ({ seekCeiling: 42, maxRate: 2 });
     renderToString(
-      <MediaProvider onEvent={onEvent} startPosition={startPosition} refreshUrl={refreshUrl}>
+      <MediaProvider
+        onEvent={onEvent}
+        startPosition={startPosition}
+        refreshUrl={refreshUrl}
+        playbackPolicy={playbackPolicy}
+      >
         <Probe />
       </MediaProvider>,
     );
     expect(seen?.onEvent).toBe(onEvent);
     expect(seen?.startPosition).toBe(startPosition);
     expect(seen?.refreshUrl).toBe(refreshUrl);
+    expect(seen?.playbackPolicy).toBe(playbackPolicy);
   });
 
   it('defaults to {} outside a provider', () => {
