@@ -16,11 +16,9 @@ import { assetsRoutes } from './routes/assets.js';
 import { integrationsRoutes } from './routes/integrations.js';
 import { evaluationsRoutes } from './routes/evaluations.js';
 import { wavesRoutes } from './routes/waves.js';
+import { waveReportRoutes } from './routes/wave-reports.js';
 
-export function registerRoutes(
-  app: FastifyInstance,
-  container: Container,
-): void {
+export function registerRoutes(app: FastifyInstance, container: Container): void {
   app.get('/health', async () => ({ status: 'ok' }));
 
   app.register(async (instance) => {
@@ -45,5 +43,6 @@ export function registerRoutes(
     await integrationsRoutes(instance, container);
     await evaluationsRoutes(instance, container);
     await wavesRoutes(instance, container);
+    await waveReportRoutes(instance, container);
   });
 }

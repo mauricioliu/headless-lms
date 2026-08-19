@@ -32,6 +32,7 @@ import {
   Integrations,
   Organizations,
   Reporting,
+  Waves,
 } from "@headless-lms/sdk";
 
 import { toQuery } from "./shared";
@@ -60,6 +61,8 @@ import type {
   Paginated,
   CommentListItem,
   Student,
+  WaveListRow,
+  WaveReport,
 } from "./types";
 
 /** Resolve a granted content id to its type + display title. The grant row
@@ -167,6 +170,29 @@ export const serverApi = {
     return await Reporting.getCourseEnrollmentSeries({ id: courseId, days }, await authHeaders());
   },
 
+  // Olas — the Admin Cliente's surface: the list to navigate from, and the
+  // per-Ola report. Course titles are joined in here (the wave stores the id).
+  async listWaves(): Promise<WaveListRow[]> {
+    const headers = await authHeaders();
+    const waves = await Waves.listWaves(headers);
+    const titles = new Map(
+      await Promise.all(
+        [...new Set(waves.map((w) => w.courseId))].map(async (id) => {
+          try {
+            const course = await Content.getCourse({ id }, headers);
+            return [id, course.title] as const;
+          } catch {
+            return [id, id] as const;
+          }
+        }),
+      ),
+    );
+    return waves.map((w) => ({ ...w, courseTitle: titles.get(w.courseId) ?? w.courseId }));
+  },
+  async waveReport(waveId: string): Promise<WaveReport> {
+    return await Waves.getWaveReport({ id: waveId }, await authHeaders());
+  },
+
   // courses
   async listCourses(params: ListParams): Promise<Paginated<Course>> {
     return await Content.listCourses(toQuery(params, ["status", "category"]), await authHeaders());
@@ -223,7 +249,10 @@ export const serverApi = {
 
   // downloads
   async listDownloads(params: ListParams): Promise<Paginated<Download>> {
-    return await Content.listDownloads(toQuery(params, ["status", "category"]), await authHeaders());
+    return await Content.listDownloads(
+      toQuery(params, ["status", "category"]),
+      await authHeaders(),
+    );
   },
   async getDownload(downloadId: string): Promise<Download> {
     return await Content.getDownload({ downloadId }, await authHeaders());

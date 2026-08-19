@@ -19,6 +19,7 @@ import {
   Organizations as OrganizationsGen,
   Progress as ProgressGen,
   Reporting as ReportingGen,
+  Waves as WavesGen,
 } from "./generated/sdk.gen";
 
 /**
@@ -44,6 +45,7 @@ export const Integrations = IntegrationsGen as Throwing<typeof IntegrationsGen>;
 export const Organizations = OrganizationsGen as Throwing<typeof OrganizationsGen>;
 export const Progress = ProgressGen as Throwing<typeof ProgressGen>;
 export const Reporting = ReportingGen as Throwing<typeof ReportingGen>;
+export const Waves = WavesGen as Throwing<typeof WavesGen>;
 
 export interface ConfigureSdkOptions {
   /** API origin, e.g. `https://api.example.com` or `http://localhost:8000`. */

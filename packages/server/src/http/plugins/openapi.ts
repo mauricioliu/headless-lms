@@ -9,7 +9,6 @@ import { jsonSchemaTransform, jsonSchemaTransformObject } from 'fastify-type-pro
 import type { ServerConfig } from '../config.js';
 import pkg from '../../../package.json' with { type: 'json' };
 
-
 export function registerOpenApi(app: FastifyInstance, config: ServerConfig): void {
   app.register(swagger, {
     openapi: {
@@ -24,11 +23,29 @@ export function registerOpenApi(app: FastifyInstance, config: ServerConfig): voi
       },
       servers: [{ url: config.publicUrl }],
       tags: [
-        { name: 'Organizations', description: 'The tenant: its members, roles, invites and students' },
-        { name: 'Content', description: 'Authored content: courses and downloads, their structure and delivery' },
-        { name: 'Evaluation', description: 'The multiple-choice evaluation a course carries: authoring and learner delivery' },
+        {
+          name: 'Organizations',
+          description: 'The tenant: its members, roles, invites and students',
+        },
+        {
+          name: 'Content',
+          description: 'Authored content: courses and downloads, their structure and delivery',
+        },
+        {
+          name: 'Evaluation',
+          description:
+            'The multiple-choice evaluation a course carries: authoring and learner delivery',
+        },
+        {
+          name: 'Waves',
+          description:
+            'The Ola: roster ingestion and the per-Ola report the Admin Cliente operates',
+        },
         { name: 'Entitlements', description: 'Access grants to content' },
-        { name: 'Progress', description: 'Per-student progress and completion through course content' },
+        {
+          name: 'Progress',
+          description: 'Per-student progress and completion through course content',
+        },
         { name: 'Discussion', description: 'Learner comments, replies, reactions and moderation' },
         { name: 'Assets', description: 'The org media library: uploads, serving and lifecycle' },
         { name: 'Automations', description: 'Trigger/action workflows' },

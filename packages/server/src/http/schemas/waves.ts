@@ -4,6 +4,7 @@ import {
   ingestWaveInputSchema,
   ingestWaveResultSchema,
   waveMemberSchema,
+  waveReportSchema,
   waveSchema,
 } from '@headless-lms/core/schemas';
 
@@ -18,6 +19,9 @@ export type IngestWaveResult = typeof IngestWaveResult._output;
 
 export const WaveMemberView = waveMemberSchema;
 export type WaveMemberView = typeof WaveMemberView._output;
+
+export const WaveReport = waveReportSchema;
+export type WaveReport = typeof WaveReport._output;
 
 export const WaveDetail = waveSchema.extend({
   members: waveMemberSchema.array(),

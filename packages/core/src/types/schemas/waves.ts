@@ -60,3 +60,75 @@ export const ingestWaveResultSchema = waveSchema.extend({
   alreadyActive: z.number().int().min(0),
 });
 export type IngestWaveResult = z.output<typeof ingestWaveResultSchema>;
+
+/** Estado de la Evaluación de un Trabajador en el reporte de una Ola, as the
+ *  Admin Cliente reads it. `last_attempt` = rendida but the latest Intento did
+ *  not pass (there is no failed state — intentos are unlimited, the last one
+ *  stands); `blocked` = avance below 100% (the rendir gate); `no_evaluation` =
+ *  the Curso carries no Evaluación (no gate: Completado is avance 100% alone). */
+export const waveWorkerEvaluationStatusSchema = z.enum([
+  'approved',
+  'last_attempt',
+  'pending',
+  'blocked',
+  'no_evaluation',
+]);
+export type WaveWorkerEvaluationStatus = z.output<typeof waveWorkerEvaluationStatusSchema>;
+
+/** One Trabajador's row in the per-Ola report: aggregates only — the per-Intento
+ *  detail lives in the append-only registro and never travels here. */
+export const waveWorkerReportSchema = z
+  .object({
+    orgUserId: idSchema,
+    email: emailSchema,
+    firstName: z.string().nullable(),
+    lastName: z.string().nullable(),
+    status: z.enum(['invited', 'active']),
+    /** Avance against the Curso's current published structure, 0–100. */
+    progress: z.number().int().min(0).max(100),
+    evaluationStatus: waveWorkerEvaluationStatusSchema,
+    /** Puntaje of the latest Intento — the one that stands. null = never rendida. */
+    score: z.number().int().min(0).max(100).nullable(),
+    /** Submitted Intentos (an open Intento is not a rendición yet). */
+    attempts: z.number().int().min(0),
+    /** Completado = avance 100% + Evaluación aprobada — progress's own fact,
+     *  read back here, never recomputed. */
+    completed: z.boolean(),
+  })
+  .strict();
+export type WaveWorkerReport = z.output<typeof waveWorkerReportSchema>;
+
+/** Ola-level aggregates the operational >80% Completado gate is read from. */
+export const waveReportTotalsSchema = z
+  .object({
+    members: z.number().int().min(0),
+    completed: z.number().int().min(0),
+    /** Completado rate, 0–100. */
+    completedRate: z.number().int().min(0).max(100),
+    /** Mean avance across the Ola, 0–100. */
+    avgProgress: z.number().int().min(0).max(100),
+    /** Mean of the standing puntaje over Trabajadores who have rendido;
+     *  null when nobody has. */
+    avgScore: z.number().int().min(0).max(100).nullable(),
+    /** Total submitted Intentos ÷ members, one decimal. */
+    avgAttempts: z.number().min(0),
+  })
+  .strict();
+export type WaveReportTotals = z.output<typeof waveReportTotalsSchema>;
+
+/** The per-Ola report the Admin Cliente operates: wave + Curso context, Ola
+ *  aggregates, and one row per Trabajador. Computed on demand — reporting owns
+ *  no records. */
+export const waveReportSchema = z
+  .object({
+    wave: waveSchema.pick({ id: true, name: true, courseId: true, createdAt: true }),
+    course: z.object({
+      id: idSchema,
+      title: z.string(),
+      status: z.enum(['draft', 'published']),
+    }),
+    totals: waveReportTotalsSchema,
+    workers: z.array(waveWorkerReportSchema),
+  })
+  .strict();
+export type WaveReport = z.output<typeof waveReportSchema>;

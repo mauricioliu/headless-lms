@@ -11,6 +11,7 @@ import type {
   GetAssetResponse,
   GetAutomationResponse,
   GetCourseResponse,
+  GetWaveReportResponse,
   ListCommentsResponse,
   GetBundleResponse,
   GetDownloadResponse,
@@ -34,6 +35,7 @@ import type {
   ListMembersResponse,
   ListModulesResponse,
   ListStudentsResponse,
+  ListWavesResponse,
   RequestAssetDownloadResponse,
   RequestUploadResponse,
   UpdateCourseSettingsResponse,
@@ -150,6 +152,16 @@ export type EnrollmentSeries = GetEnrollmentSeriesResponse;
 export type EnrollmentPoint = EnrollmentSeries[number];
 export type CourseAnalytics = GetCourseAnalyticsResponse;
 export type CourseActivityEngagement = CourseAnalytics["activities"][number];
+
+// --- Olas (the Admin Cliente's report surface) -------------------------------
+
+export type Wave = ListWavesResponse[number];
+/** List row with the Curso's title joined in — the API stores only its id. */
+export type WaveListRow = Wave & { courseTitle: string };
+export type WaveReport = GetWaveReportResponse;
+export type WaveReportTotals = WaveReport["totals"];
+export type WaveWorkerReport = WaveReport["workers"][number];
+export type WaveWorkerEvaluationStatus = WaveWorkerReport["evaluationStatus"];
 
 // --- media library (assets) ------------------------------------------------
 

@@ -56,6 +56,8 @@ import type {
   DismissCommentReportsResponses,
   EditCommentErrors,
   EditCommentResponses,
+  ExportWaveReportCsvErrors,
+  ExportWaveReportCsvResponses,
   GetAssetDownloadUrlErrors,
   GetAssetDownloadUrlResponses,
   GetAssetErrors,
@@ -96,6 +98,8 @@ import type {
   GetStudentErrors,
   GetStudentResponses,
   GetWaveErrors,
+  GetWaveReportErrors,
+  GetWaveReportResponses,
   GetWaveResponses,
   GrantEntitlementResponses,
   IngestWaveErrors,
@@ -3748,6 +3752,56 @@ export class Waves {
     return (options?.client ?? client).get<GetWaveResponses, GetWaveErrors, ThrowOnError, "data">({
       responseStyle: "data",
       url: "/api/waves/{id}",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * The per-Ola report: one aggregate row per Trabajador plus Ola totals
+   *
+   * Aggregates only: per Trabajador avance, standing Evaluación state, latest-Intento puntaje, submitted intentos and Completado (progress-owned), plus the Ola totals the >80% Completado gate is read from. The per-Intento detail lives in the append-only registro and never travels here.
+   */
+  public static getWaveReport<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<GetWaveReportResponses, GetWaveReportErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).get<
+      GetWaveReportResponses,
+      GetWaveReportErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/waves/{id}/report",
+      ...options,
+      ...params,
+    });
+  }
+
+  /**
+   * Export the per-Ola report as CSV (the table columns, per Trabajador)
+   *
+   * Comma-delimited CSV, RFC 4180 quoting, headers in Spanish identical to the table columns: Trabajador, Avance, Evaluación, Puntaje, Intentos. One row per Trabajador with aggregates only — no respuestas, no per-Intento detail.
+   */
+  public static exportWaveReportCsv<ThrowOnError extends boolean = false>(
+    parameters: {
+      id: string;
+    },
+    options?: Options<never, ThrowOnError>,
+  ): RequestResult<ExportWaveReportCsvResponses, ExportWaveReportCsvErrors, ThrowOnError, "data"> {
+    const params = buildClientParams([parameters], [{ args: [{ in: "path", key: "id" }] }]);
+    return (options?.client ?? client).get<
+      ExportWaveReportCsvResponses,
+      ExportWaveReportCsvErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/waves/{id}/report.csv",
       ...options,
       ...params,
     });

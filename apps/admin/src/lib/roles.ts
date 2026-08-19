@@ -62,6 +62,7 @@ export function visibleNav(role: Role): {
   courses: boolean;
   media: boolean;
   students: boolean;
+  waves: boolean;
   automations: boolean;
   settings: boolean;
 } {
@@ -72,6 +73,8 @@ export function visibleNav(role: Role): {
     // Anyone who builds course content can manage media.
     media: true,
     students: manager,
+    // The Admin Cliente surface (Olas y reporte) is manager-operated.
+    waves: manager,
     automations: false,
     // Settings is visible to everyone: the Account and Apps tabs are available
     // to all roles; the Team tab inside is manager-only (gated in the layout).

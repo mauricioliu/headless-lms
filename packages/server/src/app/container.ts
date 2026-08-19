@@ -24,6 +24,7 @@ import {
   DrizzleStudentsRepository,
   DrizzleUnitOfWork,
   DrizzleWaveRepository,
+  DrizzleWaveReportRepository,
 } from '@headless-lms/adapter-db';
 import { InMemoryEventBus } from '@headless-lms/adapter-defaults/events';
 import {
@@ -63,6 +64,7 @@ import { StudentsReportServiceImpl } from '@headless-lms/core/reporting/students
 import { DashboardReportServiceImpl } from '@headless-lms/core/reporting/dashboard';
 import { CoursesReportServiceImpl } from '@headless-lms/core/reporting/courses';
 import { LearnReportServiceImpl } from '@headless-lms/core/reporting/learn';
+import { WaveReportServiceImpl } from '@headless-lms/core/reporting/waves';
 import { Mailer, type MailerLookups } from '@headless-lms/core/shared/mailer';
 import { SettingsService } from '@headless-lms/core/shared/settings';
 
@@ -182,6 +184,7 @@ export interface Container {
     dashboard: DashboardReportServiceImpl;
     courses: CoursesReportServiceImpl;
     learn: LearnReportServiceImpl;
+    waves: WaveReportServiceImpl;
   };
   storage: ObjectStorage;
   mailer: Mailer;
@@ -397,6 +400,10 @@ export async function buildContainer(
       progress,
       assets,
       deliveryExpirySeconds: config.deliveryExpirySeconds,
+      logger: reportingLogger,
+    }),
+    waves: new WaveReportServiceImpl({
+      repo: new DrizzleWaveReportRepository(db, reportingLogger),
       logger: reportingLogger,
     }),
   };

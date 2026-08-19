@@ -4761,3 +4761,98 @@ export type GetWaveResponses = {
 };
 
 export type GetWaveResponse = GetWaveResponses[keyof GetWaveResponses];
+
+export type GetWaveReportData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/waves/{id}/report";
+};
+
+export type GetWaveReportErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type GetWaveReportError = GetWaveReportErrors[keyof GetWaveReportErrors];
+
+export type GetWaveReportResponses = {
+  /**
+   * Default Response
+   */
+  200: {
+    wave: {
+      id: string;
+      name: string;
+      courseId: string;
+      createdAt: string;
+    };
+    course: {
+      id: string;
+      title: string;
+      status: "draft" | "published";
+    };
+    totals: {
+      members: number;
+      completed: number;
+      completedRate: number;
+      avgProgress: number;
+      avgScore: number | null;
+      avgAttempts: number;
+    };
+    workers: Array<{
+      orgUserId: string;
+      email: string;
+      firstName: string | null;
+      lastName: string | null;
+      status: "invited" | "active";
+      progress: number;
+      evaluationStatus: "approved" | "last_attempt" | "pending" | "blocked" | "no_evaluation";
+      score: number | null;
+      attempts: number;
+      completed: boolean;
+    }>;
+  };
+};
+
+export type GetWaveReportResponse = GetWaveReportResponses[keyof GetWaveReportResponses];
+
+export type ExportWaveReportCsvData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/waves/{id}/report.csv";
+};
+
+export type ExportWaveReportCsvErrors = {
+  /**
+   * Default Response
+   */
+  404: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type ExportWaveReportCsvError = ExportWaveReportCsvErrors[keyof ExportWaveReportCsvErrors];
+
+export type ExportWaveReportCsvResponses = {
+  /**
+   * The CSV export, one row per Trabajador
+   */
+  200: string;
+};
+
+export type ExportWaveReportCsvResponse =
+  ExportWaveReportCsvResponses[keyof ExportWaveReportCsvResponses];

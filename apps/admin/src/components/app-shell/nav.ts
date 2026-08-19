@@ -4,6 +4,7 @@ import {
   Image,
   Library,
   Settings,
+  Waves as WavesIcon,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
@@ -39,6 +40,7 @@ const ALL_NAV: NavItem[] = [
   },
   { href: "/media", label: "Media", icon: Image, key: "media" },
   { href: "/students", label: "Students", icon: GraduationCap, key: "students" },
+  { href: "/waves", label: "Olas", icon: WavesIcon, key: "waves" },
   { href: "/automations", label: "Automations", icon: Workflow, key: "automations" },
   { href: "/settings", label: "Settings", icon: Settings, key: "settings" },
 ];

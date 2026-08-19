@@ -7,4 +7,8 @@ export type {
   WorkerRow,
   IngestWaveInput,
   IngestWaveResult,
+  WaveReport,
+  WaveReportTotals,
+  WaveWorkerReport,
+  WaveWorkerEvaluationStatus,
 } from './schemas/waves.js';
