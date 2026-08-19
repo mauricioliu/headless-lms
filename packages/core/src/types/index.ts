@@ -16,3 +16,4 @@ export * from "./integrations.js";
 export * from "./automations.js";
 export * from "./discussion.js";
 export * from "./evaluation.js";
+export * from "./waves.js";

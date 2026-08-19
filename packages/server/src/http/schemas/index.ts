@@ -20,3 +20,4 @@ export * from "./integrations.js";
 export * from "./settings.js";
 export * from "./discussion.js";
 export * from "./evaluations.js";
+export * from "./waves.js";

@@ -42,6 +42,7 @@ export const GrantEntitlement = z.object({
   orgUserId: z.string(),
   contentId: z.string(),
   expiresAt: z.coerce.date().nullable(),
+  source: z.string().trim().min(1).optional(),
 });
 export type GrantEntitlement = z.infer<typeof GrantEntitlement>;
 

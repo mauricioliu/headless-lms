@@ -87,6 +87,8 @@ export const createInviteInputSchema = z.object({
   inviterUserId: idSchema,
   firstName: z.string().optional(),
   lastName: z.string().optional(),
+  rut: z.string().optional(),
+  phone: z.string().optional(),
   sendEmail: z.boolean().optional(),
 }).strict();
 export type CreateInviteInput = z.infer<typeof createInviteInputSchema>;

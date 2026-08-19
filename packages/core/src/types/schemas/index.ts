@@ -12,3 +12,4 @@ export * from "./credentials.js";
 export * from "./outbox.js";
 export * from "./settings.js";
 export * from "./evaluation.js";
+export * from "./waves.js";

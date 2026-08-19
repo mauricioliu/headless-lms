@@ -22,6 +22,7 @@ import {
   DrizzleSettingsRepository,
   DrizzleStudentsRepository,
   DrizzleUnitOfWork,
+  DrizzleWaveRepository,
 } from '@headless-lms/adapter-db';
 import { InMemoryEventBus } from '@headless-lms/adapter-defaults/events';
 import {
@@ -44,6 +45,7 @@ import { ContentService } from '@headless-lms/core/content';
 import { EntitlementsServiceImpl } from '@headless-lms/core/entitlements';
 import { ProgressServiceImpl } from '@headless-lms/core/progress';
 import { EvaluationService } from '@headless-lms/core/evaluation';
+import { WaveService } from '@headless-lms/core/waves';
 import { DiscussionServiceImpl } from '@headless-lms/core/discussion';
 import { IdentityServiceImpl, type SessionAdmin } from '@headless-lms/core/identity';
 import { type OrgAdmin, OrganizationServiceImpl, parseRole } from '@headless-lms/core/organizations';
@@ -157,6 +159,7 @@ export interface Container {
   // Domains
   identity: IdentityServiceImpl;
   organizations: OrganizationServiceImpl;
+  waves: WaveService;
   content: ContentService;
   evaluation: EvaluationService;
   entitlements: EntitlementsServiceImpl;
@@ -209,6 +212,7 @@ export async function buildContainer(
 
   const contentLogger = logger.child({ name: 'content' });
   const evaluationLogger = logger.child({ name: 'evaluation' });
+  const wavesLogger = logger.child({ name: 'waves' });
   const entitlementsLogger = logger.child({ name: 'entitlements' });
   const progressLogger = logger.child({ name: 'progress' });
   const discussionLogger = logger.child({ name: 'discussion' });
@@ -311,6 +315,21 @@ export async function buildContainer(
     logger: progressLogger,
   });
 
+  // Waves: reads on the root db; the wave + membership write and its outbox
+  // event commit in one tx. Provisioning of the Trabajadores themselves goes
+  // through organizations (invites) and entitlements (the inscription).
+  const waves = new WaveService({
+    repo: new DrizzleWaveRepository(db, wavesLogger),
+    uow: new DrizzleUnitOfWork(db, (tx) => ({
+      waves: new DrizzleWaveRepository(tx, wavesLogger),
+      outbox: new DrizzleOutboxAppender(tx, outboxLogger),
+    })),
+    courses: content,
+    people: identity,
+    organizations,
+    entitlements,
+    logger: wavesLogger,
+  });
   const discussion = new DiscussionServiceImpl({
     repo: new DrizzleDiscussionRepository(db, discussionLogger),
     access: entitlements,
@@ -537,6 +556,7 @@ export async function buildContainer(
     auth,
     identity,
     organizations,
+    waves,
     // Better Auth owns org writes; the same instance fulfils the OrgAdmin port.
     orgProvider: auth,
     content,
