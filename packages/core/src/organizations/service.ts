@@ -7,7 +7,7 @@ import type {
   OrganizationsRepository,
   OrganizationsUnitOfWork,
 } from './ports.js';
-import type { Invite, Organization, OrgUser } from './model.js';
+import type { Invite, Organization, OrgUser, User } from './model.js';
 import { type Role, STUDENT_ROLE } from './roles.js';
 import {
   InviteError,
@@ -177,7 +177,7 @@ export class OrganizationServiceImpl implements OrganizationService {
   }
 
   async createInvite(input: CreateInviteInput): Promise<Invite> {
-    const { orgId, email, role, inviterUserId, firstName, lastName } = input;
+    const { orgId, email, role, inviterUserId, firstName, lastName, rut, phone } = input;
     const sendEmail = input.sendEmail ?? true;
     const { token, tokenHash } = generateInviteToken();
     const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
@@ -186,14 +186,30 @@ export class OrganizationServiceImpl implements OrganizationService {
     // the moment they click a link — so the person exists before the invite
     // does. Staff are excluded: their org_users row is mirrored from the auth
     // provider's member record, which does not exist until they join.
-    const person =
-      role === STUDENT_ROLE
-        ? await this.people.createUser({
-            email,
-            ...(firstName !== undefined && { firstName }),
-            ...(lastName !== undefined && { lastName }),
-          })
-        : null;
+    //
+    // findOrCreate, not create: the same address may already be provisioned
+    // (a re-invite, a second Ola, a roster re-upload). An existing person is
+    // refreshed with whatever roster fields this call carries — the CSV is the
+    // Empresa Cliente's canonical roster — instead of colliding on the email.
+    let person: User | null = null;
+    if (role === STUDENT_ROLE) {
+      const found = await this.people.findOrCreateUser({
+        email,
+        ...(firstName !== undefined && { firstName }),
+        ...(lastName !== undefined && { lastName }),
+        ...(rut !== undefined && { rut }),
+        ...(phone !== undefined && { phone }),
+      });
+      person = found.user;
+      if (!found.created) {
+        await this.people.updateUser(person.id, {
+          ...(firstName !== undefined && { firstName }),
+          ...(lastName !== undefined && { lastName }),
+          ...(rut !== undefined && { rut }),
+          ...(phone !== undefined && { phone }),
+        });
+      }
+    }
 
     const invite = await this.uow.run(async ({ organizations, outbox }) => {
       const row = await organizations.upsertPendingInvite(orgId, {

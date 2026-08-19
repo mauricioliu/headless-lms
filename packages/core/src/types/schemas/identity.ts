@@ -7,6 +7,10 @@ export const userSchema = z.object({
   email: emailSchema,
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
+  // Roster data an Empresa Cliente's CSV carries; stored for reporting and
+  // manual escalation, never read by any authentication path.
+  rut: z.string().nullable(),
+  phone: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 }).strict();
@@ -19,6 +23,8 @@ export const createUserInputSchema = z.object({
   email: emailSchema,
   firstName: z.string().optional(),
   lastName: z.string().optional(),
+  rut: z.string().optional(),
+  phone: z.string().optional(),
 }).strict();
 export type CreateUserInput = z.infer<typeof createUserInputSchema>;
 
@@ -34,5 +40,7 @@ export const updateUserInputSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   email: emailSchema.optional(),
+  rut: z.string().optional(),
+  phone: z.string().optional(),
 }).strict();
 export type UpdateUserInput = z.infer<typeof updateUserInputSchema>;

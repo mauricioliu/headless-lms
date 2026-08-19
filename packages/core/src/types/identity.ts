@@ -17,6 +17,10 @@ export interface User {
   readonly email: string;
   readonly firstName: string | null;
   readonly lastName: string | null;
+  // Roster attributes from an Empresa Cliente's CSV (RUT, teléfono). Stored
+  // for the admin's reads; no authentication path consults them.
+  readonly rut: string | null;
+  readonly phone: string | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }

@@ -226,7 +226,7 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
         bundleId,
         contentId,
         status: 'active',
-        source: 'manual',
+        source: input.source ?? 'manual',
         grantedAt: new Date(),
         expiresAt: input.expiresAt,
       })
@@ -234,7 +234,7 @@ export class DrizzleEntitlementsRepository implements EntitlementsRepository {
         target,
         set: {
           status: 'active',
-          source: 'manual',
+          source: input.source ?? 'manual',
           grantedAt: new Date(),
           expiresAt: input.expiresAt,
         },
