@@ -41,8 +41,8 @@ const EXPECTED: { [K in EmailTemplateId]: { subject: string; body: string[] } } 
     body: ["Camila, te invitaron a Minera Los Andes.", "Este enlace es personal: no lo reenvíes."],
   },
   memberInvite: {
-    subject: "Te invitaron a unirte a Minera Los Andes",
-    body: ["Ana te invitó a unirte a Minera Los Andes como admin."],
+    subject: "Invitación a unirse a Minera Los Andes",
+    body: ["Ana le invitó a unirse a Minera Los Andes como admin."],
   },
   passwordReset: {
     subject: "Restablecer la contraseña de Minera Los Andes",
