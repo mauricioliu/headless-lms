@@ -111,12 +111,17 @@ describe('Sustrato delivery smoke', () => {
     expect(captured).toHaveLength(1);
     const rendered = JSON.parse(captured[0]!.text) as {
       template: string;
-      params: { inviteUrl: string };
+      params: { url: string };
     };
-    expect(rendered.template).toBe('studentInvite');
-    const inviteUrl = new URL(rendered.params.inviteUrl);
-    expect(`${inviteUrl.origin}${inviteUrl.pathname}`).toBe(`${TEST_STUDENT_PORTAL_URL}/welcome`);
-    const token = inviteUrl.searchParams.get('token');
+    // The invitation IS the magic link: one click, a session, no password.
+    expect(rendered.template).toBe('magicLink');
+    const magicUrl = new URL(rendered.params.url);
+    expect(`${magicUrl.origin}${magicUrl.pathname}`).toBe(
+      `${harness.origin}/api/auth/magic-link/verify`,
+    );
+    const callback = new URL(magicUrl.searchParams.get('callbackURL')!);
+    expect(`${callback.origin}${callback.pathname}`).toBe(`${TEST_STUDENT_PORTAL_URL}/welcome`);
+    const token = callback.searchParams.get('token');
     expect(token).toBeTruthy();
 
     const peek = await app.inject({

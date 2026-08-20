@@ -78,6 +78,9 @@ function fakeAttempts() {
           .sort((a, b) => b.attemptNumber - a.attemptNumber)[0] ?? null
       );
     },
+    async existsForOrgUser(_orgId, orgUserId) {
+      return attempts.some((a) => a.orgUserId === orgUserId);
+    },
     async insert(_orgId, attempt) {
       const key = (a: Attempt) => `${a.courseId}|${a.orgUserId}|${a.attemptNumber}`;
       if (attempts.some((a) => key(a) === key(attempt))) {
@@ -224,7 +227,7 @@ describe('EvaluationService.submitAttempt', () => {
     expect(appended.filter((e) => e.type === 'evaluation.attempt.graded')).toHaveLength(1);
   });
 
-  it('scores one miss out of three at 67; passing is score ≥ cutoff', async () => {
+  it('scores one miss out of three at 66 (floor per ADR 0003); passing is score ≥ cutoff', async () => {
     const { service } = makeService();
     await service.startAttempt('org_1', document.courseId, 'orm_1');
     const feedback = await service.submitAttempt('org_1', document.courseId, 'orm_1', 1, {
@@ -234,11 +237,11 @@ describe('EvaluationService.submitAttempt', () => {
         { questionId: 'q3', optionId: 'y' },
       ],
     });
-    expect(feedback.score).toBe(67);
+    expect(feedback.score).toBe(66);
     expect(feedback.passed).toBe(false);
 
     const lenient = makeService({
-      document: { ...document, cutoff: 67 },
+      document: { ...document, cutoff: 66 },
     });
     await lenient.service.startAttempt('org_1', document.courseId, 'orm_1');
     const atCutoff = await lenient.service.submitAttempt('org_1', document.courseId, 'orm_1', 1, {
@@ -248,8 +251,8 @@ describe('EvaluationService.submitAttempt', () => {
         { questionId: 'q3', optionId: 'x' },
       ],
     });
-    expect(atCutoff.score).toBe(67);
-    expect(atCutoff.cutoff).toBe(67);
+    expect(atCutoff.score).toBe(66);
+    expect(atCutoff.cutoff).toBe(66);
     expect(atCutoff.passed).toBe(true);
   });
 

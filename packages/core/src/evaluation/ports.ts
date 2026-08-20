@@ -8,6 +8,8 @@ export interface EvaluationRepository {
 
 export interface EvaluationAttemptRepository {
   findLatest(orgId: string, courseId: string, orgUserId: string): Promise<Attempt | null>;
+  /** Any attempt at all, any course — the student-delete evidence guard. */
+  existsForOrgUser(orgId: string, orgUserId: string): Promise<boolean>;
   insert(orgId: string, attempt: Attempt): Promise<Attempt | null>;
   submit(
     orgId: string,

@@ -9,7 +9,8 @@ export default function MagicLink({ ctx, params }: { ctx: TemplateContext; param
   return (
     <Layout ctx={ctx} heading="Iniciar sesión">
       <Paragraph>
-        Haz clic en el botón para entrar. Este enlace funciona una sola vez y expira pronto.
+        Haz clic en el botón para entrar. Este enlace es personal: funciona una sola
+        vez.
       </Paragraph>
       <EmailButton href={params.url}>Entrar a {ctx.brandName}</EmailButton>
       <Paragraph>Si no fuiste tú, puedes ignorar este correo.</Paragraph>

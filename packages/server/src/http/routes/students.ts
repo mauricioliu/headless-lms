@@ -123,9 +123,11 @@ export async function studentsRoutes(app: FastifyInstance, container: Container)
     schema: {
       operationId: 'deleteStudent',
       tags: ['Organizations'],
-      summary: 'Delete a student',
+      summary: 'Delete a zero-evidence student',
+      description:
+        'Refused with 409 while the Trabajador has any recorded evidence (Intentos or progress) — the registro is append-only. A zero-evidence worker (an ingest mistake being corrected) is deleted along with their entitlements and pending invitation.',
       params: StudentIdParam,
-      response: { 204: z.void(), 404: ErrorBody },
+      response: { 204: z.void(), 404: ErrorBody, 409: ErrorBody },
     },
     handler: async (req, reply) => {
       const scope = await resolveScope(container, req);

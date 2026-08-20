@@ -163,7 +163,8 @@ export class EvaluationService {
           hits += 1;
         }
       }
-      const score = Math.round((hits / evaluation.questions.length) * 100);
+      // ADR 0003: puntaje = floor(100 × correctas / total).
+      const score = Math.floor((hits / evaluation.questions.length) * 100);
       const passed = score >= evaluation.cutoff;
       const submittedAt = new Date();
       const stored = await attempts.submit(orgId, courseId, orgUserId, attemptNumber, {
@@ -226,6 +227,11 @@ export class EvaluationService {
     }
     const latest = await this.attempts.findLatest(orgId, courseId, orgUserId);
     return latest ? toFeedback(latest, evaluation) : null;
+  }
+
+  /** Whether the Trabajador has ever rendido in any course of the org. */
+  hasAttempts(orgId: string, orgUserId: string): Promise<boolean> {
+    return this.attempts.existsForOrgUser(orgId, orgUserId);
   }
 
   async latestApproval(

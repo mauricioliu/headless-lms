@@ -30,7 +30,7 @@ import type { Logger, NewDomainEvent } from '../shared/ports.js';
 import { noopLogger } from '../shared/logger.js';
 import type { Mailer } from '../shared/mailer.js';
 import { generateInviteToken, hashInviteToken } from '../shared/invite-token.js';
-import { NotFoundError } from '../shared/errors.js';
+import { ConflictError, NotFoundError } from '../shared/errors.js';
 import type { IdentityService } from '../identity/index.js';
 import { genId } from '../shared/id.js';
 
@@ -65,6 +65,17 @@ export type OrganizationServiceParams = {
   logger?: Logger;
   mailer?: Pick<Mailer, 'send'>;
   inviteUrls?: InviteUrls;
+  /** Passwordless student invites: mints a one-time entry link that lands on
+   *  the student portal. Absent → student invite delivery fails loudly. */
+  magicInvite?: {
+    send(input: { email: string; name: string; callbackUrl: string }): Promise<void>;
+  };
+  /** The evidence read the delete guard consults: a Trabajador with recorded
+   *  Intentos or avance can never be deleted. */
+  evidence?: {
+    hasAttempts(orgId: string, orgUserId: string): Promise<boolean>;
+    hasProgress(orgId: string, orgUserId: string): Promise<boolean>;
+  };
 };
 
 export class OrganizationServiceImpl implements OrganizationService {
@@ -75,6 +86,8 @@ export class OrganizationServiceImpl implements OrganizationService {
   private readonly logger: Logger;
   private readonly mailer?: Pick<Mailer, 'send'>;
   private readonly inviteUrls?: InviteUrls;
+  private readonly magicInvite?: OrganizationServiceParams['magicInvite'];
+  private readonly evidence?: OrganizationServiceParams['evidence'];
 
   constructor(params: OrganizationServiceParams) {
     this.repo = params.repo;
@@ -84,6 +97,8 @@ export class OrganizationServiceImpl implements OrganizationService {
     this.logger = params.logger ?? noopLogger;
     this.mailer = params.mailer;
     this.inviteUrls = params.inviteUrls;
+    this.magicInvite = params.magicInvite;
+    this.evidence = params.evidence;
   }
 
   async createOrganization(input: CreateOrganizationInput): Promise<Organization> {
@@ -243,7 +258,7 @@ export class OrganizationServiceImpl implements OrganizationService {
 
     if (sendEmail) {
       // TODO make this workflow durable
-      await this.sendInviteEmail(invite, token);
+      await this.sendInviteEmail(invite, token, person);
     }
 
     this.logger.info('invite created', { orgId, inviteId: invite.id, role, sendEmail });
@@ -396,6 +411,21 @@ export class OrganizationServiceImpl implements OrganizationService {
       if (!orgUser) {
         throw new NotFoundError('OrgUser', id);
       }
+      // The registro is append-only: a Trabajador with any recorded evidence
+      // (Intentos or avance) is undeletable, so the org_users cascade can never
+      // reach their rows. Only zero-evidence workers — ingest mistakes being
+      // corrected — may be deleted.
+      if (orgUser.role === STUDENT_ROLE && this.evidence) {
+        const [hasAttempts, hasProgress] = await Promise.all([
+          this.evidence.hasAttempts(orgId, id),
+          this.evidence.hasProgress(orgId, id),
+        ]);
+        if (hasAttempts || hasProgress) {
+          throw new ConflictError(
+            'student has recorded evidence (attempts or progress) and cannot be deleted',
+          );
+        }
+      }
       const deletedUser = await organizations.deleteOrgUser(orgId, id);
       if (!deletedUser) {
         throw new NotFoundError('OrgUser', id);
@@ -422,9 +452,13 @@ export class OrganizationServiceImpl implements OrganizationService {
     return this.repo.findById(id);
   }
 
-  private async sendInviteEmail(invite: Invite, token: string): Promise<void> {
-    if (!this.mailer || !this.inviteUrls) {
-      throw new Error('invite delivery is not configured (mailer / invite urls missing)');
+  private async sendInviteEmail(
+    invite: Invite,
+    token: string,
+    person: User | null,
+  ): Promise<void> {
+    if (!this.inviteUrls) {
+      throw new Error('invite delivery is not configured (invite urls missing)');
     }
     const { email, role } = invite;
     const isStudent = role === STUDENT_ROLE;
@@ -438,9 +472,20 @@ export class OrganizationServiceImpl implements OrganizationService {
       : new URLSearchParams({ token, email });
     const inviteUrl = `${base}?${query.toString()}`;
     try {
-      if (role === STUDENT_ROLE) {
-        await this.mailer.send(email, 'studentInvite', { inviteUrl, studentName: email });
+      if (isStudent) {
+        // The student invitation is a magic link: one click, a session, no
+        // password ever. The invite token rides along as the landing page's
+        // query so acceptance is one tap away once they are in.
+        if (!this.magicInvite) {
+          throw new Error('invite delivery is not configured (magic invite missing)');
+        }
+        const name =
+          [person?.firstName, person?.lastName].filter(Boolean).join(' ').trim() || email;
+        await this.magicInvite.send({ email, name, callbackUrl: inviteUrl });
       } else {
+        if (!this.mailer) {
+          throw new Error('invite delivery is not configured (mailer missing)');
+        }
         await this.mailer.send(email, 'memberInvite', {
           inviteUrl,
           inviterName: 'Your team',

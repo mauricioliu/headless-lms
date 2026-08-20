@@ -304,6 +304,10 @@ export class ProgressServiceImpl implements ProgressService {
     return this.repo.findByTargets(orgId, orgUserId, targetIds);
   }
 
+  hasRecords(orgId: string, orgUserId: string): Promise<boolean> {
+    return this.repo.existsForOrgUser(orgId, orgUserId);
+  }
+
   async coursePercent(orgId: string, orgUserId: string, courseId: string): Promise<number> {
     const activities = await this.content.listCourseActivities(orgId, courseId);
     const ids = activities.filter((a) => isActivityPublished(a.settings)).map((a) => a.id);

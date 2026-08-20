@@ -12,13 +12,12 @@ import { Organizations, type GetInviteResponse } from "@headless-lms/sdk";
 
 import { AuthShell, AuthHeading } from "@/components/auth/auth-shell";
 import { InviteProblem } from "@/components/welcome/invite-problem";
-import { InviteAuthForm } from "@/components/welcome/invite-auth-form";
+import { MagicInviteForm } from "@/components/welcome/magic-invite-form";
 import { AcceptInviteCard } from "@/components/welcome/accept-invite-card";
 import { getServerSession } from "@/lib/auth/server-session";
 import { authHeaders } from "@/lib/api/server-call";
 import { getBranding } from "@/lib/api/branding";
 import { ApiError } from "@/lib/api/shared";
-import { fullName } from "@/lib/format";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { brandName } = await getBranding();
@@ -31,9 +30,9 @@ export const dynamic = "force-dynamic";
 export default async function WelcomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; error?: string }>;
 }) {
-  const { token = "" } = await searchParams;
+  const { token = "", error } = await searchParams;
   const { brandName } = await getBranding();
 
   let invite: GetInviteResponse | undefined;
@@ -71,7 +70,12 @@ export default async function WelcomePage({
           />
         </>
       ) : (
-        <InviteAuthForm token={token} email={invite.email} name={fullName(invite)} />
+        <>
+          <AuthHeading title="Recibiste una invitación">
+            Entra con el enlace que enviamos a tu correo.
+          </AuthHeading>
+          <MagicInviteForm email={invite.email} stale={error !== undefined} />
+        </>
       )}
     </AuthShell>
   );

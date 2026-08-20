@@ -59,7 +59,7 @@ async function bootstrapStaff(email: string, name: string): Promise<void> {
   expect(org.statusCode).toBeLessThan(400);
 }
 
-/** Invites + signs up + accepts, leaving the caller with a student membership. */
+/** Invites + enters by magic link + accepts, leaving the Trabajador active. */
 async function bootstrapStudent(email: string, firstName: string, lastName: string): Promise<void> {
   const owner = new CookieJar();
   const ownerHeaders = () => ({ origin: harness.origin, cookie: owner.header() });
@@ -92,16 +92,13 @@ async function bootstrapStudent(email: string, firstName: string, lastName: stri
   const studentInvite = await capturedInviteToken(email);
   expect(studentInvite).toBeTruthy();
 
+  const magic = await capturedMagicUrl(email);
+  expect(magic).toBeTruthy();
   const jar = new CookieJar();
   const headers = () => ({ origin: TEST_STUDENT_PORTAL_URL, cookie: jar.header() });
-  const studentSignup = await app.inject({
-    method: 'POST',
-    url: '/api/auth/sign-up/email',
-    headers: headers(),
-    payload: { email, password: 'original-password-1', name: `${firstName} ${lastName}` },
-  });
-  expect(studentSignup.statusCode).toBeLessThan(400);
-  jar.store(studentSignup.headers['set-cookie']);
+  const visit = await app.inject({ method: 'GET', url: `${magic!.pathname}${magic!.search}` });
+  expect([302, 307]).toContain(visit.statusCode);
+  jar.store(visit.headers['set-cookie']);
   const accept = await app.inject({
     method: 'POST',
     url: '/api/organizations/invites/accept',
@@ -117,10 +114,31 @@ async function capturedInviteToken(to: string): Promise<string | undefined> {
     if (message) {
       const rendered = JSON.parse(message.text) as {
         template: string;
-        params: { inviteUrl: string };
+        params: { url: string };
       };
-      if (rendered.template === 'studentInvite') {
-        return new URL(rendered.params.inviteUrl).searchParams.get('token') ?? undefined;
+      if (rendered.template === 'magicLink') {
+        const callback = new URL(rendered.params.url).searchParams.get('callbackURL');
+        const token = callback ? new URL(callback).searchParams.get('token') : null;
+        if (token) {
+          return token;
+        }
+      }
+    }
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  return undefined;
+}
+
+async function capturedMagicUrl(to: string): Promise<URL | undefined> {
+  for (let i = 0; i < 20; i++) {
+    const message = harness.mailer.to(to).at(-1);
+    if (message) {
+      const rendered = JSON.parse(message.text) as {
+        template: string;
+        params: { url: string };
+      };
+      if (rendered.template === 'magicLink') {
+        return new URL(rendered.params.url);
       }
     }
     await new Promise((r) => setTimeout(r, 50));

@@ -68,17 +68,18 @@ async function inviteStudent(
   expect(invite.statusCode).toBe(201);
   const captured = harness.mailer.to(email);
   expect(captured).toHaveLength(1);
-  const rendered = JSON.parse(captured[0]!.text) as { params: { inviteUrl: string } };
-  const token = new URL(rendered.params.inviteUrl).searchParams.get('token');
+  const rendered = JSON.parse(captured[0]!.text) as {
+    template: string;
+    params: { url: string };
+  };
+  expect(rendered.template).toBe('magicLink');
+  const magicUrl = new URL(rendered.params.url);
+  const callback = magicUrl.searchParams.get('callbackURL')!;
+  const token = new URL(callback).searchParams.get('token');
   expect(token).toBeTruthy();
-  const signup = await app.inject({
-    method: 'POST',
-    url: '/api/auth/sign-up/email',
-    headers: headers(),
-    payload: { email, password: 'student-password-1', name: firstName },
-  });
-  expect(signup.statusCode).toBeLessThan(400);
-  jar.store(signup.headers['set-cookie']);
+  const visit = await app.inject({ method: 'GET', url: `${magicUrl.pathname}${magicUrl.search}` });
+  expect([302, 307]).toContain(visit.statusCode);
+  jar.store(visit.headers['set-cookie']);
   const accepted = await app.inject({
     method: 'POST',
     url: '/api/organizations/invites/accept',
@@ -278,9 +279,30 @@ async function courseCompleted(learner: Learner, courseId: string): Promise<bool
   return res.json().completed as boolean;
 }
 
+/** The Completado mail reaches the captured mailbox via the outbox relay —
+ *  poll until it lands (or give up loudly). */
+async function capturedCourseCompleted(to: string): Promise<string | undefined> {
+  for (let i = 0; i < 60; i++) {
+    for (const message of harness.mailer.to(to)) {
+      const rendered = JSON.parse(message.text) as {
+        template: string;
+        params: { courseTitle?: string };
+      };
+      if (rendered.template === 'courseCompleted') {
+        return rendered.params.courseTitle;
+      }
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return undefined;
+}
+
 beforeAll(async () => {
   harness = await buildTestApp();
   app = harness.app;
+  // The courseCompleted mail rides the outbox relay — run it exactly as the
+  // installation's entry point does.
+  harness.container.outboxRelay.start();
 
   const jar = new CookieJar();
   const adminHeaders = () => ({ origin: harness.origin, cookie: jar.header() });
@@ -445,7 +467,7 @@ describe('Evaluation attempts HTTP seam', () => {
 
     await startAttempt(learner, staff.courseId);
     const first = await submitAttempt(learner, staff.courseId, 1, twoThirds);
-    expect(first.body).toMatchObject({ attemptNumber: 1, score: 67, passed: false });
+    expect(first.body).toMatchObject({ attemptNumber: 1, score: 66, passed: false });
 
     const resubmitted = await submitAttempt(learner, staff.courseId, 1, allCorrect);
     expect(resubmitted.statusCode).toBe(409);
@@ -488,7 +510,7 @@ describe('Evaluation attempts HTTP seam', () => {
     await startAttempt(learner, raised.courseId);
     const after = await submitAttempt(learner, raised.courseId, 2, twoThirds);
     expect(after.body.cutoff).toBe(60);
-    expect(after.body.score).toBe(67);
+    expect(after.body.score).toBe(66);
     expect(after.body.passed).toBe(true);
   });
 
@@ -536,7 +558,10 @@ describe('Evaluation attempts HTTP seam', () => {
     await startAttempt(learner, staff.courseId);
     await submitAttempt(learner, staff.courseId, 2, allCorrect);
     expect(await courseCompleted(learner, staff.courseId)).toBe(true);
-  });
+
+    const mailTitle = await capturedCourseCompleted('conjuncion@faena.test');
+    expect(mailTitle).toBe('Ley Karin · Intentos');
+  }, 120_000);
 
   it('a course without an evaluation has no gate: Completado = avance 100%', async () => {
     const plain = await createPublishedCourse('Sin evaluación', 'score_only', false);
@@ -548,7 +573,10 @@ describe('Evaluation attempts HTTP seam', () => {
 
     await watchAll(learner.headers, plain.activityIds);
     expect(await courseCompleted(learner, plain.courseId)).toBe(true);
-  });
+
+    const mailTitle = await capturedCourseCompleted('sin.eval@faena.test');
+    expect(mailTitle).toBe('Sin evaluación');
+  }, 120_000);
 
   it('isolates learners: attempts are per (course, learner)', async () => {
     const a = await enrollStudent('aislada.a@faena.test', 'Amanda', staff.courseId);

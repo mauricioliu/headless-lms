@@ -285,6 +285,16 @@ export async function buildContainer(
   /*
    * Organization
    */
+  // Both cross-context ports below are invoked only at request time, long
+  // after their providers exist — late-bound refs (same pattern as progressRef)
+  // keep the construction order intact.
+  const authRef: { current: BetterAuth | null } = { current: null };
+  const evidenceRef: {
+    current: {
+      hasAttempts: (orgId: string, orgUserId: string) => Promise<boolean>;
+      hasProgress: (orgId: string, orgUserId: string) => Promise<boolean>;
+    } | null;
+  } = { current: null };
   const organizationsUow = new DrizzleUnitOfWork(db, (tx) => ({
     organizations: new DrizzleOrganizationsRepository(tx, logger.child({ name: 'org' })),
     outbox: new DrizzleOutboxAppender(tx, logger.child({ name: 'org' })),
@@ -297,6 +307,33 @@ export async function buildContainer(
     logger: logger.child({ name: 'org' }),
     mailer,
     inviteUrls: { studentPortalUrl: config.studentPortalUrl, adminAppUrl: config.adminAppUrl },
+    magicInvite: {
+      send: async (input) => {
+        const auth = authRef.current;
+        if (!auth) {
+          throw new Error('magic invite delivery is not configured (auth not ready)');
+        }
+        await auth.sendMagicLink({
+          email: input.email,
+          name: input.name,
+          callbackURL: input.callbackUrl,
+        });
+      },
+    },
+    evidence: {
+      hasAttempts: (orgId, orgUserId) => {
+        if (!evidenceRef.current) {
+          throw new Error('evidence guard is not configured');
+        }
+        return evidenceRef.current.hasAttempts(orgId, orgUserId);
+      },
+      hasProgress: (orgId, orgUserId) => {
+        if (!evidenceRef.current) {
+          throw new Error('evidence guard is not configured');
+        }
+        return evidenceRef.current.hasProgress(orgId, orgUserId);
+      },
+    },
   });
 
   /*
@@ -368,6 +405,10 @@ export async function buildContainer(
     logger: progressLogger,
   });
   progressRef.current = progress;
+  evidenceRef.current = {
+    hasAttempts: (orgId, orgUserId) => evaluation.hasAttempts(orgId, orgUserId),
+    hasProgress: (orgId, orgUserId) => progress.hasRecords(orgId, orgUserId),
+  };
 
   // Waves: reads on the root db; the wave + membership write and its outbox
   // event commit in one tx. Provisioning of the Trabajadores themselves goes
@@ -617,6 +658,7 @@ export async function buildContainer(
     cookieDomain: config.cookieDomain,
     secureCookies: config.secureCookies,
   });
+  authRef.current = auth;
 
   return {
     auth,

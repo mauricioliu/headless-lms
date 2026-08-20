@@ -45,6 +45,15 @@ export class DrizzleEvaluationAttemptRepository implements EvaluationAttemptRepo
     return row ? toAttempt(row) : null;
   }
 
+  async existsForOrgUser(orgId: string, orgUserId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ orgUserId: evaluationAttempts.orgUserId })
+      .from(evaluationAttempts)
+      .where(and(eq(evaluationAttempts.orgId, orgId), eq(evaluationAttempts.orgUserId, orgUserId)))
+      .limit(1);
+    return row !== undefined;
+  }
+
   async insert(orgId: string, attempt: Attempt): Promise<Attempt | null> {
     const [row] = await this.db
       .insert(evaluationAttempts)

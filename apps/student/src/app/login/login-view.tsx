@@ -25,6 +25,10 @@ export function LoginView({ brandName }: { brandName: string }) {
     if (session) router.replace(next);
   }, [session, router, next]);
 
+  // A magic link that came back bad lands here with ?error= — the entry form
+  // below is the recovery: send a fresh one.
+  const staleLink = params.get("error") !== null;
+
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
       {/* Form column */}
@@ -42,7 +46,7 @@ export function LoginView({ brandName }: { brandName: string }) {
                 Bienvenido de nuevo. Ingresa tus datos para continuar tus cursos.
               </p>
             </div>
-            <LoginForms onDone={() => router.replace(next)} />
+            <LoginForms next={next} staleLink={staleLink} onDone={() => router.replace(next)} />
           </div>
         </div>
       </div>
@@ -65,12 +69,27 @@ export function LoginView({ brandName }: { brandName: string }) {
   );
 }
 
-function LoginForms({ onDone }: { onDone: () => void }) {
-  const [mode, setMode] = useState<"signin" | "forgot">("signin");
+function LoginForms({
+  next,
+  staleLink,
+  onDone,
+}: {
+  next: string;
+  staleLink: boolean;
+  onDone: () => void;
+}) {
+  const [mode, setMode] = useState<"signin" | "forgot" | "magic">("signin");
   return mode === "forgot" ? (
     <ForgotPasswordForm onBack={() => setMode("signin")} />
+  ) : mode === "magic" ? (
+    <MagicLinkForm next={next} onBack={() => setMode("signin")} />
   ) : (
-    <SignInForm onDone={onDone} onForgotPassword={() => setMode("forgot")} />
+    <SignInForm
+      staleLink={staleLink}
+      onDone={onDone}
+      onForgotPassword={() => setMode("forgot")}
+      onMagicLink={() => setMode("magic")}
+    />
   );
 }
 
@@ -158,11 +177,15 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
 }
 
 function SignInForm({
+  staleLink,
   onDone,
   onForgotPassword,
+  onMagicLink,
 }: {
+  staleLink: boolean;
   onDone: () => void;
   onForgotPassword: () => void;
+  onMagicLink: () => void;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -188,6 +211,12 @@ function SignInForm({
 
   return (
     <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
+      {staleLink && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-quiz-wrong-border bg-quiz-wrong-bg px-3 py-2.5 text-sm text-quiz-wrong-fg">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <p>El enlace con el que llegaste expiró o ya se usó. Puedes pedir uno nuevo abajo.</p>
+        </div>
+      )}
       {error && (
         <div className="flex items-start gap-2.5 rounded-lg border border-quiz-wrong-border bg-quiz-wrong-bg px-3 py-2.5 text-sm text-quiz-wrong-fg">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
@@ -234,6 +263,100 @@ function SignInForm({
       <Button type="submit" variant="brand" disabled={submitting} className="mt-1 w-full">
         {submitting && <Loader2 className="animate-spin" />}
         Iniciar sesión
+      </Button>
+      <button
+        type="button"
+        onClick={onMagicLink}
+        className="text-sm text-ink-3 underline-offset-4 hover:text-ink hover:underline"
+      >
+        ¿Sin contraseña? Entra con un enlace al correo
+      </button>
+    </form>
+  );
+}
+
+function MagicLinkForm({ next, onBack }: { next: string; onBack: () => void }) {
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    const { error: failure } = await authClient.signIn.magicLink({
+      email,
+      callbackURL: `${window.location.origin}${next}`,
+    });
+    // Any answered request — success or API error — confirms the same way:
+    // the engine never says whether the address is known.
+    if (failure && failure.status == null) {
+      setError("No pudimos enviar el correo. Inténtalo de nuevo.");
+      setSubmitting(false);
+      return;
+    }
+    setSent(true);
+    setSubmitting(false);
+  }
+
+  if (sent) {
+    return (
+      <div className="mt-6 flex flex-col items-center gap-3 py-4 text-center">
+        <div className="grid size-10 place-items-center rounded-full bg-surface-2 text-brand">
+          <MailCheck className="size-5" />
+        </div>
+        <h2 className="text-lg font-semibold tracking-tight text-ink">Revisa tu correo</h2>
+        <p className="text-sm text-ink-3 text-pretty">
+          Si el correo está registrado, llegó un enlace para entrar. Ábrelo para continuar; funciona
+          una sola vez.
+        </p>
+        <Button variant="ghost" size="sm" onClick={onBack} className="mt-2">
+          <ArrowLeft />
+          Volver a iniciar sesión
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
+      <div className="flex flex-col gap-1.5">
+        <h2 className="text-xl font-semibold tracking-tight text-ink text-balance">
+          Entrar con un enlace
+        </h2>
+        <p className="text-sm text-ink-3 text-pretty">
+          Te enviamos un enlace a tu correo; ábrelo para entrar sin contraseña.
+        </p>
+      </div>
+      {error && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-quiz-wrong-border bg-quiz-wrong-bg px-3 py-2.5 text-sm text-quiz-wrong-fg">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <p>{error}</p>
+        </div>
+      )}
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="magic-email" className="text-sm font-medium text-ink">
+          Correo
+        </label>
+        <input
+          id="magic-email"
+          type="email"
+          autoComplete="email"
+          placeholder="tu@ejemplo.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={inputClass}
+          required
+        />
+      </div>
+      <Button type="submit" variant="brand" disabled={submitting} className="mt-1 w-full">
+        {submitting && <Loader2 className="animate-spin" />}
+        Enviar enlace
+      </Button>
+      <Button type="button" variant="ghost" size="sm" onClick={onBack}>
+        <ArrowLeft />
+        Volver a iniciar sesión
       </Button>
     </form>
   );

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
-import { buildTestApp, CookieJar, type TestApp } from './test-app.js';
+import { buildTestApp, CookieJar, enterByMagicLink, type TestApp } from './test-app.js';
 
 let app: FastifyInstance;
 let harness: TestApp;
@@ -139,28 +139,8 @@ beforeAll(async () => {
   expect(invite.statusCode).toBe(201);
   const captured = harness.mailer.to(email);
   expect(captured).toHaveLength(1);
-  const rendered = JSON.parse(captured[0]!.text) as { params: { inviteUrl: string } };
-  const token = new URL(rendered.params.inviteUrl).searchParams.get('token');
-  expect(token).toBeTruthy();
-
-  const studentJar = new CookieJar();
-  studentHeaders = () => ({ origin: harness.origin, cookie: studentJar.header() });
-  const studentSignup = await app.inject({
-    method: 'POST',
-    url: '/api/auth/sign-up/email',
-    headers: studentHeaders(),
-    payload: { email, password: 'student-password-1', name: 'Juana Pérez' },
-  });
-  expect(studentSignup.statusCode).toBeLessThan(400);
-  studentJar.store(studentSignup.headers['set-cookie']);
-  const accepted = await app.inject({
-    method: 'POST',
-    url: '/api/organizations/invites/accept',
-    headers: studentHeaders(),
-    payload: { token },
-  });
-  expect(accepted.statusCode).toBe(200);
-  studentJar.drop('better-auth.session_data');
+  expect(JSON.parse(captured[0]!.text).template).toBe('magicLink');
+  studentHeaders = await enterByMagicLink(app, harness.mailer, email, harness.origin);
 
   const viewer = await app.inject({
     method: 'GET',

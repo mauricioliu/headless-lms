@@ -53,7 +53,7 @@ afterAll(async () => {
 
 interface RenderedInvite {
   template: string;
-  params: { inviteUrl: string; studentName: string };
+  params: { url: string };
 }
 
 function capturedInvite(to: string): RenderedInvite | undefined {
@@ -66,9 +66,11 @@ function capturedInvite(to: string): RenderedInvite | undefined {
 
 function tokenOf(to: string): string | undefined {
   const rendered = capturedInvite(to);
-  return rendered
-    ? (new URL(rendered.params.inviteUrl).searchParams.get('token') ?? undefined)
-    : undefined;
+  if (!rendered || rendered.template !== 'magicLink') {
+    return undefined;
+  }
+  const callback = new URL(rendered.params.url).searchParams.get('callbackURL');
+  return callback ? (new URL(callback).searchParams.get('token') ?? undefined) : undefined;
 }
 
 const ROSTER = [
@@ -118,10 +120,14 @@ describe('Ola ingestion HTTP seam', () => {
       const captured = harness.mailer.to(trabajador.email);
       expect(captured).toHaveLength(1);
       const rendered = capturedInvite(trabajador.email)!;
-      expect(rendered.template).toBe('studentInvite');
-      const inviteUrl = new URL(rendered.params.inviteUrl);
-      expect(`${inviteUrl.origin}${inviteUrl.pathname}`).toBe(`${TEST_STUDENT_PORTAL_URL}/welcome`);
-      const token = inviteUrl.searchParams.get('token');
+      expect(rendered.template).toBe('magicLink');
+      const magicUrl = new URL(rendered.params.url);
+      expect(`${magicUrl.origin}${magicUrl.pathname}`).toBe(
+        `${harness.origin}/api/auth/magic-link/verify`,
+      );
+      const callback = new URL(magicUrl.searchParams.get('callbackURL')!);
+      expect(`${callback.origin}${callback.pathname}`).toBe(`${TEST_STUDENT_PORTAL_URL}/welcome`);
+      const token = callback.searchParams.get('token');
       expect(token).toBeTruthy();
 
       const peek = await app.inject({
@@ -234,22 +240,20 @@ describe('Ola ingestion HTTP seam', () => {
   });
 
   it('a Trabajador who accepted keeps their access; a second Ola re-invites only the pending', async () => {
+    // Juana enters with her magic invitation — session, then the welcome card's
+    // accept — exactly the path the student portal drives. No password exists
+    // at any point.
+    const latestJuanaMail = harness.mailer.to('juana.perez@faena.test').at(-1)!;
+    const magicUrl = new URL((JSON.parse(latestJuanaMail.text) as RenderedInvite).params.url);
     const token = tokenOf('juana.perez@faena.test')!;
+
     const jar = new CookieJar();
     const workerHeaders = () => ({ origin: TEST_STUDENT_PORTAL_URL, cookie: jar.header() });
 
-    const signup = await app.inject({
-      method: 'POST',
-      url: '/api/auth/sign-up/email',
-      headers: workerHeaders(),
-      payload: {
-        email: 'juana.perez@faena.test',
-        password: 'trabajadora-password-1',
-        name: 'Juana Pérez Rojas',
-      },
-    });
-    expect(signup.statusCode).toBeLessThan(400);
-    jar.store(signup.headers['set-cookie']);
+    const visit = await app.inject({ method: 'GET', url: `${magicUrl.pathname}${magicUrl.search}` });
+    expect([302, 307]).toContain(visit.statusCode);
+    expect(visit.headers.location).toBe(magicUrl.searchParams.get('callbackURL'));
+    jar.store(visit.headers['set-cookie']);
 
     const accept = await app.inject({
       method: 'POST',

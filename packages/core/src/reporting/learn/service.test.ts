@@ -15,6 +15,7 @@ function fakeProgress(records: ProgressRecord[]): ProgressService {
       null,
     listByTargets: async (_orgId, _orgUserId, targetIds) =>
       records.filter((r) => r.targetType === 'activity' && targetIds.includes(r.targetId)),
+    hasRecords: async () => records.length > 0,
     coursePercent: async () => 0,
     refreshCourseCompletion: async () => null,
   };

@@ -3033,6 +3033,14 @@ export type DeleteStudentErrors = {
     message?: string;
     requestId?: string;
   };
+  /**
+   * Default Response
+   */
+  409: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
 };
 
 export type DeleteStudentError = DeleteStudentErrors[keyof DeleteStudentErrors];
@@ -3307,6 +3315,19 @@ export type ListAutomationsData = {
   url: "/api/automations";
 };
 
+export type ListAutomationsErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type ListAutomationsError = ListAutomationsErrors[keyof ListAutomationsErrors];
+
 export type ListAutomationsResponses = {
   /**
    * Default Response
@@ -3348,6 +3369,19 @@ export type CreateAutomationData = {
   url: "/api/automations";
 };
 
+export type CreateAutomationErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type CreateAutomationError = CreateAutomationErrors[keyof CreateAutomationErrors];
+
 export type CreateAutomationResponses = {
   /**
    * Default Response
@@ -3379,6 +3413,20 @@ export type ListAutomationActionsData = {
   url: "/api/automations/actions";
 };
 
+export type ListAutomationActionsErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type ListAutomationActionsError =
+  ListAutomationActionsErrors[keyof ListAutomationActionsErrors];
+
 export type ListAutomationActionsResponses = {
   /**
    * Default Response
@@ -3402,6 +3450,20 @@ export type ListAutomationTriggersData = {
   query?: never;
   url: "/api/automations/triggers";
 };
+
+export type ListAutomationTriggersErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type ListAutomationTriggersError =
+  ListAutomationTriggersErrors[keyof ListAutomationTriggersErrors];
 
 export type ListAutomationTriggersResponses = {
   /**
@@ -3431,6 +3493,14 @@ export type DeleteAutomationErrors = {
   /**
    * Default Response
    */
+  403: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+  /**
+   * Default Response
+   */
   404: {
     error: string;
     message?: string;
@@ -3457,6 +3527,14 @@ export type GetAutomationData = {
 };
 
 export type GetAutomationErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
   /**
    * Default Response
    */
@@ -3517,6 +3595,14 @@ export type UpdateAutomationErrors = {
   /**
    * Default Response
    */
+  403: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+  /**
+   * Default Response
+   */
   404: {
     error: string;
     message?: string;
@@ -3564,6 +3650,19 @@ export type ListAutomationRunsData = {
   };
   url: "/api/automations/{id}/runs";
 };
+
+export type ListAutomationRunsErrors = {
+  /**
+   * Default Response
+   */
+  403: {
+    error: string;
+    message?: string;
+    requestId?: string;
+  };
+};
+
+export type ListAutomationRunsError = ListAutomationRunsErrors[keyof ListAutomationRunsErrors];
 
 export type ListAutomationRunsResponses = {
   /**

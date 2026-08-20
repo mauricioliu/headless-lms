@@ -96,6 +96,15 @@ export class DrizzleProgressRepository implements ProgressRepository {
     return rows.map(toRecord);
   }
 
+  async existsForOrgUser(orgId: string, orgUserId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ orgUserId: progressRecords.orgUserId })
+      .from(progressRecords)
+      .where(and(eq(progressRecords.orgId, orgId), eq(progressRecords.orgUserId, orgUserId)))
+      .limit(1);
+    return row !== undefined;
+  }
+
   async update(
     orgId: string,
     id: string,

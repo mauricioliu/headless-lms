@@ -64,7 +64,7 @@ function StudentsTableInner({
             status === 404
               ? "Ya no existe; recargue la lista."
               : status === 409
-                ? "La plataforma no permite eliminar a este Trabajador."
+                ? "Tiene evidencia registrada (Intentos o avance); no puede eliminarse."
                 : "Inténtelo de nuevo en un momento.",
         });
       }
@@ -118,6 +118,9 @@ function StudentsTableInner({
               Esto elimina de forma permanente a{" "}
               <span className="font-medium text-ink">{fullName(toDelete)}</span>, junto con sus
               accesos y su avance. No se puede deshacer.
+              <br />
+              Si ya tiene evidencia registrada (Intentos o avance), la plataforma rechazará la
+              eliminación para proteger el registro.
             </>
           ) : null
         }

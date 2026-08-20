@@ -82,7 +82,7 @@ export function StudentDetailView({
             status === 404
               ? "Ya no existe; la lista se actualizará en un momento."
               : status === 409
-                ? "La plataforma no permite eliminar a este Trabajador."
+                ? "Tiene evidencia registrada (Intentos o avance); no puede eliminarse."
                 : "Inténtelo de nuevo en un momento.",
         });
       }
@@ -157,6 +157,9 @@ export function StudentDetailView({
             Esto elimina de forma permanente a{" "}
             <span className="font-medium text-ink">{fullName(student)}</span>, junto con sus
             accesos y su avance. No se puede deshacer.
+            <br />
+            Si ya tiene evidencia registrada (Intentos o avance), la plataforma rechazará la
+            eliminación para proteger el registro.
           </>
         }
         confirmLabel="Eliminar Trabajador"

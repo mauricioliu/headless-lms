@@ -15,6 +15,8 @@ export interface ProgressService {
   get(orgId: string, target: ProgressTarget): Promise<ProgressRecord | null>;
   /** Records for a set of target ids — the read the reporting layer composes. */
   listByTargets(orgId: string, orgUserId: string, targetIds: string[]): Promise<ProgressRecord[]>;
+  /** Whether the Trabajador has any progress record at all in the org. */
+  hasRecords(orgId: string, orgUserId: string): Promise<boolean>;
   /** Derived course percentage (0–100) against the current published structure —
    *  the fact the evaluation gate consumes. */
   coursePercent(orgId: string, orgUserId: string, courseId: string): Promise<number>;
@@ -42,6 +44,8 @@ export interface CourseEvaluationApprovalReader {
 export interface ProgressRepository {
   /** Conflict-safe insert. null = lost a concurrent-insert race (unique key already taken). */
   insert(orgId: string, record: ProgressRecord): Promise<ProgressRecord | null>;
+  /** Any record at all, any target — the student-delete evidence guard. */
+  existsForOrgUser(orgId: string, orgUserId: string): Promise<boolean>;
   /** Scoped to the org — returns the record for the unique (student, target) key, or null. */
   findByTarget(orgId: string, target: ProgressTarget): Promise<ProgressRecord | null>;
   /** All of the student's records whose targetId is in the set. `forUpdate` takes tx-scoped

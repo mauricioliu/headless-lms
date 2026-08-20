@@ -30,6 +30,9 @@ function fakeRepo() {
         (r) => r.orgId === orgId && r.orgUserId === orgUserId && targetIds.includes(r.targetId),
       );
     },
+    async existsForOrgUser(orgId, orgUserId) {
+      return records.some((r) => r.orgId === orgId && r.orgUserId === orgUserId);
+    },
     async update(orgId, id, patch) {
       const record = records.find((r) => r.orgId === orgId && r.id === id);
       if (!record) {

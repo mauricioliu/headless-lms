@@ -1,10 +1,12 @@
 import { randomBytes } from 'node:crypto';
 import pg from 'pg';
 import type { FastifyInstance } from 'fastify';
+import { expect } from 'vitest';
 import { runMigrations } from '@headless-lms/adapter-db';
 import { buildServer, createContainer } from '../../index.js';
 import type { Container, ServerConfig } from '../../index.js';
 import { EchoTemplateRenderer, TestMailer } from './test-mailer.js';
+import type { EmailMessage } from '@headless-lms/core/shared/ports';
 
 export const TEST_AUTH_BASE_URL = 'http://api.test.local';
 export const TEST_STUDENT_PORTAL_URL = 'http://student.test.local';
@@ -84,6 +86,59 @@ export interface TestApp {
   mailer: TestMailer;
   origin: string;
   close(): Promise<void>;
+}
+
+export interface RenderedMail {
+  template: string;
+  params: Record<string, string>;
+}
+
+export function renderedMail(message: EmailMessage | undefined): RenderedMail | undefined {
+  return message ? (JSON.parse(message.text) as RenderedMail) : undefined;
+}
+
+/** The student invitation is a magic link whose landing page (/welcome) carries
+ *  the domain invite token in its query — this digs it out of the mail. */
+export function inviteTokenOf(message: EmailMessage | undefined): string | undefined {
+  const rendered = renderedMail(message);
+  if (!rendered || rendered.template !== 'magicLink') {
+    return undefined;
+  }
+  const magicUrl = new URL(rendered.params.url!);
+  const callback = magicUrl.searchParams.get('callbackURL');
+  return callback ? (new URL(callback).searchParams.get('token') ?? undefined) : undefined;
+}
+
+/** The Trabajador's full entry path at the HTTP seam: click the captured magic
+ *  invitation (session minted, cookie captured), then the welcome card's accept
+ *  tap. No password is ever created. Returns their request headers with the
+ *  pre-org signed cookie cache dropped. */
+export async function enterByMagicLink(
+  app: FastifyInstance,
+  mailer: TestMailer,
+  email: string,
+  origin: string,
+): Promise<() => { origin: string; cookie: string }> {
+  const jar = new CookieJar();
+  const headers = () => ({ origin, cookie: jar.header() });
+  const message = mailer.to(email)[0]!;
+  const rendered = renderedMail(message)!;
+  expect(rendered.template).toBe('magicLink');
+  const token = inviteTokenOf(message)!;
+  expect(token).toBeTruthy();
+  const magicUrl = new URL(rendered.params.url!);
+  const visit = await app.inject({ method: 'GET', url: `${magicUrl.pathname}${magicUrl.search}` });
+  expect([302, 307]).toContain(visit.statusCode);
+  jar.store(visit.headers['set-cookie']);
+  const accepted = await app.inject({
+    method: 'POST',
+    url: '/api/organizations/invites/accept',
+    headers: headers(),
+    payload: { token },
+  });
+  expect(accepted.statusCode).toBe(200);
+  jar.drop('better-auth.session_data');
+  return headers;
 }
 
 export async function buildTestApp(): Promise<TestApp> {

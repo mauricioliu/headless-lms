@@ -77,6 +77,10 @@ export function createAuth(opts: CreateAuthOptions) {
       magicLink({
         disableSignUp: true,
         sendMagicLink,
+        // Invitation links must live as long as the domain invite itself (7
+        // days) — a Trabajador who opens the mail days later still gets in,
+        // and they have no password to fall back on.
+        expiresIn: 7 * 24 * 60 * 60,
       }),
       organization({
         ac,
@@ -142,6 +146,34 @@ export class BetterAuth implements SessionVerifier, OrgAdmin, SessionAdmin {
 
   async handler(request: Request) :Promise<Response>{
     return this.auth.handler(request);
+  }
+
+  /** Passwordless entry for an invited Trabajador: makes sure the auth engine
+   *  knows the invited address (an account row with no password, linked to the
+   *  provisioned domain person), then mints a one-time magic link whose
+   *  landing page is callbackURL. The mail itself goes out through the
+   *  sendMagicLink hook. */
+  async sendMagicLink(input: {
+    email: string;
+    name: string;
+    callbackURL: string;
+  }): Promise<void> {
+    const ctx = await this.auth.$context;
+    const existing = await ctx.internalAdapter.findUserByEmail(input.email);
+    if (!existing) {
+      await ctx.internalAdapter.createUser({
+        email: input.email,
+        name: input.name,
+        // The address came from the Empresa Cliente's roster and the link
+        // itself is the proof of control — the row is born verified, which
+        // also keeps a later magic-link login from stripping credentials.
+        emailVerified: true,
+      });
+    }
+    await this.auth.api.signInMagicLink({
+      body: { email: input.email, callbackURL: input.callbackURL },
+      headers: new Headers(),
+    });
   }
 
   /** Whether the user holds any staff membership (owner/admin/instructor) in

@@ -25,6 +25,7 @@ import type {
   ConnectIntegrationErrors,
   ConnectIntegrationResponses,
   CreateActivityResponses,
+  CreateAutomationErrors,
   CreateAutomationResponses,
   CreateBundleErrors,
   CreateBundleResponses,
@@ -114,9 +115,13 @@ import type {
   ListActivityCommentsResponses,
   ListAssetsErrors,
   ListAssetsResponses,
+  ListAutomationActionsErrors,
   ListAutomationActionsResponses,
+  ListAutomationRunsErrors,
   ListAutomationRunsResponses,
+  ListAutomationsErrors,
   ListAutomationsResponses,
+  ListAutomationTriggersErrors,
   ListAutomationTriggersResponses,
   ListAvailableIntegrationsErrors,
   ListAvailableIntegrationsResponses,
@@ -573,7 +578,9 @@ export class Organizations {
   }
 
   /**
-   * Delete a student
+   * Delete a zero-evidence student
+   *
+   * Refused with 409 while the Trabajador has any recorded evidence (Intentos or progress) — the registro is append-only. A zero-evidence worker (an ingest mistake being corrected) is deleted along with their entitlements and pending invitation.
    */
   public static deleteStudent<ThrowOnError extends boolean = false>(
     parameters: {
@@ -3086,18 +3093,21 @@ export class Entitlements {
 
 export class Automations {
   /**
-   * List automations
+   * List automations (owner only)
    */
   public static listAutomations<ThrowOnError extends boolean = false>(
     options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListAutomationsResponses, unknown, ThrowOnError, "data"> {
-    return (options?.client ?? client).get<ListAutomationsResponses, unknown, ThrowOnError, "data">(
-      {
-        responseStyle: "data",
-        url: "/api/automations",
-        ...options,
-      },
-    );
+  ): RequestResult<ListAutomationsResponses, ListAutomationsErrors, ThrowOnError, "data"> {
+    return (options?.client ?? client).get<
+      ListAutomationsResponses,
+      ListAutomationsErrors,
+      ThrowOnError,
+      "data"
+    >({
+      responseStyle: "data",
+      url: "/api/automations",
+      ...options,
+    });
   }
 
   /**
@@ -3116,7 +3126,7 @@ export class Automations {
       }>;
     },
     options?: Options<never, ThrowOnError>,
-  ): RequestResult<CreateAutomationResponses, unknown, ThrowOnError, "data"> {
+  ): RequestResult<CreateAutomationResponses, CreateAutomationErrors, ThrowOnError, "data"> {
     const params = buildClientParams(
       [parameters],
       [
@@ -3132,7 +3142,7 @@ export class Automations {
     );
     return (options?.client ?? client).post<
       CreateAutomationResponses,
-      unknown,
+      CreateAutomationErrors,
       ThrowOnError,
       "data"
     >({
@@ -3153,10 +3163,15 @@ export class Automations {
    */
   public static listAutomationActions<ThrowOnError extends boolean = false>(
     options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListAutomationActionsResponses, unknown, ThrowOnError, "data"> {
+  ): RequestResult<
+    ListAutomationActionsResponses,
+    ListAutomationActionsErrors,
+    ThrowOnError,
+    "data"
+  > {
     return (options?.client ?? client).get<
       ListAutomationActionsResponses,
-      unknown,
+      ListAutomationActionsErrors,
       ThrowOnError,
       "data"
     >({
@@ -3171,10 +3186,15 @@ export class Automations {
    */
   public static listAutomationTriggers<ThrowOnError extends boolean = false>(
     options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListAutomationTriggersResponses, unknown, ThrowOnError, "data"> {
+  ): RequestResult<
+    ListAutomationTriggersResponses,
+    ListAutomationTriggersErrors,
+    ThrowOnError,
+    "data"
+  > {
     return (options?.client ?? client).get<
       ListAutomationTriggersResponses,
-      unknown,
+      ListAutomationTriggersErrors,
       ThrowOnError,
       "data"
     >({
@@ -3295,7 +3315,7 @@ export class Automations {
       status?: "running" | "completed" | "failed";
     },
     options?: Options<never, ThrowOnError>,
-  ): RequestResult<ListAutomationRunsResponses, unknown, ThrowOnError, "data"> {
+  ): RequestResult<ListAutomationRunsResponses, ListAutomationRunsErrors, ThrowOnError, "data"> {
     const params = buildClientParams(
       [parameters],
       [
@@ -3313,7 +3333,7 @@ export class Automations {
     );
     return (options?.client ?? client).get<
       ListAutomationRunsResponses,
-      unknown,
+      ListAutomationRunsErrors,
       ThrowOnError,
       "data"
     >({

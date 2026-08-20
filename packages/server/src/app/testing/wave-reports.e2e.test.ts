@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
-import { buildTestApp, CookieJar, TEST_STUDENT_PORTAL_URL, type TestApp } from './test-app.js';
+import { buildTestApp, CookieJar, enterByMagicLink, TEST_STUDENT_PORTAL_URL, type TestApp } from './test-app.js';
 
 let app: FastifyInstance;
 let harness: TestApp;
@@ -63,32 +63,10 @@ const allWrong = [
   { questionId: 'denuncia', optionId: 'difundir' },
 ];
 
-/** One Trabajador of the Ola: their invite token becomes a session the test
- *  drives avance and Intentos through. */
-async function trabajador(email: string, name: string) {
-  const jar = new CookieJar();
-  const workerHeaders = () => ({ origin: TEST_STUDENT_PORTAL_URL, cookie: jar.header() });
-  const captured = harness.mailer.to(email)[0]!;
-  const rendered = JSON.parse(captured.text) as { params: { inviteUrl: string } };
-  const token = new URL(rendered.params.inviteUrl).searchParams.get('token');
-  expect(token).toBeTruthy();
-  const signup = await app.inject({
-    method: 'POST',
-    url: '/api/auth/sign-up/email',
-    headers: workerHeaders(),
-    payload: { email, password: 'trabajador-password-1', name },
-  });
-  expect(signup.statusCode).toBeLessThan(400);
-  jar.store(signup.headers['set-cookie']);
-  const accepted = await app.inject({
-    method: 'POST',
-    url: '/api/organizations/invites/accept',
-    headers: workerHeaders(),
-    payload: { token },
-  });
-  expect(accepted.statusCode).toBe(200);
-  jar.drop('better-auth.session_data');
-  return workerHeaders;
+/** One Trabajador of the Ola: their magic invitation becomes a session the
+ *  test drives avance and Intentos through. */
+async function trabajador(email: string, _name: string) {
+  return enterByMagicLink(app, harness.mailer, email, TEST_STUDENT_PORTAL_URL);
 }
 
 async function watch(workerHeaders: () => { origin: string; cookie: string }, upto: number) {
@@ -291,7 +269,7 @@ describe('per-Ola report HTTP seam', () => {
     });
 
     // 2 de 5 Completado = 40%; avance (100+100+100+50+100)/5 = 90;
-    // puntaje promedio sobre quienes rindieron (100+67+100)/3 = 89;
+    // puntaje promedio sobre quienes rindieron (100+66+100)/3 = 89;
     // intentos (1+0+3+0+2)/5 = 1.2
     expect(body.totals).toEqual({
       members: 5,
@@ -329,7 +307,7 @@ describe('per-Ola report HTTP seam', () => {
     expect(byEmail['daniela.soto@faena.test']).toMatchObject({
       progress: 100,
       evaluationStatus: 'last_attempt',
-      score: 67,
+      score: 66,
       attempts: 3,
       completed: false,
     });
@@ -369,7 +347,7 @@ describe('per-Ola report HTTP seam', () => {
     expect(rows[0]).toBe('Trabajador,Avance,Evaluación,Puntaje,Intentos');
     expect(rows[1]).toBe('"Ana ""Nana""",100%,Aprobada,100%,2');
     expect(rows[2]).toBe('Carlos Rojas,100%,Pendiente,,0');
-    expect(rows[3]).toBe('Daniela Soto,100%,Último intento,67%,3');
+    expect(rows[3]).toBe('Daniela Soto,100%,Último intento,66%,3');
     expect(rows[4]).toBe('Jorge Muñoz,50%,Bloqueada,,0');
     expect(rows[5]).toBe('María González,100%,Aprobada,100%,1');
     expect(rows[6]).toBe('');

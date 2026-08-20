@@ -8,7 +8,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/auth/client", () => ({
   signIn: { email: vi.fn() },
-  authClient: {},
+  authClient: {
+    requestPasswordReset: vi.fn(),
+    signIn: { magicLink: vi.fn() },
+  },
   useSession: () => ({ data: null }),
 }));
 
@@ -31,6 +34,11 @@ describe("student login (Trabajador register)", () => {
   it("offers the password-reset entry point", () => {
     const html = render(<LoginView brandName="Minera Los Andes" />);
     expect(html).toContain("¿Olvidaste tu contraseña?");
+  });
+
+  it("offers the passwordless magic-link entry point", () => {
+    const html = render(<LoginView brandName="Minera Los Andes" />);
+    expect(html).toContain("¿Sin contraseña? Entra con un enlace al correo");
   });
 
   it("keeps the portal's tú register", () => {

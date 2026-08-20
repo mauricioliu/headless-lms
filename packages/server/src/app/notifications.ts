@@ -5,6 +5,7 @@
 import type { EventBus } from '@headless-lms/core/shared/ports';
 import type { Mailer, MailerLookups } from '@headless-lms/core/shared/mailer';
 import { entitlementEvents } from '@headless-lms/core/entitlements';
+import { progressEvents } from '@headless-lms/core/progress';
 
 export function registerNotificationSubscribers(
   bus: EventBus,
@@ -45,6 +46,25 @@ export function registerNotificationSubscribers(
     }
     await mailer.send(to, 'accessRevoked', {
       contentTitle: content.title,
+    });
+  });
+
+  // The Completado transition itself: progress owns the conjunction, so the
+  // course-target progress.completed record is the one and only place this
+  // fires — activity and module completions pass through unheard.
+  bus.subscribe(progressEvents.progressCompleted, async (event) => {
+    if (event.data.targetType !== 'course') {
+      return;
+    }
+    const [to, content] = await Promise.all([
+      lookups.orgUserEmail(event.orgId, event.data.orgUserId),
+      lookups.contentInfo(event.orgId, event.data.targetId),
+    ]);
+    if (!to || !content) {
+      throw new Error(`course completion lookups failed: ${event.data.id}`);
+    }
+    await mailer.send(to, 'courseCompleted', {
+      courseTitle: content.title,
     });
   });
 }
