@@ -528,9 +528,17 @@ export async function buildContainer(
     trustedOrigins: config.trustedOrigins,
     hooks: {
       sendResetPassword: authHook('sendResetPassword', async (data) => {
+        // Better Auth hands us the API-side token URL with an empty
+        // callbackURL. The mail link must land on the set-password page of the
+        // app the reader belongs to: staff (owner/admin/instructor) → admin,
+        // anyone else → student portal. Staff wins a mixed membership.
+        const staff = await auth.hasStaffMembership(data.user.id);
+        const appUrl = staff ? config.adminAppUrl : config.studentPortalUrl;
+        const url = new URL(data.url);
+        url.searchParams.set('callbackURL', `${appUrl}/reset-password`);
         await identity.sendPasswordReset({
           email: data.user.email,
-          url: '',
+          url: url.toString(),
         });
       }),
       sendMagicLink: authHook('sendMagicLink', async ({ email, url }) => {

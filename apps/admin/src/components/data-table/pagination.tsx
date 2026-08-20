@@ -38,12 +38,12 @@ export function Pagination({
         {isFetching ? (
           <span className="inline-flex items-center gap-1.5">
             <span className="size-1.5 animate-pulse rounded-full bg-ink-4" />
-            Updating…
+            Actualizando…
           </span>
         ) : (
           <>
             <span className="font-medium text-ink-2">{formatNumber(from)}</span>–
-            <span className="font-medium text-ink-2">{formatNumber(to)}</span> of{" "}
+            <span className="font-medium text-ink-2">{formatNumber(to)}</span> de{" "}
             <span className="font-medium text-ink-2">{formatNumber(total)}</span>
           </>
         )}
@@ -51,9 +51,9 @@ export function Pagination({
 
       <div className="flex items-center gap-2 sm:gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-ink-3 max-sm:sr-only">Rows</span>
+          <span className="text-sm text-ink-3 max-sm:sr-only">Filas</span>
           <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
-            <SelectTrigger size="sm" className="w-[4.5rem]" aria-label="Rows per page">
+            <SelectTrigger size="sm" className="w-[4.5rem]" aria-label="Filas por página">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -67,7 +67,7 @@ export function Pagination({
         </div>
 
         <span className="text-sm text-ink-3 tabular-nums">
-          Page {page} of {pageCount}
+          Página {page} de {pageCount}
         </span>
 
         <div className="flex items-center gap-1">
@@ -76,7 +76,7 @@ export function Pagination({
             size="icon-sm"
             onClick={() => onPageChange(1)}
             disabled={page <= 1}
-            aria-label="First page"
+            aria-label="Primera página"
           >
             <ChevronsLeft />
           </Button>
@@ -85,7 +85,7 @@ export function Pagination({
             size="icon-sm"
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
-            aria-label="Previous page"
+            aria-label="Página anterior"
           >
             <ChevronLeft />
           </Button>
@@ -94,7 +94,7 @@ export function Pagination({
             size="icon-sm"
             onClick={() => onPageChange(page + 1)}
             disabled={page >= pageCount}
-            aria-label="Next page"
+            aria-label="Página siguiente"
           >
             <ChevronRight />
           </Button>
@@ -103,7 +103,7 @@ export function Pagination({
             size="icon-sm"
             onClick={() => onPageChange(pageCount)}
             disabled={page >= pageCount}
-            aria-label="Last page"
+            aria-label="Última página"
           >
             <ChevronsRight />
           </Button>

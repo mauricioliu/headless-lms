@@ -2,9 +2,9 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Loader2, MailCheck } from "lucide-react";
 
-import { signIn, useSession } from "@/lib/auth/client";
+import { authClient, signIn, useSession } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +42,7 @@ export function LoginView({ brandName }: { brandName: string }) {
                 Bienvenido de nuevo. Ingresa tus datos para continuar tus cursos.
               </p>
             </div>
-            <SignInForm onDone={() => router.replace(next)} />
+            <LoginForms onDone={() => router.replace(next)} />
           </div>
         </div>
       </div>
@@ -65,7 +65,105 @@ export function LoginView({ brandName }: { brandName: string }) {
   );
 }
 
-function SignInForm({ onDone }: { onDone: () => void }) {
+function LoginForms({ onDone }: { onDone: () => void }) {
+  const [mode, setMode] = useState<"signin" | "forgot">("signin");
+  return mode === "forgot" ? (
+    <ForgotPasswordForm onBack={() => setMode("signin")} />
+  ) : (
+    <SignInForm onDone={onDone} onForgotPassword={() => setMode("forgot")} />
+  );
+}
+
+function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    const { error: failure } = await authClient.requestPasswordReset({ email });
+    // Any answered request — success or API error — confirms the same way, so
+    // a known and an unknown address are indistinguishable.
+    if (failure && failure.status == null) {
+      setError("No pudimos enviar el correo. Inténtalo de nuevo.");
+      setSubmitting(false);
+      return;
+    }
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <div className="mt-6 flex flex-col items-center gap-3 py-4 text-center">
+        <div className="grid size-10 place-items-center rounded-full bg-surface-2 text-brand">
+          <MailCheck className="size-5" />
+        </div>
+        <h2 className="text-lg font-semibold tracking-tight text-ink">Revisa tu correo</h2>
+        <p className="text-sm text-ink-3 text-pretty">
+          Si el correo está registrado, llegó un enlace para restablecer tu contraseña. El enlace
+          expira pronto.
+        </p>
+        <Button variant="ghost" size="sm" onClick={onBack} className="mt-2">
+          <ArrowLeft />
+          Volver a iniciar sesión
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
+      <div className="flex flex-col gap-1.5">
+        <h2 className="text-xl font-semibold tracking-tight text-ink text-balance">
+          Restablecer contraseña
+        </h2>
+        <p className="text-sm text-ink-3 text-pretty">
+          Te enviaremos un enlace para elegir una contraseña nueva.
+        </p>
+      </div>
+      {error && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-quiz-wrong-border bg-quiz-wrong-bg px-3 py-2.5 text-sm text-quiz-wrong-fg">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <p>{error}</p>
+        </div>
+      )}
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="forgot-email" className="text-sm font-medium text-ink">
+          Correo
+        </label>
+        <input
+          id="forgot-email"
+          type="email"
+          autoComplete="email"
+          placeholder="tu@ejemplo.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={inputClass}
+          required
+        />
+      </div>
+      <Button type="submit" variant="brand" disabled={submitting} className="mt-1 w-full">
+        {submitting && <Loader2 className="animate-spin" />}
+        Enviar enlace
+      </Button>
+      <Button type="button" variant="ghost" size="sm" onClick={onBack}>
+        <ArrowLeft />
+        Volver a iniciar sesión
+      </Button>
+    </form>
+  );
+}
+
+function SignInForm({
+  onDone,
+  onForgotPassword,
+}: {
+  onDone: () => void;
+  onForgotPassword: () => void;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -111,9 +209,18 @@ function SignInForm({ onDone }: { onDone: () => void }) {
         />
       </div>
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="text-sm font-medium text-ink">
-          Contraseña
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="password" className="text-sm font-medium text-ink">
+            Contraseña
+          </label>
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="text-sm text-ink-3 underline-offset-4 hover:text-ink hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        </div>
         <input
           id="password"
           type="password"

@@ -28,7 +28,7 @@ export function SidebarNav({ items, onNavigate }: { items: NavItem[]; onNavigate
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-0.5" aria-label="Primary">
+    <nav className="flex flex-col gap-0.5" aria-label="Navegación principal">
       {items.map((item) =>
         item.children ? (
           <NavSection key={item.label} item={item} pathname={pathname} onNavigate={onNavigate} />

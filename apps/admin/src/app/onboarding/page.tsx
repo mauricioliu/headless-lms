@@ -7,7 +7,7 @@ import { SessionReset } from "./session-reset";
 
 const log = logger.child({ name: "onboarding" });
 
-export const metadata: Metadata = { title: "Setting up — Headless LMS" };
+export const metadata: Metadata = { title: "Preparando la sesión — Nuvora" };
 
 // The single decision point after authentication. It resolves the session and
 // sends the user to the one thing they need to do next. A session it cannot

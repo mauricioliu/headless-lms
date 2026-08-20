@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./providers";
+import { getBranding } from "@/lib/api/branding";
 
 // Self-hosted Pretendard variable font — shared with the student app so the
 // product family reads as one. No FOUT, no layout shift, offline-safe.
@@ -13,16 +14,21 @@ const pretendard = localFont({
   variable: "--font-pretendard",
 });
 
-// Neutral fallback. Authenticated pages resolve the org name via the
-// `(dashboard)` layout's `generateMetadata`; the login page sets its own title.
-export const metadata: Metadata = {
-  title: "HeadlessLms",
-  description: "Back-office dashboard for the headless LMS.",
-};
+// The brand is runtime config, so no route is honestly static. Pages with more
+// specific metadata (login, invite, the dashboard's org title) override this.
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { brandName } = await getBranding();
+  return {
+    title: brandName,
+    description: "Panel de administración de cursos.",
+  };
+}
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" className={pretendard.variable}>
+    <html lang="es" className={pretendard.variable}>
       <body className="antialiased">
         <Providers>{children}</Providers>
       </body>

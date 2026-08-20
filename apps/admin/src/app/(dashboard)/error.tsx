@@ -27,19 +27,18 @@ export default function DashboardError({
         <TriangleAlert className="size-5" />
       </span>
       <div className="flex flex-col gap-1.5">
-        <h1 className="text-base font-medium tracking-tight text-ink">Something went wrong</h1>
+        <h1 className="text-base font-medium tracking-tight text-ink">Algo falló</h1>
         <p className="max-w-[42ch] text-pretty text-sm text-ink-3">
-          This page couldn&apos;t be loaded. Try again, or
-          head back to the overview.
+          La página no se pudo cargar. Inténtelo de nuevo o vuelva al inicio.
         </p>
       </div>
       <div className="flex items-center gap-2">
         <Button variant="primary" onClick={reset}>
           <RotateCw className="size-4" />
-          Try again
+          Reintentar
         </Button>
         <Button variant="secondary" asChild>
-          <Link href="/">Go to overview</Link>
+          <Link href="/">Volver al inicio</Link>
         </Button>
       </div>
       {error.digest ? (

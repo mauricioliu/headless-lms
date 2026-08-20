@@ -75,10 +75,10 @@ export function DataTable<TData>({
   error,
   refetch,
   getRowId,
-  searchPlaceholder = "Search…",
+  searchPlaceholder = "Buscar…",
   facets = [],
   toolbarActions,
-  emptyTitle = "Nothing here yet",
+  emptyTitle = "Aún no hay nada aquí",
   emptyDescription,
   emptyAction,
   onRowClick,
@@ -118,14 +118,14 @@ export function DataTable<TData>({
               value={state.search}
               onChange={(e) => state.setSearch(e.target.value)}
               placeholder={searchPlaceholder}
-              aria-label="Search"
+              aria-label="Buscar"
               className="pl-9"
             />
             {state.search && (
               <button
                 type="button"
                 onClick={() => state.setSearch("")}
-                aria-label="Clear search"
+                aria-label="Limpiar búsqueda"
                 className="absolute top-1/2 right-2 grid size-6 -translate-y-1/2 place-items-center rounded text-ink-4 transition-colors hover:text-ink"
               >
                 <X className="size-3.5" />
@@ -148,7 +148,7 @@ export function DataTable<TData>({
                 state.setColumnFilters([]);
               }}
             >
-              Reset
+              Limpiar
               <X />
             </Button>
           )}

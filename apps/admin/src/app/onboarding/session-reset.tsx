@@ -40,14 +40,14 @@ export function SessionReset() {
       <div className="flex flex-col gap-3 py-2">
         <div className="flex items-start gap-2.5 rounded-lg border border-danger/20 bg-danger-soft px-3 py-2.5 text-sm text-danger">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-          <p>Couldn&apos;t sign you out. Please try again.</p>
+          <p>No se pudo cerrar la sesión. Inténtelo de nuevo.</p>
         </div>
         <Button
           variant="primary"
           className="w-full"
           onClick={() => attemptSignOut(() => setFailed(true))}
         >
-          Retry
+          Reintentar
         </Button>
       </div>
     );
@@ -56,7 +56,7 @@ export function SessionReset() {
   return (
     <div className="flex flex-col items-center gap-3 py-6 text-center">
       <Loader2 className="size-5 animate-spin text-brand" />
-      <p className="text-sm text-ink-3">Signing you out…</p>
+      <p className="text-sm text-ink-3">Cerrando la sesión…</p>
     </div>
   );
 }

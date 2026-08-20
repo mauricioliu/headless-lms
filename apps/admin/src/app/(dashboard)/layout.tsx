@@ -12,7 +12,7 @@ import { AppShell } from "@/components/app-shell/app-shell";
 export async function generateMetadata(): Promise<Metadata> {
   const session = await getServerSession();
   const org = session?.organization?.name?.trim();
-  return { title: org ? `${org} - headless-lms` : "headless-lms" };
+  return { title: org || "Panel de administración" };
 }
 
 // Server-side auth gate for the back office. Two outcomes only: no session at

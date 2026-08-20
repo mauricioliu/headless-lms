@@ -1,16 +1,19 @@
 import type { ReactNode } from "react";
 
 import { Logo } from "@/components/app-shell/logo";
+import { getBranding } from "@/lib/api/branding";
 
-// Shared by /login and /signup: the form on a solid surface column, a calm dark
-// panel beside it from `lg:` up. Each page supplies only its heading, its form,
-// and the link to the other one.
-export default function AuthLayout({ children }: { children: ReactNode }) {
+// Shared by /signup (the Operador's bootstrap path — its copy stays English by
+// decision, ADR 0002): the form on a solid surface column, a calm dark panel
+// beside it from `lg:` up. The wordmark is still the deployment's brand, not
+// the platform's own name.
+export default async function AuthLayout({ children }: { children: ReactNode }) {
+  const { brandName } = await getBranding();
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
       <div className="flex flex-col bg-surface">
         <div className="flex h-16 items-center px-6 sm:px-10">
-          <Logo org="Headless LMS" />
+          <Logo org={brandName} />
         </div>
         <div className="flex flex-1 items-center justify-center px-6 py-10 sm:px-10">
           <div className="w-full max-w-xs">{children}</div>
@@ -24,9 +27,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
               Everything your team needs to run courses — content and entitlements in one calm
               place.
             </p>
-            <footer className="mt-4 text-sm text-surface/60">
-              Headless LMS · Management dashboard
-            </footer>
+            <footer className="mt-4 text-sm text-surface/60">Nuvora · Management dashboard</footer>
           </blockquote>
         </div>
       </div>

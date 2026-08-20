@@ -18,11 +18,11 @@ import { addStudentAction } from "../actions";
 const FORM_ID = "add-student-form";
 
 // The name columns are nullable for people who arrive by self-signup, not so an
-// admin can skip them — someone adding a student knows who they are.
+// admin can skip them — someone adding a Trabajador knows who they are.
 const schema = z.object({
-  firstName: z.string().trim().min(1, "Enter a first name"),
-  lastName: z.string().trim().min(1, "Enter a last name"),
-  email: z.email("Enter a valid email"),
+  firstName: z.string().trim().min(1, "Ingrese el nombre"),
+  lastName: z.string().trim().min(1, "Ingrese el apellido"),
+  email: z.email("Ingrese un correo válido"),
   sendEmail: z.boolean(),
 });
 
@@ -57,17 +57,23 @@ export function AddStudentDialog({
     startTransition(async () => {
       try {
         await addStudentAction(values);
-        toast.success(values.sendEmail ? "Invite sent" : "Student added", {
+        toast.success(values.sendEmail ? "Invitación enviada" : "Trabajador agregado", {
           description: values.email,
         });
         onOpenChange(false);
         router.refresh();
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
-          setError("email", { message: "This person is already in your organization" });
+          setError("email", { message: "Esta persona ya pertenece a la organización" });
           return;
         }
-        toast.error("Couldn't add the student", { description: (err as Error).message });
+        const status = err instanceof ApiError ? err.status : undefined;
+        toast.error("No se pudo agregar al Trabajador", {
+          description:
+            status == null
+              ? "No se pudo conectar con el servidor. Inténtelo de nuevo."
+              : "Inténtelo de nuevo en un momento.",
+        });
       }
     });
   });
@@ -76,15 +82,15 @@ export function AddStudentDialog({
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Add student"
-      description="The student is added to your organization straight away. The invite emails them a single-use link to create their account."
+      title="Agregar Trabajador"
+      description="El Trabajador queda en la organización de inmediato; la invitación envía por correo un enlace de un solo uso para crear su cuenta."
       formId={FORM_ID}
-      submitLabel="Add student"
+      submitLabel="Agregar Trabajador"
       pending={pending}
     >
       <form id={FORM_ID} onSubmit={onSubmit} className="flex flex-col gap-5">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Field id="firstName" label="First name" required error={errors.firstName?.message}>
+          <Field id="firstName" label="Nombre" required error={errors.firstName?.message}>
             <Input
               id="firstName"
               autoComplete="given-name"
@@ -92,7 +98,7 @@ export function AddStudentDialog({
               {...register("firstName")}
             />
           </Field>
-          <Field id="lastName" label="Last name" required error={errors.lastName?.message}>
+          <Field id="lastName" label="Apellido" required error={errors.lastName?.message}>
             <Input
               id="lastName"
               autoComplete="family-name"
@@ -102,13 +108,13 @@ export function AddStudentDialog({
           </Field>
         </div>
 
-        <Field id="email" label="Email" required error={errors.email?.message}>
+        <Field id="email" label="Correo" required error={errors.email?.message}>
           <Input id="email" type="email" aria-invalid={!!errors.email} {...register("email")} />
         </Field>
 
         <label htmlFor="sendEmail" className="flex items-center gap-2.5 text-sm text-ink-2">
           <Checkbox id="sendEmail" {...register("sendEmail")} />
-          Send invite email
+          Enviar invitación por correo
         </label>
       </form>
     </FormDialog>

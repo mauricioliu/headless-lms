@@ -17,7 +17,7 @@ export function OrgPicker({ organizations }: { organizations: Org[] }) {
     const { error: failure } = await authClient.organization.setActive({ organizationId });
     if (failure) {
       setPending(null);
-      setError(failure.message ?? "Couldn't switch to that organization");
+      setError("No se pudo cambiar a esa organización. Inténtelo de nuevo.");
       return;
     }
     // Back to the decision point, not straight to the dashboard: it re-resolves

@@ -1,6 +1,7 @@
 import { serverApi } from "@/lib/api/server";
 import { requireAuth } from "@/lib/auth/server-session";
 import { isManager } from "@/lib/roles";
+import { redirect } from "next/navigation";
 
 import { ENROLLMENT_RANGES } from "./_components/enrollment-ranges";
 import { OverviewView } from "./_components/overview-view";
@@ -15,6 +16,10 @@ export default async function OverviewPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const session = await requireAuth();
+
+  // The Overview is the Operador's authoring home; a manager (the Admin
+  // Cliente) lands on the Olas list instead — their surface, not this one.
+  if (isManager(session.role)) redirect("/waves");
 
   const sp = await searchParams;
   const range = ENROLLMENT_RANGES.find((r) => r.key === sp.range) ?? ENROLLMENT_RANGES[1];

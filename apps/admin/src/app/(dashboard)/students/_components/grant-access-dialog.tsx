@@ -18,6 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { ApiError } from "@/lib/api/http";
+
 import { grantEntitlementAction } from "../../entitlements/actions";
 
 const FORM_ID = "student-grant-access-form";
@@ -26,12 +28,12 @@ export type LiteContent = { id: string; title: string; type: "course" | "downloa
 
 const schema = z
   .object({
-    contentId: z.string().min(1, "Select a course or download"),
+    contentId: z.string().min(1, "Seleccione un curso o material"),
     expiryMode: z.enum(["never", "date"]),
     expiresAt: z.string().optional(),
   })
   .refine((d) => d.expiryMode === "never" || (!!d.expiresAt && d.expiresAt.length > 0), {
-    message: "Pick an expiry date",
+    message: "Elija una fecha de expiración",
     path: ["expiresAt"],
   });
 
@@ -72,7 +74,7 @@ export function GrantAccessDialog({
       content.map((c) => ({
         value: c.id,
         label: c.title,
-        group: c.type === "course" ? "Courses" : "Downloads",
+        group: c.type === "course" ? "Cursos" : "Materiales",
       })),
     [content],
   );
@@ -89,10 +91,18 @@ export function GrantAccessDialog({
     startTransition(async () => {
       try {
         await grantEntitlementAction(input);
-        toast.success("Access granted");
+        toast.success("Acceso concedido");
         onOpenChange(false);
       } catch (err) {
-        toast.error("Couldn't grant access", { description: (err as Error).message });
+        const status = err instanceof ApiError ? err.status : undefined;
+        toast.error("No se pudo dar acceso", {
+          description:
+            status === 404
+              ? "El curso o material ya no existe."
+              : status === 409
+                ? "El Trabajador ya tiene acceso a este contenido."
+                : "Inténtelo de nuevo en un momento.",
+        });
       }
     });
   });
@@ -101,10 +111,10 @@ export function GrantAccessDialog({
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Grant access"
-      description="Grant this student access to a course or download. They'll get immediate access."
+      title="Dar acceso"
+      description="Se concede acceso a un curso o material; el Trabajador lo ve de inmediato."
       formId={FORM_ID}
-      submitLabel="Grant access"
+      submitLabel="Dar acceso"
       pending={pending}
     >
       <form id={FORM_ID} onSubmit={onSubmit} className="flex flex-col gap-5">
@@ -112,15 +122,15 @@ export function GrantAccessDialog({
           control={control}
           name="contentId"
           render={({ field }) => (
-            <Field id="contentId" label="Content" required error={errors.contentId?.message}>
+            <Field id="contentId" label="Contenido" required error={errors.contentId?.message}>
               <Combobox
                 id="contentId"
                 value={field.value}
                 onValueChange={field.onChange}
                 options={contentOptions}
-                placeholder="Select a course or download"
-                searchPlaceholder="Search courses and downloads…"
-                emptyText="No content matches"
+                placeholder="Seleccione un curso o material"
+                searchPlaceholder="Buscar cursos y materiales…"
+                emptyText="Nada coincide"
                 aria-invalid={!!errors.contentId}
               />
             </Field>
@@ -133,16 +143,16 @@ export function GrantAccessDialog({
           render={({ field }) => (
             <Field
               id="expiryMode"
-              label="Access expiry"
-              hint="Lifetime access never expires; set a date to time-box this entitlement."
+              label="Expiración del acceso"
+              hint="El acceso permanente no expira; con una fecha se acota hasta ese día."
             >
               <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger id="expiryMode">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="never">Never expires</SelectItem>
-                  <SelectItem value="date">Expires on a date</SelectItem>
+                  <SelectItem value="never">Nunca expira</SelectItem>
+                  <SelectItem value="date">Expira en una fecha</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
@@ -150,7 +160,7 @@ export function GrantAccessDialog({
         />
 
         {expiryMode === "date" ? (
-          <Field id="expiresAt" label="Expiry date" required error={errors.expiresAt?.message}>
+          <Field id="expiresAt" label="Fecha de expiración" required error={errors.expiresAt?.message}>
             <Input
               id="expiresAt"
               type="date"

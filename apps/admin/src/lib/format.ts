@@ -20,33 +20,32 @@ export function initials(name: string): string {
 
 const DAY = 86_400_000;
 
-/** Relative time against the current time (e.g. "3 days ago", "in 2 weeks"). */
+const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ["year", 365 * DAY],
+  ["month", 30 * DAY],
+  ["week", 7 * DAY],
+  ["day", DAY],
+  ["hour", 3_600_000],
+  ["minute", 60_000],
+];
+
+const esCL = new Intl.RelativeTimeFormat("es-CL", { numeric: "auto" });
+
+/** Relative time against the current time (e.g. "hace 3 días", "dentro de 2 semanas"). */
 export function relativeTime(iso: string | null): string {
   if (!iso) return "—";
   const diff = new Date(iso).getTime() - Date.now();
   const abs = Math.abs(diff);
-  const past = diff < 0;
-  const units: [number, string][] = [
-    [365 * DAY, "year"],
-    [30 * DAY, "month"],
-    [7 * DAY, "week"],
-    [DAY, "day"],
-    [3_600_000, "hour"],
-    [60_000, "minute"],
-  ];
-  for (const [ms, label] of units) {
+  for (const [unit, ms] of RELATIVE_UNITS) {
     const n = Math.floor(abs / ms);
-    if (n >= 1) {
-      const plural = n === 1 ? label : `${label}s`;
-      return past ? `${n} ${plural} ago` : `in ${n} ${plural}`;
-    }
+    if (n >= 1) return esCL.format(diff < 0 ? -n : n, unit);
   }
-  return "just now";
+  return "ahora mismo";
 }
 
 export function formatDate(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", {
+  return new Date(iso).toLocaleDateString("es-CL", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -54,7 +53,7 @@ export function formatDate(iso: string | null): string {
 }
 
 export function formatNumber(n: number): string {
-  return n.toLocaleString("en-US");
+  return n.toLocaleString("es-CL");
 }
 
 export function formatBytes(bytes: number): string {

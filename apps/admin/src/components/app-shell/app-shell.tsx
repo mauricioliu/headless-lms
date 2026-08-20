@@ -54,7 +54,7 @@ export function AppShell({
         <Logo org={organization.name} />
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Open menu">
+            <Button variant="ghost" size="icon" aria-label="Abrir menú">
               <Menu />
             </Button>
           </SheetTrigger>

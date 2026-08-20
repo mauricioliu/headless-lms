@@ -9,7 +9,7 @@ export function SignOutLink() {
       onClick={() => void signOut().finally(() => window.location.assign("/login"))}
       className="mx-auto mt-4 block text-sm text-ink-3 underline-offset-4 hover:text-ink hover:underline"
     >
-      Sign out
+      Cerrar sesión
     </button>
   );
 }

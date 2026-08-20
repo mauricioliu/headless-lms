@@ -18,9 +18,9 @@ import type { Student } from "@/lib/api/types";
 import { updateStudentAction } from "../actions";
 
 const schema = z.object({
-  firstName: z.string().trim().min(1, "Enter a first name"),
-  lastName: z.string().trim().min(1, "Enter a last name"),
-  email: z.email("Enter a valid email"),
+  firstName: z.string().trim().min(1, "Ingrese el nombre"),
+  lastName: z.string().trim().min(1, "Ingrese el apellido"),
+  email: z.email("Ingrese un correo válido"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -56,14 +56,22 @@ export function StudentDetailsForm({ student }: { student: Student }) {
     startTransition(async () => {
       try {
         await updateStudentAction(student.id, values);
-        toast.success("Student updated");
+        toast.success("Datos del Trabajador actualizados");
         router.refresh();
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
-          setError("email", { message: "Someone else already uses this email" });
+          setError("email", { message: "Otra persona ya usa este correo" });
           return;
         }
-        toast.error("Couldn't save the student", { description: (err as Error).message });
+        const status = err instanceof ApiError ? err.status : undefined;
+        toast.error("No se pudo guardar", {
+          description:
+            status === 404
+              ? "El Trabajador ya no existe."
+              : status == null
+                ? "No se pudo conectar con el servidor. Inténtelo de nuevo."
+                : "Inténtelo de nuevo en un momento.",
+        });
       }
     });
   });
@@ -81,17 +89,17 @@ export function StudentDetailsForm({ student }: { student: Student }) {
               onClick={() => reset(valuesFor(student))}
               disabled={pending || !isDirty}
             >
-              Discard
+              Descartar
             </Button>
             <Button type="submit" variant="primary" disabled={pending || !isDirty}>
               {pending && <Loader2 className="animate-spin" />}
-              Save changes
+              Guardar cambios
             </Button>
           </>
         }
       >
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Field id="firstName" label="First name" required error={errors.firstName?.message}>
+          <Field id="firstName" label="Nombre" required error={errors.firstName?.message}>
             <Input
               id="firstName"
               autoComplete="given-name"
@@ -99,7 +107,7 @@ export function StudentDetailsForm({ student }: { student: Student }) {
               {...register("firstName")}
             />
           </Field>
-          <Field id="lastName" label="Last name" required error={errors.lastName?.message}>
+          <Field id="lastName" label="Apellido" required error={errors.lastName?.message}>
             <Input
               id="lastName"
               autoComplete="family-name"
@@ -111,13 +119,13 @@ export function StudentDetailsForm({ student }: { student: Student }) {
 
         <Field
           id="email"
-          label="Email"
+          label="Correo"
           required
           error={errors.email?.message}
           hint={
             emailPending
-              ? "Changing this retires the invite already sent. Re-send it to reach the new address."
-              : "This is the address they sign in with."
+              ? "Cambiarlo deja sin efecto la invitación ya enviada. Reinvítielo para que llegue al correo nuevo."
+              : "Es el correo con el que la persona inicia sesión."
           }
         >
           <Input id="email" type="email" aria-invalid={!!errors.email} {...register("email")} />

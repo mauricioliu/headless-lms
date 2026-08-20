@@ -46,7 +46,7 @@ export function UserMenu({ user }: { user: SessionUser }) {
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="danger" onClick={handleSignOut} disabled={pending}>
           <LogOut />
-          Sign out
+          Cerrar sesión
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

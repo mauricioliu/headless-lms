@@ -3,18 +3,21 @@ import { EmailButton, Layout, Paragraph, PREVIEW_CTX } from "./layout.js";
 
 type Params = EmailTemplateParams["passwordReset"];
 
+// The one mail both readers get (Admin Cliente and Trabajador), so the copy is
+// written without register — no tú, no usted.
 export const subject = (ctx: TemplateContext, _params: Params) =>
-  `Restablece tu contraseña de ${ctx.brandName}`;
+  `Restablecer la contraseña de ${ctx.brandName}`;
 
 export default function PasswordReset({ ctx, params }: { ctx: TemplateContext; params: Params }) {
   return (
-    <Layout ctx={ctx} heading="Restablecer tu contraseña">
+    <Layout ctx={ctx} heading="Restablecer contraseña">
       <Paragraph>
-        Haz clic en el botón para elegir una contraseña nueva. El enlace expira pronto.
+        Se solicitó restablecer la contraseña de esta cuenta. El botón abre la página para elegir
+        una nueva; el enlace expira pronto.
       </Paragraph>
       <EmailButton href={params.resetUrl}>Restablecer contraseña</EmailButton>
       <Paragraph>
-        Si no pediste el cambio, tu contraseña sigue igual y puedes ignorar este correo.
+        Si no se solicitó este cambio, la contraseña actual no cambia y este correo puede ignorarse.
       </Paragraph>
     </Layout>
   );

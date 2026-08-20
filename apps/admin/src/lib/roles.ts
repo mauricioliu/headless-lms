@@ -68,7 +68,9 @@ export function visibleNav(role: Role): {
 } {
   const manager = isManager(role);
   return {
-    overview: true,
+    // The Overview is the Operador's authoring home — the Admin Cliente's
+    // home is the Olas list (the / route redirects managers to /waves).
+    overview: !manager,
     courses: true,
     // Anyone who builds course content can manage media.
     media: true,

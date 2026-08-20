@@ -28,9 +28,9 @@ const GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Account",
+    label: "Cuenta",
     managerOnly: false,
-    items: [{ href: "/settings/account", label: "Profile", icon: User }],
+    items: [{ href: "/settings/account", label: "Perfil", icon: User }],
   },
 ];
 
@@ -44,7 +44,7 @@ export function SettingsNav({ manager }: { manager: boolean }) {
   const groups = GROUPS.filter((g) => manager || !g.managerOnly);
 
   return (
-    <nav className="flex flex-col gap-6" aria-label="Settings">
+    <nav className="flex flex-col gap-6" aria-label="Configuración">
       {groups.map((group) => (
         <div key={group.label} className="flex flex-col gap-1">
           <p className="px-2.5 text-xs font-medium tracking-wide text-ink-4 uppercase">

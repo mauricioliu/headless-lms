@@ -49,9 +49,9 @@ export function CourseStatusBadge({ status }: { status: CourseStatus }) {
 
 export function EntitlementStatusBadge({ status }: { status: EntitlementStatus }) {
   const map = {
-    active: { variant: "success", label: "Active" },
-    expired: { variant: "warning", label: "Expired" },
-    revoked: { variant: "danger", label: "Revoked" },
+    active: { variant: "success", label: "Activo" },
+    expired: { variant: "warning", label: "Expirado" },
+    revoked: { variant: "danger", label: "Revocado" },
   } as const;
   const { variant, label } = map[status];
   return (

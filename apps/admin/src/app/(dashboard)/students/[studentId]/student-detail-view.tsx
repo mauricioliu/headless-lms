@@ -17,6 +17,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCurrentUser } from "@/lib/auth/session-context";
 import { isManager } from "@/lib/roles";
+import { ApiError } from "@/lib/api/http";
 import { formatDate, fullName, relativeTime } from "@/lib/format";
 import type { Entitlement, Student } from "@/lib/api/types";
 
@@ -25,10 +26,10 @@ import { deleteStudentAction, resendStudentInviteAction } from "../actions";
 import { StudentDetailsForm } from "./student-details-form";
 
 /**
- * Student detail client view (option 2). The student and their entitlements
- * arrive as PROPS from the Server Component — no `useStudent`/
- * `useStudentEntitlements`, no client query cache, so no loading/error states.
- * The role check stays as belt-and-suspenders (the RSC already gated managers).
+ * Trabajador detail client view (option 2). The person and their entitlements
+ * arrive as PROPS from the Server Component — no query hooks, no client cache,
+ * so no loading/error states. The role check stays as belt-and-suspenders (the
+ * RSC already gated managers).
  */
 export function StudentDetailView({
   student,
@@ -52,10 +53,18 @@ export function StudentDetailView({
     startResend(async () => {
       try {
         await resendStudentInviteAction(student.id);
-        toast.success("Invite sent", { description: student.email });
+        toast.success("Invitación reenviada", { description: student.email });
         router.refresh();
       } catch (err) {
-        toast.error("Couldn't send the invite", { description: (err as Error).message });
+        const status = err instanceof ApiError ? err.status : undefined;
+        toast.error("No se pudo reenviar la invitación", {
+          description:
+            status === 404
+              ? "El Trabajador ya no existe."
+              : status === 409
+                ? "La invitación ya fue aceptada; no queda nada por reenviar."
+                : "Inténtelo de nuevo en un momento.",
+        });
       }
     });
 
@@ -64,10 +73,18 @@ export function StudentDetailView({
     startDelete(async () => {
       try {
         await deleteStudentAction(student.id);
-        toast.success("Student deleted");
+        toast.success("Trabajador eliminado");
         router.push("/students");
       } catch (err) {
-        toast.error("Couldn't delete student", { description: (err as Error).message });
+        const status = err instanceof ApiError ? err.status : undefined;
+        toast.error("No se pudo eliminar al Trabajador", {
+          description:
+            status === 404
+              ? "Ya no existe; la lista se actualizará en un momento."
+              : status === 409
+                ? "La plataforma no permite eliminar a este Trabajador."
+                : "Inténtelo de nuevo en un momento.",
+        });
       }
     });
 
@@ -77,7 +94,7 @@ export function StudentDetailView({
         <Button asChild variant="ghost" size="sm" className="-ml-2 text-ink-3">
           <Link href="/students">
             <ArrowLeft />
-            Students
+            Trabajadores
           </Link>
         </Button>
       </div>
@@ -91,8 +108,8 @@ export function StudentDetailView({
 
       <Tabs defaultValue="details" className="flex flex-col gap-6">
         <TabsList>
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="access">Access</TabsTrigger>
+          <TabsTrigger value="details">Datos</TabsTrigger>
+          <TabsTrigger value="access">Accesos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
@@ -101,13 +118,13 @@ export function StudentDetailView({
 
         <TabsContent value="access" className="flex flex-col gap-4">
           <div className="flex items-baseline justify-between gap-4">
-            <h2 className="text-lg font-semibold tracking-tight text-ink">Entitlements</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">Accesos</h2>
             <div className="flex items-center gap-3">
               {entitlements.length > 0 ? (
-                <span className="text-sm text-ink-3">{entitlements.length} total</span>
+                <span className="text-sm text-ink-3">{entitlements.length} en total</span>
               ) : null}
               <Button variant="primary" size="sm" onClick={() => setGrantOpen(true)}>
-                Grant access
+                Dar acceso
               </Button>
             </div>
           </div>
@@ -134,15 +151,15 @@ export function StudentDetailView({
       <ConfirmDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
-        title="Delete student?"
+        title="¿Eliminar Trabajador?"
         description={
           <>
-            This permanently deletes{" "}
-            <span className="font-medium text-ink">{fullName(student)}</span>, along with their
-            entitlements and progress. This can&apos;t be undone.
+            Esto elimina de forma permanente a{" "}
+            <span className="font-medium text-ink">{fullName(student)}</span>, junto con sus
+            accesos y su avance. No se puede deshacer.
           </>
         }
-        confirmLabel="Delete student"
+        confirmLabel="Eliminar Trabajador"
         destructive
         pending={deleting}
         onConfirm={onDelete}
@@ -162,13 +179,13 @@ function StudentHeader({
   onResendInvite: () => void;
   onDelete: () => void;
 }) {
-  // A student exists from the moment an admin adds them, so the page has to say
-  // whether they have actually arrived.
+  // A Trabajador exists from the moment an admin adds them, so the page has to
+  // say whether they have actually arrived.
   const pending = student.status === "invited";
   const stats: { label: string; value: string }[] = [
-    { label: "Entitlements", value: String(student.entitlementCount) },
-    { label: "Avg. progress", value: `${Math.round(student.avgProgress)}%` },
-    { label: "Last active", value: relativeTime(student.lastActiveAt) },
+    { label: "Accesos", value: String(student.entitlementCount) },
+    { label: "Avance promedio", value: `${Math.round(student.avgProgress)}%` },
+    { label: "Última actividad", value: relativeTime(student.lastActiveAt) },
   ];
 
   return (
@@ -181,11 +198,11 @@ function StudentHeader({
               <h1 className="truncate text-xl font-semibold tracking-tight text-ink text-balance">
                 {fullName(student)}
               </h1>
-              {pending && <Badge variant="warning">Invite pending</Badge>}
+              {pending && <Badge variant="warning">Invitación pendiente</Badge>}
             </div>
             <p className="truncate text-sm text-ink-3">{student.email}</p>
             <p className="text-xs text-ink-4">
-              {pending ? "Added" : "Joined"} {formatDate(student.joinedAt)}
+              {pending ? "Agregado" : "Se unió"} el {formatDate(student.joinedAt)}
             </p>
           </div>
         </div>
@@ -193,12 +210,12 @@ function StudentHeader({
         <div className="flex shrink-0 items-center gap-2">
           {pending && (
             <Button variant="secondary" size="sm" onClick={onResendInvite} disabled={resending}>
-              Resend invite
+              Reinvitar
             </Button>
           )}
-          <RowActions label="Student actions">
+          <RowActions label="Acciones del Trabajador">
             <DropdownMenuItem variant="danger" onClick={onDelete}>
-              Delete student
+              Eliminar Trabajador
             </DropdownMenuItem>
           </RowActions>
         </div>
@@ -230,9 +247,9 @@ function EntitlementRow({ entitlement: e }: { entitlement: Entitlement }) {
           <EntitlementStatusBadge status={e.status} />
         </div>
         <p className="text-xs text-ink-3">
-          Granted {formatDate(e.grantedAt)}
+          Concedido el {formatDate(e.grantedAt)}
           {" · "}
-          {e.expiresAt ? `Expires ${relativeTime(e.expiresAt)}` : "No expiry"}
+          {e.expiresAt ? `Expira ${relativeTime(e.expiresAt)}` : "Sin expiración"}
         </p>
       </div>
     </li>
@@ -243,9 +260,9 @@ function EmptyEntitlements() {
   return (
     <div className="grid place-items-center rounded-card border border-dashed border-line bg-surface px-6 py-12 text-center">
       <div className="flex max-w-sm flex-col gap-1">
-        <p className="text-sm font-medium text-ink">No entitlements</p>
+        <p className="text-sm font-medium text-ink">Sin accesos</p>
         <p className="text-sm text-ink-3 text-pretty">
-          This student hasn&apos;t been granted access to any courses yet.
+          Este Trabajador aún no tiene acceso a ningún curso.
         </p>
       </div>
     </div>

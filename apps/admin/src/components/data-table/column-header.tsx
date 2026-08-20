@@ -53,11 +53,11 @@ export function ColumnHeader<TData, TValue>({
           <>
             <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
               <ArrowUp />
-              Ascending
+              Ascendente
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
               <ArrowDown />
-              Descending
+              Descendente
             </DropdownMenuItem>
           </>
         )}

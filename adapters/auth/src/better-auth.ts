@@ -13,7 +13,17 @@ import { prefixId } from '@headless-lms/core/shared/id';
 import { customSession, magicLink, organization } from 'better-auth/plugins';
 import { eq } from 'drizzle-orm';
 import { ac, roles } from './access.js';
-import  { type AuthHeaders, type AuthOrganization, type MemberWriteContext, type OrgAdmin, OrganizationRuleError, parseRole, type Role, type UpdateOrganizationInput } from '@headless-lms/core/organizations';
+import {
+  isStaffRole,
+  type AuthHeaders,
+  type AuthOrganization,
+  type MemberWriteContext,
+  type OrgAdmin,
+  OrganizationRuleError,
+  parseRole,
+  type Role,
+  type UpdateOrganizationInput,
+} from '@headless-lms/core/organizations';
 import type { SessionAdmin } from '@headless-lms/core/identity';
 
 export function createAuth(opts: CreateAuthOptions) {
@@ -122,14 +132,27 @@ export type Auth = ReturnType<typeof createAuth>;
 export class BetterAuth implements SessionVerifier, OrgAdmin, SessionAdmin {
   protected auth: Auth;
   protected logger: Logger;
+  private readonly db: CreateAuthOptions['db'];
 
   constructor(opts: CreateAuthOptions) {
     this.auth = createAuth(opts);
     this.logger = opts.logger;
+    this.db = opts.db;
   }
 
   async handler(request: Request) :Promise<Response>{
     return this.auth.handler(request);
+  }
+
+  /** Whether the user holds any staff membership (owner/admin/instructor) in
+   *  any organization — the reset mail links staff to the admin app and
+   *  everyone else to the student portal. */
+  async hasStaffMembership(userId: string): Promise<boolean> {
+    const memberships = await this.db
+      .select({ role: authSchema.member.role })
+      .from(authSchema.member)
+      .where(eq(authSchema.member.userId, userId));
+    return memberships.some((m) => isStaffRole(m.role));
   }
 
   async verify(headers: IncomingHttpHeaders): Promise<ActiveSession | null> {

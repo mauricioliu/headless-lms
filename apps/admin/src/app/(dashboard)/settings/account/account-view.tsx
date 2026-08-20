@@ -10,7 +10,7 @@ import { ROLE_LABEL } from "@/lib/roles";
 import { NameAvatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-/** Account tab: read-only profile + org membership, plus sign-out. */
+/** Account tab (Admin Cliente surface): read-only profile + org membership, plus sign-out. */
 export function AccountView() {
   const user = useCurrentUser();
   const organization = useOrganization();
@@ -34,18 +34,18 @@ export function AccountView() {
       </div>
 
       <dl className="flex flex-col divide-y divide-line rounded-card border border-line bg-surface px-5">
-        <Row label="Organization" value={organization.name} />
-        <Row label="Role" value={ROLE_LABEL[user.role]} />
+        <Row label="Organización" value={organization.name} />
+        <Row label="Rol" value={ROLE_LABEL[user.role]} />
       </dl>
 
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium text-ink">Sign out</span>
-          <span className="text-sm text-ink-3">End your session on this device.</span>
+          <span className="text-sm font-medium text-ink">Cerrar sesión</span>
+          <span className="text-sm text-ink-3">Termina la sesión en este dispositivo.</span>
         </div>
         <Button variant="destructive" onClick={handleSignOut} disabled={pending}>
           <LogOut />
-          Sign out
+          Cerrar sesión
         </Button>
       </div>
     </div>

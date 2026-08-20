@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "@/lib/auth/server-session";
 import { SignupForm } from "./signup-form";
 
-export const metadata: Metadata = { title: "Create an account — Headless LMS Management" };
+export const metadata: Metadata = { title: "Create an account" };
 
 export default async function SignupPage() {
   const session = await getServerSession();

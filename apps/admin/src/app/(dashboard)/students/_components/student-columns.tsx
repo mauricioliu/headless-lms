@@ -12,8 +12,8 @@ import type { Student } from "@/lib/api/types";
 import { ProgressCell } from "./progress-meter";
 
 /**
- * Column set for the students list. `onView`/`onDelete` drive the row-action
- * menu; row clicks are wired separately on the table (onRowClick).
+ * Column set for the Trabajadores list. `onView`/`onDelete` drive the
+ * row-action menu; row clicks are wired separately on the table (onRowClick).
  */
 export function studentColumns(
   onView: (id: string) => void,
@@ -22,7 +22,7 @@ export function studentColumns(
   return [
     {
       accessorKey: "name",
-      header: ({ column }) => <ColumnHeader column={column} title="Student" />,
+      header: ({ column }) => <ColumnHeader column={column} title="Trabajador" />,
       cell: ({ row }) => {
         const s = row.original;
         return (
@@ -38,26 +38,28 @@ export function studentColumns(
     },
     {
       accessorKey: "entitlementCount",
-      header: ({ column }) => <ColumnHeader column={column} title="Entitlements" align="right" />,
+      header: ({ column }) => <ColumnHeader column={column} title="Accesos" align="right" />,
       cell: ({ row }) => <span className="text-ink-2">{row.original.entitlementCount}</span>,
       meta: { align: "right" },
     },
     {
       accessorKey: "avgProgress",
-      header: ({ column }) => <ColumnHeader column={column} title="Avg. progress" align="right" />,
+      header: ({ column }) => (
+        <ColumnHeader column={column} title="Avance promedio" align="right" />
+      ),
       cell: ({ row }) => <ProgressCell value={row.original.avgProgress} />,
       meta: { align: "right" },
     },
     {
       accessorKey: "joinedAt",
-      header: ({ column }) => <ColumnHeader column={column} title="Joined" />,
+      header: ({ column }) => <ColumnHeader column={column} title="Agregado" />,
       cell: ({ row }) => (
         <span className="whitespace-nowrap text-ink-3">{relativeTime(row.original.joinedAt)}</span>
       ),
     },
     {
       accessorKey: "lastActiveAt",
-      header: ({ column }) => <ColumnHeader column={column} title="Last active" />,
+      header: ({ column }) => <ColumnHeader column={column} title="Última actividad" />,
       cell: ({ row }) => (
         <span className="whitespace-nowrap text-ink-3">
           {relativeTime(row.original.lastActiveAt)}
@@ -66,18 +68,18 @@ export function studentColumns(
     },
     {
       id: "actions",
-      header: () => <span className="sr-only">Actions</span>,
+      header: () => <span className="sr-only">Acciones</span>,
       enableSorting: false,
       enableHiding: false,
       cell: ({ row }) => (
         <div className="flex justify-end">
           <RowActions>
             <DropdownMenuItem onClick={() => onView(row.original.id)}>
-              View student
+              Ver Trabajador
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="danger" onClick={() => onDelete(row.original)}>
-              Delete
+              Eliminar
             </DropdownMenuItem>
           </RowActions>
         </div>

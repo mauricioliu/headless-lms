@@ -45,8 +45,12 @@ const EXPECTED: { [K in EmailTemplateId]: { subject: string; body: string[] } } 
     body: ["Ana te invitó a unirte a Minera Los Andes como admin."],
   },
   passwordReset: {
-    subject: "Restablece tu contraseña de Minera Los Andes",
-    body: ["El enlace expira pronto.", "tu contraseña sigue igual y puedes ignorar este correo."],
+    subject: "Restablecer la contraseña de Minera Los Andes",
+    body: [
+      "Se solicitó restablecer la contraseña de esta cuenta.",
+      "el enlace expira pronto.",
+      "la contraseña actual no cambia y este correo puede ignorarse.",
+    ],
   },
   emailVerification: {
     subject: "Confirma tu correo en Minera Los Andes",

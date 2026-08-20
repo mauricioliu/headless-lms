@@ -56,7 +56,7 @@ export function FormDialog({
         <div className="-mr-1 min-h-0 overflow-y-auto pr-1">{children}</div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={pending}>
-            Cancel
+            Cancelar
           </Button>
           <Button
             type="submit"

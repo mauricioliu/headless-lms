@@ -18,7 +18,7 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="en">
+    <html lang="es">
       <body
         style={{
           margin: 0,
@@ -37,10 +37,10 @@ export default function GlobalError({
         }}
       >
         <h1 style={{ margin: 0, fontSize: "16px", fontWeight: 500 }}>
-          Something went wrong
+          Algo falló
         </h1>
         <p style={{ margin: 0, maxWidth: "42ch", fontSize: "14px", color: "#6b6b6b" }}>
-          The app couldn&apos;t be loaded. Try again, or reload the page.
+          La aplicación no se pudo cargar. Inténtelo de nuevo o recargue la página.
         </p>
         <button
           onClick={reset}
@@ -56,7 +56,7 @@ export default function GlobalError({
             cursor: "pointer",
           }}
         >
-          Try again
+          Reintentar
         </button>
         {error.digest ? (
           <p style={{ margin: 0, fontSize: "12px", fontFamily: "ui-monospace, monospace", color: "#9a9a9a" }}>

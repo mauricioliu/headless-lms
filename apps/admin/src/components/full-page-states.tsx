@@ -1,7 +1,7 @@
 import { Ban, Loader2 } from "lucide-react";
 
 /** Centered full-viewport loader for the auth gate / route transitions. */
-export function FullPageLoader({ label = "Loading…" }: { label?: string }) {
+export function FullPageLoader({ label = "Cargando…" }: { label?: string }) {
   return (
     <div className="grid min-h-dvh place-items-center bg-page">
       <div className="flex flex-col items-center gap-3 text-ink-3">
@@ -21,10 +21,10 @@ export function ForbiddenView({ description }: { description?: string }) {
           <Ban className="size-5" />
         </div>
         <div className="flex flex-col gap-1">
-          <h1 className="text-lg font-semibold tracking-tight text-ink">Access restricted</h1>
+          <h1 className="text-lg font-semibold tracking-tight text-ink">Acceso restringido</h1>
           <p className="text-sm text-ink-3 text-pretty">
             {description ??
-              "Your role doesn't permit access to this area. Contact an owner or admin if you need it."}
+              "Su rol no permite entrar a esta sección. Contacte a un propietario o administrador si la necesita."}
           </p>
         </div>
       </div>

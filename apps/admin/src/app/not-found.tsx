@@ -11,13 +11,13 @@ export default function NotFound() {
         <SearchX className="size-5" />
       </span>
       <div className="flex flex-col gap-1.5">
-        <h1 className="text-base font-medium tracking-tight text-ink">Page not found</h1>
+        <h1 className="text-base font-medium tracking-tight text-ink">Página no encontrada</h1>
         <p className="max-w-[42ch] text-pretty text-sm text-ink-3">
-          This page doesn&apos;t exist, or you don&apos;t have access to it.
+          Esta página no existe, o no tiene acceso a ella.
         </p>
       </div>
       <Button variant="secondary" asChild>
-        <Link href="/">Go to overview</Link>
+        <Link href="/">Volver al inicio</Link>
       </Button>
     </main>
   );

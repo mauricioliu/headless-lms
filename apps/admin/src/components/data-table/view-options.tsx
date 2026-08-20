@@ -22,13 +22,13 @@ export function ViewOptions<TData>({ table }: { table: Table<TData> }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label="Toggle columns" title="Columns">
+        <Button variant="ghost" size="icon-sm" aria-label="Mostrar u ocultar columnas" title="Columnas">
           <SlidersHorizontal />
-          <span className="sr-only">Columns</span>
+          <span className="sr-only">Columnas</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+        <DropdownMenuLabel>Mostrar u ocultar columnas</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {columns.map((column) => (
           <DropdownMenuCheckboxItem

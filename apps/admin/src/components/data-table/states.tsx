@@ -78,8 +78,8 @@ export function TableEmpty({
     <StateRow
       colSpan={colSpan}
       icon={<SearchX className="size-5" />}
-      title={filtered ? "No matching results" : title}
-      description={filtered ? "Try adjusting your search or filters." : description}
+      title={filtered ? "Sin resultados" : title}
+      description={filtered ? "Ajuste la búsqueda o los filtros." : description}
       action={filtered ? undefined : action}
     />
   );
@@ -90,12 +90,12 @@ export function TableError({ colSpan, onRetry }: { colSpan: number; onRetry: () 
     <StateRow
       colSpan={colSpan}
       icon={<RotateCw className="size-5" />}
-      title="Couldn't load this data"
-      description="Something went wrong while fetching. Check your connection and try again."
+      title="No se pudieron cargar los datos"
+      description="Algo falló al consultar el servidor. Revise la conexión e inténtelo de nuevo."
       action={
         <Button variant="secondary" size="sm" onClick={onRetry}>
           <RotateCw />
-          Retry
+          Reintentar
         </Button>
       }
     />
@@ -107,8 +107,8 @@ export function TableForbidden({ colSpan }: { colSpan: number }) {
     <StateRow
       colSpan={colSpan}
       icon={<Ban className="size-5" />}
-      title="You don't have access to this"
-      description="Your role doesn't permit viewing these records. Contact an owner or admin if you need access."
+      title="No tiene acceso a esto"
+      description="Su rol no permite ver estos registros. Contacte a un propietario o administrador si necesita acceso."
     />
   );
 }

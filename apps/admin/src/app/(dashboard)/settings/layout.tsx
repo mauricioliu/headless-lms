@@ -18,7 +18,7 @@ export default async function SettingsLayout({ children }: { children: ReactNode
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Settings" />
+      <PageHeader title="Configuración" />
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
         <aside className="lg:w-56 lg:shrink-0">
           <SettingsNav manager={manager} />

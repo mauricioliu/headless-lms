@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "@/lib/auth/server-session";
 import { CreateOrgForm } from "./create-org-form";
 
-export const metadata: Metadata = { title: "Create your organization — Headless LMS" };
+export const metadata: Metadata = { title: "Create your organization" };
 
 export default async function CreateOrganizationPage() {
   const session = await getServerSession();
