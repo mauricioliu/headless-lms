@@ -4,6 +4,8 @@ import { requireManager } from "@/lib/auth/server-session";
 import { serverApi } from "@/lib/api/server";
 import { PageHeader } from "@/components/page-header";
 
+import { EvidenceLink } from "../registro/_components/evidence-link";
+
 // Olas list (the Admin Cliente's entry point): each Ola links to its per-Ola
 // report. Fetches server-side like every list screen; the table follows the
 // approved report table's styling (variant A).
@@ -14,7 +16,11 @@ export default async function WavesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Olas" subtitle="Grupos de Trabajadores inscritos por Curso" />
+      <PageHeader
+        title="Olas"
+        subtitle="Grupos de Trabajadores inscritos por Curso"
+        actions={<EvidenceLink />}
+      />
       {waves.length === 0 ? (
         <div className="flex flex-col gap-1 border-y border-line py-10 text-center">
           <p className="text-sm font-medium text-ink">Aún no hay Olas</p>

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { fullName } from "@/lib/format";
+import { EvidenceLink } from "@/app/(dashboard)/registro/_components/evidence-link";
 import type { WaveReport, WaveWorkerEvaluationStatus } from "@/lib/api/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -194,7 +195,8 @@ function WaveReportViewInner({ report }: { report: WaveReport }) {
           <div>
             <h2 className="text-sm font-semibold">Registro por Trabajador</h2>
             <p className="mt-1 text-sm text-ink-3">
-              Vale el último intento; el historial completo permanece registrado.
+              Vale el último intento; el historial completo permanece registrado.{" "}
+              <EvidenceLink />
             </p>
           </div>
           <div className="flex gap-2" role="group" aria-label="Filtrar por estado">
