@@ -1,5 +1,5 @@
 export { EvaluationService } from './service.js';
-export type { EvaluationServiceParams } from './service.js';
+export type { AttemptsSummary, EvaluationServiceParams } from './service.js';
 export { InvalidAttemptAnswersError } from './errors.js';
 export type {
   Attempt,
@@ -25,6 +25,7 @@ export type {
   EvaluationRepository,
   EvaluationTxScope,
   EvaluationUnitOfWork,
+  SubmittedAttemptsSummary,
 } from './ports.js';
 export { evaluationEvents } from './events.js';
 export type { EvaluationAttemptGraded, EvaluationReplaced } from './events.js';

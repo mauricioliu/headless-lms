@@ -1,6 +1,10 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type { Attempt, EvaluationAttemptRepository } from "@headless-lms/core/evaluation";
+import type {
+  Attempt,
+  EvaluationAttemptRepository,
+  SubmittedAttemptsSummary,
+} from "@headless-lms/core/evaluation";
 import type { Logger } from "@headless-lms/core/types";
 import { noopLogger } from "@headless-lms/core/shared/logger";
 import { evaluationAttempts } from "../schema/evaluation-attempts.js";
@@ -43,6 +47,39 @@ export class DrizzleEvaluationAttemptRepository implements EvaluationAttemptRepo
       .orderBy(desc(evaluationAttempts.attemptNumber))
       .limit(1);
     return row ? toAttempt(row) : null;
+  }
+
+  async summarizeSubmitted(
+    orgId: string,
+    courseId: string,
+    orgUserId: string,
+  ): Promise<SubmittedAttemptsSummary> {
+    const submitted = and(
+      eq(evaluationAttempts.orgId, orgId),
+      eq(evaluationAttempts.courseId, courseId),
+      eq(evaluationAttempts.orgUserId, orgUserId),
+      isNotNull(evaluationAttempts.submittedAt),
+    );
+    const [latest] = await this.db
+      .select({
+        score: evaluationAttempts.score,
+        passed: evaluationAttempts.passed,
+      })
+      .from(evaluationAttempts)
+      .where(submitted)
+      .orderBy(desc(evaluationAttempts.attemptNumber))
+      .limit(1);
+    const [counted] = await this.db
+      .select({ value: sql<number>`cast(count(*) as int)` })
+      .from(evaluationAttempts)
+      .where(submitted);
+    return {
+      count: counted?.value ?? 0,
+      latest:
+        latest && latest.score !== null && latest.passed !== null
+          ? { score: latest.score, passed: latest.passed }
+          : null,
+    };
   }
 
   async existsForOrgUser(orgId: string, orgUserId: string): Promise<boolean> {

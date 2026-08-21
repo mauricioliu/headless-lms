@@ -78,6 +78,19 @@ function fakeAttempts() {
           .sort((a, b) => b.attemptNumber - a.attemptNumber)[0] ?? null
       );
     },
+    async summarizeSubmitted(_orgId, courseId, orgUserId) {
+      const submitted = attempts
+        .filter((a) => a.courseId === courseId && a.orgUserId === orgUserId && a.submittedAt)
+        .sort((a, b) => b.attemptNumber - a.attemptNumber);
+      const latest = submitted[0];
+      return {
+        count: submitted.length,
+        latest:
+          latest && latest.score !== null && latest.passed !== null
+            ? { score: latest.score, passed: latest.passed }
+            : null,
+      };
+    },
     async existsForOrgUser(_orgId, orgUserId) {
       return attempts.some((a) => a.orgUserId === orgUserId);
     },
@@ -429,6 +442,82 @@ describe('EvaluationService.latestAttempt and latestApproval', () => {
     });
     expect(await service.latestApproval('org_1', document.courseId, 'orm_1')).toEqual({
       passed: true,
+    });
+  });
+
+  it('latestApproval keeps the last submitted pass when a later attempt is still open', async () => {
+    const { service } = makeService();
+    await service.startAttempt('org_1', document.courseId, 'orm_1');
+    await service.submitAttempt('org_1', document.courseId, 'orm_1', 1, {
+      answers: allCorrect,
+    });
+    await service.startAttempt('org_1', document.courseId, 'orm_1');
+    expect(await service.latestApproval('org_1', document.courseId, 'orm_1')).toEqual({
+      passed: true,
+    });
+  });
+});
+
+describe('EvaluationService.attemptsSummary', () => {
+  const oneMiss = [
+    { questionId: 'q1', optionId: 'o2' },
+    { questionId: 'q2', optionId: 'a' },
+    { questionId: 'q3', optionId: 'y' },
+  ];
+
+  it('returns zero submitted attempts when there are none, even without an evaluation', async () => {
+    const without = makeService({ document: null });
+    expect(await without.service.attemptsSummary('org_1', document.courseId, 'orm_1')).toEqual({
+      intentos: 0,
+      ultimo: null,
+    });
+
+    const { service } = makeService();
+    expect(await service.attemptsSummary('org_1', document.courseId, 'orm_1')).toEqual({
+      intentos: 0,
+      ultimo: null,
+    });
+  });
+
+  it('ignores an open attempt that was never submitted', async () => {
+    const { service } = makeService();
+    await service.startAttempt('org_1', document.courseId, 'orm_1');
+    expect(await service.attemptsSummary('org_1', document.courseId, 'orm_1')).toEqual({
+      intentos: 0,
+      ultimo: null,
+    });
+  });
+
+  it('reports the last submitted attempt when it failed', async () => {
+    const { service } = makeService();
+    await service.startAttempt('org_1', document.courseId, 'orm_1');
+    await service.submitAttempt('org_1', document.courseId, 'orm_1', 1, { answers: oneMiss });
+    expect(await service.attemptsSummary('org_1', document.courseId, 'orm_1')).toEqual({
+      intentos: 1,
+      ultimo: { puntaje: 66, aprobado: false },
+    });
+  });
+
+  it('reports the last submitted attempt when it passed', async () => {
+    const { service } = makeService();
+    await service.startAttempt('org_1', document.courseId, 'orm_1');
+    await service.submitAttempt('org_1', document.courseId, 'orm_1', 1, { answers: oneMiss });
+    await service.startAttempt('org_1', document.courseId, 'orm_1');
+    await service.submitAttempt('org_1', document.courseId, 'orm_1', 2, { answers: allCorrect });
+    expect(await service.attemptsSummary('org_1', document.courseId, 'orm_1')).toEqual({
+      intentos: 2,
+      ultimo: { puntaje: 100, aprobado: true },
+    });
+  });
+
+  it('does not let an open later attempt overwrite the last submitted one', async () => {
+    const { service } = makeService();
+    await service.startAttempt('org_1', document.courseId, 'orm_1');
+    await service.submitAttempt('org_1', document.courseId, 'orm_1', 1, { answers: allCorrect });
+    await service.startAttempt('org_1', document.courseId, 'orm_1');
+    expect(await service.attemptsSummary('org_1', document.courseId, 'orm_1')).toEqual({
+      intentos: 1,
+      ultimo: { puntaje: 100, aprobado: true },
     });
   });
 });

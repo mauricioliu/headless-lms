@@ -41,6 +41,11 @@ function toAttemptStatus(attempt: Attempt): AttemptStatus {
   };
 }
 
+export type AttemptsSummary = {
+  intentos: number;
+  ultimo: { puntaje: number; aprobado: boolean } | null;
+};
+
 export interface EvaluationServiceParams {
   repo: EvaluationRepository;
   attempts: EvaluationAttemptRepository;
@@ -234,6 +239,20 @@ export class EvaluationService {
     return this.attempts.existsForOrgUser(orgId, orgUserId);
   }
 
+  async attemptsSummary(
+    orgId: string,
+    courseId: string,
+    orgUserId: string,
+  ): Promise<AttemptsSummary> {
+    const summary = await this.attempts.summarizeSubmitted(orgId, courseId, orgUserId);
+    return {
+      intentos: summary.count,
+      ultimo: summary.latest
+        ? { puntaje: summary.latest.score, aprobado: summary.latest.passed }
+        : null,
+    };
+  }
+
   async latestApproval(
     orgId: string,
     courseId: string,
@@ -243,11 +262,8 @@ export class EvaluationService {
     if (!evaluation) {
       return null;
     }
-    const latest = await this.attempts.findLatest(orgId, courseId, orgUserId);
-    if (!latest || !latest.submittedAt) {
-      return { passed: false };
-    }
-    return { passed: latest.passed === true };
+    const summary = await this.attemptsSummary(orgId, courseId, orgUserId);
+    return { passed: summary.ultimo?.aprobado ?? false };
   }
 
   private async assertCourseComplete(
