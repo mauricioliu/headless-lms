@@ -31,7 +31,7 @@ window.VTTCue = class {
   startTime: number;
   endTime: number;
   text: string;
-  constructor(startTime = 0, endTime = 0, text = '') {
+  constructor(startTime = 0, endTime = 0, text = "") {
     this.startTime = startTime;
     this.endTime = endTime;
     this.text = text;
@@ -70,9 +70,25 @@ window.matchMedia = ((query: string) => ({
   dispatchEvent: () => false,
 })) as typeof window.matchMedia;
 window.ResizeObserver = ObserverStub as unknown as typeof ResizeObserver;
-window.IntersectionObserver =
-  IntersectionObserverStub as unknown as typeof IntersectionObserver;
+window.IntersectionObserver = IntersectionObserverStub as unknown as typeof IntersectionObserver;
 window.requestAnimationFrame = ((cb: FrameRequestCallback) =>
-  setTimeout(() => cb(Date.now()), 0) as unknown as number) as typeof window.requestAnimationFrame;
+  setTimeout(() => {
+    if (typeof window === "undefined") return;
+    cb(Date.now());
+  }, 0) as unknown as number) as typeof window.requestAnimationFrame;
 window.cancelAnimationFrame = ((id: number) =>
-  clearTimeout(id as unknown as ReturnType<typeof setTimeout>)) as typeof window.cancelAnimationFrame;
+  clearTimeout(
+    id as unknown as ReturnType<typeof setTimeout>,
+  )) as typeof window.cancelAnimationFrame;
+
+if (typeof window.PointerEvent === "undefined") {
+  window.PointerEvent = class PointerEvent extends MouseEvent {
+    pointerId: number;
+    pointerType: string;
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init);
+      this.pointerId = init.pointerId ?? 0;
+      this.pointerType = init.pointerType ?? "";
+    }
+  } as typeof PointerEvent;
+}

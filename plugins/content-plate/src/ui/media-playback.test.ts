@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
 import {
   captureError,
@@ -6,12 +6,13 @@ import {
   createResumeState,
   gateRate,
   gateSeek,
+  naturalAspectRatio,
   resumeTarget,
   videoMimeType,
-} from './media-playback';
+} from "./media-playback";
 
-describe('resume choreography', () => {
-  it('fresh load with a saved position seeks there and suppresses the seek report', () => {
+describe("resume choreography", () => {
+  it("fresh load with a saved position seeks there and suppresses the seek report", () => {
     const { target, next } = resumeTarget(createResumeState(), 612, 1475);
     expect(target).toBe(612);
     expect(next.resumed).toBe(true);
@@ -20,7 +21,7 @@ describe('resume choreography', () => {
     expect(consumeSeekSuppression(seek.next).report).toBe(true); // user seeks still report
   });
 
-  it('fresh load with an expired first presign still resumes at the saved position', () => {
+  it("fresh load with an expired first presign still resumes at the saved position", () => {
     let st = createResumeState();
     const err = captureError(st, 0); // nothing played yet
     expect(err.retry).toBe(true);
@@ -30,7 +31,7 @@ describe('resume choreography', () => {
     expect(target).toBe(612);
   });
 
-  it('mid-playback expiry resumes at the interrupted position, not the saved one', () => {
+  it("mid-playback expiry resumes at the interrupted position, not the saved one", () => {
     let st = resumeTarget(createResumeState(), 612, 1475).next;
     const err = captureError(st, 300);
     expect(err.retry).toBe(true);
@@ -39,77 +40,92 @@ describe('resume choreography', () => {
     expect(target).toBe(300);
   });
 
-  it('retries the refresh only once', () => {
+  it("retries the refresh only once", () => {
     const first = captureError(createResumeState(), 10);
     expect(first.retry).toBe(true);
     expect(captureError(first.next, 20).retry).toBe(false);
   });
 
-  it('no saved position: no seek, no suppression', () => {
+  it("no saved position: no seek, no suppression", () => {
     const { target, next } = resumeTarget(createResumeState(), undefined, 90);
     expect(target).toBeNull();
     expect(consumeSeekSuppression(next).report).toBe(true);
   });
 
-  it('a finished video restarts from the top', () => {
+  it("a finished video restarts from the top", () => {
     const { target } = resumeTarget(createResumeState(), 89.6, 90);
     expect(target).toBeNull();
   });
 
-  it('lesson revisits after the first load do not re-consult the saved position', () => {
+  it("lesson revisits after the first load do not re-consult the saved position", () => {
     const st = resumeTarget(createResumeState(), 612, 1475).next;
     const { target } = resumeTarget(st, 612, 1475);
     expect(target).toBeNull();
   });
 });
 
-describe('videoMimeType', () => {
-  it('derives the type from the stored filename', () => {
-    expect(videoMimeType('clip.webm')).toBe('video/webm');
-    expect(videoMimeType('clip.OGV')).toBe('video/ogg');
-    expect(videoMimeType('clip.mp4')).toBe('video/mp4');
+describe("videoMimeType", () => {
+  it("derives the type from the stored filename", () => {
+    expect(videoMimeType("clip.webm")).toBe("video/webm");
+    expect(videoMimeType("clip.OGV")).toBe("video/ogg");
+    expect(videoMimeType("clip.mp4")).toBe("video/mp4");
   });
 
-  it('defaults to mp4 when the name is absent or unknown', () => {
-    expect(videoMimeType(undefined)).toBe('video/mp4');
-    expect(videoMimeType('clip.xyz')).toBe('video/mp4');
+  it("defaults to mp4 when the name is absent or unknown", () => {
+    expect(videoMimeType(undefined)).toBe("video/mp4");
+    expect(videoMimeType("clip.xyz")).toBe("video/mp4");
   });
 });
 
-describe('playback gate', () => {
-  it('a seek beyond the ceiling snaps back to it', () => {
+describe("naturalAspectRatio", () => {
+  it("derives the inline ratio from the media natural size", () => {
+    expect(naturalAspectRatio(720, 1280)).toBe("720 / 1280");
+    expect(naturalAspectRatio(1920, 1080)).toBe("1920 / 1080");
+  });
+
+  it("stays null until metadata reports a real size", () => {
+    expect(naturalAspectRatio(undefined, undefined)).toBeNull();
+    expect(naturalAspectRatio(720, undefined)).toBeNull();
+    expect(naturalAspectRatio(0, 0)).toBeNull();
+    expect(naturalAspectRatio(720, 0)).toBeNull();
+    expect(naturalAspectRatio(Number.NaN, 1280)).toBeNull();
+  });
+});
+
+describe("playback gate", () => {
+  it("a seek beyond the ceiling snaps back to it", () => {
     expect(gateSeek(120, 45)).toBe(45);
   });
 
-  it('seeking to exactly the ceiling is allowed', () => {
+  it("seeking to exactly the ceiling is allowed", () => {
     expect(gateSeek(45, 45)).toBeNull();
   });
 
-  it('rewinding below the ceiling is always allowed', () => {
+  it("rewinding below the ceiling is always allowed", () => {
     expect(gateSeek(10, 45)).toBeNull();
     expect(gateSeek(0, 0)).toBeNull();
   });
 
-  it('no ceiling leaves seeks unconstrained', () => {
+  it("no ceiling leaves seeks unconstrained", () => {
     expect(gateSeek(900, undefined)).toBeNull();
   });
 
-  it('a non-finite ceiling leaves seeks unconstrained', () => {
+  it("a non-finite ceiling leaves seeks unconstrained", () => {
     expect(gateSeek(900, Number.NaN)).toBeNull();
   });
 
-  it('a rate above the cap clamps down to it', () => {
+  it("a rate above the cap clamps down to it", () => {
     expect(gateRate(4, 2)).toBe(2);
     expect(gateRate(2.5, 2)).toBe(2);
   });
 
-  it('a rate at or below the cap passes, including slower speeds', () => {
+  it("a rate at or below the cap passes, including slower speeds", () => {
     expect(gateRate(2, 2)).toBeNull();
     expect(gateRate(1, 2)).toBeNull();
     expect(gateRate(0.5, 2)).toBeNull();
   });
 
-  it('no cap leaves the rate unconstrained', () => {
+  it("no cap leaves the rate unconstrained", () => {
     expect(gateRate(16, undefined)).toBeNull();
     expect(gateRate(16, 0)).toBeNull();
   });

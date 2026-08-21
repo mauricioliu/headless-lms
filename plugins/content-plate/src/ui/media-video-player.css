@@ -1,0 +1,60 @@
+/*
+ * Mobile-first presentation for the static video island (media-video-player).
+ * Vidstack's theme boxes every video at 16/9; Segmentos are vertical (9/16).
+ *
+ * 1. The box defaults to 9/16 so first paint on a phone reserves the right
+ *    space; the island sets the natural ratio inline once metadata loads,
+ *    covering non-vertical assets.
+ * 2. On wide screens the tall box is capped: object-fit contain centers the
+ *    video on the player's black background instead of growing unbounded.
+ * 3. Phone rotated to landscape: a started Segmento takes over the viewport.
+ *    position: fixed escapes the scrolling content column; contain keeps the
+ *    vertical video centered with side bars on black.
+ * 4. The fullscreen button does NOT use the Fullscreen API (Chrome Android
+ *    locks that to landscape, shrinking a 9/16 Segmento into a strip). It
+ *    toggles .nuvora-fs, the same overlay in the current orientation — so
+ *    portrait fills the phone vertically. Below the toast layer order-wise
+ *    (toast mounts later in the body at the same z).
+ */
+
+.nuvora-media-player:not([data-view-type='audio']) {
+  aspect-ratio: 9 / 16; /* 1 */
+  max-height: 78dvh; /* 2 */
+}
+
+.nuvora-media-player.nuvora-fs {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  width: 100dvw;
+  height: 100dvh;
+  max-height: none;
+  aspect-ratio: auto; /* 4 */
+  border: none;
+  border-radius: 0;
+  background: #000;
+}
+
+.nuvora-media-player.nuvora-fs video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  [data-media-player].nuvora-media-player[data-view-type='video'][data-started] {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    width: 100dvw;
+    height: 100dvh;
+    max-height: none;
+    aspect-ratio: auto; /* 3 */
+    border: none;
+    border-radius: 0;
+  }
+
+  [data-media-player].nuvora-media-player[data-view-type='video'][data-started] video {
+    height: 100%;
+  }
+}
