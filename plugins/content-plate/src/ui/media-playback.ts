@@ -25,8 +25,7 @@ export function resumeTarget(
 ): { target: number | null; next: ResumeState } {
   let candidate = st.resumeAt;
   if (candidate == null && !st.resumed) {
-    const finished =
-      saved != null && duration != null && duration > 0 && saved >= duration - 1;
+    const finished = saved != null && duration != null && duration > 0 && saved >= duration - 1;
     candidate = finished ? null : (saved ?? null);
   }
   const target = candidate != null && candidate > 0 ? candidate : null;
@@ -90,6 +89,18 @@ export function gateRate(rate: number, max: number | undefined): number | null {
     return null;
   }
   return max;
+}
+
+/** Inline `aspect-ratio` for the player box from the media's natural size,
+ *  or null while unknown — the vertical 9/16 CSS default then stands in. */
+export function naturalAspectRatio(
+  videoWidth: number | undefined,
+  videoHeight: number | undefined,
+): string | null {
+  if (videoWidth == null || videoHeight == null) return null;
+  if (!Number.isFinite(videoWidth) || !Number.isFinite(videoHeight)) return null;
+  if (videoWidth <= 0 || videoHeight <= 0) return null;
+  return `${videoWidth} / ${videoHeight}`;
 }
 
 /** The subset of Vidstack's closed VideoMimeType union we can produce. */

@@ -12,6 +12,7 @@ import {
 import { DefaultVideoLayout, defaultLayoutIcons } from "@vidstack/react/player/layouts/default";
 import "@vidstack/react/player/styles/default/theme.css";
 import "@vidstack/react/player/styles/default/layouts/video.css";
+import "./media-video-player.css";
 
 import { useMediaTracking, type MediaTrackingEvent } from "../media";
 import {
@@ -20,6 +21,7 @@ import {
   createResumeState,
   gateRate,
   gateSeek,
+  naturalAspectRatio,
   resumeTarget,
   videoMimeType,
 } from "./media-playback";
@@ -38,6 +40,12 @@ export function MediaVideoPlayer({
   const hostRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef(createResumeState());
   const [src, setSrc] = useState(url);
+  // Natural box ratio, set once metadata reports it. Null until then: the
+  // mobile-first CSS default (9/16, the produced Segmento ratio) stands in.
+  const [aspectRatio, setAspectRatio] = useState<string | null>(null);
+  // CSS overlay instead of the Fullscreen API: Chrome Android locks native
+  // video fullscreen to landscape, letterboxing a 9/16 Segmento into a strip.
+  const [cssFs, setCssFs] = useState(false);
 
   const clipSeek = (target: number) => {
     const policy = assetId ? playbackPolicy?.(assetId) : undefined;
@@ -58,9 +66,48 @@ export function MediaVideoPlayer({
         playerRef.current?.remoteControl.seek(clamped);
       }
     };
+    const onEnter = (e: Event) => {
+      e.preventDefault();
+      setCssFs(true);
+    };
+    const onExit = (e: Event) => {
+      e.preventDefault();
+      setCssFs(false);
+    };
     root.addEventListener("media-seek-request", onSeekRequest, true);
-    return () => root.removeEventListener("media-seek-request", onSeekRequest, true);
+    root.addEventListener("media-enter-fullscreen-request", onEnter);
+    root.addEventListener("media-exit-fullscreen-request", onExit);
+    return () => {
+      root.removeEventListener("media-seek-request", onSeekRequest, true);
+      root.removeEventListener("media-enter-fullscreen-request", onEnter);
+      root.removeEventListener("media-exit-fullscreen-request", onExit);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!cssFs) return;
+    window.history.pushState({ nuvoraFs: 1 }, "");
+    const onPop = () => setCssFs(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCssFs(false);
+    };
+    window.addEventListener("popstate", onPop);
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [cssFs]);
+
+  const toggleCssFs = () => {
+    setCssFs((on) => {
+      if (on && window.history.state?.nuvoraFs) window.history.back();
+      return !on;
+    });
+  };
 
   const duration = () => {
     const raw = playerRef.current?.duration;
@@ -75,9 +122,11 @@ export function MediaVideoPlayer({
     <div ref={hostRef} className="w-full">
       <MediaPlayer
         ref={playerRef}
-        className="overflow-hidden rounded-sm"
+        className={`overflow-hidden rounded-sm nuvora-media-player${cssFs ? " nuvora-fs" : ""}`}
+        style={aspectRatio ? { aspectRatio } : undefined}
         src={{ src, type: videoMimeType(name) }}
         playsInline
+        fullscreenOrientation="none"
         onCanPlay={() => {
           const saved = assetId ? startPosition?.(assetId) : undefined;
           const { target, next } = resumeTarget(stateRef.current, saved, duration());
@@ -85,6 +134,13 @@ export function MediaVideoPlayer({
           if (target != null && playerRef.current) {
             playerRef.current.currentTime = target;
           }
+        }}
+        onLoadedMetadata={() => {
+          // Metadata just arrived: size the box to the video's natural ratio
+          // (the mobile-first 9/16 CSS default covers the wait and any
+          // metadata-less fallback).
+          const video = hostRef.current?.querySelector("video");
+          setAspectRatio(naturalAspectRatio(video?.videoWidth, video?.videoHeight));
         }}
         onPlay={() => emit("play", playerRef.current?.currentTime ?? 0)}
         onPause={() => emit("pause", playerRef.current?.currentTime ?? 0)}
@@ -130,8 +186,29 @@ export function MediaVideoPlayer({
         }}
       >
         <VidstackMediaProvider />
-        <DefaultVideoLayout icons={defaultLayoutIcons} />
+        <DefaultVideoLayout
+          icons={defaultLayoutIcons}
+          slots={{
+            fullscreenButton: <CssFullscreenButton active={cssFs} onToggle={toggleCssFs} />,
+          }}
+        />
       </MediaPlayer>
     </div>
+  );
+}
+
+function CssFullscreenButton({ active, onToggle }: { active: boolean; onToggle: () => void }) {
+  const Enter = defaultLayoutIcons.FullscreenButton.Enter;
+  const Exit = defaultLayoutIcons.FullscreenButton.Exit;
+  return (
+    <button
+      type="button"
+      className="vds-fullscreen-button vds-button"
+      aria-label={active ? "Salir de pantalla completa" : "Pantalla completa"}
+      aria-pressed={active}
+      onClick={onToggle}
+    >
+      {active ? <Exit className="vds-icon" /> : <Enter className="vds-icon" />}
+    </button>
   );
 }

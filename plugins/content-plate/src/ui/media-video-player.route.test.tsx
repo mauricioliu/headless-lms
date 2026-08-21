@@ -339,4 +339,51 @@ describe("video gate on the real player route", () => {
     await r.tapSlider(0.04);
     expect(r.video.currentTime).toBeCloseTo(3.6, 1);
   });
+
+  it("sizes the player box to the asset's natural ratio at loaded-metadata", async () => {
+    const r = await mountReadyRoute();
+    const playerEl = document.querySelector("[data-media-player]") as HTMLElement;
+    // jsdom reports no natural size: the mobile-first 9/16 CSS default stands.
+    expect(playerEl.style.aspectRatio).toBe("");
+
+    Object.defineProperty(r.video, "videoWidth", { configurable: true, get: () => 720 });
+    Object.defineProperty(r.video, "videoHeight", { configurable: true, get: () => 1280 });
+    await act(async () => {
+      r.video.dispatchEvent(new Event("loadedmetadata"));
+    });
+    expect(playerEl.style.aspectRatio).toBe("720 / 1280");
+  });
+
+  it("fills the current viewport on fullscreen instead of calling the native API", async () => {
+    Element.prototype.requestFullscreen ??= async () => {};
+    const native = vi.spyOn(Element.prototype, "requestFullscreen").mockResolvedValue();
+    const r = await mountReadyRoute();
+    const playerEl = document.querySelector("[data-media-player]") as HTMLElement;
+
+    const btn = document.querySelector(".vds-fullscreen-button") as HTMLButtonElement | null;
+    await act(async () => {
+      if (btn) {
+        btn.click();
+      } else {
+        playerEl.dispatchEvent(
+          new Event("media-enter-fullscreen-request", { bubbles: true, cancelable: true }),
+        );
+      }
+    });
+
+    expect(playerEl.classList.contains("nuvora-fs")).toBe(true);
+    expect(native).not.toHaveBeenCalled();
+
+    await act(async () => {
+      const again = document.querySelector(".vds-fullscreen-button") as HTMLButtonElement | null;
+      if (again) {
+        again.click();
+      } else {
+        playerEl.dispatchEvent(
+          new Event("media-exit-fullscreen-request", { bubbles: true, cancelable: true }),
+        );
+      }
+    });
+    expect(playerEl.classList.contains("nuvora-fs")).toBe(false);
+  });
 });
